@@ -1081,9 +1081,8 @@ const fetchT = (url, opts, ms) => fetch(url, { ...(opts || {}), signal: AbortSig
 // rejects datacenter playback requests outright ("URL has expired").
 const PIPED_APIS = ['https://api.piped.private.coffee'];
 const PIPED_INFO_CACHE = new Map();
-async function fetchPipedStreams(id) {
-  const c = PIPED_INFO_CACHE.get(id);
-  if (c && Date.now() - c.at < 300e3) return c.hit;
+async function fetchPipedStreams(id, bust) {
+  if (!bust) { const c = PIPED_INFO_CACHE.get(id); if (c && Date.now() - c.at < 300e3) return c.hit; }
   for (const api of PIPED_APIS) {
     try {
       const r = await fetchT(api + '/streams/' + encodeURIComponent(id), { headers: { 'user-agent': BROWSER_UA, 'accept': 'application/json' } }, 7000);
@@ -1147,10 +1146,11 @@ function pickStreams(d) {
   return { v, a, p };
 }
 function ytWatchPage(id, hit, phit) {
-  // primary player is youtube's own embed, iframed through the proxy —
-  // extraction happens in the browser, so the datacenter bot-wall that
-  // kills every server-side backend does not apply the same way. the
-  // stream mode below is the fallback for embeds youtube refuses.
+  // stream mode is the primary player: a muxed mp4 file relayed through
+  // /yt/stream (piped proxy first) — verified actually playing in a real
+  // browser. youtube's embed is the manual backup: through the proxy it
+  // renders black (and bare embed urls error 153 without a referer), so
+  // it only loads when the user taps for it.
   const embedSrc = gproxied('https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id) + '?autoplay=1&rel=0&playsinline=1');
   const progUrl = '/yt/stream?v=' + encodeURIComponent(id) + '&kind=p';
   let title = '', poster = '', recs = '';
@@ -1181,63 +1181,82 @@ function ytWatchPage(id, hit, phit) {
 ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <div class="wrap">
 <a class="back" href="/yt">← youtube</a>
-<iframe id="ytembed" src="${embedSrc}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="width:100%;aspect-ratio:16/9;border:0;border-radius:18px;background:#000;display:block;margin-top:12px"></iframe>
-<video id="vid" controls playsinline ${poster ? `poster="${poster}"` : ''} style="width:100%;border-radius:18px;background:#000;aspect-ratio:16/9;margin-top:12px;display:none"></video>
+<video id="vid" controls playsinline preload="auto" ${poster ? `poster="${poster}"` : ''} style="width:100%;border-radius:18px;background:#000;aspect-ratio:16/9;margin-top:12px"></video>
+<iframe id="ytembed" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="width:100%;aspect-ratio:16/9;border:0;border-radius:18px;background:#000;margin-top:12px;display:none"></iframe>
 <div style="display:flex;gap:8px;margin:12px 2px 4px;flex-wrap:wrap;align-items:center">
-<button id="modeEmbed" style="background:rgba(124,58,237,.25);border:1px solid rgba(196,181,253,.45);color:#ece9ff;border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:700">embed player</button>
-<button id="modeStream" style="background:rgba(20,14,48,.92);border:1px solid rgba(196,181,253,.45);color:#ece9ff;border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:700;opacity:.65">✦ stream mode</button>
-<span id="ytstat" style="opacity:.75;font-size:13px">starting the embed player… if it stays black, stream mode is the backup</span>
+<button id="modeStream" style="background:rgba(124,58,237,.25);border:1px solid rgba(196,181,253,.45);color:#ece9ff;border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:700">✦ stream mode</button>
+<button id="modeEmbed" style="background:rgba(20,14,48,.92);border:1px solid rgba(196,181,253,.45);color:#ece9ff;border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:700;opacity:.65">embed player</button>
+<span id="ytstat" style="opacity:.75;font-size:13px">stream mode — the file itself, straight through the network</span>
 </div>
 <p style="margin:10px 2px 20px;font-weight:700">${escHtml(title || '')}</p>
-<div id="ytretry" onclick="location.reload()" style="display:none;margin:0 2px 14px;background:rgba(20,14,48,.92);border:1px solid rgba(196,181,253,.45);color:#ece9ff;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700;width:fit-content">✦ tap to retry</div>
+<div id="ytretry" style="display:none;margin:0 2px 14px;background:rgba(20,14,48,.92);border:1px solid rgba(196,181,253,.45);color:#ece9ff;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700;width:fit-content">✦ tap for a fresh route</div>
 <div class="grid">${recs}</div>
 ${CLOAK_BAR}
 </div>
 <script src="/cloak.js"></script>
 <script>
-var EMBED=document.getElementById('ytembed'), VID=document.getElementById('vid'), STAT=document.getElementById('ytstat');
-var PROG=${JSON.stringify(progUrl)};
-var mode='embed', checks=0;
+var EMBED=document.getElementById('ytembed'), VID=document.getElementById('vid'), STAT=document.getElementById('ytstat'), PILL=document.getElementById('ytretry');
+var PROG=${JSON.stringify(progUrl)}, EMBEDSRC=${JSON.stringify(embedSrc)};
+var mode='stream', retries=0, embedWatch=null, eChecks=0;
 function setStat(t){ if(STAT) STAT.textContent=t; }
-function toStream(why){
-  if(mode==='stream') return; mode='stream';
+function tryPlay(){
+  var p=VID.play();
+  if(p && p.catch) p.catch(function(){ try{ VID.muted=true; var q=VID.play(); if(q && q.catch) q.catch(function(){}); }catch(e){} });
+}
+VID.src=PROG; tryPlay();
+function toStream(){
+  if(embedWatch){ clearInterval(embedWatch); embedWatch=null; }
+  mode='stream';
   EMBED.style.display='none'; VID.style.display='block';
-  if(!VID.getAttribute('src')) VID.src=PROG;
-  var p=VID.play(); if(p && p.catch) p.catch(function(){});
-  setStat(why || 'stream mode — the file itself, straight through the network');
+  if(!VID.getAttribute('src')){ VID.src=PROG; }
+  tryPlay();
+  setStat('stream mode — the file itself, straight through the network');
   document.getElementById('modeEmbed').style.opacity='.65';
   document.getElementById('modeStream').style.opacity='1';
 }
 function toEmbed(){
-  mode='embed';
+  mode='embed'; eChecks=0;
   try{ VID.pause(); }catch(e){}
   VID.style.display='none'; EMBED.style.display='block';
+  if(!EMBED.getAttribute('src')) EMBED.src=EMBEDSRC;
   setStat('embed player — the normal youtube player, inside the network');
   document.getElementById('modeStream').style.opacity='.65';
   document.getElementById('modeEmbed').style.opacity='1';
+  if(embedWatch) clearInterval(embedWatch);
+  embedWatch=setInterval(function(){
+    eChecks++;
+    if(mode!=='embed'){ clearInterval(embedWatch); embedWatch=null; return; }
+    if(eChecks>8){ clearInterval(embedWatch); embedWatch=null; setStat('embed still black… stream mode is the one that works — tap it'); return; }
+    var doc=null;
+    try{ doc=EMBED.contentWindow && EMBED.contentWindow.document; }catch(e){}
+    if(!doc || !doc.body) return;
+    var v=doc.querySelector('video');
+    if(v && (v.readyState>=2 || v.currentTime>0)){ setStat('playing ✦'); clearInterval(embedWatch); embedWatch=null; return; }
+    var t=(doc.body.innerText || '').toLowerCase();
+    if(t.indexOf('video is unavailable')>=0 || t.indexOf('video unavailable')>=0 || t.indexOf('sign in')>=0 || t.indexOf('configuration error')>=0 || (t.indexOf('error')>=0 && t.indexOf('occurred')>=0)){
+      clearInterval(embedWatch); embedWatch=null;
+      setStat('the embed got refused — tap stream mode, that is the one that works');
+    }
+  }, 2500);
 }
-document.getElementById('modeStream').addEventListener('click', function(){ toStream(); });
+document.getElementById('modeStream').addEventListener('click', toStream);
 document.getElementById('modeEmbed').addEventListener('click', toEmbed);
 VID.addEventListener('error', function(){
   if(mode!=='stream') return;
-  var p=document.getElementById('ytretry'); if(p) p.style.display='block';
-  setStat('stream mode could not load this one either — tap retry or pick another video');
+  PILL.style.display='block';
+  setStat('stream mode could not load this one — tap for a fresh route, or try another video');
 }, true);
-var iv=setInterval(function(){
-  checks++;
-  if(mode!=='embed'){ clearInterval(iv); return; }
-  if(checks>8){ clearInterval(iv); setStat('still loading… if it stays black, tap stream mode'); return; }
-  var doc=null;
-  try{ doc=EMBED.contentWindow && EMBED.contentWindow.document; }catch(e){}
-  if(!doc || !doc.body) return;
-  var v=doc.querySelector('video');
-  if(v && (v.readyState>=2 || v.currentTime>0)){ setStat('playing ✦'); clearInterval(iv); return; }
-  var t=(doc.body.innerText || '').toLowerCase();
-  if(t.indexOf('video unavailable')>=0 || t.indexOf('sign in')>=0 || (t.indexOf('error')>=0 && t.indexOf('occurred')>=0)){
-    clearInterval(iv);
-    toStream('the embed got refused — switched to stream mode ✦');
-  }
-}, 2500);
+PILL.addEventListener('click', function(){
+  retries++;
+  PILL.style.display='none';
+  if(retries>2){ location.reload(); return; }
+  setStat('getting a fresh route…');
+  VID.src=PROG + '&fresh=1&n=' + retries;
+  tryPlay();
+});
+setTimeout(function(){
+  if(mode==='stream' && VID.readyState<2 && !VID.error){ PILL.style.display='block'; setStat('still loading… tap for a fresh route, or pick another video'); }
+}, 14000);
 </script>
 </body>
 </html>`;
@@ -1497,10 +1516,14 @@ export default {
       const range = request.headers.get('range');
       if (kind === 'p') {
         // direct-file playback: a muxed mp4 whose bytes actually flow.
-        // piped's proxy first, invidious progressive (below) as backup
-        const ph = await fetchPipedStreams(vidId);
-        const pf = ph ? pickPipedFile(ph.data) : null;
-        if (pf) {
+        // piped's proxy first (its extractor flaps per video, so a
+        // failed fetch earns one fresh re-resolve), invidious
+        // progressive (below) as the last resort
+        const wantFresh = u.searchParams.get('fresh') === '1';
+        for (let round = 0; round < 2; round++) {
+          const ph = await fetchPipedStreams(vidId, wantFresh || round === 1);
+          const pf = ph ? pickPipedFile(ph.data) : null;
+          if (!pf) break;
           try {
             const up = await fetch(pf.url, { headers: { 'user-agent': BROWSER_UA, ...(range ? { range } : {}) } });
             if (up.status === 200 || up.status === 206) {
@@ -1508,7 +1531,7 @@ export default {
               for (const h of ['content-type', 'content-length', 'content-range', 'accept-ranges']) { const v = up.headers.get(h); if (v) hh.set(h, v); }
               return new Response(up.body, { status: up.status, headers: hh });
             }
-          } catch { /* fall through to invidious */ }
+          } catch { /* retry fresh once, then fall through */ }
         }
       }
       let hit = await fetchVideoInfo(vidId);
