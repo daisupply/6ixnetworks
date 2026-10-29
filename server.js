@@ -22,6 +22,37 @@ function proxied(absUrl) {
 function gproxied(absUrl) {
   return '/gproxy/' + b64urlEncode(absUrl);
 }
+// ---------- proxy shim ----------
+// Injected at the very top of every proxied page. The static rewriter only
+// catches URLs written in HTML — this patches the runtime too: fetch, XHR,
+// dynamically-set src/href, link clicks, form posts and DOM insertions all
+// get routed back through the proxy, so a page's own code can't wander off
+// to its base network. Everything stays inside 6ixNetworks.
+const PROXY_SHIM = `(function(){
+var TGT=%%TGT%%, PRE=%%PRE%%;
+function b64(s){ return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+function rw(u){ try{ if(typeof u!=='string') return u; if(!u || u.indexOf(PRE)===0 || /^(data|blob|about|javascript|mailto|tel):/i.test(u)) return u; var a=new URL(u, TGT); if(!/^https?:$/.test(a.protocol)) return u; return PRE + b64(a.href); }catch(e){ return u; } }
+var of=window.fetch;
+if(of) window.fetch=function(input, init){ try{ if(typeof input==='string') input=rw(input); else if(input && input.url) input=new Request(rw(input.url), input); }catch(e){} return of.call(this, input, init); };
+var oo=XMLHttpRequest.prototype.open;
+XMLHttpRequest.prototype.open=function(m, u){ try{ arguments[1]=rw(u); }catch(e){} return oo.apply(this, arguments); };
+[['HTMLImageElement','src'],['HTMLScriptElement','src'],['HTMLMediaElement','src'],['HTMLSourceElement','src'],['HTMLIFrameElement','src'],['HTMLLinkElement','href'],['HTMLAnchorElement','href']].forEach(function(pair){
+  var el=window[pair[0]]; if(!el) return;
+  var desc=Object.getOwnPropertyDescriptor(el.prototype, pair[1]);
+  if(desc && desc.set && desc.configurable){ Object.defineProperty(el.prototype, pair[1], { configurable:true, enumerable:desc.enumerable, get:desc.get, set:function(v){ desc.set.call(this, rw(v)); } }); }
+});
+document.addEventListener('click', function(e){ var a=e.target && e.target.closest ? e.target.closest('a[href]') : null; if(a){ var h=a.getAttribute('href'); var r=rw(h); if(r!==h) a.setAttribute('href', r); } }, true);
+document.addEventListener('submit', function(e){ var f=e.target; if(f && f.getAttribute && f.getAttribute('action')){ var r=rw(f.getAttribute('action')); f.setAttribute('action', r); } }, true);
+function fixNode(node){ if(node.nodeType!==1) return; var list=[node]; if(node.querySelectorAll) list=list.concat(Array.prototype.slice.call(node.querySelectorAll('img,script,link,video,audio,source,iframe,a'))); list.forEach(function(el){ if(!el.getAttribute) return; ['src','href'].forEach(function(at){ var v=el.getAttribute(at); if(v){ var r=rw(v); if(r!==v) el.setAttribute(at, r); } }); }); }
+try{ new MutationObserver(function(ms){ ms.forEach(function(m){ m.addedNodes.forEach(fixNode); }); }).observe(document.documentElement, { childList:true, subtree:true }); }catch(e){}
+})();`;
+function injectProxyShim(html, tgt, pre) {
+  const shim = '<script>' + PROXY_SHIM.replace('%%TGT%%', JSON.stringify(tgt)).replace('%%PRE%%', JSON.stringify(pre)) + '</' + 'script>';
+  if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, m => m + shim);
+  if (/<html[^>]*>/i.test(html)) return html.replace(/<html[^>]*>/i, m => m + shim);
+  return shim + html;
+}
+
 // ---------- browser identity + cookie handling ----------
 // Present as one consistent, ordinary desktop Chrome browser (same UA +
 // client hints + fetch headers every time), and persist each site's cookies
@@ -224,36 +255,41 @@ const STARS_JS = `
 // their /watch pages when fetched from a server — but Invidious SEARCH works
 // through the proxy, and the Piped network (a whole federated YouTube
 // frontend) still plays. So: search here, mirror playback to Piped.
-const PIPED_BASE = 'https://piped.video';
 const INVIDIOUS_INSTANCES = [
   'https://invidious.tiekoetter.com',
   'https://inv.nadeko.net',
   'https://yt.chocolatemoo53.com',
 ];
+const INVIDIOUS_API_ORDER = [
+  'https://yt.chocolatemoo53.com',
+  'https://invidious.tiekoetter.com',
+  'https://inv.nadeko.net',
+  'https://invidious.nerdvpn.de',
+];
 const INVIDIOUS_HOSTS = INVIDIOUS_INSTANCES.map(u => new URL(u).hostname).concat(['invidious.nerdvpn.de']);
-function youtubeMirror(target) {
+// every video/search link resolves to a 6ixNetworks route — nothing is
+// ever handed off to youtube, piped, or an instance's own pages
+function internalMirror(target) {
   const h = target.hostname.toLowerCase();
+  const vid = target.searchParams.get('v');
   if (h === 'youtu.be') {
     const id = target.pathname.slice(1).split('/')[0];
-    return id ? PIPED_BASE + '/watch?v=' + encodeURIComponent(id) : PIPED_BASE;
+    return id ? '/yt/watch?v=' + encodeURIComponent(id) : '/yt';
   }
   if (/(^|\.)youtube\.com$/.test(h) || h === 'www.youtube-nocookie.com') {
-    const v = target.searchParams.get('v');
-    if (target.pathname === '/watch' && v) return PIPED_BASE + '/watch?v=' + encodeURIComponent(v);
-    if (target.pathname.startsWith('/shorts/') || target.pathname.startsWith('/embed/') || target.pathname.startsWith('/live/')) {
+    if (target.pathname === '/watch' && vid) return '/yt/watch?v=' + encodeURIComponent(vid);
+    if (/^\/(shorts|embed|live)\//.test(target.pathname)) {
       const id = target.pathname.split('/')[2];
-      if (id) return PIPED_BASE + '/watch?v=' + encodeURIComponent(id);
+      if (id) return '/yt/watch?v=' + encodeURIComponent(id);
     }
     if (target.pathname === '/results') {
       const q = target.searchParams.get('search_query');
-      if (q) return PIPED_BASE + '/search?q=' + encodeURIComponent(q);
+      if (q) return '/yt/search?q=' + encodeURIComponent(q);
     }
-    if (target.pathname.startsWith('/channel/') || target.pathname.startsWith('/@')) return PIPED_BASE + target.pathname;
-    return PIPED_BASE;
+    return '/yt';
   }
-  if (INVIDIOUS_HOSTS.includes(h) && target.pathname === '/watch') {
-    const v = target.searchParams.get('v');
-    if (v) return PIPED_BASE + '/watch?v=' + encodeURIComponent(v);
+  if (INVIDIOUS_HOSTS.includes(h) && target.pathname === '/watch' && vid) {
+    return '/yt/watch?v=' + encodeURIComponent(vid);
   }
   return null;
 }
@@ -265,7 +301,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 
 <form action="/yt/search" method="get"><input name="q" type="text" placeholder="search youtube" autocomplete="off" autofocus><button type="submit">search</button></form>
 <div class="links">
-<a href="https://piped.video">open piped directly</a>
+
 <a href="/">← back to 6ixnetworks</a>
 </div>
 ${CLOAK_BAR}<script src="/cloak.js"></script>
@@ -357,31 +393,26 @@ function playPage(u, t) {
     return '<!DOCTYPE html><body style="background:#070313;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#c084fc" href="/gs">back to games</a></body>';
   }
   const prox = gproxied(u);
+  const alt = proxied(u);
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>${escHtml(t || 'Game')}</title>
-${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CANVAS}
+${'${FONT_LINKS}'}<style>${'${GALAXY_CSS}'}</style></head><body class="playbody">${'${STAR_CANVAS}'}
 <div class="top"><a href="/gs">← games</a><span class="title">${escHtml(t || 'Game')}</span>
-<button id="bNet" class="on" onclick="setMode('net')">thru network</button>
-<button id="bDir" onclick="setMode('dir')">direct</button>
+<button class="on" onclick="useNet()">network</button>
+<button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
 <button onclick="cloakTab('google')">cloak: google</button>
 <button onclick="cloakOpen()">cloaked tab</button></div>
-<iframe class="gameframe" id="gf" src="${prox}" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock"></iframe>
+<iframe class="gameframe" id="gf" src="${'${prox}'}" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock"></iframe>
+<div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(20,14,48,.92);border:1px solid rgba(196,181,253,.45);color:#ece9ff;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
 <script src="/cloak.js"></script>
 <script>
-var PROX=${JSON.stringify(prox)}, DIRECT=${JSON.stringify(u)};
-var mode='net', fell=false;
-function setMode(m){
-  mode=m;
-  document.getElementById('gf').src = (m==='net' ? PROX : DIRECT);
-  document.getElementById('bNet').classList.toggle('on', m==='net');
-  document.getElementById('bDir').classList.toggle('on', m==='dir');
-  if(m==='net') armChecks();
-}
-function looksDead(){
+var PROX=${'${JSON.stringify(prox)}'}, ALT=${'${JSON.stringify(alt)}'}, stage=0;
+var gf=document.getElementById('gf');
+function dead(){
   try{
-    var d=document.getElementById('gf').contentDocument;
+    var d=gf.contentDocument;
     if(!d || !d.body) return false;
     var t=d.body.innerText||'';
     if(/proxy could not reach|that host is blocked|bad proxy path/i.test(t)) return true;
@@ -389,15 +420,16 @@ function looksDead(){
     return d.body.innerHTML.length < 5000;
   }catch(e){ return false; }
 }
-function armChecks(){
-  [5000, 10000, 16000].forEach(function(ms){
-    setTimeout(function(){ if(mode==='net' && !fell && looksDead()){ fell=true; setMode('dir'); } }, ms);
-  });
+function check(){
+  if(!dead()) return;
+  if(stage===0){ stage=1; gf.src=ALT; arm(); }
+  else if(stage===1){ stage=2; document.getElementById('dead').style.display='block'; }
 }
-document.getElementById('gf').addEventListener('load', function(){
-  if(mode==='net') setTimeout(function(){ if(!fell && looksDead()){ fell=true; setMode('dir'); } }, 3000);
-});
-armChecks();
+function arm(){ [5000, 11000, 18000].forEach(function(ms){ setTimeout(check, ms); }); }
+function useNet(){ stage=0; document.getElementById('dead').style.display='none'; gf.src=PROX; arm(); }
+function retry(){ useNet(); }
+gf.addEventListener('load', function(){ setTimeout(check, 3000); });
+arm();
 </script>
 </body>
 </html>`;
@@ -487,7 +519,7 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
   const upstreamCookies = buildUpstreamCookies(req.headers['cookie'] || '', target.hostname);
   if (upstreamCookies) headers['cookie'] = upstreamCookies;
 
-  const mirror = youtubeMirror(target);
+  const mirror = internalMirror(target);
   if (mirror) {
     res.writeHead(302, { location: mirror });
     return res.end();
@@ -541,14 +573,7 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
   if (isHtml || isCss) {
     const text = await upstream.text();
     let rewritten = isHtml ? rewriteHtml(text, target.toString()) : rewriteCss(text, target.toString());
-  if (gameMode && isHtml) {
-    // game mode: give the page a <base> pointing at its real home folder,
-    // so asset paths the game's own code builds at runtime resolve to the
-    // game's real files instead of breaking against the proxy path
-    const baseHref = new URL('.', target).href;
-    if (/<head[^>]*>/i.test(rewritten)) rewritten = rewritten.replace(/<head[^>]*>/i, m => m + '<base href="' + baseHref + '">');
-    else rewritten = '<base href="' + baseHref + '">' + rewritten;
-  }
+  if (isHtml) rewritten = injectProxyShim(rewritten, target.toString(), gameMode ? '/gproxy/' : '/browse/');
     const buf = Buffer.from(rewritten, 'utf8');
     outHeaders['content-length'] = buf.length;
     res.writeHead(status, outHeaders);
@@ -608,7 +633,120 @@ async function handleYtSearch(req, res, q) {
     } catch { /* try next instance */ }
   }
   res.writeHead(502, { 'content-type': 'text/html; charset=utf-8' });
-  res.end('<!DOCTYPE html><body style="background:#070313;color:#f2f2f2;font-family:system-ui;padding:40px">all search instances are down rn — <a style="color:#c084fc" href="https://piped.video/search?q=' + encodeURIComponent(query) + '">search on Piped instead</a></body>');
+  res.end('<!DOCTYPE html><body style="background:#070313;color:#f2f2f2;font-family:system-ui;padding:40px">all search instances are down rn — <a style="color:#c084fc" href="/yt/search?q=' + encodeURIComponent(query) + '">retry</a></body>');
+}
+
+
+// ---------- in-network youtube player (/yt/watch) ----------
+// Data comes from an instance's API (fetched by this server), playback is
+// an MSE player in our own page streaming both tracks through /gproxy —
+// the browser never talks to youtube, an instance, or googlevideo.
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+async function fetchVideoInfo(id) {
+  // instances flap (their youtube-bypass backends restart and 500 for a
+  // few seconds), so sweep the list twice with a breath between rounds
+  for (let round = 0; round < 2; round++) {
+    for (const inst of INVIDIOUS_API_ORDER) {
+      try {
+        const r = await fetch(inst + '/api/v1/videos/' + encodeURIComponent(id) + '?local=true', {
+          headers: { 'user-agent': BROWSER_UA, 'accept': 'application/json' },
+        });
+        if (!r.ok) continue;
+        const j = await r.json();
+        if (j && ((j.adaptiveFormats || []).length || (j.formatStreams || []).length)) return { inst, data: j };
+      } catch { /* next instance */ }
+    }
+    if (round === 0) await sleep(1500);
+  }
+  return null;
+}
+function pickStreams(d) {
+  const hOf = (f) => parseInt(f.resolution) || f.height || 0;
+  const vids = (d.adaptiveFormats || []).filter(f => /^video\//.test(f.type || '') && /video\/mp4/.test(f.type || ''));
+  const auds = (d.adaptiveFormats || []).filter(f => /^audio\//.test(f.type || ''));
+  const avc = vids.filter(f => (f.type || '').includes('avc1')).sort((a, b) => hOf(b) - hOf(a));
+  const v = avc.find(f => hOf(f) <= 720) || avc[0] || vids.sort((a, b) => hOf(b) - hOf(a))[0] || null;
+  const audsMp4 = auds.filter(f => /audio\/mp4/.test(f.type || '')).sort((x, y) => (y.bitrate || 0) - (x.bitrate || 0));
+  const a = audsMp4[0] || auds.sort((x, y) => (y.bitrate || 0) - (x.bitrate || 0))[0] || null;
+  const p = (d.formatStreams || [])[0] || null;
+  return { v, a, p };
+}
+function ytWatchPage(id, hit) {
+  const d = hit.data;
+  const abs = (u) => { try { return new URL(u, hit.inst).href; } catch { return u; } };
+  const hOf = (f) => parseInt(f.resolution) || f.height || 0;
+  const vids = (d.adaptiveFormats || []).filter(f => /^video\//.test(f.type || '') && /video\/mp4/.test(f.type || ''));
+  const auds = (d.adaptiveFormats || []).filter(f => /^audio\//.test(f.type || ''));
+  const avc = vids.filter(f => (f.type || '').includes('avc1')).sort((a, b) => hOf(b) - hOf(a));
+  const pickV = avc.find(f => hOf(f) <= 720) || avc[0] || vids.sort((a, b) => hOf(b) - hOf(a))[0];
+  const pickA = auds.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))[0];
+  const thumbs = (d.videoThumbnails || []).slice().sort((a, b) => (b.width || 0) - (a.width || 0));
+  const poster = thumbs.length ? proxied(abs(thumbs[0].url)) : '';
+  const recs = (d.recommendedVideos || []).slice(0, 12).map(rv => {
+    const t0 = (rv.videoThumbnails || [])[0];
+    const img = t0 ? proxied(abs(t0.url)) : '';
+    return `<a class="card" href="/yt/watch?v=${encodeURIComponent(rv.videoId)}">${img ? `<img loading="lazy" src="${img}" alt="">` : '<div class="noimg">✦</div>'}<div class="gt">${escHtml(rv.title || '')}</div></a>`;
+  }).join('');
+  // signed stream urls expire and instances restart, so the player asks
+  // /yt/stream for a fresh one at play time instead of trusting this render
+  const streamV = pickV ? '/yt/stream?v=' + encodeURIComponent(id) + '&kind=v' : '';
+  const streamA = pickA ? '/yt/stream?v=' + encodeURIComponent(id) + '&kind=a' : '';
+  const progUrl = (d.formatStreams || []).length ? '/yt/stream?v=' + encodeURIComponent(id) + '&kind=p' : '';
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>${escHtml(d.title || 'video')}</title>
+${'${FONT_LINKS}'}<style>${'${GALAXY_CSS}'}</style></head><body>${'${STAR_CANVAS}'}
+<div class="wrap">
+<a class="back" href="/yt">← youtube</a>
+<video id="vid" controls autoplay playsinline ${poster ? `poster="${poster}"` : ''} style="width:100%;border-radius:18px;background:#000;aspect-ratio:16/9;margin-top:12px"></video>
+<p style="margin:14px 2px 20px;font-weight:700">${escHtml(d.title || '')}</p>
+<div class="grid">${recs}</div>
+${'${CLOAK_BAR}'}
+</div>
+<script src="/cloak.js"></script>
+<script>
+var V=${JSON.stringify(streamV)}, A=${JSON.stringify(streamA)}, VM=${JSON.stringify(pickV ? pickV.type : '')}, AM=${JSON.stringify(pickA ? pickA.type : '')}, PROG=${JSON.stringify(progUrl)};
+var vid=document.getElementById('vid');
+function appendBuf(sb, buf){ return new Promise(function(res){ function u(){ sb.removeEventListener('updateend', u); res(); } sb.addEventListener('updateend', u); try{ sb.appendBuffer(buf); }catch(e){ res(); } }); }
+async function pump(sb, url, end){
+  var start=0, CH=2000000, base=url, retried=false;
+  try{
+    while(true){
+      var r=await fetch(url, { headers:{ 'Range':'bytes='+start+'-'+(start+CH-1) } });
+      if(r.status===416) break;
+      if(r.status===403 || r.status===500 || r.status===502){
+        if(start===0 && !retried){ retried=true; url=base; await new Promise(function(res){ setTimeout(res, 1200); }); continue; }
+        break;
+      }
+      if(!r.ok && r.status!==206) break;
+      if(r.url) url=r.url;
+      var buf=await r.arrayBuffer();
+      if(!buf.byteLength) break;
+      await appendBuf(sb, buf);
+      start+=buf.byteLength;
+      var cr=r.headers.get('Content-Range');
+      if(cr){ var total=parseInt((cr.split('/')[1]||''),10); if(!isNaN(total) && start>=total) break; }
+      else if(buf.byteLength<CH) break;
+    }
+  }catch(e){}
+  end();
+}
+(function start(){
+  if(!V){ if(PROG) vid.src=PROG; return; }
+  if(!('MediaSource' in window) || !MediaSource.isTypeSupported(VM) || (A && !MediaSource.isTypeSupported(AM))){ vid.src = PROG || V; return; }
+  var ms=new MediaSource();
+  vid.src=URL.createObjectURL(ms);
+  ms.addEventListener('sourceopen', function(){
+    var vb, ab, dv=false, da=!A;
+    try{ vb=ms.addSourceBuffer(VM); if(A) ab=ms.addSourceBuffer(AM); }catch(e){ vid.src = PROG || V; return; }
+    function done(){ if(dv && da){ try{ ms.endOfStream(); }catch(e){} } }
+    pump(vb, V, function(){ dv=true; done(); });
+    if(A) pump(ab, A, function(){ da=true; done(); });
+  });
+})();
+</script>
+</body>
+</html>`;
 }
 
 // ---------- server ----------
@@ -638,6 +776,26 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/yt') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
     return res.end(YT_HOME);
+  }
+  if (u.pathname === '/yt/watch') {
+    const vidId = (u.searchParams.get('v') || '').trim();
+    const hit = vidId ? await fetchVideoInfo(vidId) : null;
+    if (!hit) {
+      res.writeHead(502, { 'content-type': 'text/html; charset=utf-8' });
+      return res.end('<!DOCTYPE html><body style="background:#070313;color:#f2f2f2;font-family:system-ui;padding:40px">unavailable rn — <a style="color:#c084fc" href="/yt">back</a></body>');
+    }
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    return res.end(ytWatchPage(vidId, hit));
+  }
+  if (u.pathname === '/yt/stream') {
+    const vidId = (u.searchParams.get('v') || '').trim();
+    const kind = u.searchParams.get('kind') || 'v';
+    const hit = vidId ? await fetchVideoInfo(vidId) : null;
+    const fmt = hit ? pickStreams(hit.data)[kind] : null;
+    if (!hit || !fmt) { res.writeHead(502); return res.end('stream unavailable'); }
+    let absUrl; try { absUrl = new URL(fmt.url, hit.inst).href; } catch { absUrl = fmt.url; }
+    res.writeHead(302, { location: gproxied(absUrl) });
+    return res.end();
   }
   if (u.pathname === '/yt/search') {
     return handleYtSearch(req, res, u.searchParams.get('q') || '');

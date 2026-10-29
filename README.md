@@ -138,3 +138,30 @@ PORT=3000 node server.js
   its egress IP — fetches leave from Cloudflare's network, full stop.
   Direct mode is the real answer to "look like a secure network": the
   game runs on its own origin over HTTPS, its actual secure home.
+
+## v8 — nothing leaves the network
+
+Standing rule from the owner: no game, search, video, or page may ever
+hand the browser off to its base URL. Everything is wired through
+6ixNetworks:
+
+- **Proxy shim.** Every proxied page gets a small script injected first
+  that patches fetch(), XMLHttpRequest, dynamically-set src/href, link
+  clicks, form posts and DOM insertions, routing them all back through
+  /browse or /gproxy. The static HTML rewriter alone cannot catch URLs
+  a page builds at runtime — the shim can.
+- **YouTube is fully internal.** youtube.com / youtu.be / Invidious
+  watch links mirror to /yt/watch; searches to /yt/search. The old
+  hand-off to Piped is gone — there are no external links left.
+- **In-network player.** /yt/watch is our own page: metadata comes from
+  an instance API, video+audio stream through /gproxy via an MSE
+  player, and /yt/stream resolves a fresh signed stream URL at play
+  time (they expire; instances restart) with a re-resolve retry.
+  Verified: HTTP 206 ftypdash video/mp4 and audio/mp4 chunks through
+  the proxy. Only one public instance currently offers an API
+  (yt.chocolatemoo53.com), so playback can flap when its backend
+  restarts — search (3 instances) is sturdier.
+- **Games: no direct mode anymore.** The player tries /gproxy, then
+  plain /browse mode, then shows an in-network retry pill. WebSocket
+  traffic (live multiplayer) is the one thing an HTTP proxy cannot
+  tunnel — those games may still not connect.
