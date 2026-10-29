@@ -1,0 +1,17 @@
+# 6ixNetworks on Fly.io — rename the app (names are global), then `fly deploy`.
+# Chicago (ord) is closest to Minnesota. Fly has no free tier anymore,
+# but the smallest machine is a few bucks a month and never sleeps.
+app = "sixnetworks-change-me"
+primary_region = "ord"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "off"
+  min_machines_running = 1

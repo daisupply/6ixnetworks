@@ -1,0 +1,10 @@
+services:
+  sixnetworks:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      # optional: route all traffic through a vpn/proxy endpoint
+      # UPSTREAM_PROXY: "http://user:pass@host:port"
+      PORT: "8080"
+    restart: unless-stopped

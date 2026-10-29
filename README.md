@@ -201,6 +201,12 @@ hand the browser off to its base URL. Everything is wired through
   build (200, real PNG bytes) — logo failures on the live site mean
   it is still running an older build.
 
+## Deploy anywhere
+
+See **DEPLOY.md** — Cloudflare Workers, Render (one click), Railway,
+Fly.io, Docker/compose for any VPS or home machine, and Heroku-style
+platforms are all wired up in this repo.
+
 ## Egress: getting a different IP (VPN / proxy)
 
 A Cloudflare Worker can never choose its outgoing IP — every fetch leaves
