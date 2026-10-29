@@ -122,12 +122,30 @@ function isPrivateHost(hostname) {
   }
   return false;
 }
+
+// Bing result links don't point at the result — they point at Bing's own
+// click-tracker (bing.com/ck/a?...&u=a1<base64 of the real URL>), which
+// serves a fragile JS interstitial that dies or loops from datacenter
+// IPs. The real destination is sitting right there in the link, so we
+// decode it and skip the tracker entirely.
+function debingUrl(abs) {
+  try {
+    if (!/(^|\.)bing\.com$/i.test(abs.hostname)) return null;
+    if (!abs.pathname.startsWith('/ck/')) return null;
+    const p = abs.searchParams.get('u');
+    if (!p || p.slice(0, 2) !== 'a1') return null;
+    const real = b64urlDecode(p.slice(2).replace(/\+/g, '-').replace(/\//g, '_'));
+    return /^https?:\/\//i.test(real) ? real : null;
+  } catch { return null; }
+}
+
 function resolveAndProxy(rawValue, baseUrl) {
   const v = (rawValue || '').trim();
   if (!v || v.startsWith('#') || /^(data|javascript|mailto|tel|blob|about):/i.test(v)) return rawValue;
   try {
     const abs = new URL(v, baseUrl).toString();
-    return proxied(abs);
+    const real = debingUrl(new URL(abs));
+    return proxied(real || abs);
   } catch { return rawValue; }
 }
 function rewriteSrcset(value, baseUrl) {
@@ -569,6 +587,11 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
   const mirror = internalMirror(target);
   if (mirror) {
     res.writeHead(302, { location: mirror });
+    return res.end();
+  }
+  const debinged = debingUrl(target);
+  if (debinged) {
+    res.writeHead(302, { location: proxied(debinged) });
     return res.end();
   }
   // memory cache (Node deploys): static assets only, GET without Range
