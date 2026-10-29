@@ -184,3 +184,19 @@ hand the browser off to its base URL. Everything is wired through
 - Note: the live sixsearch worker must be re-pasted with this build —
   a screenshot on 2026-10-29 showed it still running the broken v8
   (literal ${FONT_LINKS} text, "not found" iframe).
+
+## v9.2 — bing click fix
+
+- **HTML entities in URLs.** Bing writes result links with \&amp;
+  instead of \&. The rewriter was encoding the escaped text verbatim,
+  so Bing received garbage parameters and answered clicks with a
+  blank HTTP 204 — the "new window that never loads". Attribute
+  values are now unescaped before resolution (verified: clicks return
+  Bing's real redirect flow instead of 204).
+- **Same-tab clicks.** target="_blank" is stripped from proxied
+  pages (Bing forces new tabs; school popup blockers strand them),
+  and the shim now routes location.replace/assign and window.open
+  back through the proxy in the same tab.
+- Logos: Bing's sprite PNG was verified loading through the current
+  build (200, real PNG bytes) — logo failures on the live site mean
+  it is still running an older build.

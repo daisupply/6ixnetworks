@@ -45,6 +45,9 @@ document.addEventListener('click', function(e){ var a=e.target && e.target.close
 document.addEventListener('submit', function(e){ var f=e.target; if(f && f.getAttribute && f.getAttribute('action')){ var r=rw(f.getAttribute('action')); f.setAttribute('action', r); } }, true);
 function fixNode(node){ if(node.nodeType!==1) return; var list=[node]; if(node.querySelectorAll) list=list.concat(Array.prototype.slice.call(node.querySelectorAll('img,script,link,video,audio,source,iframe,a'))); list.forEach(function(el){ if(!el.getAttribute) return; ['src','href'].forEach(function(at){ var v=el.getAttribute(at); if(v){ var r=rw(v); if(r!==v) el.setAttribute(at, r); } }); }); }
 try{ new MutationObserver(function(ms){ ms.forEach(function(m){ m.addedNodes.forEach(fixNode); }); }).observe(document.documentElement, { childList:true, subtree:true }); }catch(e){}
+try{ var _lr=window.location.replace.bind(window.location); window.location.replace=function(u){ _lr(rw(u)); }; }catch(e){}
+try{ var _la=window.location.assign.bind(window.location); window.location.assign=function(u){ _la(rw(u)); }; }catch(e){}
+window.open=function(u){ if(u){ window.location.href=rw(u); } return null; };
 })();`;
 function injectProxyShim(html, tgt, pre) {
   const shim = '<script>' + PROXY_SHIM.replace('%%TGT%%', JSON.stringify(tgt)).replace('%%PRE%%', JSON.stringify(pre)) + '</' + 'script>';
@@ -136,6 +139,12 @@ function rewriteSrcset(value, baseUrl) {
     return bits.join(' ');
   }).join(', ');
 }
+// Browsers hand us attribute values HTML-escaped (&amp; for &). Encoding
+// the escaped text into the proxy URL corrupts the query string — Bing's
+// result links died as blank 204s because of exactly this. Decode first.
+function unescapeAttr(s) {
+  return s.replace(/&amp;/gi, '&').replace(/&quot;/gi, '"').replace(/&#0?39;|&apos;/gi, "'").replace(/&lt;/gi, '<').replace(/&gt;/gi, '>');
+}
 function rewriteHtml(html, baseUrl) {
   // v3: ONE pass over the document (was 4-5 passes). On Cloudflare's free
   // plan only 10ms of CPU is allowed per request, so scan count matters.
@@ -146,11 +155,11 @@ function rewriteHtml(html, baseUrl) {
       return `url(${q}${resolveAndProxy(urlVal, baseUrl)}${q})`;
     }
     if (attr === undefined) return ''; // <base ...> tag: drop it
-    const val = dq !== undefined ? dq : (sq !== undefined ? sq : uq);
+    const val = unescapeAttr(dq !== undefined ? dq : (sq !== undefined ? sq : uq));
     const quote = dq !== undefined ? '"' : (sq !== undefined ? "'" : '');
     const rewritten = attr.toLowerCase() === 'srcset' ? rewriteSrcset(val, baseUrl) : resolveAndProxy(val, baseUrl);
     return `${attr}=${quote}${rewritten}${quote}`;
-  });
+  }).replace(/\s+target\s*=\s*("_blank"|'_blank'|_blank)/gi, '');
 }
 function rewriteCss(css, baseUrl) {
   let out = css.replace(/url\(\s*(['"]?)([^'")]+)\1\s*\)/gi,
