@@ -444,7 +444,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{pos
 <h1>6ix<span>Networks</span> games</h1>
 
 <div class="bar"><input id="gq" type="text" placeholder="search games..." autocomplete="off">
-<select id="gc"><option value="">all categories</option>${cats.map(c => `<option>${escHtml(c)}</option>`).join('')}</select><button class="chip" id="gfav" type="button">★ favorites</button><button class="chip" id="grec" type="button">recent</button><button class="chip" id="grand" type="button">🎲 random</button><a class="chip" href="/emu" style="text-decoration:none">🕹 emulator</a></div>
+<select id="gc"><option value="">all categories</option>${cats.map(c => `<option>${escHtml(c)}</option>`).join('')}</select><button class="chip" id="gfav" type="button">★ favorites</button><button class="chip" id="grec" type="button">recent</button><button class="chip" id="grand" type="button">🎲 random</button><a class="chip" href="/emu" style="text-decoration:none">🕹 emulator</a><a class="chip" href="/chat" style="text-decoration:none">💬 chat</a><a class="chip" href="/ai" style="text-decoration:none">✦ ai</a></div>
 <div class="grid" id="grid">${cards}</div>
 ${CLOAK_BAR}
 
@@ -620,6 +620,149 @@ const FEATURED_GAMES = [
   { t: 'Krunker', u: 'https://krunker.io', img: '', c: 'Featured', w: 800, h: 600 },
 ];
 
+// ---------- six ai + chatroom (shared pages) ----------
+const SIX_SYSTEM = 'You are Six, the AI inside 6ixNetworks — a galaxy-themed web network with a web proxy, a 600-game hub, a retro emulator (NES, SNES, Game Boy/Color, GBA, N64, Genesis, Atari 2600), a YouTube player, tools (calculator, notepad, timers), and a live chatroom where people can summon you with /ai. You are chill, direct, and genuinely helpful. Keep answers short unless asked for detail. Help with homework, games, ideas, and questions about the site. Never claim a feature exists that is not listed here.';
+function cleanName(n) { n = String(n || '').replace(/[<>&"']/g, '').trim().slice(0, 24); if (!n || /six/i.test(n)) n = 'anon'; return n; }
+function cleanText(t) { return String(t || '').replace(/\s+/g, ' ').trim().slice(0, 500); }
+
+function chatPage() {
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — Chat</title>
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+#msgs{height:52vh;overflow-y:auto;background:rgba(0,0,0,.25);border:1px solid rgba(196,181,253,.22);border-radius:16px;padding:14px;text-align:left}
+.msg{margin:7px 0;word-break:break-word}
+.msg b{color:#c4b5fd}
+.msg.bot b{color:#f0abfc}
+.sys{text-align:center;opacity:.55;font-size:12px;margin:8px 0}
+.bar{display:flex;gap:8px;margin-top:10px}
+.bar input[type=text]{flex:1;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:10px;padding:11px;font-family:inherit}
+.bar button{background:rgba(139,92,246,.3);color:#fff;border:1px solid rgba(196,181,253,.5);border-radius:10px;padding:11px 18px;font-weight:800;cursor:pointer;font-family:inherit}
+.chip.on{background:rgba(139,92,246,.45)}
+</style></head><body>${STAR_CANVAS}<div class="wrap">
+<a class="back" href="/home">← home</a> · <a class="back" href="/ai">ask six ✦</a>
+<h1>6ix<span>Networks</span> chat</h1>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0">
+<button class="chip room on" data-room="lobby" type="button">lobby</button>
+<button class="chip room" data-room="games" type="button">games</button>
+<button class="chip room" data-room="random" type="button">random</button>
+<span id="pres" style="opacity:.7;font-size:13px">connecting…</span>
+<input id="name" type="text" maxlength="24" placeholder="ur name" style="margin-left:auto;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:10px;padding:8px 10px;font-family:inherit;width:130px">
+</div>
+<div id="msgs"></div>
+<form class="bar" id="sendbar"><input type="text" id="text" placeholder="message…  (/ai + a question summons six)" autocomplete="off" maxlength="500"><button type="submit">send</button></form>
+<p style="opacity:.65;font-size:13px">real people, live ✦ be cool — names n messages are public to the room</p>
+${CLOAK_BAR}
+</div>
+<script src="/cloak.js"></script>
+<script src="/stars.js"></script>
+<script>
+var nameEl=document.getElementById('name'), msgsEl=document.getElementById('msgs'), presEl=document.getElementById('pres'), textEl=document.getElementById('text');
+var myName=localStorage.getItem('six_name')||'';
+if(!myName){ myName='anon-'+Math.floor(1000+Math.random()*9000); localStorage.setItem('six_name', myName); }
+nameEl.value=myName;
+var room='lobby', lastTs=0, ws=null, polling=false, pollTimer=null;
+function curName(){ return (nameEl.value||'').trim()||myName; }
+function line(m){
+  var d=document.createElement('div');
+  if(m.sys){ d.className='sys'; d.textContent=m.text; }
+  else { d.className='msg'+(m.bot?' bot':''); var b=document.createElement('b'); b.textContent=(m.bot?'✦ ':'')+m.name; var s=document.createElement('span'); s.textContent=' '+m.text; d.appendChild(b); d.appendChild(s); }
+  msgsEl.appendChild(d); msgsEl.scrollTop=msgsEl.scrollHeight;
+}
+function handle(o){
+  if(!o) return;
+  if(o.type==='history'){ (o.msgs||[]).forEach(function(m){ line(m); if(m.ts>lastTs) lastTs=m.ts; }); }
+  else if(o.type==='msg'){ line(o.msg); if(o.msg.ts>lastTs) lastTs=o.msg.ts; }
+  else if(o.type==='presence'){ presEl.textContent=o.n+' online'; }
+  else if(o.type==='sys'){ line({sys:true, text:o.text}); }
+}
+function connect(){
+  stopPoll();
+  try { ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/chat/ws?room='+encodeURIComponent(room)+'&name='+encodeURIComponent(curName())); }
+  catch(e){ startPoll(); return; }
+  ws.onopen=function(){ presEl.textContent='live ✦'; };
+  ws.onmessage=function(ev){ try{ handle(JSON.parse(ev.data)); }catch(e){} };
+  ws.onclose=function(){ startPoll(); };
+  ws.onerror=function(){ try{ ws.close(); }catch(e){} };
+}
+function poll(){
+  fetch('/chat/poll?room='+encodeURIComponent(room)+'&since='+lastTs).then(function(r){ return r.json(); }).then(function(o){
+    (o.msgs||[]).forEach(function(m){ line(m); if(m.ts>lastTs) lastTs=m.ts; });
+    presEl.textContent=(o.n||0)+' online · polling';
+  }).catch(function(){});
+}
+function startPoll(){ if(polling) return; polling=true; poll(); pollTimer=setInterval(poll, 1500); }
+function stopPoll(){ polling=false; if(pollTimer) clearInterval(pollTimer); }
+document.getElementById('sendbar').addEventListener('submit', function(ev){
+  ev.preventDefault();
+  var t=textEl.value.trim(); if(!t) return; textEl.value='';
+  if(t.toLowerCase().indexOf('/ai ')===0){
+    line({sys:true, text:'asking six…'});
+    fetch('/ai/room', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ room: room, name: curName(), question: t.slice(4) }) }).catch(function(){});
+    return;
+  }
+  if(ws && ws.readyState===1){ ws.send(JSON.stringify({ text: t })); }
+  else { fetch('/chat/send', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ room: room, name: curName(), text: t }) }).then(function(){ setTimeout(poll, 150); }).catch(function(){}); }
+});
+nameEl.addEventListener('change', function(){ localStorage.setItem('six_name', curName()); if(ws) try{ ws.close(); }catch(e){} connect(); });
+Array.prototype.forEach.call(document.querySelectorAll('.room'), function(btn){
+  btn.addEventListener('click', function(){
+    Array.prototype.forEach.call(document.querySelectorAll('.room'), function(b){ b.classList.remove('on'); });
+    btn.classList.add('on'); room=btn.getAttribute('data-room');
+    msgsEl.innerHTML=''; lastTs=0; if(ws) try{ ws.close(); }catch(e){} connect();
+  });
+});
+connect();
+</script>
+</body>
+</html>`;
+}
+
+function aiPage() {
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — Six AI</title>
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+#log{height:52vh;overflow-y:auto;background:rgba(0,0,0,.25);border:1px solid rgba(196,181,253,.22);border-radius:16px;padding:14px;text-align:left}
+.bub{max-width:85%;margin:8px 0;padding:10px 13px;border-radius:14px;word-break:break-word;white-space:pre-wrap}
+.bub.me{margin-left:auto;background:rgba(139,92,246,.35)}
+.bub.six{margin-right:auto;background:rgba(255,255,255,.07)}
+.bar{display:flex;gap:8px;margin-top:10px}
+.bar input[type=text]{flex:1;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:10px;padding:11px;font-family:inherit}
+.bar button{background:rgba(139,92,246,.3);color:#fff;border:1px solid rgba(196,181,253,.5);border-radius:10px;padding:11px 18px;font-weight:800;cursor:pointer;font-family:inherit}
+</style></head><body>${STAR_CANVAS}<div class="wrap">
+<a class="back" href="/home">← home</a> · <a class="back" href="/chat">chatroom</a>
+<h1>six <span>✦ ai</span></h1>
+<div id="log"></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+<button class="chip q" type="button">what can this site do?</button>
+<button class="chip q" type="button">help me study chemistry</button>
+<button class="chip q" type="button">pick a game for me</button>
+</div>
+<form class="bar" id="askbar"><input type="text" id="q" placeholder="ask six anything…" autocomplete="off" maxlength="1000"><button type="submit">ask</button></form>
+${CLOAK_BAR}
+</div>
+<script src="/cloak.js"></script>
+<script src="/stars.js"></script>
+<script>
+var logEl=document.getElementById('log'), qEl=document.getElementById('q'), hist=[];
+function bubble(cls, text){ var d=document.createElement('div'); d.className='bub '+cls; d.textContent=text; logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight; return d; }
+bubble('six', 'yo ✦ im six — the ai that lives in this network. ask me anything: homework, games, what to search, how the site works.');
+function ask(text){
+  hist.push({ role:'user', content: text }); bubble('me', text);
+  var wait=bubble('six', 'thinking…');
+  fetch('/ai/ask', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ messages: hist.slice(-10) }) })
+    .then(function(r){ return r.json(); })
+    .then(function(o){ var t=(o && o.text) || 'six blanked ✦ try again'; wait.textContent=t; hist.push({ role:'assistant', content: t }); })
+    .catch(function(){ wait.textContent='six is unreachable rn ✦ try again in a sec'; });
+}
+document.getElementById('askbar').addEventListener('submit', function(ev){ ev.preventDefault(); var t=qEl.value.trim(); if(!t) return; qEl.value=''; ask(t); });
+Array.prototype.forEach.call(document.querySelectorAll('.q'), function(b){ b.addEventListener('click', function(){ ask(b.textContent); }); });
+</script>
+</body>
+</html>`;
+}
+
 function toolsPage() {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
@@ -697,7 +840,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style>
     <a href="/go?q=https://duckduckgo.com">duckduckgo</a>
     <a href="/go?q=https://www.wikipedia.org">wikipedia</a>
     <a href="/yt">youtube</a>
-    <a href="/gs">games</a> <a href="/tools">tools</a>
+    <a href="/gs">games</a> <a href="/tools">tools</a> <a href="/chat">chat</a> <a href="/ai">ai ✦</a>
     <a href="/go?q=https://www.reddit.com">reddit</a>
     <a href="/go?q=https://www.coolmathgames.com">coolmath games</a>
   </div>
@@ -1180,6 +1323,81 @@ try{ var sd=localStorage.getItem('six_disguise'); if(sd && presets[sd]){ documen
 }
 
 // ---------- server ----------
+
+// ---------- chatroom (node) + six ai ----------
+function cleanRoom(r) { r = String(r || 'lobby').toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 24); return r || 'lobby'; }
+function sixMessages(list) {
+  const out = [];
+  if (Array.isArray(list)) for (const m of list.slice(-10)) {
+    if (m && (m.role === 'user' || m.role === 'assistant')) out.push({ role: m.role, content: String(m.content || '').slice(0, 1000) });
+  }
+  return out.length ? out : [{ role: 'user', content: 'hi' }];
+}
+async function askSix(messages) {
+  return 'six only wakes up on the cloudflare build ✦ this copy cant reach him — try s.usareme.site';
+}
+const crypto = require('crypto');
+const CHAT_ROOMS = new Map();
+function chatRoomOf(name) { if (!CHAT_ROOMS.has(name)) CHAT_ROOMS.set(name, { msgs: [], socks: new Set() }); return CHAT_ROOMS.get(name); }
+function wsEncode(str) {
+  const p = Buffer.from(str, 'utf8'); const len = p.length; let h;
+  if (len < 126) { h = Buffer.from([0x81, len]); }
+  else if (len < 65536) { h = Buffer.alloc(4); h[0] = 0x81; h[1] = 126; h.writeUInt16BE(len, 2); }
+  else { h = Buffer.alloc(10); h[0] = 0x81; h[1] = 127; h.writeBigUInt64BE(BigInt(len), 2); }
+  return Buffer.concat([h, p]);
+}
+function chatBroadcast(room, obj) { const data = wsEncode(JSON.stringify(obj)); for (const sk of room.socks) { try { sk.write(data); } catch {} } }
+function chatPost(roomName, msg) { const room = chatRoomOf(roomName); room.msgs.push(msg); room.msgs = room.msgs.slice(-60); chatBroadcast(room, { type: 'msg', msg }); return msg; }
+function chatPresence(roomName) { const room = chatRoomOf(roomName); chatBroadcast(room, { type: 'presence', n: room.socks.size }); }
+function readJsonBody(req) {
+  return new Promise((resolve) => {
+    let b = '';
+    req.on('data', (c) => { b += c; if (b.length > 32768) { try { req.destroy(); } catch {} } });
+    req.on('end', () => { try { resolve(JSON.parse(b || '{}')); } catch { resolve({}); } });
+    req.on('error', () => resolve({}));
+  });
+}
+function chatUpgrade(req, socket) {
+  const u = new URL(req.url, 'http://x');
+  if (u.pathname !== '/chat/ws') { socket.destroy(); return; }
+  const key = req.headers['sec-websocket-key'];
+  if (!key) { socket.destroy(); return; }
+  const accept = crypto.createHash('sha1').update(key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64');
+  socket.write('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ' + accept + '\r\n\r\n');
+  const roomName = cleanRoom(u.searchParams.get('room'));
+  const name = cleanName(u.searchParams.get('name'));
+  const room = chatRoomOf(roomName);
+  room.socks.add(socket);
+  try { socket.write(wsEncode(JSON.stringify({ type: 'history', msgs: room.msgs.slice(-50) }))); } catch {}
+  chatBroadcast(room, { type: 'sys', text: name + ' slid in ✦' });
+  chatPresence(roomName);
+  let buf = Buffer.alloc(0); let last = 0; let dead = false;
+  const cleanup = () => { if (dead) return; dead = true; room.socks.delete(socket); chatBroadcast(room, { type: 'sys', text: name + ' dipped' }); chatPresence(roomName); };
+  socket.on('data', (chunk) => {
+    buf = Buffer.concat([buf, chunk]);
+    while (buf.length >= 2) {
+      const b0 = buf[0], b1 = buf[1]; const op = b0 & 15; const masked = !!(b1 & 128);
+      let len = b1 & 127; let off = 2;
+      if (len === 126) { if (buf.length < 4) return; len = buf.readUInt16BE(2); off = 4; }
+      else if (len === 127) { if (buf.length < 10) return; len = Number(buf.readBigUInt64BE(2)); off = 10; }
+      const maskOff = off; if (masked) off += 4;
+      if (buf.length < off + len) return;
+      let payload = buf.slice(off, off + len);
+      if (masked) { const mask = buf.slice(maskOff, maskOff + 4); payload = Buffer.from(payload); for (let i = 0; i < payload.length; i++) payload[i] ^= mask[i % 4]; }
+      buf = buf.slice(off + len);
+      if (op === 8) { try { socket.end(); } catch {} cleanup(); return; }
+      if (op === 9) { if (payload.length <= 125) { try { socket.write(Buffer.concat([Buffer.from([0x8a, payload.length]), payload])); } catch {} } continue; }
+      if (op !== 1) continue;
+      const now = Date.now(); if (now - last < 300) continue; last = now;
+      let b = {}; try { b = JSON.parse(payload.toString('utf8')); } catch { continue; }
+      const text = cleanText(b.text); if (!text) continue;
+      chatPost(roomName, { name, text, ts: now, bot: false });
+    }
+  });
+  socket.on('close', cleanup);
+  socket.on('error', cleanup);
+}
+
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://localhost');
   if (u.pathname === '/' || u.pathname === '/index.html') {
@@ -1218,6 +1436,46 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/cloak.js') {
     res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8' });
     return res.end(CLOAK_JS);
+  }
+  if (u.pathname === '/chat') {
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    return res.end(chatPage());
+  }
+  if (u.pathname === '/ai') {
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    return res.end(aiPage());
+  }
+  if (u.pathname === '/ai/ask' && req.method === 'POST') {
+    const b = await readJsonBody(req);
+    const text = await askSix(sixMessages(b.messages));
+    res.writeHead(200, { 'content-type': 'application/json' });
+    return res.end(JSON.stringify({ text }));
+  }
+  if (u.pathname === '/ai/room' && req.method === 'POST') {
+    const b = await readJsonBody(req);
+    const q = cleanText(b.question).slice(0, 300);
+    const roomName = cleanRoom(b.room);
+    if (q) {
+      chatPost(roomName, { name: cleanName(b.name), text: q, ts: Date.now(), bot: false });
+      const ans = await askSix([{ role: 'user', content: q }]);
+      chatPost(roomName, { name: 'six ✦ ai', text: ans, ts: Date.now(), bot: true });
+    }
+    res.writeHead(200, { 'content-type': 'application/json' });
+    return res.end('{"ok":true}');
+  }
+  if (u.pathname === '/chat/send' && req.method === 'POST') {
+    const b = await readJsonBody(req);
+    const text = cleanText(b.text);
+    if (text) chatPost(cleanRoom(b.room), { name: cleanName(b.name), text, ts: Date.now(), bot: false });
+    res.writeHead(200, { 'content-type': 'application/json' });
+    return res.end('{"ok":true}');
+  }
+  if (u.pathname === '/chat/poll') {
+    const room = chatRoomOf(cleanRoom(u.searchParams.get('room')));
+    const since = parseInt(u.searchParams.get('since') || '0', 10) || 0;
+    const msgs = since > 0 ? room.msgs.filter(m => m.ts > since) : room.msgs.slice(-50);
+    res.writeHead(200, { 'content-type': 'application/json' });
+    return res.end(JSON.stringify({ msgs, n: room.socks.size }));
   }
   if (u.pathname === '/emu') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
@@ -1317,4 +1575,5 @@ const server = http.createServer(async (req, res) => {
   res.end('not found');
 });
 
+server.on('upgrade', chatUpgrade);
 server.listen(PORT, () => console.log('web proxy listening on ' + PORT));

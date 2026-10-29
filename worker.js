@@ -425,7 +425,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{pos
 <h1>6ix<span>Networks</span> games</h1>
 
 <div class="bar"><input id="gq" type="text" placeholder="search games..." autocomplete="off">
-<select id="gc"><option value="">all categories</option>${cats.map(c => `<option>${escHtml(c)}</option>`).join('')}</select><button class="chip" id="gfav" type="button">★ favorites</button><button class="chip" id="grec" type="button">recent</button><button class="chip" id="grand" type="button">🎲 random</button><a class="chip" href="/emu" style="text-decoration:none">🕹 emulator</a></div>
+<select id="gc"><option value="">all categories</option>${cats.map(c => `<option>${escHtml(c)}</option>`).join('')}</select><button class="chip" id="gfav" type="button">★ favorites</button><button class="chip" id="grec" type="button">recent</button><button class="chip" id="grand" type="button">🎲 random</button><a class="chip" href="/emu" style="text-decoration:none">🕹 emulator</a><a class="chip" href="/chat" style="text-decoration:none">💬 chat</a><a class="chip" href="/ai" style="text-decoration:none">✦ ai</a></div>
 <div class="grid" id="grid">${cards}</div>
 ${CLOAK_BAR}
 
@@ -600,6 +600,150 @@ const FEATURED_GAMES = [
   { t: 'Krunker', u: 'https://krunker.io', img: '', c: 'Featured', w: 800, h: 600 },
 ];
 
+
+// ---------- six ai + chatroom (shared pages) ----------
+const SIX_SYSTEM = 'You are Six, the AI inside 6ixNetworks — a galaxy-themed web network with a web proxy, a 600-game hub, a retro emulator (NES, SNES, Game Boy/Color, GBA, N64, Genesis, Atari 2600), a YouTube player, tools (calculator, notepad, timers), and a live chatroom where people can summon you with /ai. You are chill, direct, and genuinely helpful. Keep answers short unless asked for detail. Help with homework, games, ideas, and questions about the site. Never claim a feature exists that is not listed here.';
+function cleanName(n) { n = String(n || '').replace(/[<>&"']/g, '').trim().slice(0, 24); if (!n || /six/i.test(n)) n = 'anon'; return n; }
+function cleanText(t) { return String(t || '').replace(/\s+/g, ' ').trim().slice(0, 500); }
+
+function chatPage() {
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — Chat</title>
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+#msgs{height:52vh;overflow-y:auto;background:rgba(0,0,0,.25);border:1px solid rgba(196,181,253,.22);border-radius:16px;padding:14px;text-align:left}
+.msg{margin:7px 0;word-break:break-word}
+.msg b{color:#c4b5fd}
+.msg.bot b{color:#f0abfc}
+.sys{text-align:center;opacity:.55;font-size:12px;margin:8px 0}
+.bar{display:flex;gap:8px;margin-top:10px}
+.bar input[type=text]{flex:1;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:10px;padding:11px;font-family:inherit}
+.bar button{background:rgba(139,92,246,.3);color:#fff;border:1px solid rgba(196,181,253,.5);border-radius:10px;padding:11px 18px;font-weight:800;cursor:pointer;font-family:inherit}
+.chip.on{background:rgba(139,92,246,.45)}
+</style></head><body>${STAR_CANVAS}<div class="wrap">
+<a class="back" href="/home">← home</a> · <a class="back" href="/ai">ask six ✦</a>
+<h1>6ix<span>Networks</span> chat</h1>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0">
+<button class="chip room on" data-room="lobby" type="button">lobby</button>
+<button class="chip room" data-room="games" type="button">games</button>
+<button class="chip room" data-room="random" type="button">random</button>
+<span id="pres" style="opacity:.7;font-size:13px">connecting…</span>
+<input id="name" type="text" maxlength="24" placeholder="ur name" style="margin-left:auto;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:10px;padding:8px 10px;font-family:inherit;width:130px">
+</div>
+<div id="msgs"></div>
+<form class="bar" id="sendbar"><input type="text" id="text" placeholder="message…  (/ai + a question summons six)" autocomplete="off" maxlength="500"><button type="submit">send</button></form>
+<p style="opacity:.65;font-size:13px">real people, live ✦ be cool — names n messages are public to the room</p>
+${CLOAK_BAR}
+</div>
+<script src="/cloak.js"></script>
+<script src="/stars.js"></script>
+<script>
+var nameEl=document.getElementById('name'), msgsEl=document.getElementById('msgs'), presEl=document.getElementById('pres'), textEl=document.getElementById('text');
+var myName=localStorage.getItem('six_name')||'';
+if(!myName){ myName='anon-'+Math.floor(1000+Math.random()*9000); localStorage.setItem('six_name', myName); }
+nameEl.value=myName;
+var room='lobby', lastTs=0, ws=null, polling=false, pollTimer=null;
+function curName(){ return (nameEl.value||'').trim()||myName; }
+function line(m){
+  var d=document.createElement('div');
+  if(m.sys){ d.className='sys'; d.textContent=m.text; }
+  else { d.className='msg'+(m.bot?' bot':''); var b=document.createElement('b'); b.textContent=(m.bot?'✦ ':'')+m.name; var s=document.createElement('span'); s.textContent=' '+m.text; d.appendChild(b); d.appendChild(s); }
+  msgsEl.appendChild(d); msgsEl.scrollTop=msgsEl.scrollHeight;
+}
+function handle(o){
+  if(!o) return;
+  if(o.type==='history'){ (o.msgs||[]).forEach(function(m){ line(m); if(m.ts>lastTs) lastTs=m.ts; }); }
+  else if(o.type==='msg'){ line(o.msg); if(o.msg.ts>lastTs) lastTs=o.msg.ts; }
+  else if(o.type==='presence'){ presEl.textContent=o.n+' online'; }
+  else if(o.type==='sys'){ line({sys:true, text:o.text}); }
+}
+function connect(){
+  stopPoll();
+  try { ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/chat/ws?room='+encodeURIComponent(room)+'&name='+encodeURIComponent(curName())); }
+  catch(e){ startPoll(); return; }
+  ws.onopen=function(){ presEl.textContent='live ✦'; };
+  ws.onmessage=function(ev){ try{ handle(JSON.parse(ev.data)); }catch(e){} };
+  ws.onclose=function(){ startPoll(); };
+  ws.onerror=function(){ try{ ws.close(); }catch(e){} };
+}
+function poll(){
+  fetch('/chat/poll?room='+encodeURIComponent(room)+'&since='+lastTs).then(function(r){ return r.json(); }).then(function(o){
+    (o.msgs||[]).forEach(function(m){ line(m); if(m.ts>lastTs) lastTs=m.ts; });
+    presEl.textContent=(o.n||0)+' online · polling';
+  }).catch(function(){});
+}
+function startPoll(){ if(polling) return; polling=true; poll(); pollTimer=setInterval(poll, 1500); }
+function stopPoll(){ polling=false; if(pollTimer) clearInterval(pollTimer); }
+document.getElementById('sendbar').addEventListener('submit', function(ev){
+  ev.preventDefault();
+  var t=textEl.value.trim(); if(!t) return; textEl.value='';
+  if(t.toLowerCase().indexOf('/ai ')===0){
+    line({sys:true, text:'asking six…'});
+    fetch('/ai/room', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ room: room, name: curName(), question: t.slice(4) }) }).catch(function(){});
+    return;
+  }
+  if(ws && ws.readyState===1){ ws.send(JSON.stringify({ text: t })); }
+  else { fetch('/chat/send', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ room: room, name: curName(), text: t }) }).then(function(){ setTimeout(poll, 150); }).catch(function(){}); }
+});
+nameEl.addEventListener('change', function(){ localStorage.setItem('six_name', curName()); if(ws) try{ ws.close(); }catch(e){} connect(); });
+Array.prototype.forEach.call(document.querySelectorAll('.room'), function(btn){
+  btn.addEventListener('click', function(){
+    Array.prototype.forEach.call(document.querySelectorAll('.room'), function(b){ b.classList.remove('on'); });
+    btn.classList.add('on'); room=btn.getAttribute('data-room');
+    msgsEl.innerHTML=''; lastTs=0; if(ws) try{ ws.close(); }catch(e){} connect();
+  });
+});
+connect();
+</script>
+</body>
+</html>`;
+}
+
+function aiPage() {
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — Six AI</title>
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+#log{height:52vh;overflow-y:auto;background:rgba(0,0,0,.25);border:1px solid rgba(196,181,253,.22);border-radius:16px;padding:14px;text-align:left}
+.bub{max-width:85%;margin:8px 0;padding:10px 13px;border-radius:14px;word-break:break-word;white-space:pre-wrap}
+.bub.me{margin-left:auto;background:rgba(139,92,246,.35)}
+.bub.six{margin-right:auto;background:rgba(255,255,255,.07)}
+.bar{display:flex;gap:8px;margin-top:10px}
+.bar input[type=text]{flex:1;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:10px;padding:11px;font-family:inherit}
+.bar button{background:rgba(139,92,246,.3);color:#fff;border:1px solid rgba(196,181,253,.5);border-radius:10px;padding:11px 18px;font-weight:800;cursor:pointer;font-family:inherit}
+</style></head><body>${STAR_CANVAS}<div class="wrap">
+<a class="back" href="/home">← home</a> · <a class="back" href="/chat">chatroom</a>
+<h1>six <span>✦ ai</span></h1>
+<div id="log"></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+<button class="chip q" type="button">what can this site do?</button>
+<button class="chip q" type="button">help me study chemistry</button>
+<button class="chip q" type="button">pick a game for me</button>
+</div>
+<form class="bar" id="askbar"><input type="text" id="q" placeholder="ask six anything…" autocomplete="off" maxlength="1000"><button type="submit">ask</button></form>
+${CLOAK_BAR}
+</div>
+<script src="/cloak.js"></script>
+<script src="/stars.js"></script>
+<script>
+var logEl=document.getElementById('log'), qEl=document.getElementById('q'), hist=[];
+function bubble(cls, text){ var d=document.createElement('div'); d.className='bub '+cls; d.textContent=text; logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight; return d; }
+bubble('six', 'yo ✦ im six — the ai that lives in this network. ask me anything: homework, games, what to search, how the site works.');
+function ask(text){
+  hist.push({ role:'user', content: text }); bubble('me', text);
+  var wait=bubble('six', 'thinking…');
+  fetch('/ai/ask', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ messages: hist.slice(-10) }) })
+    .then(function(r){ return r.json(); })
+    .then(function(o){ var t=(o && o.text) || 'six blanked ✦ try again'; wait.textContent=t; hist.push({ role:'assistant', content: t }); })
+    .catch(function(){ wait.textContent='six is unreachable rn ✦ try again in a sec'; });
+}
+document.getElementById('askbar').addEventListener('submit', function(ev){ ev.preventDefault(); var t=qEl.value.trim(); if(!t) return; qEl.value=''; ask(t); });
+Array.prototype.forEach.call(document.querySelectorAll('.q'), function(b){ b.addEventListener('click', function(){ ask(b.textContent); }); });
+</script>
+</body>
+</html>`;
+}
+
 function toolsPage() {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
@@ -668,7 +812,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <a href="/go?q=https://www.google.com">google</a>
 <a href="/go?q=https://duckduckgo.com">duckduckgo</a>
 <a href="/go?q=https://www.wikipedia.org">wikipedia</a>
-<a href="/yt">youtube</a><a href="/gs">games</a> <a href="/tools">tools</a>
+<a href="/yt">youtube</a><a href="/gs">games</a> <a href="/tools">tools</a> <a href="/chat">chat</a> <a href="/ai">ai ✦</a>
 <a href="/go?q=https://www.reddit.com">reddit</a>
 <a href="/go?q=https://www.coolmathgames.com">coolmath games</a>
 </div>
@@ -1094,6 +1238,80 @@ try{ var sd=localStorage.getItem('six_disguise'); if(sd && presets[sd]){ documen
 </body></html>`;
 }
 
+
+// ---------- six ai (cloudflare workers ai) + chat backend ----------
+function cleanRoom(r) { r = String(r || 'lobby').toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 24); return r || 'lobby'; }
+function sixMessages(list) {
+  const out = [];
+  if (Array.isArray(list)) for (const m of list.slice(-10)) {
+    if (m && (m.role === 'user' || m.role === 'assistant')) out.push({ role: m.role, content: String(m.content || '').slice(0, 1000) });
+  }
+  return out.length ? out : [{ role: 'user', content: 'hi' }];
+}
+async function askSix(env, messages) {
+  if (!env || !env.AI) return 'six only wakes up on the cloudflare build ✦ this copy cant reach him — try s.usareme.site';
+  try {
+    const r = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', { messages: [{ role: 'system', content: SIX_SYSTEM }].concat(messages), max_tokens: 400 });
+    const t = (r && (r.response || (r.result && r.result.response))) || '';
+    return String(t).trim() || 'six blanked on that one ✦ ask again';
+  } catch { return 'six is unreachable rn ✦ try again in a sec'; }
+}
+
+// the chatroom itself: one Durable Object per room. WebSockets use the
+// hibernation API so idle rooms cost nothing; history (last 60) persists
+// in the object's storage. bot messages can only arrive through the
+// worker's /ai/room route, which marks them with an internal header the
+// public /chat/send path never sets.
+export class ChatRoom {
+  constructor(state, env) { this.state = state; this.env = env; this.msgs = null; }
+  async loadMsgs() { if (this.msgs === null) { try { this.msgs = (await this.state.storage.get('msgs')) || []; } catch { this.msgs = []; } } }
+  async storeMsgs() { try { await this.state.storage.put('msgs', this.msgs.slice(-60)); } catch {} }
+  broadcast(obj) { const s = JSON.stringify(obj); for (const ws of this.state.getWebSockets()) { try { ws.send(s); } catch {} } }
+  presence() { this.broadcast({ type: 'presence', n: this.state.getWebSockets().length }); }
+  async addMsg(msg) { await this.loadMsgs(); this.msgs.push(msg); this.msgs = this.msgs.slice(-60); await this.storeMsgs(); this.broadcast({ type: 'msg', msg }); }
+  async fetch(request) {
+    const u = new URL(request.url);
+    if (u.pathname === '/ws') {
+      if (request.headers.get('Upgrade') !== 'websocket') return new Response('expected websocket', { status: 426 });
+      const name = cleanName(u.searchParams.get('name'));
+      const pair = new WebSocketPair();
+      this.state.acceptWebSocket(pair[1]);
+      pair[1].serializeAttachment({ name, last: 0 });
+      await this.loadMsgs();
+      try { pair[1].send(JSON.stringify({ type: 'history', msgs: this.msgs.slice(-50) })); } catch {}
+      this.broadcast({ type: 'sys', text: name + ' slid in ✦' });
+      this.presence();
+      return new Response(null, { status: 101, webSocket: pair[0] });
+    }
+    if (u.pathname === '/send' && request.method === 'POST') {
+      const b = await request.json().catch(() => ({}));
+      const bot = request.headers.get('x-six-bot') === '1';
+      const text = cleanText(b.text);
+      if (!text) return new Response('{"ok":false}', { headers: { 'content-type': 'application/json' } });
+      await this.addMsg({ name: bot ? 'six ✦ ai' : cleanName(b.name), text, ts: Date.now(), bot });
+      return new Response('{"ok":true}', { headers: { 'content-type': 'application/json' } });
+    }
+    if (u.pathname === '/poll') {
+      await this.loadMsgs();
+      const since = parseInt(u.searchParams.get('since') || '0', 10) || 0;
+      const msgs = since > 0 ? this.msgs.filter(m => m.ts > since) : this.msgs.slice(-50);
+      return new Response(JSON.stringify({ msgs, n: this.state.getWebSockets().length }), { headers: { 'content-type': 'application/json' } });
+    }
+    return new Response('not found', { status: 404 });
+  }
+  async webSocketMessage(ws, data) {
+    let att = {}; try { att = ws.deserializeAttachment() || {}; } catch {}
+    const now = Date.now();
+    if (now - (att.last || 0) < 300) return;
+    att.last = now; try { ws.serializeAttachment(att); } catch {}
+    let b = {}; try { b = JSON.parse(String(data)); } catch { return; }
+    const text = cleanText(b.text); if (!text) return;
+    await this.addMsg({ name: cleanName(att.name), text, ts: now, bot: false });
+  }
+  webSocketClose(ws) { let att = {}; try { att = ws.deserializeAttachment() || {}; } catch {} this.broadcast({ type: 'sys', text: (att.name || 'anon') + ' dipped' }); this.presence(); }
+  webSocketError() { this.presence(); }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const u = new URL(request.url);
@@ -1127,6 +1345,42 @@ export default {
     }
     if (u.pathname === '/cloak.js') {
       return new Response(CLOAK_JS, { headers: { 'content-type': 'text/javascript; charset=utf-8' } });
+    }
+    if (u.pathname === '/chat') {
+      return new Response(chatPage(), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+    }
+    if (u.pathname === '/ai') {
+      return new Response(aiPage(), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+    }
+    if (u.pathname === '/ai/ask' && request.method === 'POST') {
+      const b = await request.json().catch(() => ({}));
+      const text = await askSix(env, sixMessages(b.messages));
+      return new Response(JSON.stringify({ text }), { headers: { 'content-type': 'application/json' } });
+    }
+    if (u.pathname === '/ai/room' && request.method === 'POST') {
+      const b = await request.json().catch(() => ({}));
+      const q = cleanText(b.question).slice(0, 300);
+      if (!q || !env.CHAT) return new Response('{"ok":false}', { headers: { 'content-type': 'application/json' } });
+      const stub = env.CHAT.get(env.CHAT.idFromName(cleanRoom(b.room)));
+      await stub.fetch('https://chat/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: cleanName(b.name), text: q }) });
+      const ans = await askSix(env, [{ role: 'user', content: q }]);
+      await stub.fetch('https://chat/send', { method: 'POST', headers: { 'content-type': 'application/json', 'x-six-bot': '1' }, body: JSON.stringify({ text: ans }) });
+      return new Response('{"ok":true}', { headers: { 'content-type': 'application/json' } });
+    }
+    if (u.pathname === '/chat/ws' || u.pathname === '/chat/send' || u.pathname === '/chat/poll') {
+      if (!env.CHAT) return new Response('chat needs the full deploy ✦', { status: 503 });
+      const stub = env.CHAT.get(env.CHAT.idFromName(cleanRoom(u.searchParams.get('room'))));
+      if (u.pathname === '/chat/ws') {
+        const du = new URL(request.url); du.pathname = '/ws';
+        return stub.fetch(new Request(du, request));
+      }
+      if (u.pathname === '/chat/send') {
+        const b = await request.json().catch(() => ({}));
+        const r = await stub.fetch('https://chat/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: cleanName(b.name), text: cleanText(b.text) }) });
+        return new Response(await r.text(), { headers: { 'content-type': 'application/json' } });
+      }
+      const r = await stub.fetch('https://chat/poll?since=' + encodeURIComponent(u.searchParams.get('since') || '0'));
+      return new Response(await r.text(), { headers: { 'content-type': 'application/json' } });
     }
     if (u.pathname === '/emu') {
       return new Response(emuPage(), { headers: { 'content-type': 'text/html; charset=utf-8' } });
