@@ -961,7 +961,12 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
   if (req.headers['range']) headers['range'] = req.headers['range'];
   if (req.headers['if-range']) headers['if-range'] = req.headers['if-range'];
   if (req.headers['content-type']) headers['content-type'] = req.headers['content-type'];
-  const upstreamCookies = buildUpstreamCookies(req.headers['cookie'] || '', target.hostname);
+  // bing degrades search results when a request carries an established
+  // cookie jar (it collapses the ranking to a single term while still
+  // echoing the full query) — a fresh jar always gets the real results.
+  // so bing search requests go out cookieless, always.
+  const isBingSearch = /(^|\.)bing\.com$/i.test(target.hostname) && target.pathname.includes('/search');
+  const upstreamCookies = isBingSearch ? '' : buildUpstreamCookies(req.headers['cookie'] || '', target.hostname);
   if (upstreamCookies) headers['cookie'] = upstreamCookies;
 
   const mirror = internalMirror(target);
