@@ -200,3 +200,23 @@ hand the browser off to its base URL. Everything is wired through
 - Logos: Bing's sprite PNG was verified loading through the current
   build (200, real PNG bytes) — logo failures on the live site mean
   it is still running an older build.
+
+## Egress: getting a different IP (VPN / proxy)
+
+A Cloudflare Worker can never choose its outgoing IP — every fetch leaves
+from Cloudflare's network, and some sites block that on sight. The Node
+server (`server.js`) has two ways out:
+
+1. **Run it on a machine that is itself on a VPN** (a VPS with WARP or any
+   VPN client, a home computer, etc.). No configuration — the server's
+   fetches automatically leave from that machine's IP. A home connection
+   is a residential IP, which blocked sites treat far better.
+2. **Point it at a proxy endpoint** with an env var:
+   `UPSTREAM_PROXY=http://user:pass@host:port node server.js`
+   All upstream traffic then routes through that proxy (uses the optional
+   `undici` dependency — `npm install` first). On Render, set
+   `UPSTREAM_PROXY` in the dashboard (render.yaml already declares it).
+
+Free public proxy lists were tested while building this (120+ endpoints):
+essentially none of them pass HTTPS traffic. Use an endpoint you control
+or pay for.

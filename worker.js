@@ -332,7 +332,7 @@ function internalMirror(target) {
       const q = target.searchParams.get('q');
       return q ? '/go?q=' + encodeURIComponent(q) : '/';
     }
-    if (target.pathname === '/' || target.pathname.startsWith('/sorry')) return '/';
+    if (target.pathname === '/' || target.pathname.startsWith('/sorry')) return '/home';
     return null;
   }
   if (INVIDIOUS_HOSTS.includes(h) && target.pathname === '/watch' && vid) {
@@ -349,7 +349,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <form action="/yt/search" method="get"><input name="q" type="text" placeholder="search youtube" autocomplete="off" autofocus><button type="submit">search</button></form>
 <div class="links">
 
-<a href="/">← back to 6ixnetworks</a>
+<a href="/home">← back to 6ixnetworks</a>
 </div>
 ${CLOAK_BAR}<script src="/cloak.js"></script>
 
@@ -421,7 +421,7 @@ function gamesPage(games) {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — Games</title>
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{position:absolute;top:6px;right:8px;z-index:2;font-size:19px;line-height:1;color:rgba(255,255,255,.85);text-shadow:0 1px 6px rgba(0,0,0,.85);cursor:pointer;padding:3px 5px}.fav.on{color:#fbbf24}.chip{background:rgba(139,92,246,.14);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:700;font-family:inherit}.chip.on{background:rgba(139,92,246,.45)}</style></head><body>${STAR_CANVAS}<div class="wrap">
-<a class="back" href="/">← 6ixNetworks</a>
+<a class="back" href="/home">← 6ixNetworks</a>
 <h1>6ix<span>Networks</span> games</h1>
 
 <div class="bar"><input id="gq" type="text" placeholder="search games..." autocomplete="off">
@@ -531,7 +531,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .trow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;align-items:center}
 #tmin{width:70px;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:10px;padding:9px;text-align:center;font-family:inherit}
 </style></head><body>${STAR_CANVAS}<div class="wrap">
-<a class="back" href="/">← 6ixNetworks</a>
+<a class="back" href="/home">← 6ixNetworks</a>
 <h1>6ix<span>Networks</span> tools</h1>
 <div class="tools">
 <div class="panel"><h2>calculator</h2><div id="cdisp">0</div><div class="cgrid" id="cgrid"></div></div>
@@ -583,7 +583,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <a href="/go?q=https://www.google.com">google</a>
 <a href="/go?q=https://duckduckgo.com">duckduckgo</a>
 <a href="/go?q=https://www.wikipedia.org">wikipedia</a>
-<a href="/yt">youtube</a><a href="/gs">games</a> <a href="/shell">shell</a> <a href="/tools">tools</a>
+<a href="/yt">youtube</a><a href="/gs">games</a> <a href="/tools">tools</a>
 <a href="/go?q=https://www.reddit.com">reddit</a>
 <a href="/go?q=https://www.coolmathgames.com">coolmath games</a>
 </div>
@@ -603,11 +603,11 @@ function blockPage(targetStr) {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>blocked — 6ixNetworks</title>
 ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}<div class="wrap">
-<a class="back" href="/">← 6ixNetworks</a>
+<a class="back" href="/home">← 6ixNetworks</a>
 <h1>6ix<span>Networks</span></h1>
 <p style="font-weight:700;font-size:19px">that site blocked the network ✦</p>
 <p style="opacity:.8;max-width:52ch">its firewall refused the connection — happens with datacenter traffic. the archive copy usually still loads:</p>
-<div class="links"><a href="${arch}">archive.org copy</a><a href="${again}">retry</a><a href="/">home</a></div>
+<div class="links"><a href="${arch}">archive.org copy</a><a href="${again}">retry</a><a href="/home">home</a></div>
 ${CLOAK_BAR}
 </div>
 <script src="/cloak.js"></script>
@@ -946,7 +946,7 @@ function shellPage(servers) {
 var SERVERS=${list} || [location.origin + '/'];
 var f=document.getElementById('f');
 var presets={ google:{t:'Google',i:'https://www.google.com/favicon.ico'}, classroom:{t:'Google Classroom',i:'https://ssl.gstatic.com/classroom/favicon.png'}, docs:{t:'Google Docs',i:'https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico'}, drive:{t:'My Drive - Google Drive',i:'https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png'} };
-function disguise(k){ var p=presets[k]||presets.google; document.title=p.t; var l=document.querySelector("link[rel~='icon']")||document.createElement('link'); l.rel='icon'; l.href=p.i; document.head.appendChild(l); }
+function disguise(k){ try{ localStorage.setItem('six_disguise', k); }catch(e){} var p=presets[k]||presets.google; document.title=p.t; var l=document.querySelector("link[rel~='icon']")||document.createElement('link'); l.rel='icon'; l.href=p.i; document.head.appendChild(l); }
 function panic(){ disguise('classroom'); f.src='https://classroom.google.com/'; }
 document.addEventListener('keydown', function(e){ if(e.keyCode===192) panic(); });
 document.getElementById('dot').addEventListener('click', function(){ var m=document.getElementById('menu'); m.style.display = m.style.display==='flex' ? 'none' : 'flex'; });
@@ -958,17 +958,18 @@ function blank(){
   w.document.close();
   location.replace('https://www.google.com/');
 }
+try{ var sd=localStorage.getItem('six_disguise'); if(sd && presets[sd]){ document.title=presets[sd].t; var li=document.querySelector("link[rel~='icon']"); if(li) li.href=presets[sd].i; } }catch(e){}
 (function start(){
   var saved=null;
   try{ saved=localStorage.getItem('six_server'); }catch(e){}
   var cands = saved ? [saved].concat(SERVERS) : SERVERS.slice();
   var i=0;
   function next(){
-    if(i>=cands.length){ f.src=cands[0]; return; }
+    if(i>=cands.length){ f.src=cands[0]+'home'; return; }
     var base=cands[i++];
-    fetch(base, { mode:'no-cors', cache:'no-store' }).then(function(){ f.src=base; }, next);
+    fetch(base, { mode:'no-cors', cache:'no-store' }).then(function(){ f.src=base+'home'; }, next);
   }
-  if(cands.length===1) f.src=cands[0]; else next();
+  if(cands.length===1) f.src=cands[0]+'home'; else next();
 })();
 </script>
 </body></html>`;
@@ -978,6 +979,9 @@ export default {
   async fetch(request, env, ctx) {
     const u = new URL(request.url);
     if (u.pathname === '/' || u.pathname === '/index.html') {
+      return new Response(shellPage(null), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+    }
+    if (u.pathname === '/home') {
       return new Response(HOME, { headers: { 'content-type': 'text/html; charset=utf-8' } });
     }
     if (u.pathname === '/stars.js') {
@@ -1048,7 +1052,7 @@ export default {
     }
     if (u.pathname === '/go') {
       const dest = normalizeInput(u.searchParams.get('q') || '');
-      if (!dest) return Response.redirect(u.origin + '/', 302);
+      if (!dest) return Response.redirect(u.origin + '/home', 302);
       return Response.redirect(u.origin + proxied(dest), 302);
     }
     if (u.pathname.startsWith('/gproxy/')) {
