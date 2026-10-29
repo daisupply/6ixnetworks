@@ -338,6 +338,10 @@ function internalMirror(target) {
     const id = target.pathname.slice(1).split('/')[0];
     return id ? '/yt/watch?v=' + encodeURIComponent(id) : '/yt';
   }
+  // the official embed player is the one youtube surface built to run
+  // inside other sites — let it load through the proxy (the /yt/watch
+  // page iframes it). watch/shorts/search links still mirror inside.
+  if (h === 'www.youtube-nocookie.com' && /^\/embed\/[\w-]+/.test(target.pathname)) return null;
   if (/(^|\.)youtube\.com$/.test(h) || h === 'www.youtube-nocookie.com') {
     if (target.pathname === '/watch' && vid) return '/yt/watch?v=' + encodeURIComponent(vid);
     if (/^\/(shorts|embed|live)\//.test(target.pathname)) {
@@ -1108,7 +1112,7 @@ async function fetchYtSearchApi(query) {
   for (let round = 0; round < 2; round++) {
     for (const inst of INVIDIOUS_API_ORDER) {
       try {
-        const r = await fetch(inst + '/api/v1/search?q=' + encodeURIComponent(query) + '&type=video', { headers: { 'user-agent': BROWSER_UA, 'accept': 'application/json' } });
+        const r = await fetchT(inst + '/api/v1/search?q=' + encodeURIComponent(query) + '&type=video', { headers: { 'user-agent': BROWSER_UA, 'accept': 'application/json' } }, 6000);
         if (!r.ok) continue;
         const j = await r.json();
         if (Array.isArray(j)) { const vids = j.filter(x => x && x.videoId && x.title); if (vids.length) return { inst, vids }; }
@@ -1121,6 +1125,8 @@ async function fetchYtSearchApi(query) {
 async function handleYtSearch(req, res, q) {
   const query = (q || '').trim();
   if (!query) { res.writeHead(302, { location: '/yt' }); return res.end(); }
+  const pipedHit = await fetchPipedSearch(query);
+  if (pipedHit) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(ytSearchPage(query, pipedHit)); }
   const apiHit = await fetchYtSearchApi(query);
   if (apiHit) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(ytSearchPage(query, apiHit)); }
   for (const inst of INVIDIOUS_INSTANCES) {
@@ -1152,6 +1158,47 @@ async function handleYtSearch(req, res, q) {
 // an MSE player in our own page streaming both tracks through /gproxy —
 // the browser never talks to youtube, an instance, or googlevideo.
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+const fetchT = (url, opts, ms) => fetch(url, { ...(opts || {}), signal: AbortSignal.timeout(ms || 6000) });
+// piped backend: its proxy serves muxed mp4 files whose bytes actually
+// flow from datacenter IPs (for videos its extractor can still reach).
+// invidious stays as the metadata/search fallback — its companion
+// rejects datacenter playback requests outright ("URL has expired").
+const PIPED_APIS = ['https://api.piped.private.coffee'];
+const PIPED_INFO_CACHE = new Map();
+async function fetchPipedStreams(id) {
+  const c = PIPED_INFO_CACHE.get(id);
+  if (c && Date.now() - c.at < 300e3) return c.hit;
+  for (const api of PIPED_APIS) {
+    try {
+      const r = await fetchT(api + '/streams/' + encodeURIComponent(id), { headers: { 'user-agent': BROWSER_UA, 'accept': 'application/json' } }, 7000);
+      if (!r.ok) continue;
+      const j = await r.json();
+      if (j && (j.title || (j.videoStreams || []).length)) { const hit = { api, data: j }; PIPED_INFO_CACHE.set(id, { at: Date.now(), hit }); if (PIPED_INFO_CACHE.size > 60) PIPED_INFO_CACHE.delete(PIPED_INFO_CACHE.keys().next().value); return hit; }
+    } catch { /* next backend */ }
+  }
+  return null;
+}
+function pickPipedFile(d) {
+  const vs = (d.videoStreams || []).filter(s => s && s.url && !s.videoOnly && /video\/mp4/.test(s.mimeType || ''));
+  const q = (s) => parseInt(s.quality, 10) || 0;
+  vs.sort((a, b) => q(b) - q(a));
+  return vs.find(s => q(s) > 0 && q(s) <= 720) || vs.find(s => q(s) > 0) || vs[0] || null;
+}
+async function fetchPipedSearch(query) {
+  for (const api of PIPED_APIS) {
+    try {
+      const r = await fetchT(api + '/search?q=' + encodeURIComponent(query) + '&filter=videos', { headers: { 'user-agent': BROWSER_UA, 'accept': 'application/json' } }, 7000);
+      if (!r.ok) continue;
+      const j = await r.json();
+      const items = ((j && j.items) || []).filter(x => x && x.url && x.title);
+      if (items.length) {
+        const vids = items.map(x => ({ videoId: (String(x.url).split('v=')[1] || '').split('&')[0], title: x.title, author: x.uploaderName || '', lengthSeconds: x.duration || 0, videoThumbnails: [{ url: x.thumbnail || '', width: 480 }] })).filter(v => v.videoId);
+        if (vids.length) return { inst: api, vids };
+      }
+    } catch { /* next backend */ }
+  }
+  return null;
+}
 const YT_INFO_CACHE = new Map();
 async function fetchVideoInfo(id, bust) {
   if (!bust) { const c = YT_INFO_CACHE.get(id); if (c && Date.now() - c.at < 300e3) return c.hit; }
@@ -1160,9 +1207,9 @@ async function fetchVideoInfo(id, bust) {
   for (let round = 0; round < 2; round++) {
     for (const inst of INVIDIOUS_API_ORDER) {
       try {
-        const r = await fetch(inst + '/api/v1/videos/' + encodeURIComponent(id) + '?local=true', {
+        const r = await fetchT(inst + '/api/v1/videos/' + encodeURIComponent(id) + '?local=true', {
           headers: { 'user-agent': BROWSER_UA, 'accept': 'application/json' },
-        });
+        }, 6000);
         if (!r.ok) continue;
         const j = await r.json();
         if (j && ((j.adaptiveFormats || []).length || (j.formatStreams || []).length)) { const hit = { inst, data: j }; YT_INFO_CACHE.set(id, { at: Date.now(), hit }); if (YT_INFO_CACHE.size > 60) YT_INFO_CACHE.delete(YT_INFO_CACHE.keys().next().value); return hit; }
@@ -1183,87 +1230,102 @@ function pickStreams(d) {
   const p = (d.formatStreams || [])[0] || null;
   return { v, a, p };
 }
-function ytWatchPage(id, hit) {
-  const d = hit.data;
-  const abs = (u) => { try { return new URL(u, hit.inst).href; } catch { return u; } };
-  const hOf = (f) => parseInt(f.resolution) || f.height || 0;
-  const vids = (d.adaptiveFormats || []).filter(f => /^video\//.test(f.type || '') && /video\/mp4/.test(f.type || ''));
-  const auds = (d.adaptiveFormats || []).filter(f => /^audio\//.test(f.type || ''));
-  const avc = vids.filter(f => (f.type || '').includes('avc1')).sort((a, b) => hOf(b) - hOf(a));
-  const pickV = avc.find(f => hOf(f) <= 720) || avc[0] || vids.sort((a, b) => hOf(b) - hOf(a))[0];
-  const pickA = auds.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))[0];
-  const thumbs = (d.videoThumbnails || []).slice().sort((a, b) => (b.width || 0) - (a.width || 0));
-  const poster = thumbs.length ? proxied(abs(thumbs[0].url)) : '';
-  const recs = (d.recommendedVideos || []).slice(0, 12).map(rv => {
-    const t0 = (rv.videoThumbnails || [])[0];
-    const img = t0 ? proxied(abs(t0.url)) : '';
-    return `<a class="card" href="/yt/watch?v=${encodeURIComponent(rv.videoId)}">${img ? `<img loading="lazy" src="${img}" alt="">` : '<div class="noimg">✦</div>'}<div class="gt">${escHtml(rv.title || '')}</div></a>`;
-  }).join('');
-  // signed stream urls expire and instances restart, so the player asks
-  // /yt/stream for a fresh one at play time instead of trusting this render
-  const streamV = pickV ? '/yt/stream?v=' + encodeURIComponent(id) + '&kind=v' : '';
-  const streamA = pickA ? '/yt/stream?v=' + encodeURIComponent(id) + '&kind=a' : '';
-  const progUrl = (d.formatStreams || []).length ? '/yt/stream?v=' + encodeURIComponent(id) + '&kind=p' : '';
+function ytWatchPage(id, hit, phit) {
+  // primary player is youtube's own embed, iframed through the proxy —
+  // extraction happens in the browser, so the datacenter bot-wall that
+  // kills every server-side backend does not apply the same way. the
+  // stream mode below is the fallback for embeds youtube refuses.
+  const embedSrc = gproxied('https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id) + '?autoplay=1&rel=0&playsinline=1');
+  const progUrl = '/yt/stream?v=' + encodeURIComponent(id) + '&kind=p';
+  let title = '', poster = '', recs = '';
+  if (hit) {
+    const d = hit.data;
+    const abs = (u) => { try { return new URL(u, hit.inst).href; } catch { return u; } };
+    const thumbs = (d.videoThumbnails || []).slice().sort((a, b) => (b.width || 0) - (a.width || 0));
+    title = d.title || '';
+    poster = thumbs.length ? proxied(abs(thumbs[0].url)) : '';
+    recs = (d.recommendedVideos || []).slice(0, 12).map(rv => {
+      const t0 = (rv.videoThumbnails || [])[0];
+      const img = t0 ? proxied(abs(t0.url)) : '';
+      return `<a class="card" href="/yt/watch?v=${encodeURIComponent(rv.videoId)}">${img ? `<img loading="lazy" src="${img}" alt="">` : '<div class="noimg">✦</div>'}<div class="gt">${escHtml(rv.title || '')}</div></a>`;
+    }).join('');
+  } else if (phit) {
+    const d = phit.data;
+    title = d.title || '';
+    poster = d.thumbnailUrl ? proxied(d.thumbnailUrl) : '';
+    recs = (d.relatedStreams || []).slice(0, 12).map(rv => {
+      const rid = (String(rv.url || '').split('v=')[1] || '').split('&')[0];
+      if (!rid) return '';
+      return `<a class="card" href="/yt/watch?v=${encodeURIComponent(rid)}">${rv.thumbnail ? `<img loading="lazy" src="${proxied(rv.thumbnail)}" alt="">` : '<div class="noimg">✦</div>'}<div class="gt">${escHtml(rv.title || '')}</div></a>`;
+    }).join('');
+  }
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><title>${escHtml(d.title || 'video')}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>${escHtml(title || 'video')}</title>
 ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <div class="wrap">
 <a class="back" href="/yt">← youtube</a>
-<video id="vid" controls autoplay playsinline ${poster ? `poster="${poster}"` : ''} style="width:100%;border-radius:18px;background:#000;aspect-ratio:16/9;margin-top:12px"></video>
-<p style="margin:14px 2px 20px;font-weight:700">${escHtml(d.title || '')}</p>
+<iframe id="ytembed" src="${embedSrc}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="width:100%;aspect-ratio:16/9;border:0;border-radius:18px;background:#000;display:block;margin-top:12px"></iframe>
+<video id="vid" controls playsinline ${poster ? `poster="${poster}"` : ''} style="width:100%;border-radius:18px;background:#000;aspect-ratio:16/9;margin-top:12px;display:none"></video>
+<div style="display:flex;gap:8px;margin:12px 2px 4px;flex-wrap:wrap;align-items:center">
+<button id="modeEmbed" style="background:rgba(124,58,237,.25);border:1px solid rgba(196,181,253,.45);color:#ece9ff;border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:700">embed player</button>
+<button id="modeStream" style="background:rgba(20,14,48,.92);border:1px solid rgba(196,181,253,.45);color:#ece9ff;border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:700;opacity:.65">✦ stream mode</button>
+<span id="ytstat" style="opacity:.75;font-size:13px">starting the embed player… if it stays black, stream mode is the backup</span>
+</div>
+<p style="margin:10px 2px 20px;font-weight:700">${escHtml(title || '')}</p>
 <div id="ytretry" onclick="location.reload()" style="display:none;margin:0 2px 14px;background:rgba(20,14,48,.92);border:1px solid rgba(196,181,253,.45);color:#ece9ff;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700;width:fit-content">✦ tap to retry</div>
 <div class="grid">${recs}</div>
 ${CLOAK_BAR}
 </div>
 <script src="/cloak.js"></script>
 <script>
-var GOT=0;
-var V=${JSON.stringify(streamV)}, A=${JSON.stringify(streamA)}, VM=${JSON.stringify(pickV ? pickV.type : '')}, AM=${JSON.stringify(pickA ? pickA.type : '')}, PROG=${JSON.stringify(progUrl)};
-var vid=document.getElementById('vid');
-function appendBuf(sb, buf){ return new Promise(function(res){ function u(){ sb.removeEventListener('updateend', u); res(); } sb.addEventListener('updateend', u); try{ sb.appendBuffer(buf); }catch(e){ res(); } }); }
-async function pump(sb, url, end){
-  var start=0, CH=2000000, base=url, retries=0;
-  try{
-    while(true){
-      var r=await fetch(url, { headers:{ 'Range':'bytes='+start+'-'+(start+CH-1) } });
-      if(r.status===416) break;
-      if(r.status===403 || r.status===500 || r.status===502){
-        if(start===0 && retries<2){ retries++; url=base; await new Promise(function(res){ setTimeout(res, 1200*retries); }); continue; }
-        break;
-      }
-      if(!r.ok && r.status!==206) break;
-      if(r.url) url=r.url;
-      var buf=await r.arrayBuffer();
-      if(!buf.byteLength) break;
-      await appendBuf(sb, buf); GOT+=buf.byteLength;
-      start+=buf.byteLength;
-      var cr=r.headers.get('Content-Range');
-      if(cr){ var total=parseInt((cr.split('/')[1]||''),10); if(!isNaN(total) && start>=total) break; }
-      else if(buf.byteLength<CH) break;
-    }
-  }catch(e){}
-  end();
+var EMBED=document.getElementById('ytembed'), VID=document.getElementById('vid'), STAT=document.getElementById('ytstat');
+var PROG=${JSON.stringify(progUrl)};
+var mode='embed', checks=0;
+function setStat(t){ if(STAT) STAT.textContent=t; }
+function toStream(why){
+  if(mode==='stream') return; mode='stream';
+  EMBED.style.display='none'; VID.style.display='block';
+  if(!VID.getAttribute('src')) VID.src=PROG;
+  var p=VID.play(); if(p && p.catch) p.catch(function(){});
+  setStat(why || 'stream mode — the file itself, straight through the network');
+  document.getElementById('modeEmbed').style.opacity='.65';
+  document.getElementById('modeStream').style.opacity='1';
 }
-(function start(){
-  if(!V){ if(PROG) vid.src=PROG; return; }
-  if(!('MediaSource' in window) || !MediaSource.isTypeSupported(VM) || (A && !MediaSource.isTypeSupported(AM))){ vid.src = PROG || V; return; }
-  var ms=new MediaSource();
-  vid.src=URL.createObjectURL(ms);
-  ms.addEventListener('sourceopen', function(){
-    var vb, ab, dv=false, da=!A;
-    try{ vb=ms.addSourceBuffer(VM); if(A) ab=ms.addSourceBuffer(AM); }catch(e){ vid.src = PROG || V; return; }
-    function done(){ if(dv && da){ if(GOT===0 && (PROG || V)){ vid.src = PROG || V; return; } try{ ms.endOfStream(); }catch(e){} } }
-    pump(vb, V, function(){ dv=true; done(); });
-    if(A) pump(ab, A, function(){ da=true; done(); });
-    setTimeout(function(){ if(GOT===0 && vid.readyState<2){ var p=document.getElementById('ytretry'); if(p) p.style.display='block'; } }, 12000);
-  });
-})();
+function toEmbed(){
+  mode='embed';
+  try{ VID.pause(); }catch(e){}
+  VID.style.display='none'; EMBED.style.display='block';
+  setStat('embed player — the normal youtube player, inside the network');
+  document.getElementById('modeStream').style.opacity='.65';
+  document.getElementById('modeEmbed').style.opacity='1';
+}
+document.getElementById('modeStream').addEventListener('click', function(){ toStream(); });
+document.getElementById('modeEmbed').addEventListener('click', toEmbed);
+VID.addEventListener('error', function(){
+  if(mode!=='stream') return;
+  var p=document.getElementById('ytretry'); if(p) p.style.display='block';
+  setStat('stream mode could not load this one either — tap retry or pick another video');
+}, true);
+var iv=setInterval(function(){
+  checks++;
+  if(mode!=='embed'){ clearInterval(iv); return; }
+  if(checks>8){ clearInterval(iv); setStat('still loading… if it stays black, tap stream mode'); return; }
+  var doc=null;
+  try{ doc=EMBED.contentWindow && EMBED.contentWindow.document; }catch(e){}
+  if(!doc || !doc.body) return;
+  var v=doc.querySelector('video');
+  if(v && (v.readyState>=2 || v.currentTime>0)){ setStat('playing ✦'); clearInterval(iv); return; }
+  var t=(doc.body.innerText || '').toLowerCase();
+  if(t.indexOf('video unavailable')>=0 || t.indexOf('sign in')>=0 || (t.indexOf('error')>=0 && t.indexOf('occurred')>=0)){
+    clearInterval(iv);
+    toStream('the embed got refused — switched to stream mode ✦');
+  }
+}, 2500);
 </script>
 </body>
 </html>`;
 }
-
 
 // ---------- the shell (/shell) ----------
 // A single HTML page that IS the cloak: the whole network runs inside a
@@ -1505,19 +1567,38 @@ const server = http.createServer(async (req, res) => {
   }
   if (u.pathname === '/yt/watch') {
     const vidId = (u.searchParams.get('v') || '').trim();
-    const hit = vidId ? await fetchVideoInfo(vidId) : null;
-    if (!hit) {
-      res.writeHead(502, { 'content-type': 'text/html; charset=utf-8' });
-      return res.end('<!DOCTYPE html><body style="background:#070313;color:#f2f2f2;font-family:system-ui;padding:40px">unavailable rn — <a style="color:#c084fc" href="/yt">back</a></body>');
-    }
+    if (!vidId) { res.writeHead(302, { location: '/yt' }); return res.end(); }
+    // metadata is decoration now (title, poster, up next) — the embed
+    // player does not need it, so a dead metadata backend no longer
+    // kills the watch page; it renders with whatever resolved
+    const hit = await fetchVideoInfo(vidId);
+    const phit = hit ? null : await fetchPipedStreams(vidId);
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-    return res.end(ytWatchPage(vidId, hit));
+    return res.end(ytWatchPage(vidId, hit, phit));
   }
   if (u.pathname === '/yt/stream') {
     const vidId = (u.searchParams.get('v') || '').trim();
     const kind = u.searchParams.get('kind') || 'v';
     if (!vidId) { res.writeHead(502); return res.end('stream unavailable'); }
     const range = req.headers['range'];
+    if (kind === 'p') {
+      // direct-file playback: a muxed mp4 whose bytes actually flow.
+      // piped's proxy first, invidious progressive (below) as backup
+      const ph = await fetchPipedStreams(vidId);
+      const pf = ph ? pickPipedFile(ph.data) : null;
+      if (pf) {
+        try {
+          const up = await fetch(pf.url, { headers: { 'user-agent': BROWSER_UA, ...(range ? { range } : {}) } });
+          if (up.status === 200 || up.status === 206) {
+            const hh = {};
+            for (const h of ['content-type', 'content-length', 'content-range', 'accept-ranges']) { const v = up.headers.get(h); if (v) hh[h] = v; }
+            res.writeHead(up.status, hh);
+            if (up.body) { const reader = up.body.getReader(); while (true) { const { done, value } = await reader.read(); if (done) break; res.write(Buffer.from(value)); } }
+            return res.end();
+          }
+        } catch { /* fall through to invidious */ }
+      }
+    }
     let hit = await fetchVideoInfo(vidId);
     for (let attempt = 0; attempt < 2; attempt++) {
       const fmt = hit ? pickStreams(hit.data)[kind] : null;
