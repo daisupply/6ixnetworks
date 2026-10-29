@@ -532,7 +532,7 @@ async function handleProxy(request, targetUrlStr, ctx, gameMode) {
   if (upstreamCookies) headers.set('cookie', upstreamCookies);
 
   const mirror = internalMirror(target);
-  if (mirror) return Response.redirect(new URL(mirror, request.url), 302);
+  if (mirror) return Response.redirect(new URL(mirror, request.url).toString(), 302);
   // edge cache: static assets only, GET without Range
   const canCache = request.method === 'GET' && !request.headers.has('range') && isStaticAsset(target, '');
   const cache = (typeof caches !== 'undefined') ? caches.default : null;
@@ -600,7 +600,7 @@ async function handleProxy(request, targetUrlStr, ctx, gameMode) {
 
 async function handleYtSearch(q, request) {
   const query = (q || '').trim();
-  if (!query) return Response.redirect(new URL('/yt', request.url), 302);
+  if (!query) return Response.redirect(new URL('/yt', request.url).toString(), 302);
   for (const inst of INVIDIOUS_INSTANCES) {
     try {
       const pageUrl = inst + '/search?q=' + encodeURIComponent(query);
@@ -837,7 +837,7 @@ export default {
       const fmt = hit ? pickStreams(hit.data)[kind] : null;
       if (!hit || !fmt) return new Response('stream unavailable', { status: 502 });
       let absUrl; try { absUrl = new URL(fmt.url, hit.inst).href; } catch { absUrl = fmt.url; }
-      return Response.redirect(new URL(gproxied(absUrl), request.url), 302);
+      return Response.redirect(new URL(gproxied(absUrl), request.url).toString(), 302);
     }
     if (u.pathname === '/yt/search') {
       return handleYtSearch(u.searchParams.get('q') || '', request);
