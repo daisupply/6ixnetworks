@@ -393,18 +393,19 @@ function playPage(u, t) {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>${escHtml(t || 'Game')}</title>
-${'${FONT_LINKS}'}<style>${'${GALAXY_CSS}'}</style></head><body class="playbody">${'${STAR_CANVAS}'}
+${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CANVAS}
 <div class="top"><a href="/gs">← games</a><span class="title">${escHtml(t || 'Game')}</span>
 <button class="on" onclick="useNet()">network</button>
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
 <button onclick="cloakTab('google')">cloak: google</button>
 <button onclick="cloakOpen()">cloaked tab</button></div>
-<iframe class="gameframe" id="gf" src="${'${prox}'}" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock"></iframe>
+<iframe class="gameframe" id="gf" src="${prox}" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock"></iframe>
 <div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(20,14,48,.92);border:1px solid rgba(196,181,253,.45);color:#ece9ff;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
 <script src="/cloak.js"></script>
+<script src="/stars.js"></script>
 <script>
-var PROX=${'${JSON.stringify(prox)}'}, ALT=${'${JSON.stringify(alt)}'}, stage=0;
+var PROX=${JSON.stringify(prox)}, ALT=${JSON.stringify(alt)}, stage=0;
 var gf=document.getElementById('gf');
 function dead(){
   try{
@@ -630,13 +631,13 @@ function ytWatchPage(id, hit) {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>${escHtml(d.title || 'video')}</title>
-${'${FONT_LINKS}'}<style>${'${GALAXY_CSS}'}</style></head><body>${'${STAR_CANVAS}'}
+${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <div class="wrap">
 <a class="back" href="/yt">← youtube</a>
 <video id="vid" controls autoplay playsinline ${poster ? `poster="${poster}"` : ''} style="width:100%;border-radius:18px;background:#000;aspect-ratio:16/9;margin-top:12px"></video>
 <p style="margin:14px 2px 20px;font-weight:700">${escHtml(d.title || '')}</p>
 <div class="grid">${recs}</div>
-${'${CLOAK_BAR}'}
+${CLOAK_BAR}
 </div>
 <script src="/cloak.js"></script>
 <script>
