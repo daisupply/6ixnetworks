@@ -662,6 +662,32 @@ function looksBlocked(text) {
   const head = (text || '').slice(0, 4000);
   return /attention required|are you a robot|access denied|request blocked|unusual traffic|verify you are human|checking your browser|ddos-guard|incapsula|just a moment/i.test(head) || head.length < 1200;
 }
+
+const BLOCK_SIG = /attention required|are you a robot|access denied|request blocked|unusual traffic|verify you are human|checking your browser|ddos-guard|incapsula|just a moment|rate limit|too many requests/i;
+const CHAL_SIG = /just a moment|checking your browser|verify you are human|are you a robot|attention required/i;
+// alternate egress, worker-style: public relay services fetch the page
+// from THEIR network and hand us the HTML. Wired as an automatic
+// fallback for sites that firewall the direct route — allorigins and
+// cors.lol were the two that demonstrably answered during testing
+// (codetabs timed out, corsproxy.io wants a key, thingproxy is dead).
+const RELAYS = [
+  (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+  (u) => 'https://api.cors.lol/?url=' + encodeURIComponent(u),
+];
+async function fetchViaRelay(targetStr) {
+  for (const build of RELAYS) {
+    try {
+      const r = await fetch(build(targetStr), { headers: { 'user-agent': BROWSER_UA, 'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' }, redirect: 'follow', signal: AbortSignal.timeout(12000) });
+      if (!r.ok) continue;
+      const ct = r.headers.get('content-type') || '';
+      if (!ct.includes('text/html')) continue;
+      const text = await r.text();
+      if (text.length < 800 || BLOCK_SIG.test(text.slice(0, 4000))) continue;
+      return text;
+    } catch { /* next relay */ }
+  }
+  return null;
+}
 async function handleProxy(req, res, targetUrlStr, gameMode) {
   let target;
   try { target = new URL(targetUrlStr); } catch {
@@ -769,10 +795,20 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
 
   if (isHtml || isCss) {
     const text = await upstream.text();
-    if (isHtml && isNav && (status === 403 || status === 429) && looksBlocked(text)) {
-      const bp = Buffer.from(blockPage(target.toString()), 'utf8');
-      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'content-length': bp.length });
-      return res.end(bp);
+    if (isHtml && isNav && (status === 403 || status === 429 || CHAL_SIG.test(text.slice(0, 4000)))) {
+      const relayed = await fetchViaRelay(target.toString());
+      if (relayed) {
+        let rw = rewriteHtml(relayed, target.toString());
+        rw = injectProxyShim(rw, target.toString(), gameMode ? '/gproxy/' : '/browse/');
+        const rb = Buffer.from(rw, 'utf8');
+        res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'content-length': rb.length, 'x-6ixnetworks-route': 'relay' });
+        return res.end(rb);
+      }
+      if (status !== 200) {
+        const bp = Buffer.from(blockPage(target.toString()), 'utf8');
+        res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'content-length': bp.length });
+        return res.end(bp);
+      }
     }
     let rewritten = isHtml ? rewriteHtml(text, target.toString()) : rewriteCss(text, target.toString());
   if (isHtml) rewritten = injectProxyShim(rewritten, target.toString(), gameMode ? '/gproxy/' : '/browse/');
