@@ -293,6 +293,18 @@ function internalMirror(target) {
     }
     return '/yt';
   }
+  if (h === 'www.google.com' || h === 'google.com') {
+    // google serves datacenter IPs its "unusual traffic" sorry page, and
+    // the captcha on it can never work through a proxy (reCAPTCHA is
+    // domain-locked — it errors "invalid domain for site key" anywhere
+    // but google.com). So google searches just become network searches.
+    if (target.pathname === '/search') {
+      const q = target.searchParams.get('q');
+      return q ? '/go?q=' + encodeURIComponent(q) : '/';
+    }
+    if (target.pathname === '/' || target.pathname.startsWith('/sorry')) return '/';
+    return null;
+  }
   if (INVIDIOUS_HOSTS.includes(h) && target.pathname === '/watch' && vid) {
     return '/yt/watch?v=' + encodeURIComponent(vid);
   }
