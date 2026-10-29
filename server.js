@@ -621,6 +621,29 @@ function normalizeInput(q) {
 const MEM_CACHE = new Map();
 
 // ---------- proxy core ----------
+
+function blockPage(targetStr) {
+  const arch = proxied('https://web.archive.org/web/2id_/' + targetStr);
+  const again = proxied(targetStr);
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>blocked — 6ixNetworks</title>
+${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}<div class="wrap">
+<a class="back" href="/">← 6ixNetworks</a>
+<h1>6ix<span>Networks</span></h1>
+<p style="font-weight:700;font-size:19px">that site blocked the network ✦</p>
+<p style="opacity:.8;max-width:52ch">its firewall refused the connection — happens with datacenter traffic. the archive copy usually still loads:</p>
+<div class="links"><a href="${arch}">archive.org copy</a><a href="${again}">retry</a><a href="/">home</a></div>
+${CLOAK_BAR}
+</div>
+<script src="/cloak.js"></script>
+<script src="/stars.js"></script>
+</body></html>`;
+}
+function looksBlocked(text) {
+  const head = (text || '').slice(0, 4000);
+  return /attention required|are you a robot|access denied|request blocked|unusual traffic|verify you are human|checking your browser|ddos-guard|incapsula|just a moment/i.test(head) || head.length < 1200;
+}
 async function handleProxy(req, res, targetUrlStr, gameMode) {
   let target;
   try { target = new URL(targetUrlStr); } catch {
@@ -728,6 +751,11 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
 
   if (isHtml || isCss) {
     const text = await upstream.text();
+    if (isHtml && isNav && (status === 403 || status === 429) && looksBlocked(text)) {
+      const bp = Buffer.from(blockPage(target.toString()), 'utf8');
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'content-length': bp.length });
+      return res.end(bp);
+    }
     let rewritten = isHtml ? rewriteHtml(text, target.toString()) : rewriteCss(text, target.toString());
   if (isHtml) rewritten = injectProxyShim(rewritten, target.toString(), gameMode ? '/gproxy/' : '/browse/');
     const buf = Buffer.from(rewritten, 'utf8');
@@ -766,9 +794,48 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
   res.end();
 }
 
+
+function ytSearchPage(query, hit) {
+  const abs = (u) => { try { return new URL(u, hit.inst).href; } catch { return u; } };
+  const cards = hit.vids.map(r => {
+    const t0 = (r.videoThumbnails || []).slice().sort((a, b) => (b.width || 0) - (a.width || 0))[0];
+    const img = t0 ? proxied(abs(t0.url)) : '';
+    const len = r.lengthSeconds ? Math.floor(r.lengthSeconds / 60) + ':' + String(r.lengthSeconds % 60).padStart(2, '0') : '';
+    return `<a class="card" href="/yt/watch?v=${encodeURIComponent(r.videoId)}">${img ? `<img loading="lazy" src="${img}" alt="">` : '<div class="noimg">✦</div>'}<div class="gt">${escHtml(r.title || '')}</div><div style="opacity:.65;font-size:12px;padding:0 10px 10px">${escHtml(r.author || '')}${len ? ' · ' + len : ''}</div></a>`;
+  }).join('');
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>${escHtml(query)} — 6ixNetworks</title>
+${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}<div class="wrap">
+<a class="back" href="/yt">← youtube</a>
+<h1>6ix<span>Networks</span></h1>
+<form action="/yt/search" method="get"><input name="q" type="text" value="${escHtml(query)}" placeholder="search youtube ✦" autocomplete="off"><button type="submit">go</button></form>
+<div class="grid" style="margin-top:18px">${cards}</div>
+${CLOAK_BAR}
+</div>
+<script src="/cloak.js"></script>
+<script src="/stars.js"></script>
+</body></html>`;
+}
+async function fetchYtSearchApi(query) {
+  for (let round = 0; round < 2; round++) {
+    for (const inst of INVIDIOUS_API_ORDER) {
+      try {
+        const r = await fetch(inst + '/api/v1/search?q=' + encodeURIComponent(query) + '&type=video', { headers: { 'user-agent': BROWSER_UA, 'accept': 'application/json' } });
+        if (!r.ok) continue;
+        const j = await r.json();
+        if (Array.isArray(j)) { const vids = j.filter(x => x && x.videoId && x.title); if (vids.length) return { inst, vids }; }
+      } catch { /* next instance */ }
+    }
+    if (round === 0) await sleep(1200);
+  }
+  return null;
+}
 async function handleYtSearch(req, res, q) {
   const query = (q || '').trim();
   if (!query) { res.writeHead(302, { location: '/yt' }); return res.end(); }
+  const apiHit = await fetchYtSearchApi(query);
+  if (apiHit) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(ytSearchPage(query, apiHit)); }
   for (const inst of INVIDIOUS_INSTANCES) {
     try {
       const pageUrl = inst + '/search?q=' + encodeURIComponent(query);
@@ -798,7 +865,9 @@ async function handleYtSearch(req, res, q) {
 // an MSE player in our own page streaming both tracks through /gproxy —
 // the browser never talks to youtube, an instance, or googlevideo.
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-async function fetchVideoInfo(id) {
+const YT_INFO_CACHE = new Map();
+async function fetchVideoInfo(id, bust) {
+  if (!bust) { const c = YT_INFO_CACHE.get(id); if (c && Date.now() - c.at < 300e3) return c.hit; }
   // instances flap (their youtube-bypass backends restart and 500 for a
   // few seconds), so sweep the list twice with a breath between rounds
   for (let round = 0; round < 2; round++) {
@@ -809,7 +878,7 @@ async function fetchVideoInfo(id) {
         });
         if (!r.ok) continue;
         const j = await r.json();
-        if (j && ((j.adaptiveFormats || []).length || (j.formatStreams || []).length)) return { inst, data: j };
+        if (j && ((j.adaptiveFormats || []).length || (j.formatStreams || []).length)) { const hit = { inst, data: j }; YT_INFO_CACHE.set(id, { at: Date.now(), hit }); if (YT_INFO_CACHE.size > 60) YT_INFO_CACHE.delete(YT_INFO_CACHE.keys().next().value); return hit; }
       } catch { /* next instance */ }
     }
     if (round === 0) await sleep(1500);
@@ -856,29 +925,31 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <a class="back" href="/yt">← youtube</a>
 <video id="vid" controls autoplay playsinline ${poster ? `poster="${poster}"` : ''} style="width:100%;border-radius:18px;background:#000;aspect-ratio:16/9;margin-top:12px"></video>
 <p style="margin:14px 2px 20px;font-weight:700">${escHtml(d.title || '')}</p>
+<div id="ytretry" onclick="location.reload()" style="display:none;margin:0 2px 14px;background:rgba(20,14,48,.92);border:1px solid rgba(196,181,253,.45);color:#ece9ff;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700;width:fit-content">✦ tap to retry</div>
 <div class="grid">${recs}</div>
 ${CLOAK_BAR}
 </div>
 <script src="/cloak.js"></script>
 <script>
+var GOT=0;
 var V=${JSON.stringify(streamV)}, A=${JSON.stringify(streamA)}, VM=${JSON.stringify(pickV ? pickV.type : '')}, AM=${JSON.stringify(pickA ? pickA.type : '')}, PROG=${JSON.stringify(progUrl)};
 var vid=document.getElementById('vid');
 function appendBuf(sb, buf){ return new Promise(function(res){ function u(){ sb.removeEventListener('updateend', u); res(); } sb.addEventListener('updateend', u); try{ sb.appendBuffer(buf); }catch(e){ res(); } }); }
 async function pump(sb, url, end){
-  var start=0, CH=2000000, base=url, retried=false;
+  var start=0, CH=2000000, base=url, retries=0;
   try{
     while(true){
       var r=await fetch(url, { headers:{ 'Range':'bytes='+start+'-'+(start+CH-1) } });
       if(r.status===416) break;
       if(r.status===403 || r.status===500 || r.status===502){
-        if(start===0 && !retried){ retried=true; url=base; await new Promise(function(res){ setTimeout(res, 1200); }); continue; }
+        if(start===0 && retries<2){ retries++; url=base; await new Promise(function(res){ setTimeout(res, 1200*retries); }); continue; }
         break;
       }
       if(!r.ok && r.status!==206) break;
       if(r.url) url=r.url;
       var buf=await r.arrayBuffer();
       if(!buf.byteLength) break;
-      await appendBuf(sb, buf);
+      await appendBuf(sb, buf); GOT+=buf.byteLength;
       start+=buf.byteLength;
       var cr=r.headers.get('Content-Range');
       if(cr){ var total=parseInt((cr.split('/')[1]||''),10); if(!isNaN(total) && start>=total) break; }
@@ -895,9 +966,10 @@ async function pump(sb, url, end){
   ms.addEventListener('sourceopen', function(){
     var vb, ab, dv=false, da=!A;
     try{ vb=ms.addSourceBuffer(VM); if(A) ab=ms.addSourceBuffer(AM); }catch(e){ vid.src = PROG || V; return; }
-    function done(){ if(dv && da){ try{ ms.endOfStream(); }catch(e){} } }
+    function done(){ if(dv && da){ if(GOT===0 && (PROG || V)){ vid.src = PROG || V; return; } try{ ms.endOfStream(); }catch(e){} } }
     pump(vb, V, function(){ dv=true; done(); });
     if(A) pump(ab, A, function(){ da=true; done(); });
+    setTimeout(function(){ if(GOT===0 && vid.readyState<2){ var p=document.getElementById('ytretry'); if(p) p.style.display='block'; } }, 12000);
   });
 })();
 </script>
@@ -1030,12 +1102,24 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/yt/stream') {
     const vidId = (u.searchParams.get('v') || '').trim();
     const kind = u.searchParams.get('kind') || 'v';
-    const hit = vidId ? await fetchVideoInfo(vidId) : null;
-    const fmt = hit ? pickStreams(hit.data)[kind] : null;
-    if (!hit || !fmt) { res.writeHead(502); return res.end('stream unavailable'); }
-    let absUrl; try { absUrl = new URL(fmt.url, hit.inst).href; } catch { absUrl = fmt.url; }
-    res.writeHead(302, { location: gproxied(absUrl) });
-    return res.end();
+    if (!vidId) { res.writeHead(502); return res.end('stream unavailable'); }
+    const range = req.headers['range'];
+    let hit = await fetchVideoInfo(vidId);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const fmt = hit ? pickStreams(hit.data)[kind] : null;
+      if (!fmt) break;
+      let absUrl; try { absUrl = new URL(fmt.url, hit.inst).href; } catch { absUrl = fmt.url; }
+      try {
+        const up = await fetch(absUrl, { headers: { 'user-agent': BROWSER_UA, ...(range ? { range } : {}) } });
+        if ((up.status === 403 || up.status === 500 || up.status === 502) && attempt === 0) { hit = await fetchVideoInfo(vidId, true); continue; }
+        const hh = {};
+        for (const h of ['content-type', 'content-length', 'content-range', 'accept-ranges']) { const v = up.headers.get(h); if (v) hh[h] = v; }
+        res.writeHead(up.status, hh);
+        if (up.body) { const reader = up.body.getReader(); while (true) { const { done, value } = await reader.read(); if (done) break; res.write(Buffer.from(value)); } }
+        return res.end();
+      } catch { if (attempt === 0) { hit = await fetchVideoInfo(vidId, true); continue; } }
+    }
+    res.writeHead(502); return res.end('stream unavailable');
   }
   if (u.pathname === '/yt/search') {
     return handleYtSearch(req, res, u.searchParams.get('q') || '');
