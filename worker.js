@@ -12,6 +12,9 @@ function b64urlDecode(str) {
   return decodeURIComponent(escape(atob(b64 + pad)));
 }
 function proxied(absUrl) { return '/browse/' + b64urlEncode(absUrl); }
+function gproxied(absUrl) {
+  return '/gproxy/' + b64urlEncode(absUrl);
+}
 // ---------- browser identity + cookie handling ----------
 // Present as one consistent, ordinary desktop Chrome browser (same UA +
 // client hints + fetch headers every time), and persist each site's cookies
@@ -349,7 +352,7 @@ function playPage(u, t) {
   if (!/^https:\/\//i.test(u || '')) {
     return '<!DOCTYPE html><body style="background:#070313;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#c084fc" href="/gs">back to games</a></body>';
   }
-  const prox = proxied(u);
+  const prox = gproxied(u);
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>${escHtml(t || 'Game')}</title>
@@ -364,11 +367,33 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CA
 <script src="/cloak.js"></script>
 <script>
 var PROX=${JSON.stringify(prox)}, DIRECT=${JSON.stringify(u)};
+var mode='net', fell=false;
 function setMode(m){
+  mode=m;
   document.getElementById('gf').src = (m==='net' ? PROX : DIRECT);
   document.getElementById('bNet').classList.toggle('on', m==='net');
   document.getElementById('bDir').classList.toggle('on', m==='dir');
+  if(m==='net') armChecks();
 }
+function looksDead(){
+  try{
+    var d=document.getElementById('gf').contentDocument;
+    if(!d || !d.body) return false;
+    var t=d.body.innerText||'';
+    if(/proxy could not reach|that host is blocked|bad proxy path/i.test(t)) return true;
+    if(d.querySelector('canvas,iframe,video,embed,object')) return false;
+    return d.body.innerHTML.length < 5000;
+  }catch(e){ return false; }
+}
+function armChecks(){
+  [5000, 10000, 16000].forEach(function(ms){
+    setTimeout(function(){ if(mode==='net' && !fell && looksDead()){ fell=true; setMode('dir'); } }, ms);
+  });
+}
+document.getElementById('gf').addEventListener('load', function(){
+  if(mode==='net') setTimeout(function(){ if(!fell && looksDead()){ fell=true; setMode('dir'); } }, 3000);
+});
+armChecks();
 </script>
 </body>
 </html>`;
@@ -393,7 +418,7 @@ ${CLOAK_BAR}<script src="/cloak.js"></script>
 
 </body></html>`;
 
-async function handleProxy(request, targetUrlStr, ctx) {
+async function handleProxy(request, targetUrlStr, ctx, gameMode) {
   let target;
   try { target = new URL(targetUrlStr); } catch {
     return new Response('bad url', { status: 400 });
@@ -471,9 +496,17 @@ async function handleProxy(request, targetUrlStr, ctx) {
 
   if (ct.includes('text/html') || ct.includes('text/css')) {
     const text = await upstream.text();
-    const rewritten = ct.includes('text/html')
+    let rewritten = ct.includes('text/html')
       ? rewriteHtml(text, target.toString())
       : rewriteCss(text, target.toString());
+  if (gameMode && ct.includes('text/html')) {
+    // game mode: give the page a <base> pointing at its real home folder,
+    // so asset paths the game's own code builds at runtime resolve to the
+    // game's real files instead of breaking against the proxy path
+    const baseHref = new URL('.', target).href;
+    if (/<head[^>]*>/i.test(rewritten)) rewritten = rewritten.replace(/<head[^>]*>/i, m => m + '<base href="' + baseHref + '">');
+    else rewritten = '<base href="' + baseHref + '">' + rewritten;
+  }
     return new Response(rewritten, { status: upstream.status, headers: outHeaders });
   }
   for (const h of ['content-length', 'content-range', 'accept-ranges', 'etag', 'last-modified']) {
@@ -542,6 +575,14 @@ export default {
       const dest = normalizeInput(u.searchParams.get('q') || '');
       if (!dest) return Response.redirect(u.origin + '/', 302);
       return Response.redirect(u.origin + proxied(dest), 302);
+    }
+    if (u.pathname.startsWith('/gproxy/')) {
+      let targetStr;
+      try { targetStr = b64urlDecode(u.pathname.slice('/gproxy/'.length)); } catch {
+        return new Response('bad proxy path', { status: 400 });
+      }
+      if (u.search) targetStr += (targetStr.includes('?') ? '&' : '?') + u.search.slice(1);
+      return handleProxy(request, targetStr, ctx, true);
     }
     if (u.pathname.startsWith('/browse/')) {
       let targetStr;

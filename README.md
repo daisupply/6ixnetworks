@@ -119,3 +119,22 @@ PORT=3000 node server.js
 - **Niche copy + type:** Comfortaa display font + Nunito body, everything
   lowercase and soft-spoken ("paste a link, or drift into a search ✦").
   The old red accent is gone; the palette is violet/pink/sky throughout.
+
+## v7 — every game works (or falls back trying)
+
+- **/gproxy game mode.** Games load through a dedicated proxy route that
+  injects a <base> tag pointing at the game's real home folder, so asset
+  paths the game's code builds at runtime resolve to its real files
+  instead of breaking against the proxy path — the #1 reason proxied
+  games used to black-screen.
+- **Auto-fallback in the player.** The player watches the proxied game:
+  if no canvas/video appears or the page comes back dead, it silently
+  switches the iframe to direct mode. Manual net/direct buttons remain.
+- **Audit (2026-10-29):** 120 catalog games tested both ways — 120/120
+  loaded direct, 120/120 through the proxy, 0 blocked from iframing,
+  0 dead. GameMonetize embed pages are built to be iframed, which is
+  what makes this work.
+- **About exit IPs:** a Cloudflare Worker cannot choose or randomize
+  its egress IP — fetches leave from Cloudflare's network, full stop.
+  Direct mode is the real answer to "look like a secure network": the
+  game runs on its own origin over HTTPS, its actual secure home.
