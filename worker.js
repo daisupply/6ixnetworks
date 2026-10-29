@@ -1248,7 +1248,7 @@ function sixMessages(list) {
   }
   return out.length ? out : [{ role: 'user', content: 'hi' }];
 }
-const SIX_MODELS = ['@cf/meta/llama-3.1-8b-instruct-fp8', '@cf/meta/llama-3.1-8b-instruct', '@cf/meta/llama-3.2-3b-instruct', '@cf/meta/llama-3.3-70b-instruct-fp8-fast', '@cf/mistral/mistral-7b-instruct-v0.1'];
+const SIX_MODELS = ['@cf/zai-org/glm-4.7-flash', '@cf/meta/llama-3.1-8b-instruct-fp8', '@cf/openai/gpt-oss-20b', '@cf/meta/llama-4-scout-17b-16e-instruct', '@cf/meta/llama-3.2-3b-instruct', '@cf/meta/llama-3.3-70b-instruct-fp8-fast'];
 async function askSix(env, messages) {
   if (!env || !env.AI) return 'six only wakes up on the cloudflare build ✦ this copy cant reach him — try s.usareme.site';
   for (const model of SIX_MODELS) {
