@@ -70,6 +70,23 @@ function buildUpstreamCookies(cookieHeader, hostname) {
   }
   return out.join('; ');
 }
+
+// The page the browser was actually on, translated back to target-space:
+// its referer points at a /browse or /gproxy URL on this host, so decode
+// it and hand the site the real page URL as the referer.
+function proxyReferer(ref, target) {
+  if (ref) {
+    try {
+      const u = new URL(ref);
+      const m = u.pathname.match(/^\/(?:browse|gproxy)\/(.+)$/);
+      if (m) {
+        const decoded = b64urlDecode(m[1]);
+        if (/^https?:\/\//i.test(decoded)) return decoded;
+      }
+    } catch { /* fall through */ }
+  }
+  return target.origin + '/';
+}
 function translateSetCookie(setCookieStr, hostname) {
   const prefix = hostKey(hostname);
   const segments = setCookieStr.split(';').map(s => s.trim());
@@ -498,19 +515,27 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
 
   const accept = req.headers['accept'] || 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8';
   const isNav = accept.includes('text/html');
+    // forward the browser's own fetch metadata when it sent any: an image
+    // request has to look like an image request, a script like a script.
+    // Forging one fixed shape for everything (the old way) is what made
+    // image and captcha servers refuse to serve pictures.
+    const fDest = req.headers['sec-fetch-dest'];
+    const fMode = req.headers['sec-fetch-mode'];
+    const fSite = req.headers['sec-fetch-site'];
   const headers = {
     'user-agent': BROWSER_UA,
     'accept': accept,
-    'accept-language': 'en-US,en;q=0.9',
+    'accept-language': req.headers['accept-language'] || 'en-US,en;q=0.9',
     'sec-ch-ua': '"Chromium";v="131", "Google Chrome";v="131", "Not-A.Brand";v="24"',
     'sec-ch-ua-mobile': '?0',
     'sec-ch-ua-platform': '"Windows"',
-    'sec-fetch-dest': isNav ? 'document' : 'empty',
-    'sec-fetch-mode': isNav ? 'navigate' : 'cors',
-    'sec-fetch-site': 'none',
-    'referer': target.origin + '/',
+    'sec-fetch-dest': fDest || (isNav ? 'document' : 'empty'),
+    'sec-fetch-mode': fMode || (isNav ? 'navigate' : 'cors'),
+    'sec-fetch-site': fSite || 'none',
+    'referer': proxyReferer(req.headers['referer'], target),
   };
-  if (isNav) {
+  if (req.headers['sec-fetch-user']) headers['sec-fetch-user'] = req.headers['sec-fetch-user'];
+  else if (isNav && !fDest) {
     headers['sec-fetch-user'] = '?1';
     headers['upgrade-insecure-requests'] = '1';
   }
@@ -555,6 +580,7 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
   if (ct) outHeaders['content-type'] = ct;
   const cache = upstream.headers.get('cache-control');
   if (cache) outHeaders['cache-control'] = cache;
+  else if (isStaticAsset(target, ct || '')) outHeaders['cache-control'] = 'public, max-age=604800, immutable';
   // translate the site's cookies onto the proxy domain so sessions persist
   const translatedCookies = getSetCookies(upstream.headers)
     .map(sc => translateSetCookie(sc, target.hostname)).filter(Boolean);
@@ -621,7 +647,7 @@ async function handleYtSearch(req, res, q) {
         headers: {
           'user-agent': BROWSER_UA,
           'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'accept-language': 'en-US,en;q=0.9',
+          'accept-language': req.headers['accept-language'] || 'en-US,en;q=0.9',
         },
         redirect: 'follow',
       });

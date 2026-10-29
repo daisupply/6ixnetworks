@@ -165,3 +165,22 @@ hand the browser off to its base URL. Everything is wired through
   plain /browse mode, then shows an in-network retry pill. WebSocket
   traffic (live multiplayer) is the one thing an HTTP proxy cannot
   tunnel — those games may still not connect.
+
+## v9 — real request shapes + caching (pictures load, pages fly)
+
+- **Per-request headers.** The proxy used to forge one fixed
+  "document navigation" header shape for EVERY upstream fetch —
+  images included. Image/captcha servers saw a picture being requested
+  like a page load by a bot and refused. Now the browser's own
+  sec-fetch-dest/mode/site and accept headers are forwarded per
+  request, and the referer is decoded from the proxy URL back to the
+  real page. Verified against an echo server: an image request now
+  arrives as sec-fetch-dest: image with the true page as referer.
+- **Browser caching.** Static assets (images, fonts, css, js) now get
+  cache-control: public, max-age=604800, immutable when the origin
+  didn't set its own — combined with the edge/memory cache, repeat
+  loads and thumbnails are instant (verified: cache HIT in 0.012s,
+  real WebP bytes served).
+- Note: the live sixsearch worker must be re-pasted with this build —
+  a screenshot on 2026-10-29 showed it still running the broken v8
+  (literal ${FONT_LINKS} text, "not found" iframe).
