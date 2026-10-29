@@ -1,3 +1,9 @@
 name = "6ixnetworks"
 main = "worker.js"
 compatibility_date = "2024-11-01"
+
+# public entrance: s.usareme.site serves the entire site (the worker is
+# host-agnostic — every route works on any attached domain).
+# attach it in the dashboard: worker -> Settings -> Domains & Routes
+# -> Add -> Custom Domain -> s.usareme.site
+routes = [{ pattern = "s.usareme.site", custom_domain = true }]
