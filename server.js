@@ -444,7 +444,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{pos
 <h1>6ix<span>Networks</span> games</h1>
 
 <div class="bar"><input id="gq" type="text" placeholder="search games..." autocomplete="off">
-<select id="gc"><option value="">all categories</option>${cats.map(c => `<option>${escHtml(c)}</option>`).join('')}</select><button class="chip" id="gfav" type="button">★ favorites</button><button class="chip" id="grec" type="button">recent</button><button class="chip" id="grand" type="button">🎲 random</button></div>
+<select id="gc"><option value="">all categories</option>${cats.map(c => `<option>${escHtml(c)}</option>`).join('')}</select><button class="chip" id="gfav" type="button">★ favorites</button><button class="chip" id="grec" type="button">recent</button><button class="chip" id="grand" type="button">🎲 random</button><a class="chip" href="/emu" style="text-decoration:none">🕹 emulator</a></div>
 <div class="grid" id="grid">${cards}</div>
 ${CLOAK_BAR}
 
@@ -534,6 +534,91 @@ arm();
 }
 
 // ---------- homepage ----------
+
+
+// ---------- emulator (/emu) ----------
+// EmulatorJS cores (real JS/WASM emulation: NES, SNES, GB, GBA, N64,
+// Genesis, Atari) stream through the network via the /px/ prefix proxy,
+// and the ROM runs entirely in the visitor's browser — they supply the
+// game file (upload or link), nothing is hosted or uploaded here.
+function emuPage() {
+  const data = '/px/' + b64urlEncode('https://cdn.emulatorjs.org/stable/data/') + '/';
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — Emulator</title>
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+.panel{background:rgba(20,14,48,.55);border:1px solid rgba(196,181,253,.25);border-radius:18px;padding:16px;margin-top:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.row select,.row input[type=text]{background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:10px;padding:10px;font-family:inherit}
+.row input[type=text]{flex:1;min-width:200px}
+#game{width:100%;aspect-ratio:4/3;background:#000;border-radius:14px;overflow:hidden}
+button.play{background:rgba(139,92,246,.3);color:#fff;border:1px solid rgba(196,181,253,.5);border-radius:999px;padding:11px 26px;font-weight:800;cursor:pointer;font-family:inherit;font-size:15px}
+</style></head><body>${STAR_CANVAS}<div class="wrap">
+<a class="back" href="/gs">← games</a>
+<h1>6ix<span>Networks</span> emulator</h1>
+<div class="panel">
+<div class="row">
+<select id="sys">
+<option value="nes">NES</option>
+<option value="snes">SNES</option>
+<option value="gb">Game Boy / Color</option>
+<option value="gba">Game Boy Advance</option>
+<option value="n64">Nintendo 64</option>
+<option value="segaMD">Genesis</option>
+<option value="atari2600">Atari 2600</option>
+</select>
+<input type="file" id="rom">
+</div>
+<div class="row"><input type="text" id="romurl" placeholder="or paste a rom link (.nes .smc .gba .z64 .zip...)"><button class="play" id="go">▶ play</button></div>
+<p style="opacity:.75;font-size:13px;margin:6px 2px 0">drop in a rom u own — it runs right in ur browser, nothing uploads ✦ zip files work too</p>
+</div>
+<div class="panel"><div id="game"></div></div>
+${CLOAK_BAR}
+</div>
+<script src="/cloak.js"></script>
+<script src="/stars.js"></script>
+<script>
+var DATA=${JSON.stringify(data)};
+var extmap={nes:'nes',smc:'snes',sfc:'snes',gb:'gb',gbc:'gb',gba:'gba',z64:'n64',n64:'n64',v64:'n64',md:'segaMD',gen:'segaMD',a26:'atari2600'};
+var fileEl=document.getElementById('rom'), sysEl=document.getElementById('sys');
+fileEl.addEventListener('change', function(){
+  var f=fileEl.files[0]; if(!f) return;
+  var ext=(f.name.split('.').pop()||'').toLowerCase();
+  if(extmap[ext]) sysEl.value=extmap[ext];
+});
+function b64url(s){ return btoa(unescape(encodeURIComponent(s))).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,''); }
+document.getElementById('go').addEventListener('click', function(){
+  var url='';
+  var f=fileEl.files[0];
+  if(f){ url=URL.createObjectURL(f); }
+  else {
+    var raw=document.getElementById('romurl').value.trim();
+    if(!raw){ alert('pick a rom file or paste a link first'); return; }
+    if(/^https?:\\/\\//i.test(raw)){ url='/gproxy/'+b64url(raw); }
+    else { url=raw; }
+    var ext=(raw.split('?')[0].split('.').pop()||'').toLowerCase();
+    if(extmap[ext]) sysEl.value=extmap[ext];
+  }
+  window.EJS_player='#game';
+  window.EJS_core=sysEl.value;
+  window.EJS_pathtodata=location.origin+DATA;
+  window.EJS_gameUrl=url;
+  window.EJS_startOnLoaded=true;
+  var sc=document.createElement('script');
+  sc.src=location.origin+DATA+'loader.js';
+  document.body.appendChild(sc);
+  document.getElementById('game').scrollIntoView({ behavior:'smooth' });
+});
+</script>
+</body>
+</html>`;
+}
+
+const FEATURED_GAMES = [
+  { t: 'Roblox', u: 'https://www.roblox.com/home', img: '', c: 'Featured', w: 800, h: 600 },
+  { t: 'Minecraft Classic', u: 'https://classic.minecraft.net', img: '', c: 'Featured', w: 800, h: 600 },
+  { t: 'Krunker', u: 'https://krunker.io', img: '', c: 'Featured', w: 800, h: 600 },
+];
 
 function toolsPage() {
   return `<!DOCTYPE html>
@@ -1134,10 +1219,14 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8' });
     return res.end(CLOAK_JS);
   }
+  if (u.pathname === '/emu') {
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    return res.end(emuPage());
+  }
   if (u.pathname === '/gs') {
     const games = await loadGames();
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-    return res.end(gamesPage(games));
+    return res.end(gamesPage(FEATURED_GAMES.concat(games)));
   }
   if (u.pathname === '/play') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
@@ -1187,6 +1276,17 @@ const server = http.createServer(async (req, res) => {
     if (!dest) { res.writeHead(302, { location: '/home' }); return res.end(); }
     res.writeHead(302, { location: proxied(dest) });
     return res.end();
+  }
+  if (u.pathname.startsWith('/px/')) {
+    const rest = u.pathname.slice('/px/'.length);
+    const slash = rest.indexOf('/');
+    let base = null;
+    if (slash > 0) { try { base = b64urlDecode(rest.slice(0, slash)); } catch {} }
+    if (!base || !/^https:\/\//i.test(base)) { res.writeHead(400, { 'content-type': 'text/plain' }); return res.end('bad prefix path'); }
+    if (!base.endsWith('/')) base += '/';
+    let targetStr = base + rest.slice(slash + 1);
+    if (u.search) targetStr += u.search;
+    return handleProxy(req, res, targetStr, false);
   }
   if (u.pathname.startsWith('/gproxy/')) {
     const encoded = u.pathname.slice('/gproxy/'.length);
