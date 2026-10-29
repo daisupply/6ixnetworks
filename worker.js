@@ -122,10 +122,86 @@ function cloakOpen(){
   w.document.close();
 }`;
 const CLOAK_BAR = `<div style="margin-top:26px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;color:#9a9a9a;font-size:13px">tab cloak:
-<button onclick="cloakTab('google')" style="background:#171717;color:#ddd;border:1px solid #2c2c2c;border-radius:999px;padding:7px 13px;cursor:pointer">Google</button>
-<button onclick="cloakTab('classroom')" style="background:#171717;color:#ddd;border:1px solid #2c2c2c;border-radius:999px;padding:7px 13px;cursor:pointer">Classroom</button>
-<button onclick="cloakTab('docs')" style="background:#171717;color:#ddd;border:1px solid #2c2c2c;border-radius:999px;padding:7px 13px;cursor:pointer">Docs</button>
-<button onclick="cloakOpen()" style="background:#171717;color:#ddd;border:1px solid #2c2c2c;border-radius:999px;padding:7px 13px;cursor:pointer">open in cloaked tab</button></div>`;
+<button onclick="cloakTab('google')" style="background:rgba(139,92,246,.13);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:7px 13px;cursor:pointer">google</button>
+<button onclick="cloakTab('classroom')" style="background:rgba(139,92,246,.13);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:7px 13px;cursor:pointer">classroom</button>
+<button onclick="cloakTab('docs')" style="background:rgba(139,92,246,.13);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:7px 13px;cursor:pointer">docs</button>
+<button onclick="cloakOpen()" style="background:rgba(139,92,246,.13);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:7px 13px;cursor:pointer">open in cloaked tab</button></div>`;
+// ---------- galaxy theme ----------
+// relaxing deep-space look shared by every page: layered nebula gradients,
+// a slow twinkling starfield canvas (served from /stars.js), glass panels,
+// soft rounded type (Comfortaa + Nunito), all-lowercase niche copy.
+const FONT_LINKS = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">';
+const STAR_CANVAS = '<canvas id="stars"></canvas><script src="/stars.js"></script>';
+const GALAXY_CSS = `
+*{box-sizing:border-box;margin:0}
+html{background:#05030f}
+body{background:radial-gradient(1200px 800px at 85% -10%, rgba(88,60,180,.28), transparent 60%),radial-gradient(1000px 700px at -10% 110%, rgba(30,80,160,.20), transparent 60%),linear-gradient(180deg,#070418 0%,#05030f 45%,#030209 100%);color:#ece9ff;font-family:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:56px 16px 48px;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:-12%;z-index:0;pointer-events:none;background:radial-gradient(560px 380px at 18% 26%, rgba(139,92,246,.20), transparent 65%),radial-gradient(640px 420px at 82% 18%, rgba(236,121,196,.13), transparent 65%),radial-gradient(760px 520px at 55% 88%, rgba(56,150,255,.12), transparent 65%);filter:blur(6px);animation:nebula 26s ease-in-out infinite alternate}
+@keyframes nebula{from{transform:translate3d(-1.5%,-1%,0) scale(1)}to{transform:translate3d(1.5%,1.2%,0) scale(1.05)}}
+#stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+body>*:not(#stars){position:relative;z-index:1}
+h1{font-family:'Comfortaa','Nunito',sans-serif;font-size:clamp(30px,6vw,44px);font-weight:700;letter-spacing:.04em;text-transform:lowercase;background:linear-gradient(92deg,#c4b5fd 0%,#f0abfc 48%,#7dd3fc 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 18px rgba(167,139,250,.35));margin-bottom:10px;text-align:center}
+p.sub{color:#b3a8e8;margin-bottom:30px;font-size:15px;text-align:center;max-width:600px;line-height:1.55;font-weight:600;letter-spacing:.02em}
+form{display:flex;width:100%;max-width:640px;gap:10px}
+input{flex:1;background:rgba(255,255,255,.055);border:1px solid rgba(196,181,253,.28);border-radius:16px;color:#fff;padding:15px 18px;font-size:16px;outline:none;font-family:inherit;backdrop-filter:blur(10px);transition:border-color .25s, box-shadow .25s}
+input::placeholder{color:#8f86c9}
+input:focus{border-color:rgba(240,171,252,.75);box-shadow:0 0 0 4px rgba(167,139,250,.16),0 0 24px rgba(167,139,250,.22)}
+button{background:linear-gradient(120deg,#8b5cf6,#ec4899);color:#fff;border:0;border-radius:16px;padding:15px 24px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.03em;box-shadow:0 6px 24px rgba(168,85,247,.35);transition:transform .2s, box-shadow .2s}
+button:hover{transform:translateY(-1px);box-shadow:0 10px 30px rgba(236,72,153,.4)}
+.links{margin-top:32px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:680px}
+.links a{color:#ded7ff;text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(196,181,253,.25);padding:10px 16px;border-radius:999px;font-size:14px;font-weight:600;backdrop-filter:blur(8px);transition:border-color .2s, background .2s}
+.links a:hover{border-color:rgba(240,171,252,.7);background:rgba(167,139,250,.14)}
+footer,.foot{margin-top:auto;padding-top:44px;color:#7e74ad;font-size:12.5px;text-align:center;max-width:640px;line-height:1.6}
+::selection{background:rgba(167,139,250,.45)}
+::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:rgba(167,139,250,.35);border-radius:8px}::-webkit-scrollbar-track{background:transparent}
+.wrap{width:100%;max-width:1120px;margin:0 auto}
+a.back{color:#c4b5fd;text-decoration:none;font-size:14px;font-weight:700}
+.bar{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 20px;width:100%;max-width:1120px}
+.bar input{flex:1;min-width:200px;padding:13px 16px;font-size:15px}
+.bar select{background:rgba(20,14,48,.88);border:1px solid rgba(196,181,253,.28);border-radius:16px;color:#ece9ff;padding:13px;font-size:15px;font-family:inherit;outline:none}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;width:100%;max-width:1120px}
+.card{background:rgba(255,255,255,.045);border:1px solid rgba(196,181,253,.16);border-radius:18px;overflow:hidden;text-decoration:none;color:#ece9ff;display:block;backdrop-filter:blur(8px);transition:transform .22s, border-color .22s, box-shadow .22s}
+.card:hover{transform:translateY(-4px);border-color:rgba(240,171,252,.65);box-shadow:0 14px 34px rgba(88,60,180,.35)}
+.card img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:rgba(255,255,255,.03)}
+.noimg{width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;color:#7e74ad;background:rgba(255,255,255,.03);font-size:12px}
+.gt{padding:10px 12px 2px;font-size:14px;font-weight:700}
+.gc{padding:0 12px 12px;font-size:12px;color:#9d92d6}
+body.playbody{padding:0;height:100vh}
+.top{display:flex;gap:8px;align-items:center;padding:9px 12px;background:rgba(10,6,28,.72);border-bottom:1px solid rgba(196,181,253,.18);flex-wrap:wrap;width:100%;backdrop-filter:blur(12px)}
+.top .title{font-weight:700;margin-right:auto;font-size:15px;font-family:'Comfortaa',sans-serif;letter-spacing:.02em}
+.top a,.top button{background:rgba(255,255,255,.06);color:#ded7ff;border:1px solid rgba(196,181,253,.3);border-radius:12px;padding:8px 13px;cursor:pointer;text-decoration:none;font-size:13px;font-weight:700;box-shadow:none;font-family:inherit}
+.top button.on{border-color:#f0abfc;color:#fff;background:rgba(236,72,153,.18)}
+iframe.gameframe{flex:1;width:100%;border:0;background:#000}
+`;
+const STARS_JS = `
+(function(){
+  var c=document.getElementById('stars'); if(!c) return;
+  var ctx=c.getContext('2d'); var W=0,H=0,stars=[],meteor=null;
+  var DPR=Math.min(window.devicePixelRatio||1,1.5);
+  var reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function size(){ W=window.innerWidth; H=window.innerHeight; c.width=W*DPR; c.height=H*DPR; c.style.width=W+'px'; c.style.height=H+'px'; ctx.setTransform(DPR,0,0,DPR,0,0);
+    var n=Math.min(170, Math.floor(W*H/11000)); stars=[];
+    for(var i=0;i<n;i++) stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+0.3,p:Math.random()*6.283,s:0.4+Math.random()*1.1,d:Math.random()*0.008+0.002});
+  }
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    for(var i=0;i<stars.length;i++){ var st=stars[i]; st.p+=st.s*0.016; st.y-=st.d; if(st.y<-2){ st.y=H+2; st.x=Math.random()*W; }
+      var a=0.35+0.65*Math.abs(Math.sin(st.p));
+      ctx.beginPath(); ctx.arc(st.x,st.y,st.r,0,6.2832); ctx.fillStyle='rgba(230,225,255,'+(a*0.9)+')'; ctx.fill();
+      if(st.r>1.15){ ctx.beginPath(); ctx.arc(st.x,st.y,st.r*3.2,0,6.2832); ctx.fillStyle='rgba(167,139,250,'+(a*0.10)+')'; ctx.fill(); }
+    }
+    if(!meteor && !reduced && Math.random()<0.0022){ meteor={x:Math.random()*W*0.7+W*0.2,y:Math.random()*H*0.25,vx:-7-Math.random()*3,vy:4+Math.random()*2,l:1}; }
+    if(meteor){ meteor.x+=meteor.vx; meteor.y+=meteor.vy; meteor.l-=0.016;
+      var g=ctx.createLinearGradient(meteor.x,meteor.y,meteor.x-meteor.vx*9,meteor.y-meteor.vy*9);
+      g.addColorStop(0,'rgba(255,255,255,'+(0.85*Math.max(meteor.l,0))+')'); g.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.strokeStyle=g; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(meteor.x,meteor.y); ctx.lineTo(meteor.x-meteor.vx*9,meteor.y-meteor.vy*9); ctx.stroke();
+      if(meteor.l<=0||meteor.x<-80||meteor.y>H+80) meteor=null;
+    }
+    if(!reduced) requestAnimationFrame(draw);
+  }
+  size(); window.addEventListener('resize',size); requestAnimationFrame(draw);
+})();`;
+
 
 // ---------- YouTube network ----------
 // youtube.com's own player refuses every cloud/datacenter IP at the
@@ -169,21 +245,13 @@ function youtubeMirror(target) {
 const YT_HOME = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — YouTube</title>
-<style>
-*{box-sizing:border-box;margin:0}body{background:#0a0a0a;color:#f2f2f2;font-family:system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:48px 16px}
-h1{font-size:32px;margin-bottom:6px}h1 span{color:#e11d2e}p.sub{color:#9a9a9a;margin-bottom:28px;font-size:14px;text-align:center;max-width:560px}
-form{display:flex;width:100%;max-width:640px;gap:8px}input{flex:1;background:#171717;border:1px solid #2c2c2c;border-radius:10px;color:#fff;padding:14px 16px;font-size:16px;outline:none}
-input:focus{border-color:#e11d2e}button{background:#e11d2e;color:#fff;border:0;border-radius:10px;padding:14px 22px;font-size:16px;font-weight:600;cursor:pointer}
-.links{margin-top:30px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:640px}
-.links a{color:#ddd;text-decoration:none;background:#171717;border:1px solid #2c2c2c;padding:9px 14px;border-radius:999px;font-size:14px}
-footer{margin-top:auto;padding-top:40px;color:#666;font-size:12px;text-align:center;max-width:640px}
-</style></head><body>
-<h1>6ix<span>Networks</span> — YouTube mode</h1>
-<p class="sub">search runs through 6ixNetworks. videos open on the Piped network — youtube's own player blocks every cloud proxy IP on earth right now, Piped is the workaround that actually plays.</p>
-<form action="/yt/search" method="get"><input name="q" type="text" placeholder="search youtube" autocomplete="off" autofocus><button type="submit">Search</button></form>
+${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
+<h1>6ix<span>Networks</span> — youtube mode</h1>
+<p class="sub">search drifts through 6ixnetworks ✦ videos open on the piped network — youtube's own player blocks every cloud proxy ip on earth right now, piped is the workaround that actually plays.</p>
+<form action="/yt/search" method="get"><input name="q" type="text" placeholder="search youtube" autocomplete="off" autofocus><button type="submit">search</button></form>
 <div class="links">
-<a href="https://piped.video">open Piped directly</a>
-<a href="/">← back to 6ixNetworks</a>
+<a href="https://piped.video">open piped directly</a>
+<a href="/">← back to 6ixnetworks</a>
 </div>
 ${CLOAK_BAR}<script src="/cloak.js"></script>
 <footer>paste any youtube link into the main 6ixNetworks bar and it auto-mirrors to Piped too — watch links, shorts, youtu.be, all of it.</footer>
@@ -254,21 +322,7 @@ function gamesPage(games) {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — Games</title>
-<style>
-*{box-sizing:border-box;margin:0}body{background:#0a0a0a;color:#f2f2f2;font-family:system-ui,sans-serif;min-height:100vh;padding:34px 16px 48px}
-.wrap{max-width:1100px;margin:0 auto}h1{font-size:30px}h1 span{color:#e11d2e}
-.sub{color:#9a9a9a;margin:6px 0 20px;font-size:14px}
-.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
-.bar input{flex:1;min-width:200px;background:#171717;border:1px solid #2c2c2c;border-radius:10px;color:#fff;padding:12px 14px;font-size:15px;outline:none}
-.bar select{background:#171717;border:1px solid #2c2c2c;border-radius:10px;color:#fff;padding:12px;font-size:15px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
-.card{background:#141414;border:1px solid #262626;border-radius:12px;overflow:hidden;text-decoration:none;color:#eee;display:block}
-.card:hover{border-color:#e11d2e}.card img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#1d1d1d}
-.noimg{width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;color:#555;background:#1d1d1d;font-size:12px}
-.gt{padding:9px 10px 2px;font-size:14px;font-weight:600}.gc{padding:0 10px 10px;font-size:12px;color:#8a8a8a}
-.foot{margin-top:34px;color:#666;font-size:12px;text-align:center}
-a.back{color:#e11d2e;text-decoration:none;font-size:14px}
-</style></head><body><div class="wrap">
+${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/">← 6ixNetworks</a>
 <h1>6ix<span>Networks</span> games</h1>
 <p class="sub">${games.length} games, pulled live from the games network — every one launches inside the site, through the proxy.</p>
@@ -293,27 +347,20 @@ gq.addEventListener('input', filt); gc.addEventListener('change', filt);
 }
 function playPage(u, t) {
   if (!/^https:\/\//i.test(u || '')) {
-    return '<!DOCTYPE html><body style="background:#0a0a0a;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#e11d2e" href="/gs">back to games</a></body>';
+    return '<!DOCTYPE html><body style="background:#070313;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#c084fc" href="/gs">back to games</a></body>';
   }
   const prox = proxied(u);
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>${escHtml(t || 'Game')}</title>
-<style>
-*{box-sizing:border-box;margin:0}body{background:#000;color:#f2f2f2;font-family:system-ui,sans-serif;height:100vh;display:flex;flex-direction:column}
-.top{display:flex;gap:8px;align-items:center;padding:8px 12px;background:#0d0d0d;border-bottom:1px solid #222;flex-wrap:wrap}
-.top .title{font-weight:700;margin-right:auto;font-size:15px}
-.top a,.top button{background:#171717;color:#ddd;border:1px solid #2c2c2c;border-radius:8px;padding:7px 12px;cursor:pointer;text-decoration:none;font-size:13px}
-.top button.on{border-color:#e11d2e;color:#fff}
-iframe{flex:1;width:100%;border:0;background:#000}
-</style></head><body>
+${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CANVAS}
 <div class="top"><a href="/gs">← games</a><span class="title">${escHtml(t || 'Game')}</span>
 <button id="bNet" class="on" onclick="setMode('net')">thru network</button>
 <button id="bDir" onclick="setMode('dir')">direct</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
 <button onclick="cloakTab('google')">cloak: google</button>
 <button onclick="cloakOpen()">cloaked tab</button></div>
-<iframe id="gf" src="${prox}" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock"></iframe>
+<iframe class="gameframe" id="gf" src="${prox}" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock"></iframe>
 <script src="/cloak.js"></script>
 <script>
 var PROX=${JSON.stringify(prox)}, DIRECT=${JSON.stringify(u)};
@@ -330,25 +377,17 @@ function setMode(m){
 const HOME = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks</title>
-<style>
-*{box-sizing:border-box;margin:0}body{background:#0a0a0a;color:#f2f2f2;font-family:system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:48px 16px}
-h1{font-size:34px;margin-bottom:6px}h1 span{color:#e11d2e}p.sub{color:#9a9a9a;margin-bottom:28px;font-size:14px}
-form{display:flex;width:100%;max-width:640px;gap:8px}input{flex:1;background:#171717;border:1px solid #2c2c2c;border-radius:10px;color:#fff;padding:14px 16px;font-size:16px;outline:none}
-input:focus{border-color:#e11d2e}button{background:#e11d2e;color:#fff;border:0;border-radius:10px;padding:14px 22px;font-size:16px;font-weight:600;cursor:pointer}
-.links{margin-top:30px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:640px}
-.links a{color:#ddd;text-decoration:none;background:#171717;border:1px solid #2c2c2c;padding:9px 14px;border-radius:999px;font-size:14px}
-footer{margin-top:auto;padding-top:40px;color:#666;font-size:12px;text-align:center;max-width:640px}
-</style></head><body>
+${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <h1>6ix<span>Networks</span></h1>
-<p class="sub">paste a link or type a search — the site loads through this server, not your device</p>
-<form action="/go" method="get"><input name="q" type="text" placeholder="https://example.com  —  or just search something" autocomplete="off" autofocus><button type="submit">Go</button></form>
+<p class="sub">paste a link, or drift into a search ✦ everything loads through the network — soft, quiet, unbothered</p>
+<form action="/go" method="get"><input name="q" type="text" placeholder="https://example.com  —  or just search something" autocomplete="off" autofocus><button type="submit">go</button></form>
 <div class="links">
-<a href="/go?q=https://www.google.com">Google</a>
-<a href="/go?q=https://duckduckgo.com">DuckDuckGo</a>
-<a href="/go?q=https://www.wikipedia.org">Wikipedia</a>
-<a href="/yt">YouTube</a><a href="/gs">Games</a>
-<a href="/go?q=https://www.reddit.com">Reddit</a>
-<a href="/go?q=https://www.coolmathgames.com">CoolMath Games</a>
+<a href="/go?q=https://www.google.com">google</a>
+<a href="/go?q=https://duckduckgo.com">duckduckgo</a>
+<a href="/go?q=https://www.wikipedia.org">wikipedia</a>
+<a href="/yt">youtube</a><a href="/gs">games</a>
+<a href="/go?q=https://www.reddit.com">reddit</a>
+<a href="/go?q=https://www.coolmathgames.com">coolmath games</a>
 </div>
 ${CLOAK_BAR}<script src="/cloak.js"></script>
 <footer>heads up: simple sites, search, articles and a lot of video/game pages work fine. sites see a regular Chrome browser running on this server, and cookies carry over per site, so some logins stick now. the biggest sites still block proxy IPs sometimes — that's them, not the proxy.</footer>
@@ -471,7 +510,7 @@ async function handleYtSearch(q, request) {
       return new Response(rewriteHtml(text, pageUrl), { headers: { 'content-type': 'text/html; charset=utf-8' } });
     } catch { /* try next instance */ }
   }
-  return new Response('<!DOCTYPE html><body style="background:#0a0a0a;color:#f2f2f2;font-family:system-ui;padding:40px">all search instances are down rn — <a style="color:#e11d2e" href="https://piped.video/search?q=' + encodeURIComponent(query) + '">search on Piped instead</a></body>', { status: 502, headers: { 'content-type': 'text/html; charset=utf-8' } });
+  return new Response('<!DOCTYPE html><body style="background:#070313;color:#f2f2f2;font-family:system-ui;padding:40px">all search instances are down rn — <a style="color:#c084fc" href="https://piped.video/search?q=' + encodeURIComponent(query) + '">search on Piped instead</a></body>', { status: 502, headers: { 'content-type': 'text/html; charset=utf-8' } });
 }
 
 export default {
@@ -479,6 +518,9 @@ export default {
     const u = new URL(request.url);
     if (u.pathname === '/' || u.pathname === '/index.html') {
       return new Response(HOME, { headers: { 'content-type': 'text/html; charset=utf-8' } });
+    }
+    if (u.pathname === '/stars.js') {
+      return new Response(STARS_JS, { headers: { 'content-type': 'text/javascript; charset=utf-8' } });
     }
     if (u.pathname === '/cloak.js') {
       return new Response(CLOAK_JS, { headers: { 'content-type': 'text/javascript; charset=utf-8' } });

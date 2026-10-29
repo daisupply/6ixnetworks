@@ -108,3 +108,14 @@ PORT=3000 node server.js
   Google Classroom or Google Docs with the matching favicon, or opens the
   current page inside an about:blank tab labeled Google.
 - Renamed from SixSearch to **6ixNetworks** (worker name `6ixnetworks`).
+
+## v5 — galaxy theme
+
+- **Relaxing galaxy look on every page** (home, /yt, /gs, player): layered
+  nebula gradients that slowly drift, a twinkling starfield canvas with the
+  occasional shooting star (served from /stars.js, respects
+  prefers-reduced-motion), glassmorphism panels, and a violet → pink →
+  sky gradient logo.
+- **Niche copy + type:** Comfortaa display font + Nunito body, everything
+  lowercase and soft-spoken ("paste a link, or drift into a search ✦").
+  The old red accent is gone; the palette is violet/pink/sky throughout.
