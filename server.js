@@ -1445,6 +1445,10 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
     return res.end(aiPage());
   }
+  if (u.pathname === '/ai/health') {
+    res.writeHead(200, { 'content-type': 'application/json' });
+    return res.end(JSON.stringify({ binding: false, note: 'node build — six lives on the cloudflare build' }));
+  }
   if (u.pathname === '/ai/ask' && req.method === 'POST') {
     const b = await readJsonBody(req);
     const text = await askSix(sixMessages(b.messages));

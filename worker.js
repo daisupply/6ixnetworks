@@ -1248,13 +1248,28 @@ function sixMessages(list) {
   }
   return out.length ? out : [{ role: 'user', content: 'hi' }];
 }
+const SIX_MODELS = ['@cf/meta/llama-3.1-8b-instruct-fp8', '@cf/meta/llama-3.1-8b-instruct', '@cf/meta/llama-3.2-3b-instruct', '@cf/meta/llama-3.3-70b-instruct-fp8-fast', '@cf/mistral/mistral-7b-instruct-v0.1'];
 async function askSix(env, messages) {
   if (!env || !env.AI) return 'six only wakes up on the cloudflare build ✦ this copy cant reach him — try s.usareme.site';
-  try {
-    const r = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', { messages: [{ role: 'system', content: SIX_SYSTEM }].concat(messages), max_tokens: 400 });
-    const t = (r && (r.response || (r.result && r.result.response))) || '';
-    return String(t).trim() || 'six blanked on that one ✦ ask again';
-  } catch { return 'six is unreachable rn ✦ try again in a sec'; }
+  for (const model of SIX_MODELS) {
+    try {
+      const r = await env.AI.run(model, { messages: [{ role: 'system', content: SIX_SYSTEM }].concat(messages), max_tokens: 400 });
+      const t = (r && (r.response || (r.result && r.result.response))) || '';
+      if (String(t).trim()) return String(t).trim();
+    } catch {}
+  }
+  return 'six is unreachable rn ✦ try again in a sec';
+}
+async function sixHealth(env) {
+  const out = { binding: !!(env && env.AI), models: {} };
+  if (!env || !env.AI) return out;
+  for (const model of SIX_MODELS) {
+    try {
+      const r = await env.AI.run(model, { messages: [{ role: 'user', content: 'say ok' }], max_tokens: 3 });
+      out.models[model] = 'ok: ' + String((r && r.response) || '').slice(0, 24);
+    } catch (e) { out.models[model] = 'ERR: ' + String((e && e.message) || e).slice(0, 220); }
+  }
+  return out;
 }
 
 // the chatroom itself: one Durable Object per room. WebSockets use the
@@ -1351,6 +1366,9 @@ export default {
     }
     if (u.pathname === '/ai') {
       return new Response(aiPage(), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+    }
+    if (u.pathname === '/ai/health') {
+      return new Response(JSON.stringify(await sixHealth(env)), { headers: { 'content-type': 'application/json' } });
     }
     if (u.pathname === '/ai/ask' && request.method === 'POST') {
       const b = await request.json().catch(() => ({}));
