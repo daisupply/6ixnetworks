@@ -411,34 +411,53 @@ function escHtml(s) {
 }
 function gamesPage(games) {
   const cats = [...new Set(games.map(g => g.c))].sort();
-  const cards = games.map(g => {
+  const cards = games.map((g, gi) => {
     const thumb = g.img ? proxied(g.img) : '';
-    return `<a class="card" href="/play?u=${encodeURIComponent(g.u)}&t=${encodeURIComponent(g.t)}" data-s="${escHtml((g.t + ' ' + g.c).toLowerCase())}" data-c="${escHtml(g.c)}">
+    return `<a class="card" href="/play?u=${encodeURIComponent(g.u)}&t=${encodeURIComponent(g.t)}" data-s="${escHtml((g.t + ' ' + g.c).toLowerCase())}" data-c="${escHtml(g.c)}" data-u="${escHtml(g.u)}" data-i="${gi}">
       ${thumb ? `<img loading="lazy" src="${thumb}" alt="">` : '<div class="noimg">no preview</div>'}
-      <div class="gt">${escHtml(g.t)}</div></a>`;
+      <span class="fav" data-f="${escHtml(g.u)}">☆</span><div class="gt">${escHtml(g.t)}</div></a>`;
   }).join('');
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — Games</title>
-${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}<div class="wrap">
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{position:absolute;top:6px;right:8px;z-index:2;font-size:19px;line-height:1;color:rgba(255,255,255,.85);text-shadow:0 1px 6px rgba(0,0,0,.85);cursor:pointer;padding:3px 5px}.fav.on{color:#fbbf24}.chip{background:rgba(139,92,246,.14);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:700;font-family:inherit}.chip.on{background:rgba(139,92,246,.45)}</style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/">← 6ixNetworks</a>
 <h1>6ix<span>Networks</span> games</h1>
 
 <div class="bar"><input id="gq" type="text" placeholder="search games..." autocomplete="off">
-<select id="gc"><option value="">all categories</option>${cats.map(c => `<option>${escHtml(c)}</option>`).join('')}</select></div>
+<select id="gc"><option value="">all categories</option>${cats.map(c => `<option>${escHtml(c)}</option>`).join('')}</select><button class="chip" id="gfav" type="button">★ favorites</button><button class="chip" id="grec" type="button">recent</button><button class="chip" id="grand" type="button">🎲 random</button></div>
 <div class="grid" id="grid">${cards}</div>
 ${CLOAK_BAR}
 
 </div>
 <script src="/cloak.js"></script>
 <script>
-var gq=document.getElementById('gq'), gc=document.getElementById('gc');
-function filt(){ var q=gq.value.toLowerCase(), c=gc.value;
+var gq=document.getElementById('gq'), gc=document.getElementById('gc'), grid=document.getElementById('grid');
+var favOnly=false, recOnly=false;
+function ls(k, d){ try{ return JSON.parse(localStorage.getItem(k)) || d; }catch(e){ return d; } }
+function favs(){ return ls('gx_favs', []); }
+function recents(){ return ls('gx_recent', []); }
+function paintFavs(){ var f=favs(); document.querySelectorAll('.fav').forEach(function(el){ var on=f.indexOf(el.dataset.f)>=0; el.classList.toggle('on', on); el.textContent = on ? '★' : '☆'; }); }
+function filt(){ var q=gq.value.toLowerCase(), c=gc.value, f=favs(), r=recents();
   document.querySelectorAll('.card').forEach(function(el){
-    el.style.display = ((!q || el.dataset.s.includes(q)) && (!c || el.dataset.c===c)) ? '' : 'none';
+    var ok = (!q || el.dataset.s.includes(q)) && (!c || el.dataset.c===c);
+    if(favOnly) ok = ok && f.indexOf(el.dataset.u)>=0;
+    if(recOnly) ok = ok && r.indexOf(el.dataset.u)>=0;
+    el.style.display = ok ? '' : 'none';
   });
 }
+function orderRecent(on){ var cards=[].slice.call(grid.querySelectorAll('.card')); if(on){ var r=recents(); cards.sort(function(a,b){ var ia=r.indexOf(a.dataset.u), ib=r.indexOf(b.dataset.u); ia = ia<0 ? 999 : ia; ib = ib<0 ? 999 : ib; return ia-ib; }); } else { cards.sort(function(a,b){ return (+a.dataset.i)-(+b.dataset.i); }); } cards.forEach(function(el){ grid.appendChild(el); }); }
 gq.addEventListener('input', filt); gc.addEventListener('change', filt);
+document.getElementById('gfav').addEventListener('click', function(){ favOnly=!favOnly; this.classList.toggle('on', favOnly); filt(); });
+document.getElementById('grec').addEventListener('click', function(){ recOnly=!recOnly; this.classList.toggle('on', recOnly); orderRecent(recOnly); filt(); });
+document.getElementById('grand').addEventListener('click', function(){ var vis=[].slice.call(grid.querySelectorAll('.card')).filter(function(el){ return el.style.display!=='none'; }); if(vis.length) location.href = vis[Math.floor(Math.random()*vis.length)].href; });
+grid.addEventListener('click', function(e){
+  var f=e.target.closest ? e.target.closest('.fav') : null;
+  if(f){ e.preventDefault(); e.stopPropagation(); var u=f.dataset.f, a=favs(), i=a.indexOf(u); if(i>=0) a.splice(i,1); else a.push(u); try{ localStorage.setItem('gx_favs', JSON.stringify(a)); }catch(err){} paintFavs(); if(favOnly) filt(); return; }
+  var card=e.target.closest ? e.target.closest('.card') : null;
+  if(card && card.dataset.u){ var r=recents().filter(function(x){ return x!==card.dataset.u; }); r.unshift(card.dataset.u); try{ localStorage.setItem('gx_recent', JSON.stringify(r.slice(0,12))); }catch(err){} }
+});
+paintFavs();
 </script>
 </body>
 </html>`;
@@ -453,7 +472,7 @@ function playPage(u, t) {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>${escHtml(t || 'Game')}</title>
 ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CANVAS}
-<div class="top"><a href="/gs">← games</a><span class="title">${escHtml(t || 'Game')}</span>
+<div class="top"><a href="/gs">← games</a><span class="title">${escHtml(t || 'Game')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
 <button class="on" onclick="useNet()">network</button>
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
@@ -465,7 +484,11 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CA
 <script src="/stars.js"></script>
 <script>
 var PROX=${JSON.stringify(prox)}, ALT=${JSON.stringify(alt)}, stage=0;
-var gf=document.getElementById('gf');
+var gf=document.getElementById('gf'), stEl=document.getElementById('st');
+var MKEY='gx_mode_'+location.search;
+function saveMode(){ try{ localStorage.setItem(MKEY, stage===0 ? 'prox' : 'alt'); }catch(e){} }
+try{ if(localStorage.getItem(MKEY)==='alt'){ stage=1; gf.src=ALT; } }catch(e){}
+try{ var gu=new URLSearchParams(location.search).get('u'); if(gu){ var R=[]; try{ R=JSON.parse(localStorage.getItem('gx_recent'))||[]; }catch(e){} R=[gu].concat(R.filter(function(x){ return x!==gu; })).slice(0,12); localStorage.setItem('gx_recent', JSON.stringify(R)); } }catch(e){}
 function dead(){
   try{
     var d=gf.contentDocument;
@@ -477,15 +500,73 @@ function dead(){
   }catch(e){ return false; }
 }
 function check(){
-  if(!dead()) return;
-  if(stage===0){ stage=1; gf.src=ALT; arm(); }
-  else if(stage===1){ stage=2; document.getElementById('dead').style.display='block'; }
+  if(!dead()){ saveMode(); if(stEl) stEl.textContent=''; return; }
+  if(stage===0){ stage=1; if(stEl) stEl.textContent='switching route…'; gf.src=ALT; arm(); }
+  else if(stage===1){ stage=2; if(stEl) stEl.textContent=''; document.getElementById('dead').style.display='block'; }
 }
-function arm(){ [5000, 11000, 18000].forEach(function(ms){ setTimeout(check, ms); }); }
-function useNet(){ stage=0; document.getElementById('dead').style.display='none'; gf.src=PROX; arm(); }
+function arm(){ [5000, 11000, 18000, 30000].forEach(function(ms){ setTimeout(check, ms); }); }
+function useNet(){ stage=0; document.getElementById('dead').style.display='none'; if(stEl) stEl.textContent=''; gf.src=PROX; arm(); }
 function retry(){ useNet(); }
 gf.addEventListener('load', function(){ setTimeout(check, 3000); });
 arm();
+</script>
+</body>
+</html>`;
+}
+
+
+function toolsPage() {
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — Tools</title>
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+.tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:16px}
+.panel{background:rgba(20,14,48,.55);border:1px solid rgba(196,181,253,.25);border-radius:18px;padding:16px}
+.panel h2{margin:0 0 12px;font-size:17px}
+#cdisp{background:rgba(0,0,0,.35);border-radius:12px;padding:12px;font-size:24px;text-align:right;min-height:30px;word-break:break-all}
+.cgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.cgrid button,.tbtn{background:rgba(139,92,246,.16);color:#ece9ff;border:1px solid rgba(196,181,253,.3);border-radius:12px;padding:12px 10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
+#note{width:100%;min-height:170px;background:rgba(0,0,0,.3);color:#f2f2f2;border:1px solid rgba(196,181,253,.25);border-radius:12px;padding:10px;font-family:inherit;font-size:14px;box-sizing:border-box}
+#sw{font-size:38px;text-align:center;font-weight:800;margin:8px 0 12px}
+.trow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;align-items:center}
+#tmin{width:70px;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:10px;padding:9px;text-align:center;font-family:inherit}
+</style></head><body>${STAR_CANVAS}<div class="wrap">
+<a class="back" href="/">← 6ixNetworks</a>
+<h1>6ix<span>Networks</span> tools</h1>
+<div class="tools">
+<div class="panel"><h2>calculator</h2><div id="cdisp">0</div><div class="cgrid" id="cgrid"></div></div>
+<div class="panel"><h2>notepad</h2><textarea id="note" placeholder="type here — it saves itself ✦"></textarea><div id="ncount" style="opacity:.7;font-size:12px;margin-top:6px"></div></div>
+<div class="panel"><h2>stopwatch + timer</h2><div id="sw">00:00.0</div>
+<div class="trow"><button class="tbtn" id="swgo">start</button><button class="tbtn" id="swreset">reset</button></div>
+<div class="trow" style="margin-top:14px"><input id="tmin" type="number" min="0" placeholder="min"><button class="tbtn" id="tgo">timer</button><span id="tstat" style="opacity:.8"></span></div></div>
+</div>
+${CLOAK_BAR}
+</div>
+<script src="/cloak.js"></script>
+<script src="/stars.js"></script>
+<script>
+var cd=document.getElementById('cdisp'), expr='';
+var keys=['C','(',')','/','7','8','9','*','4','5','6','-','1','2','3','+','0','.','⌫','='];
+var cg=document.getElementById('cgrid');
+keys.forEach(function(k){ var b=document.createElement('button'); b.type='button'; b.textContent=k; b.addEventListener('click', function(){
+  if(k==='C'){ expr=''; }
+  else if(k==='⌫'){ expr=expr.slice(0,-1); }
+  else if(k==='='){ if(/^[0-9+\-*/.() ]+$/.test(expr)){ try{ var v=Function('return ('+expr+')')(); expr=String(Math.round(v*1e10)/1e10); }catch(e){ expr=''; cd.textContent='error'; return; } } }
+  else { expr+=k; }
+  cd.textContent = expr || '0';
+}); cg.appendChild(b); });
+var note=document.getElementById('note'), nc=document.getElementById('ncount');
+try{ note.value=localStorage.getItem('gx_note')||''; }catch(e){}
+function nupd(){ nc.textContent=note.value.length+' chars — saved ✦'; try{ localStorage.setItem('gx_note', note.value); }catch(e){} }
+note.addEventListener('input', nupd); nupd();
+var swEl=document.getElementById('sw'), swT0=0, swAcc=0, swRun=null;
+function fmt(ms){ var t=Math.floor(ms/100), s=Math.floor(t/10), m=Math.floor(s/60); function p(n,l){ return String(n).padStart(l,'0'); } return p(m,2)+':'+p(s%60,2)+'.'+(t%10); }
+function swDraw(){ swEl.textContent=fmt(swAcc + (swT0 ? Date.now()-swT0 : 0)); }
+document.getElementById('swgo').addEventListener('click', function(){ if(swT0){ swAcc+=Date.now()-swT0; swT0=0; clearInterval(swRun); this.textContent='start'; } else { swT0=Date.now(); swRun=setInterval(swDraw, 47); this.textContent='pause'; } });
+document.getElementById('swreset').addEventListener('click', function(){ swAcc=0; swT0=0; clearInterval(swRun); document.getElementById('swgo').textContent='start'; swDraw(); });
+var tInt=null;
+document.getElementById('tgo').addEventListener('click', function(){ var m=parseFloat(document.getElementById('tmin').value)||0, st=document.getElementById('tstat'); if(tInt){ clearInterval(tInt); tInt=null; } if(m<=0){ st.textContent=''; return; } var left=Math.round(m*60); st.textContent=left+'s left'; tInt=setInterval(function(){ left--; if(left<=0){ clearInterval(tInt); tInt=null; st.textContent='done ✦'; try{ var ac=new (window.AudioContext||window.webkitAudioContext)(), o=ac.createOscillator(), g=ac.createGain(); o.connect(g); g.connect(ac.destination); o.frequency.value=880; g.gain.value=0.15; o.start(); setTimeout(function(){ o.stop(); ac.close(); }, 700); }catch(e){} return; } st.textContent=left+'s left'; }, 1000); });
+swDraw();
 </script>
 </body>
 </html>`;
@@ -497,17 +578,21 @@ const HOME = `<!DOCTYPE html>
 ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <h1>6ix<span>Networks</span></h1>
 
-<form action="/go" method="get"><input name="q" type="text" placeholder="search ✦" autocomplete="off" autofocus><button type="submit">go</button></form>
+<form action="/go" method="get"><input name="q" type="text" placeholder="search ✦" autocomplete="off" autofocus list="sg"><button type="submit">go</button></form><datalist id="sg"></datalist>
 <div class="links">
 <a href="/go?q=https://www.google.com">google</a>
 <a href="/go?q=https://duckduckgo.com">duckduckgo</a>
 <a href="/go?q=https://www.wikipedia.org">wikipedia</a>
-<a href="/yt">youtube</a><a href="/gs">games</a> <a href="/shell">shell</a>
+<a href="/yt">youtube</a><a href="/gs">games</a> <a href="/shell">shell</a> <a href="/tools">tools</a>
 <a href="/go?q=https://www.reddit.com">reddit</a>
 <a href="/go?q=https://www.coolmathgames.com">coolmath games</a>
 </div>
 ${CLOAK_BAR}<script src="/cloak.js"></script>
 
+<script>
+var qi=document.querySelector('input[name=q]'), sg=document.getElementById('sg'), sgt=null;
+if(qi && sg){ qi.addEventListener('input', function(){ clearTimeout(sgt); var v=qi.value.trim(); if(v.length<2){ sg.innerHTML=''; return; } sgt=setTimeout(function(){ fetch('/suggest?q='+encodeURIComponent(v)).then(function(r){ return r.json(); }).then(function(list){ sg.innerHTML=''; (list||[]).forEach(function(s){ var o=document.createElement('option'); o.value=s; sg.appendChild(o); }); }).catch(function(){}); }, 160); }); }
+</script>
 </body></html>`;
 
 async function handleProxy(request, targetUrlStr, ctx, gameMode) {
@@ -831,6 +916,21 @@ export default {
     if (u.pathname === '/shell') {
       const servers = u.searchParams.has('ext') ? ['https://s.usareme.site/', 'https://sixsearch.deionmont1.workers.dev/'] : null;
       return new Response(shellPage(servers), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+    }
+        if (u.pathname === '/tools') {
+      return new Response(toolsPage(), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+    }
+    if (u.pathname === '/suggest') {
+      const q = (u.searchParams.get('q') || '').trim();
+      let out = [];
+      if (q) {
+        try {
+          const r = await fetch('https://ac.duckduckgo.com/ac/?q=' + encodeURIComponent(q) + '&type=list', { headers: { 'user-agent': BROWSER_UA, 'accept': 'application/json' } });
+          const j = await r.json();
+          if (Array.isArray(j) && Array.isArray(j[1])) out = j[1].slice(0, 8).map(String);
+        } catch {}
+      }
+      return new Response(JSON.stringify(out), { headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=300' } });
     }
     if (u.pathname === '/cloak.js') {
       return new Response(CLOAK_JS, { headers: { 'content-type': 'text/javascript; charset=utf-8' } });
