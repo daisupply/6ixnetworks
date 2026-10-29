@@ -121,7 +121,7 @@ function cloakOpen(){
   w.document.write('<!DOCTYPE html><html><head><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico"></head><body style="margin:0"><iframe src="'+location.href+'" style="border:0;width:100vw;height:100vh"></iframe></body></html>');
   w.document.close();
 }`;
-const CLOAK_BAR = `<div style="margin-top:26px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;color:#9a9a9a;font-size:13px">tab cloak:
+const CLOAK_BAR = `<div style="margin-top:26px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;color:#9a9a9a;font-size:13px">
 <button onclick="cloakTab('google')" style="background:rgba(139,92,246,.13);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:7px 13px;cursor:pointer">google</button>
 <button onclick="cloakTab('classroom')" style="background:rgba(139,92,246,.13);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:7px 13px;cursor:pointer">classroom</button>
 <button onclick="cloakTab('docs')" style="background:rgba(139,92,246,.13);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:7px 13px;cursor:pointer">docs</button>
@@ -247,14 +247,14 @@ const YT_HOME = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — YouTube</title>
 ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <h1>6ix<span>Networks</span> — youtube mode</h1>
-<p class="sub">search drifts through 6ixnetworks ✦ videos open on the piped network — youtube's own player blocks every cloud proxy ip on earth right now, piped is the workaround that actually plays.</p>
+
 <form action="/yt/search" method="get"><input name="q" type="text" placeholder="search youtube" autocomplete="off" autofocus><button type="submit">search</button></form>
 <div class="links">
 <a href="https://piped.video">open piped directly</a>
 <a href="/">← back to 6ixnetworks</a>
 </div>
 ${CLOAK_BAR}<script src="/cloak.js"></script>
-<footer>paste any youtube link into the main 6ixNetworks bar and it auto-mirrors to Piped too — watch links, shorts, youtu.be, all of it.</footer>
+
 </body></html>`;
 function isStaticAsset(target, ct) {
   if (ct) {
@@ -317,7 +317,7 @@ function gamesPage(games) {
     const thumb = g.img ? proxied(g.img) : '';
     return `<a class="card" href="/play?u=${encodeURIComponent(g.u)}&t=${encodeURIComponent(g.t)}" data-s="${escHtml((g.t + ' ' + g.c).toLowerCase())}" data-c="${escHtml(g.c)}">
       ${thumb ? `<img loading="lazy" src="${thumb}" alt="">` : '<div class="noimg">no preview</div>'}
-      <div class="gt">${escHtml(g.t)}</div><div class="gc">${escHtml(g.c)}</div></a>`;
+      <div class="gt">${escHtml(g.t)}</div></a>`;
   }).join('');
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
@@ -325,12 +325,12 @@ function gamesPage(games) {
 ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/">← 6ixNetworks</a>
 <h1>6ix<span>Networks</span> games</h1>
-<p class="sub">${games.length} games, pulled live from the games network — every one launches inside the site, through the proxy.</p>
+
 <div class="bar"><input id="gq" type="text" placeholder="search games..." autocomplete="off">
 <select id="gc"><option value="">all categories</option>${cats.map(c => `<option>${escHtml(c)}</option>`).join('')}</select></div>
 <div class="grid" id="grid">${cards}</div>
 ${CLOAK_BAR}
-<div class="foot">a game stuck on a black screen? open it and hit <b>direct</b> — some games' code fights the proxy, direct mode iframes the original instead.</div>
+
 </div>
 <script src="/cloak.js"></script>
 <script>
@@ -379,8 +379,8 @@ const HOME = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks</title>
 ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <h1>6ix<span>Networks</span></h1>
-<p class="sub">paste a link, or drift into a search ✦ everything loads through the network — soft, quiet, unbothered</p>
-<form action="/go" method="get"><input name="q" type="text" placeholder="https://example.com  —  or just search something" autocomplete="off" autofocus><button type="submit">go</button></form>
+
+<form action="/go" method="get"><input name="q" type="text" placeholder="search ✦" autocomplete="off" autofocus><button type="submit">go</button></form>
 <div class="links">
 <a href="/go?q=https://www.google.com">google</a>
 <a href="/go?q=https://duckduckgo.com">duckduckgo</a>
@@ -390,7 +390,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <a href="/go?q=https://www.coolmathgames.com">coolmath games</a>
 </div>
 ${CLOAK_BAR}<script src="/cloak.js"></script>
-<footer>heads up: simple sites, search, articles and a lot of video/game pages work fine. sites see a regular Chrome browser running on this server, and cookies carry over per site, so some logins stick now. the biggest sites still block proxy IPs sometimes — that's them, not the proxy.</footer>
+
 </body></html>`;
 
 async function handleProxy(request, targetUrlStr, ctx) {
