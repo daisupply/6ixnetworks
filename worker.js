@@ -1974,7 +1974,7 @@ export class ChatRoom {
       const bot = request.headers.get('x-six-bot') === '1';
       const text = cleanText(b.text);
       if (!text) return new Response('{"ok":false}', { headers: { 'content-type': 'application/json' } });
-      await this.addMsg({ name: bot ? cleanName(b.botName || 'six ✦ ai') : cleanName(b.name), text, ts: Date.now(), bot });
+      await this.addMsg({ name: bot ? (String(b.botName || 'six ✦ ai').replace(/[<>&"']/g, '').trim().slice(0, 24) || 'six ✦ ai') : cleanName(b.name), text, ts: Date.now(), bot });
       return new Response('{"ok":true}', { headers: { 'content-type': 'application/json' } });
     }
     if (u.pathname === '/poll') {
