@@ -27,5 +27,8 @@ binding = "AI"
 
 # optional secret — set it in the cloudflare dashboard (worker -> settings
 # -> variables and secrets), NEVER as a plain var or in the repo:
-# GEMINI_API_KEY: a Google AI Studio free key. six uses gemini first for
-# text and keeps the workers ai neuron budget for images + vision.
+# GEMINI_API_KEY: a Google AI Studio free key — six runs on gemini for
+# text, vision and image generation, workers ai is only the fallback.
+# optional extra keys multiply the free quota: add GEMINI_API_KEY2,
+# GEMINI_API_KEY3, GEMINI_API_KEY4 the same way (best: one ai studio
+# project per key — keys in one project share that project's quota).
