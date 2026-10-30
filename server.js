@@ -3662,7 +3662,7 @@ const server = http.createServer(async (req, res) => {
     return handleProxy(req, res, targetStr);
   }
   if (u.pathname === '/uv') {
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp' });
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(ultravioletPage(u.searchParams.get('url') || '', u.searchParams.get('t') || ''));
   }
   if (u.pathname === '/sj') {
