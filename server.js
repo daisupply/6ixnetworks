@@ -323,7 +323,7 @@ const SIDEBAR_HTML = `<button id="sbBtn" aria-label="menu"><svg width="19" heigh
 <div class="sb-foot">everything stays inside the network — nothing loads from its home site</div>
 </aside>
 <script>
-(function(){ var p = location.pathname; document.querySelectorAll('#sb nav a').forEach(function(a){ if (a.getAttribute('href') === p) a.classList.add('on'); });
+(function(){ document.body.classList.add('has-sb'); var p = location.pathname; document.querySelectorAll('#sb nav a').forEach(function(a){ if (a.getAttribute('href') === p) a.classList.add('on'); });
 var b = document.getElementById('sbBtn'); if (b) b.addEventListener('click', function(){ document.body.classList.toggle('sb-open'); });
 var s = document.getElementById('sbScrim'); if (s) s.addEventListener('click', function(){ document.body.classList.remove('sb-open'); }); })();
 </script>`;
@@ -387,7 +387,7 @@ body.sb-open #sbScrim{opacity:1;pointer-events:auto}
 .sb-cloak button{background:#17171a;color:#d4d4d8;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 11px;font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit}
 .sb-cloak button:hover{border-color:rgba(255,255,255,.3);color:#fff}
 .sb-foot{margin-top:auto;padding:16px 10px 2px;color:#4b4b52;font-size:12px;line-height:1.55}
-@media(min-width:900px){ #sb{transform:none} #sbBtn{display:none} body:has(>aside#sb){padding-left:252px} }
+@media(min-width:900px){ #sb{transform:none} #sbBtn{display:none} body:has(aside#sb),body.has-sb{padding-left:252px} }
 .launch{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;width:100%;max-width:640px;margin-top:36px;text-align:left}
 .lcard{background:#101012;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;text-decoration:none;color:#f4f4f5;display:block;transition:border-color .15s}
 .lcard:hover{border-color:rgba(255,255,255,.24)}
