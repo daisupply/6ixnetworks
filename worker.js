@@ -283,7 +283,7 @@ const CLOAK_BAR = `<div style="margin-top:26px;display:flex;gap:8px;flex-wrap:wr
 <button onclick="cloakTab('docs')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">docs</button>
 <button onclick="cloakTab('drive')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">open in cloaked tab</button></div>`;
 const TABBAR_HTML = `<nav id="tabbar"><a href="/home"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg><span>home</span></a><a href="/gs"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg><span>games</span></a><a href="/chat"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span>6ixchat</span></a><a href="/ai"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>six ai</span></a><button id="tabMore" type="button"><svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg><span>more</span></button></nav>
-<div id="tabSheet"><a href="/search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span>search</span></a><a href="/yt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg><span>youtube</span></a><a href="/hw"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>hw helper</span></a><a href="/emu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="16.5" cy="11" r=".4" fill="currentColor"/><circle cx="18.5" cy="14" r=".4" fill="currentColor"/></svg><span>emulator</span></a><a href="/tools"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>tools</span></a><a href="/account"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>account</span></a><div class="tsh-sec">disguise</div><div class="tsh-cloak"><button onclick="cloakTab('google')">google</button><button onclick="cloakTab('classroom')">classroom</button><button onclick="cloakTab('docs')">docs</button><button onclick="cloakTab('drive')">drive</button><button onclick="cloakOpen()">open cloaked tab</button></div></div>
+<div id="tabSheet"><a href="/search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span>search</span></a><a href="/apps"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M12 18h.01"/></svg><span>apps</span></a><a href="/yt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg><span>youtube</span></a><a href="/hw"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>hw helper</span></a><a href="/emu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="16.5" cy="11" r=".4" fill="currentColor"/><circle cx="18.5" cy="14" r=".4" fill="currentColor"/></svg><span>emulator</span></a><a href="/tools"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>tools</span></a><a href="/account"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>account</span></a><div class="tsh-sec">disguise</div><div class="tsh-cloak"><button onclick="cloakTab('google')">google</button><button onclick="cloakTab('classroom')">classroom</button><button onclick="cloakTab('docs')">docs</button><button onclick="cloakTab('drive')">drive</button><button onclick="cloakOpen()">open cloaked tab</button></div></div>
 <script>
 (function(){ if (window.parent !== window) { document.documentElement.classList.add('gx-framed'); var bar0 = document.getElementById('tabbar'); if (bar0) bar0.style.bottom = '6px'; var sh0 = document.getElementById('tabSheet'); if (sh0) sh0.style.bottom = '80px'; } var p = location.pathname; document.querySelectorAll('#tabbar a, #tabSheet a').forEach(function(a){ if (a.getAttribute('href') === p) a.classList.add('on'); }); var tm = document.getElementById('tabMore'), sh = document.getElementById('tabSheet'); if (tm && sh) { tm.addEventListener('click', function(){ sh.classList.toggle('open'); }); document.addEventListener('click', function(e){ if (sh.classList.contains('open') && !sh.contains(e.target) && !tm.contains(e.target)) sh.classList.remove('open'); }); } })();
 </script>`;
@@ -294,6 +294,7 @@ const SIDEBAR_HTML = `<button id="sbBtn" aria-label="menu"><svg width="19" heigh
 <a href="/home"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>home</a>
 <a href="/search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>search</a>
 <a href="/gs"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>games</a>
+<a href="/apps"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M12 18h.01"/></svg>apps</a>
 <a href="/yt"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg>youtube</a>
 <a href="/chat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>6ixchat</a>
 <a href="/ai"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>six ai</a>
@@ -615,6 +616,103 @@ async function loadGames() {
 function escHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
+const APPS = [
+  { t: 'Discord', u: 'https://discord.com/app', c: 'Social' },
+  { t: 'Instagram', u: 'https://www.instagram.com', c: 'Social' },
+  { t: 'TikTok', u: 'https://www.tiktok.com', c: 'Social' },
+  { t: 'X', u: 'https://x.com', c: 'Social' },
+  { t: 'Reddit', u: 'https://www.reddit.com', c: 'Social' },
+  { t: 'Snapchat', u: 'https://web.snapchat.com', c: 'Social' },
+  { t: 'WhatsApp', u: 'https://web.whatsapp.com', c: 'Social' },
+  { t: 'Telegram', u: 'https://web.telegram.org', c: 'Social' },
+  { t: 'Pinterest', u: 'https://www.pinterest.com', c: 'Social' },
+  { t: 'Facebook', u: 'https://www.facebook.com', c: 'Social' },
+  { t: 'YouTube', u: 'https://www.youtube.com', c: 'Video' },
+  { t: 'Twitch', u: 'https://www.twitch.tv', c: 'Video' },
+  { t: 'Kick', u: 'https://kick.com', c: 'Video' },
+  { t: 'Tubi', u: 'https://tubitv.com', c: 'Video' },
+  { t: 'Pluto TV', u: 'https://pluto.tv', c: 'Video' },
+  { t: 'Rumble', u: 'https://rumble.com', c: 'Video' },
+  { t: 'Dailymotion', u: 'https://www.dailymotion.com', c: 'Video' },
+  { t: 'Spotify', u: 'https://open.spotify.com', c: 'Music' },
+  { t: 'SoundCloud', u: 'https://soundcloud.com', c: 'Music' },
+  { t: 'YouTube Music', u: 'https://music.youtube.com', c: 'Music' },
+  { t: 'Apple Music', u: 'https://music.apple.com', c: 'Music' },
+  { t: 'Audiomack', u: 'https://audiomack.com', c: 'Music' },
+  { t: 'ChatGPT', u: 'https://chatgpt.com', c: 'AI' },
+  { t: 'Gemini', u: 'https://gemini.google.com', c: 'AI' },
+  { t: 'Claude', u: 'https://claude.ai', c: 'AI' },
+  { t: 'Perplexity', u: 'https://www.perplexity.ai', c: 'AI' },
+  { t: 'Character AI', u: 'https://character.ai', c: 'AI' },
+  { t: 'Gmail', u: 'https://mail.google.com', c: 'Google' },
+  { t: 'Drive', u: 'https://drive.google.com', c: 'Google' },
+  { t: 'Docs', u: 'https://docs.google.com', c: 'Google' },
+  { t: 'Maps', u: 'https://www.google.com/maps', c: 'Google' },
+  { t: 'Photos', u: 'https://photos.google.com', c: 'Google' },
+  { t: 'Classroom', u: 'https://classroom.google.com', c: 'Google' },
+  { t: 'Photopea', u: 'https://www.photopea.com', c: 'Tools' },
+  { t: 'Canva', u: 'https://www.canva.com', c: 'Tools' },
+  { t: 'CapCut', u: 'https://www.capcut.com', c: 'Tools' },
+  { t: 'VS Code', u: 'https://vscode.dev', c: 'Tools' },
+  { t: 'GitHub', u: 'https://github.com', c: 'Tools' },
+  { t: 'Wikipedia', u: 'https://www.wikipedia.org', c: 'Tools' },
+  { t: 'Internet Archive', u: 'https://archive.org', c: 'Tools' }
+];
+function appHue(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360; return h; }
+function appsPage() {
+  const cats = [...new Set(APPS.map(a => a.c))].sort();
+  const cards = APPS.map((a, ai) => {
+    const icon = '<svg viewBox="0 0 120 90" aria-hidden="true"><rect width="120" height="90" fill="hsl(' + appHue(a.t) + ',42%,30%)"/><text x="60" y="60" font-family="Inter,Arial,sans-serif" font-size="36" font-weight="800" fill="#ffffff" text-anchor="middle">' + escHtml(a.t.slice(0, 1).toUpperCase()) + '</text></svg>';
+    return `<a class="card" href="/play?u=${encodeURIComponent(a.u)}&t=${encodeURIComponent(a.t)}" data-s="${escHtml((a.t + ' ' + a.c).toLowerCase())}" data-c="${escHtml(a.c)}" data-u="${escHtml(a.u)}" data-i="${ai}">
+      <div class="noimg gicon">${icon}</div>
+      <span class="fav" data-f="${escHtml(a.u)}">☆</span><div class="gt">${escHtml(a.t)}</div></a>`;
+  }).join('');
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{position:absolute;top:6px;right:8px;z-index:2;font-size:19px;line-height:1;color:rgba(255,255,255,.85);text-shadow:0 1px 6px rgba(0,0,0,.85);cursor:pointer;padding:3px 5px}.fav.on{color:#fbbf24}.chip{background:rgba(94,142,255,.14);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:700;font-family:inherit}.chip.on{background:rgba(94,142,255,.45)}</style></head><body>${STAR_CANVAS}<div class="wrap">
+<a class="back" href="/home">← 6ixNetworks</a>
+<h1>6ix<span>Networks</span> apps</h1>
+
+<div class="bar"><input id="gq" type="text" placeholder="search apps..." autocomplete="off">
+<select id="gc"><option value="">all categories</option>${cats.map(c => `<option>${escHtml(c)}</option>`).join('')}</select><button class="chip" id="gfav" type="button">★ favorites</button><button class="chip" id="grec" type="button">recent</button><button class="chip" id="grand" type="button">random</button><a class="chip" href="/gs" style="text-decoration:none">games</a></div>
+<div class="grid" id="grid">${cards}</div>
+${SIDEBAR_HTML}
+
+</div>
+<script src="/cloak.js"></script>
+<script>
+var gq=document.getElementById('gq'), gc=document.getElementById('gc'), grid=document.getElementById('grid');
+var favOnly=false, recOnly=false;
+function ls(k, d){ try{ return JSON.parse(localStorage.getItem(k)) || d; }catch(e){ return d; } }
+function favs(){ return ls('gx_afavs', []); }
+function recents(){ return ls('gx_arecent', []); }
+function paintFavs(){ var f=favs(); document.querySelectorAll('.fav').forEach(function(el){ var on=f.indexOf(el.dataset.f)>=0; el.classList.toggle('on', on); el.textContent = on ? '★' : '☆'; }); }
+function filt(){ var q=gq.value.toLowerCase(), c=gc.value, f=favs(), r=recents();
+  document.querySelectorAll('.card').forEach(function(el){
+    var ok = (!q || el.dataset.s.includes(q)) && (!c || el.dataset.c===c);
+    if(favOnly) ok = ok && f.indexOf(el.dataset.u)>=0;
+    if(recOnly) ok = ok && r.indexOf(el.dataset.u)>=0;
+    el.style.display = ok ? '' : 'none';
+  });
+}
+function orderRecent(on){ var cards=[].slice.call(grid.querySelectorAll('.card')); if(on){ var r=recents(); cards.sort(function(a,b){ var ia=r.indexOf(a.dataset.u), ib=r.indexOf(b.dataset.u); ia = ia<0 ? 999 : ia; ib = ib<0 ? 999 : ib; return ia-ib; }); } else { cards.sort(function(a,b){ return (+a.dataset.i)-(+b.dataset.i); }); } cards.forEach(function(el){ grid.appendChild(el); }); }
+gq.addEventListener('input', filt); gc.addEventListener('change', filt);
+document.getElementById('gfav').addEventListener('click', function(){ favOnly=!favOnly; this.classList.toggle('on', favOnly); filt(); });
+document.getElementById('grec').addEventListener('click', function(){ recOnly=!recOnly; this.classList.toggle('on', recOnly); orderRecent(recOnly); filt(); });
+document.getElementById('grand').addEventListener('click', function(){ var vis=[].slice.call(grid.querySelectorAll('.card')).filter(function(el){ return el.style.display!=='none'; }); if(vis.length) location.href = vis[Math.floor(Math.random()*vis.length)].href; });
+grid.addEventListener('click', function(e){
+  var f=e.target.closest ? e.target.closest('.fav') : null;
+  if(f){ e.preventDefault(); e.stopPropagation(); var u=f.dataset.f, a=favs(), i=a.indexOf(u); if(i>=0) a.splice(i,1); else a.push(u); try{ localStorage.setItem('gx_afavs', JSON.stringify(a)); }catch(err){} paintFavs(); if(favOnly) filt(); return; }
+  var card=e.target.closest ? e.target.closest('.card') : null;
+  if(card && card.dataset.u){ var r=recents().filter(function(x){ return x!==card.dataset.u; }); r.unshift(card.dataset.u); try{ localStorage.setItem('gx_arecent', JSON.stringify(r.slice(0,12))); }catch(err){} }
+});
+paintFavs();
+</script>
+</body>
+</html>`;
+}
+
 function gamesPage(games) {
   const cats = [...new Set(games.map(g => g.c))].sort();
   const cards = games.map((g, gi) => {
@@ -2680,6 +2778,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <div class="launch">
 <a class="lcard" href="/search"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><b>search</b><span>the web + ur saved tabs</span></a>
 <a class="lcard" href="/gs"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg><b>games</b><span>600+ games, all through the network</span></a>
+<a class="lcard" href="/apps"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M12 18h.01"/></svg><b>apps</b><span>40 web apps, all through the network</span></a>
 <a class="lcard" href="/yt"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg><b>youtube</b><span>watch without ever leaving</span></a>
 <a class="lcard" href="/chat"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><b>6ixchat</b><span>rooms, voice + video, the group chat</span></a>
 <a class="lcard" href="/ai"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><b>six ai</b><span>ask six anything — he answers in the room too</span></a>
@@ -4010,6 +4109,9 @@ async function chatIdentity(env, request, wantName) {
     if (u.pathname === '/gs') {
       const games = await loadGames();
       return new Response(cfBoot(gamesPage(FEATURED_GAMES.concat(games))), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
+    }
+    if (u.pathname === '/apps') {
+      return new Response(cfBoot(appsPage()), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
     }
     if (u.pathname === '/play') {
       return new Response(cfPlayPageUv(u.searchParams.get('u') || '', u.searchParams.get('t') || 'Game'), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
