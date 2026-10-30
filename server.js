@@ -1348,7 +1348,18 @@ body{display:block;padding:0}
 .vs-brand span{color:#9db9ff}
 .vs-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9db9ff;border:1px solid rgba(94,142,255,.4);border-radius:999px;padding:3px 9px}
 .vs-timer{font-size:13px;opacity:.6;font-variant-numeric:tabular-nums}
-#vgrid{flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;padding:18px;align-content:start;align-content:safe center;max-width:1400px;width:100%;margin:0 auto;box-sizing:border-box}
+#vgrid{flex:1;min-height:0;overflow-y:auto;display:flex;flex-wrap:wrap;gap:14px;padding:18px;align-content:center;justify-content:center;align-items:center;max-width:1400px;width:100%;margin:0 auto;box-sizing:border-box}
+#vgrid .vtile{flex:1 1 300px;max-width:560px}
+#vgrid[data-n="1"] .vtile{flex-basis:100%;max-width:1060px}
+#vgrid[data-n="2"] .vtile{flex-basis:calc(50% - 14px);max-width:700px}
+#vgrid[data-n="3"] .vtile,#vgrid[data-n="4"] .vtile{flex-basis:calc(50% - 14px);max-width:620px}
+#vgrid[data-n="5"] .vtile,#vgrid[data-n="6"] .vtile{flex-basis:calc(33.333% - 14px);max-width:460px}
+#vgrid .vtile.vvoice{flex:0 1 168px!important;max-width:168px;aspect-ratio:auto!important;min-height:178px;background:transparent!important;border-color:transparent!important;border-radius:16px!important}
+#vgrid[data-n="1"] .vtile.vvoice{flex-basis:168px}
+.vtile.vvoice .vph{inset:auto!important;left:50%;top:44%;transform:translate(-50%,-50%);width:96px;height:96px;border-radius:50%;background:rgba(94,142,255,.15);border:2px solid rgba(94,142,255,.45);font-size:38px!important}
+.vtile.vvoice.speaking .vph{border-color:#4ade80;box-shadow:0 0 0 4px rgba(74,222,128,.4)}
+.vtile.vvoice>span{left:0!important;right:0;bottom:auto!important;top:calc(44% + 58px);text-align:center;font-size:13px!important}
+@media (max-width:640px){#vgrid[data-n="2"] .vtile{flex-basis:100%}#vgrid[data-n="3"] .vtile,#vgrid[data-n="4"] .vtile,#vgrid[data-n="5"] .vtile,#vgrid[data-n="6"] .vtile{flex-basis:calc(50% - 14px)}}
 .vtile{aspect-ratio:16/9!important;border-radius:16px!important;border:1px solid rgba(255,255,255,.12)!important;background:#17171a!important}
 .vtile.speaking{border-color:#4ade80!important;box-shadow:0 0 0 2px rgba(74,222,128,.45)}
 .vmem{transition:all .15s}
@@ -1427,27 +1438,28 @@ function applyAudio(){
   vholdBtn.style.display = vPtt ? 'inline-block' : 'none';
 }
 function memberName(pid){ for(var i=0;i<lastMembers.length;i++) if(lastMembers[i].pid === pid) return lastMembers[i].name; return 'anon'; }
+function fitGrid(){ vgridEl.setAttribute('data-n', vgridEl.querySelectorAll('[data-tile]').length); }
 function ensureTile(pid){
   var t = vgridEl.querySelector('[data-tile="'+pid+'"]');
   if(t) return t;
   var self = pid === myPid;
   var nm = self ? 'you' : memberName(pid);
-  t = document.createElement('div'); t.className = 'vtile'; t.setAttribute('data-tile', pid);
+  t = document.createElement('div'); t.className = 'vtile vvoice'; t.setAttribute('data-tile', pid);
   t.setAttribute('style', 'position:relative;border-radius:14px;overflow:hidden;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.25);aspect-ratio:1/1');
   var vid = document.createElement('video'); vid.autoplay = true; vid.setAttribute('playsinline', ''); vid.setAttribute('style', 'width:100%;height:100%;object-fit:cover;display:none' + (self ? ';transform:scaleX(-1)' : ''));
   var ph = document.createElement('div'); ph.className = 'vph'; ph.setAttribute('style', 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#9db9ff'); ph.textContent = (memberName(pid) || 'a').slice(0, 1).toUpperCase();
   var lb = document.createElement('span'); lb.setAttribute('style', 'position:absolute;left:8px;bottom:6px;font-size:12px;opacity:.9;text-shadow:0 1px 4px #000'); lb.textContent = nm;
   if(!self) vid.addEventListener('click', function(){ if(vid.requestFullscreen) vid.requestFullscreen().catch(function(){}); else if(vid.webkitEnterFullscreen) vid.webkitEnterFullscreen(); });
   t.appendChild(vid); t.appendChild(ph); t.appendChild(lb);
-  vgridEl.appendChild(t);
+  vgridEl.appendChild(t); fitGrid();
   return t;
 }
 function localTile(){
   if(!myPid) return;
   var t = ensureTile(myPid);
   var vid = t.querySelector('video');
-  if(camOn && localStream){ vid.srcObject = localStream; vid.muted = true; vid.style.display = 'block'; t.querySelector('.vph').style.display = 'none'; }
-  else { vid.style.display = 'none'; try { vid.srcObject = null; } catch(e){} t.querySelector('.vph').style.display = 'flex'; }
+  if(camOn && localStream){ t.classList.remove('vvoice'); t.classList.add('vvid'); vid.srcObject = localStream; vid.muted = true; vid.style.display = 'block'; t.querySelector('.vph').style.display = 'none'; }
+  else { t.classList.add('vvoice'); t.classList.remove('vvid'); vid.style.display = 'none'; try { vid.srcObject = null; } catch(e){} t.querySelector('.vph').style.display = 'flex'; }
 }
 function watchLevel(stream, pid){
   try {
@@ -1481,9 +1493,9 @@ function makePc(pid){
     var vid = tile.querySelector('video');
     if(ev.streams && ev.streams[0]){ vid.srcObject = ev.streams[0]; remoteEls[pid] = vid; watchLevel(ev.streams[0], pid); }
     if(ev.track.kind === 'video'){
-      vid.style.display = 'block'; tile.querySelector('.vph').style.display = 'none';
-      ev.track.onmute = function(){ vid.style.display = 'none'; tile.querySelector('.vph').style.display = 'flex'; };
-      ev.track.onunmute = function(){ vid.style.display = 'block'; tile.querySelector('.vph').style.display = 'none'; };
+      vid.style.display = 'block'; tile.querySelector('.vph').style.display = 'none'; tile.classList.remove('vvoice'); tile.classList.add('vvid');
+      ev.track.onmute = function(){ vid.style.display = 'none'; tile.querySelector('.vph').style.display = 'flex'; tile.classList.add('vvoice'); tile.classList.remove('vvid'); };
+      ev.track.onunmute = function(){ vid.style.display = 'block'; tile.querySelector('.vph').style.display = 'none'; tile.classList.remove('vvoice'); tile.classList.add('vvid'); };
     }
     applyAudio();
   };
@@ -1497,6 +1509,7 @@ function closePc(pid){
   if(pcs[pid]){ try{ pcs[pid].close(); }catch(e){} delete pcs[pid]; }
   delete remoteEls[pid];
   var t = vgridEl.querySelector('[data-tile="'+pid+'"]'); if(t) t.remove();
+  fitGrid();
   unwatch(pid);
 }
 async function rtcMsg(from, data){
@@ -1544,6 +1557,7 @@ function voiceList(members){
   sixTileShow();
   
   vstatEl.textContent = others === 0 ? 'in the call — just u rn, get ur people in this room' : 'in the call ✦ ' + (others + 1) + ' here';
+  fitGrid();
 }
 function videoCons(){ return { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { max: 24 }, facingMode: facing }; }
 function joinCall(wantVideo){
@@ -1610,13 +1624,13 @@ var vsixBtn=document.getElementById('vsix'), vtalkBtn=document.getElementById('v
 function sixTileShow(){
   if(!inVoice || !sixVoice) return;
   if(vgridEl.querySelector('[data-tile="sixbot"]')) return;
-  var t=document.createElement('div'); t.className='vtile'; t.setAttribute('data-tile','sixbot');
+  var t=document.createElement('div'); t.className='vtile vvoice'; t.setAttribute('data-tile','sixbot');
   t.setAttribute('style','position:relative;border-radius:14px;overflow:hidden;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.45);aspect-ratio:1/1');
   var ph=document.createElement('div'); ph.setAttribute('style','position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#fafafa'); ph.textContent='✦';
   var lb=document.createElement('span'); lb.setAttribute('style','position:absolute;left:8px;bottom:6px;font-size:12px;opacity:.9;text-shadow:0 1px 4px #000'); lb.textContent='six ✦ ai';
-  t.appendChild(ph); t.appendChild(lb); vgridEl.appendChild(t);
+  t.appendChild(ph); t.appendChild(lb); vgridEl.appendChild(t); fitGrid();
 }
-function sixTileHide(){ var t=vgridEl.querySelector('[data-tile="sixbot"]'); if(t) t.remove(); }
+function sixTileHide(){ var t=vgridEl.querySelector('[data-tile="sixbot"]'); if(t) t.remove(); fitGrid(); }
 function sixGlow(on){ var t=vgridEl.querySelector('[data-tile="sixbot"]'); if(t){ if(on) t.classList.add('speaking'); else t.classList.remove('speaking'); } }
 function speakSix(text){
   if(!sixVoice || !inVoice || !('speechSynthesis' in window)) return;
