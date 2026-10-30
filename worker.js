@@ -282,6 +282,11 @@ const CLOAK_BAR = `<div style="margin-top:26px;display:flex;gap:8px;flex-wrap:wr
 <button onclick="cloakTab('classroom')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">classroom</button>
 <button onclick="cloakTab('docs')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">docs</button>
 <button onclick="cloakTab('drive')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">open in cloaked tab</button></div>`;
+const TABBAR_HTML = `<nav id="tabbar"><a href="/home"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg><span>home</span></a><a href="/gs"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg><span>games</span></a><a href="/chat"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span>6ixchat</span></a><a href="/ai"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>six ai</span></a><button id="tabMore" type="button"><svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg><span>more</span></button></nav>
+<div id="tabSheet"><a href="/yt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg><span>youtube</span></a><a href="/hw"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>hw helper</span></a><a href="/emu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="16.5" cy="11" r=".4" fill="currentColor"/><circle cx="18.5" cy="14" r=".4" fill="currentColor"/></svg><span>emulator</span></a><a href="/tools"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>tools</span></a><a href="/account"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>account</span></a><div class="tsh-sec">disguise</div><div class="tsh-cloak"><button onclick="cloakTab('google')">google</button><button onclick="cloakTab('classroom')">classroom</button><button onclick="cloakTab('docs')">docs</button><button onclick="cloakTab('drive')">drive</button><button onclick="cloakOpen()">open cloaked tab</button></div></div>
+<script>
+(function(){ var p = location.pathname; document.querySelectorAll('#tabbar a, #tabSheet a').forEach(function(a){ if (a.getAttribute('href') === p) a.classList.add('on'); }); var tm = document.getElementById('tabMore'), sh = document.getElementById('tabSheet'); if (tm && sh) { tm.addEventListener('click', function(){ sh.classList.toggle('open'); }); document.addEventListener('click', function(e){ if (sh.classList.contains('open') && !sh.contains(e.target) && !tm.contains(e.target)) sh.classList.remove('open'); }); } })();
+</script>`;
 const SIDEBAR_HTML = `<button id="sbBtn" aria-label="menu"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><div id="sbScrim"></div>
 <aside id="sb">
 <a class="sb-logo" href="/home">6ix<span>networks</span></a>
@@ -306,11 +311,10 @@ const SIDEBAR_HTML = `<button id="sbBtn" aria-label="menu"><svg width="19" heigh
 </div>
 <div class="sb-foot">everything stays inside the network — nothing loads from its home site</div>
 </aside>
-<nav id="tabbar"><a href="/home"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg><span>home</span></a><a href="/gs"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg><span>games</span></a><a href="/chat"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span>6ixchat</span></a><a href="/ai"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>six ai</span></a><button id="tabMore" type="button"><svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg><span>more</span></button></nav>
+${TABBAR_HTML}
 <script>
-(function(){ document.body.classList.add('has-sb'); var p = location.pathname; document.querySelectorAll('#sb nav a, #tabbar a').forEach(function(a){ if (a.getAttribute('href') === p) a.classList.add('on'); });
+(function(){ document.body.classList.add('has-sb'); var p = location.pathname; document.querySelectorAll('#sb nav a').forEach(function(a){ if (a.getAttribute('href') === p) a.classList.add('on'); });
 var b = document.getElementById('sbBtn'); if (b) b.addEventListener('click', function(){ document.body.classList.toggle('sb-open'); });
-var tm = document.getElementById('tabMore'); if (tm && b) tm.addEventListener('click', function(){ b.click(); });
 var s = document.getElementById('sbScrim'); if (s) s.addEventListener('click', function(){ document.body.classList.remove('sb-open'); }); })();
 </script>`;
 // ---------- galaxy theme ----------
@@ -406,13 +410,22 @@ input:focus,textarea:focus,select:focus{border-color:rgba(94,142,255,.65)}
 .card:hover{border-color:rgba(255,255,255,.28);background:#141416}
 a{transition:color .15s ease}
 #tabbar{display:none}
+#tabSheet{display:none}
 @media (max-width:820px){
 #tabbar{display:flex;position:fixed;left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:50;background:rgba(22,22,27,.52);-webkit-backdrop-filter:blur(22px) saturate(1.7);backdrop-filter:blur(22px) saturate(1.7);border:1px solid rgba(255,255,255,.16);border-radius:28px;box-shadow:0 10px 34px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.15),inset 0 -1px 0 rgba(255,255,255,.05);padding:7px 6px;justify-content:space-around;align-items:stretch}
 #tabbar a,#tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:0;color:#c9c9d1;font-size:10px;font-weight:600;letter-spacing:.02em;text-decoration:none;padding:6px 0 4px;border-radius:19px;cursor:pointer;font-family:inherit}
 #tabbar a.on{color:#fff;background:rgba(255,255,255,.13);box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
 #tabbar a.on svg{color:#9db9ff}
+#tabSheet.open{display:block;position:fixed;left:10px;right:10px;bottom:calc(90px + env(safe-area-inset-bottom));z-index:51;background:rgba(22,22,27,.6);-webkit-backdrop-filter:blur(22px) saturate(1.7);backdrop-filter:blur(22px) saturate(1.7);border:1px solid rgba(255,255,255,.16);border-radius:22px;box-shadow:0 10px 34px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.15);padding:10px}
+#tabSheet a{display:flex;align-items:center;gap:12px;padding:11px 10px;border-radius:14px;color:#f4f4f5;text-decoration:none;font-weight:600;font-size:14.5px}
+#tabSheet a.on{background:rgba(255,255,255,.1)}
+#tabSheet a svg{color:#9db9ff;flex:none}
+.tsh-sec{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;opacity:.5;margin:10px 4px 6px}
+.tsh-cloak{display:flex;flex-wrap:wrap;gap:6px}
+.tsh-cloak button{flex:1;padding:8px 6px;font-size:12.5px;white-space:nowrap}
 #sbBtn{display:none}
 body.has-sb{padding-bottom:118px}
+.app6{padding-bottom:calc(80px + env(safe-area-inset-bottom))}
 }
 
 
@@ -932,7 +945,8 @@ ${CLOAK_BAR}
 
 </div>
 
-</main></div><script src="/cloak.js"></script>
+</main></div>${TABBAR_HTML}
+<script src="/cloak.js"></script>
 <script src="/stars.js"></script>
 <script>
 var nameEl=document.getElementById('name'), msgsEl=document.getElementById('msgs'), presEl=document.getElementById('pres'), textEl=document.getElementById('text');
@@ -1535,13 +1549,14 @@ function fitGrid(){
   var vids = [];
   Array.prototype.forEach.call(tiles, function(t){ if (!t.classList.contains('vvoice')) vids.push(t); });
   var n = vids.length; if (!n) return;
+  var AR = (vgridEl.clientHeight > vgridEl.clientWidth && vgridEl.clientWidth < 560) ? 3 / 4 : 16 / 9;
   var best = null;
   for (var cols = 1; cols <= n; cols++) {
     var rows = Math.ceil(n / cols);
     var tw = (W - (cols - 1) * 14) / cols;
     var th = (H - (rows - 1) * 14) / rows;
-    var w = Math.min(tw, th * 16 / 9);
-    var h = w * 9 / 16;
+    var w = Math.min(tw, th * AR);
+    var h = w / AR;
     if (h <= th + 1 && (!best || w * h > best.w * best.h)) best = { w: w, h: h };
   }
   if (!best) return;
@@ -1669,7 +1684,7 @@ function voiceList(members){
   vstatEl.textContent = others === 0 ? 'in the call — just u rn, get ur people in this room' : 'in the call ✦ ' + (others + 1) + ' here';
   fitGrid();
 }
-function videoCons(){ return { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { max: 30 }, facingMode: facing }; }
+function videoCons(){ var port = window.matchMedia && window.matchMedia('(orientation: portrait)').matches; return port ? { width: { ideal: 720 }, height: { ideal: 1280 }, frameRate: { max: 30 }, facingMode: facing } : { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { max: 30 }, facingMode: facing }; }
 function joinCall(wantVideo){
   if(!(ws && ws.readyState === 1)){ vstatEl.textContent = 'calls need the live connection — ur on the polling fallback rn (this network blocks websockets)'; return; }
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ vstatEl.textContent = 'this browser wont hand over a mic/camera in here'; return; }
@@ -1721,7 +1736,7 @@ function flipCam(){
     camOn = false; paintCtl(); vflipBtn.style.display = 'none'; localTile();
     vstatEl.textContent = 'flip didnt work on this browser — cam stopped, tap cam: off to turn it back on';
   }
-  var exact = { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { max: 30 }, facingMode: { exact: facing } };
+  var exact = videoCons(); exact.facingMode = { exact: facing };
   navigator.mediaDevices.getUserMedia({ video: exact }).then(got).catch(function(){ navigator.mediaDevices.getUserMedia({ video: videoCons() }).then(got).catch(flop); });
 }
 function teardownVoice(){
