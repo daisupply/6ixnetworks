@@ -23,7 +23,7 @@ var SERVERS=["https://s.usareme.site/","https://sixsearch.deionmont1.workers.dev
 var f=document.getElementById('f');
 var presets={ google:{t:'Google',i:'https://www.google.com/favicon.ico'}, classroom:{t:'Google Classroom',i:'https://ssl.gstatic.com/classroom/favicon.png'}, docs:{t:'Google Docs',i:'https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico'}, drive:{t:'My Drive - Google Drive',i:'https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png'} };
 function disguise(k){ try{ localStorage.setItem('six_disguise', k); }catch(e){} var p=presets[k]||presets.google; document.title=p.t; var l=document.querySelector("link[rel~='icon']")||document.createElement('link'); l.rel='icon'; l.href=p.i; document.head.appendChild(l); }
-function panic(){ disguise('classroom'); f.src='https://classroom.google.com/'; }
+function panic(){ location.href='https://classroom.google.com/'; } // real classroom, top-level: google sends X-Frame-Options SAMEORIGIN so it can never load inside the frame
 document.addEventListener('keydown', function(e){ if(e.keyCode===192) panic(); });
 document.getElementById('dot').addEventListener('click', function(){ var m=document.getElementById('menu'); m.style.display = m.style.display==='flex' ? 'none' : 'flex'; });
 function blank(){
