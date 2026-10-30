@@ -3454,7 +3454,7 @@ const server = http.createServer(async (req, res) => {
   res.end = (body, ...rest) => {
     try {
       if (UV_OK() && typeof body === 'string' && body.includes('</body>') && (body.includes('action="/go"') || body.includes('href="/play?u=') || body.includes('id="askbar"'))) {
-        body = body.replace('</body>', UV_BOOT + '</body>');
+        const ix = body.lastIndexOf('</body>'); body = body.slice(0, ix) + UV_BOOT + body.slice(ix);
       }
     } catch (e) {}
     return _end0(body, ...rest);

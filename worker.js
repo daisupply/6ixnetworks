@@ -3280,7 +3280,7 @@ const ENGINE_ORIGIN = 'https://sixixnetworks.onrender.com';
 function cfXorEncode(str) { let out = ''; for (let i = 0; i < str.length; i++) out += i % 2 ? String.fromCharCode(str.charCodeAt(i) ^ 2) : str[i]; return encodeURIComponent(out); }
 function cfXorDecode(str) { let s2 = str || ''; try { s2 = decodeURIComponent(s2); } catch (e) {} let out = ''; for (let i = 0; i < s2.length; i++) out += i % 2 ? String.fromCharCode(s2.charCodeAt(i) ^ 2) : s2[i]; return out; }
 const CF_UV_BOOT = '<script>window.GX_WISP = "wss://sixixnetworks.onrender.com/wisp/";</' + 'script><script src="/uv-assets/baremux/index.js?e=61"></' + 'script><script>(function(){ if (window.__gxUv) return; window.__gxUv = 1; (async function(){ try { await navigator.serviceWorker.register(\'/uv-assets/uv.sw.js\', { scope: \'/uv/service/\' }); } catch (e) {} try { var conn = new BareMux.BareMuxConnection(\'/uv-assets/baremux/worker.js?e=61\'); if ((await conn.getTransport()) !== \'/uv-assets/epoxy/index.mjs?e=61\') await conn.setTransport(\'/uv-assets/epoxy/index.mjs?e=61\', [{ wisp: (window.GX_WISP || (location.protocol === \'https:\' ? \'wss:\' : \'ws:\') + \'//\' + location.host + \'/wisp/\') }]); } catch (e) {} })(); })();</' + 'script>';
-function cfBoot(html) { try { if (typeof html === 'string' && html.includes('</body>')) return html.replace('</body>', CF_UV_BOOT + '</body>'); } catch (e) {} return html; }
+function cfBoot(html) { try { if (typeof html === 'string') { const ix = html.lastIndexOf('</body>'); if (ix >= 0) return html.slice(0, ix) + CF_UV_BOOT + html.slice(ix); } } catch (e) {} return html; }
 function cfWarmPage(target) {
   let classic = '/home';
   try { if (/^https:\/\//i.test(target || '')) classic = proxied(target); } catch (e) {}
