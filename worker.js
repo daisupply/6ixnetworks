@@ -2220,50 +2220,103 @@ function hwPage() {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
-#doc{width:100%;height:30vh;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:14px;padding:13px;font-family:inherit;font-size:14px;line-height:1.5;resize:vertical}
-#out{display:none;text-align:left;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:16px;margin-top:14px;white-space:pre-wrap;word-break:break-word;line-height:1.6}
-.act{background:rgba(94,142,255,.3);color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:10px;padding:11px 16px;font-weight:800;cursor:pointer;font-family:inherit}
-.act.alt{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.5)}
-</style></head><body>${STAR_CANVAS}<div class="wrap">
+.hwwrap{max-width:1180px}
+.hwsub{opacity:.7;margin:6px 0 2px;max-width:660px;line-height:1.55}
+.hwgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;align-items:start}
+@media (max-width:900px){.hwgrid{grid-template-columns:1fr}}
+.hwcard{background:#101012;border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:16px;text-align:left}
+.hwcard-h{display:flex;align-items:center;gap:8px;font-weight:800;font-size:15px;margin-bottom:12px}
+.hwcard-h svg{color:#9db9ff;flex:none}
+#count{margin-left:auto;opacity:.55;font-size:12px;font-weight:600}
+#drop{border:1.5px dashed rgba(255,255,255,.35);border-radius:14px;padding:14px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;color:#d4d4d8}
+#drop.dragging{border-color:#5e8eff;background:rgba(94,142,255,.08)}
+#drop svg{color:#9db9ff}
+#droplabel{font-size:13.5px;line-height:1.5;opacity:.85}
+#prev{display:none;max-width:100%;max-height:200px;border-radius:10px;margin-top:6px}
+#rmimg{display:none;margin-top:8px;background:rgba(255,255,255,.1);color:#f4f4f5;border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:7px 13px;font-weight:700;cursor:pointer;font-family:inherit}
+#doc{width:100%;height:190px;background:rgba(255,255,255,.04);color:#f4f4f5;border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:13px;font-family:inherit;font-size:16px;line-height:1.55;resize:vertical;margin-top:12px;box-sizing:border-box}
+.hwlabel{display:block;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;opacity:.55;margin:14px 0 6px}
+#editq{width:100%;background:rgba(255,255,255,.04);color:#f4f4f5;border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:11px 12px;font-family:inherit;font-size:16px;box-sizing:border-box}
+.hwmodes{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
+.mode{display:flex;flex-direction:column;align-items:flex-start;gap:3px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:12px 13px;cursor:pointer;font-family:inherit;color:#f4f4f5;text-align:left}
+.mode svg{color:#9db9ff;margin-bottom:2px}
+.mode b{font-size:14.5px}
+.mode span{font-size:12px;opacity:.6;line-height:1.4}
+.mode:active{transform:scale(.98)}
+.mode:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.35)}
+.mode.primary:hover{background:#e4e4e7;border-color:#e4e4e7}
+#copy:hover{background:rgba(255,255,255,.14)}
+#rmimg:hover{background:rgba(255,255,255,.18)}
+.mode.primary{background:#f4f4f5;color:#0a0a0b;border-color:#f4f4f5}
+.mode.primary svg{color:#0a0a0b}
+.statpill{margin-left:auto;background:rgba(94,142,255,.16);border:1px solid rgba(94,142,255,.4);color:#c7d6ff;border-radius:999px;padding:4px 11px;font-size:12px;font-weight:700;white-space:nowrap}
+#copy{display:none;margin-left:8px;background:rgba(255,255,255,.08);color:#f4f4f5;border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:6px 12px;font-weight:700;cursor:pointer;font-family:inherit;align-items:center;gap:6px;font-size:13px}
+#out{display:none;line-height:1.65;word-break:break-word;font-size:15px}
+#out .mdlist{margin:6px 0 6px 18px;padding:0}
+#empty{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;opacity:.55;padding:36px 12px;line-height:1.55}
+#empty svg{color:#9db9ff}
+.hwfoot{opacity:.6;font-size:13px;margin-top:14px;line-height:1.55}
+</style></head><body>${STAR_CANVAS}<div class="wrap hwwrap">
 <a class="back" href="/home">← home</a> · <a class="back" href="/ai">ask six ✦</a>
 <h1>hw <span>helper</span></h1>
-<p style="opacity:.7;margin:6px 0 12px">paste the hw or drop a screenshot of it — six will summarize it, dumb it down, or just do it for u</p>
-<textarea id="doc" placeholder="paste the whole doc here…" maxlength="12000"></textarea>
-<div id="drop" style="margin-top:10px;border:1.5px dashed rgba(255,255,255,.45);border-radius:14px;padding:16px;text-align:center;cursor:pointer">
-<span id="droplabel">📸 drop a screenshot of the hw here, click to pick one, or just paste it (ctrl+v) — six can read images too</span>
-<img id="prev" style="display:none;max-width:100%;max-height:220px;border-radius:10px;margin:10px auto 0">
-<button class="act" id="rmimg" type="button" style="display:none;margin-top:10px;padding:7px 12px">remove screenshot</button>
+<p class="hwsub">paste the homework or drop a screenshot of it — six will summarize it, dumb it down, edit it, or just do it for u</p>
+<div class="hwgrid">
+<section class="hwcard">
+<div class="hwcard-h"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>your homework<span id="count"></span></div>
+<div id="drop">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.5-4.5L6 21"/></svg>
+<span id="droplabel">drop a screenshot of the hw here, tap to pick one, or just paste it — six can read images too</span>
+<img id="prev" alt="">
+<button id="rmimg" type="button">remove screenshot</button>
 <input id="file" type="file" accept="image/*" style="display:none">
 </div>
-<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px">
-<button class="act" id="bsum" type="button">summarize it</button>
-<button class="act alt" id="bwrite" type="button">do it for me ✦</button>
-<button class="act" id="bsimple" type="button">explain it simple</button>
-<button class="act" id="bedit" type="button">edit it</button>
-<span id="count" style="opacity:.6;font-size:12px"></span>
-<span id="stat" style="opacity:.8;font-size:13px"></span>
+<textarea id="doc" placeholder="paste the whole doc here…" maxlength="12000"></textarea>
+<label class="hwlabel" for="editq">edit note — only used by “edit it”</label>
+<input id="editq" type="text" maxlength="300" placeholder="make it longer, fix the grammar, rewrite it like a student wrote it…">
+<div class="hwmodes">
+<button class="mode" id="bsum" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.1" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1.1" fill="currentColor" stroke="none"/></svg><b>summarize it</b><span>the short version, main points only</span></button>
+<button class="mode primary" id="bwrite" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><b>do it for me</b><span>a full draft, ready to make yours</span></button>
+<button class="mode" id="bsimple" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><b>explain it simple</b><span>broken down like ur five</span></button>
+<button class="mode" id="bedit" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/><path d="M1.5 14h5M9.5 8h5M17.5 16h5"/></svg><b>edit it</b><span>follows ur edit note above</span></button>
 </div>
-<input id="editq" type="text" maxlength="300" placeholder="editing? tell six what to change — make it longer, fix the grammar, rewrite it like a student wrote it…" style="width:100%;margin-top:10px;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:11px;font-family:inherit">
+</section>
+<section class="hwcard">
+<div class="hwcard-h"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>six's answer<span id="stat" class="statpill">ready</span><button id="copy" type="button">copy the text</button></div>
+<div id="empty"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg><div>six's answer lands here<br>paste ur hw on the left n pick a mode</div></div>
 <div id="out"></div>
-<button class="act" id="copy" type="button" style="display:none;margin-top:10px">copy the text</button>
-<p style="opacity:.6;font-size:13px;margin-top:14px">nothing leaves the network — six reads it right here, screenshots included. drafts are a starting point, make it sound like u before u turn it in</p>
+</section>
+</div>
+<p class="hwfoot">nothing leaves the network — six reads it right here, screenshots included. drafts are a starting point, make it sound like u before u turn it in</p>
 ${SIDEBAR_HTML}
 </div>
 <script src="/cloak.js"></script>
 <script src="/stars.js"></script>
 <script>
-var docEl=document.getElementById('doc'), outEl=document.getElementById('out'), statEl=document.getElementById('stat'), countEl=document.getElementById('count'), copyBtn=document.getElementById('copy');
+var docEl=document.getElementById('doc'), outEl=document.getElementById('out'), statEl=document.getElementById('stat'), countEl=document.getElementById('count'), copyBtn=document.getElementById('copy'), emptyEl=document.getElementById('empty');
+function fmtMd(text){
+  var t = String(text == null ? '' : text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  function inl(x){ return x.replace(/\\*\\*([^*]+)\\*\\*/g, '<strong>$1</strong>').replace(/\\x60([^\\x60]+)\\x60/g, '<code>$1</code>').replace(/(^|[^\\*])\\*([^*]+)\\*/g, '$1<em>$2</em>'); }
+  var lines = t.split('\\n'), out = '', inList = false;
+  lines.forEach(function(ln){
+    var m = ln.match(/^\\s*(?:•|-|\\*)\\s+(.*)$/);
+    if (m) { if (!inList) { out += '<ul class="mdlist">'; inList = true; } out += '<li>' + inl(m[1]) + '</li>'; }
+    else { if (inList) { out += '</ul>'; inList = false; } if (ln.trim()) out += '<div>' + inl(ln) + '</div>'; }
+  });
+  if (inList) out += '</ul>';
+  return out || '<div></div>';
+}
+
 function upd(){ countEl.textContent=docEl.value.length+' / 12000 chars'; }
 docEl.addEventListener('input', upd); upd();
 function run(mode){
   var t=docEl.value.trim();
   if(!t && !imgB64){ statEl.textContent='paste something or drop a screenshot first twin'; return; }
-  statEl.textContent= imgB64 ? 'six is looking…' : 'six is on it…'; outEl.style.display='none'; copyBtn.style.display='none';
+  statEl.textContent= imgB64 ? 'six is looking…' : 'six is on it…'; outEl.style.display='none'; emptyEl.style.display='flex'; copyBtn.style.display='none';
   var url= imgB64 ? '/ai/look' : '/ai/doc';
   var ins=(document.getElementById('editq').value||'').slice(0,300);
   var body= imgB64 ? { image: imgB64, mode: mode, text: mode==='edit' ? ins : t.slice(0,500) } : { text: t.slice(0,12000), mode: mode, instruction: ins };
   fetch(url, { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify(body) }).then(function(r){ return r.json(); }).then(function(o){
-    if(o && o.out){ outEl.textContent=o.out; outEl.style.display='block'; copyBtn.style.display='inline-block'; statEl.textContent='done ✦'; }
+    if(o && o.out){ outEl.innerHTML=fmtMd(o.out); outEl.dataset.raw=o.out; outEl.style.display='block'; emptyEl.style.display='none'; copyBtn.style.display='inline-flex'; statEl.textContent='done ✦'; }
     else { statEl.textContent='six couldnt run that rn — give it a sec n try again'; }
   }).catch(function(){ statEl.textContent='six couldnt run that rn'; });
 }
@@ -2275,8 +2328,8 @@ var dropEl=document.getElementById('drop'), fileEl=document.getElementById('file
 var imgB64='';
 function setImg(b64){
   imgB64=b64;
-  if(b64){ prevEl.src='data:image/jpeg;base64,'+b64; prevEl.style.display='block'; rmBtn.style.display='inline-block'; dropLabel.textContent='got it ✦ screenshot attached — hit a button, or drop another to swap it'; }
-  else { prevEl.style.display='none'; rmBtn.style.display='none'; dropLabel.textContent='📸 drop a screenshot of the hw here, click to pick one, or just paste it (ctrl+v) — six can read images too'; }
+  if(b64){ prevEl.src='data:image/jpeg;base64,'+b64; prevEl.style.display='block'; rmBtn.style.display='inline-block'; dropLabel.textContent='got it ✦ screenshot attached — hit a mode, or drop another to swap it'; }
+  else { prevEl.style.display='none'; rmBtn.style.display='none'; dropLabel.textContent='drop a screenshot of the hw here, tap to pick one, or just paste it — six can read images too'; }
 }
 function handleFile(f){
   if(!f || !/^image\\//.test(f.type||'')) return;
@@ -2292,18 +2345,21 @@ function handleFile(f){
 }
 dropEl.addEventListener('click', function(){ fileEl.click(); });
 fileEl.addEventListener('change', function(){ handleFile(fileEl.files && fileEl.files[0]); });
-dropEl.addEventListener('dragover', function(ev){ ev.preventDefault(); });
-dropEl.addEventListener('drop', function(ev){ ev.preventDefault(); var f=ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0]; handleFile(f); });
+dropEl.addEventListener('dragover', function(ev){ ev.preventDefault(); dropEl.classList.add('dragging'); });
+dropEl.addEventListener('dragleave', function(){ dropEl.classList.remove('dragging'); });
+dropEl.addEventListener('drop', function(ev){ ev.preventDefault(); dropEl.classList.remove('dragging'); var f=ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0]; handleFile(f); });
 document.addEventListener('paste', function(ev){ var items=(ev.clipboardData||{}).items||[]; for(var i=0;i<items.length;i++){ if(/^image\\//.test(items[i].type)){ handleFile(items[i].getAsFile()); break; } } });
 rmBtn.addEventListener('click', function(ev){ ev.stopPropagation(); setImg(''); });
 copyBtn.addEventListener('click', function(){
   var done=function(){ statEl.textContent='copied ✦'; };
-  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(outEl.textContent).then(done).catch(done); } else { done(); }
+  var txt=outEl.dataset.raw || outEl.textContent;
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done).catch(done); } else { done(); }
 });
 </script>
 </body>
 </html>`;
 }
+
 function accountPage() {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
