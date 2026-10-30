@@ -661,16 +661,30 @@ function appHue(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 +
 function appsPage() {
   const cats = [...new Set(APPS.map(a => a.c))].sort();
   const cards = APPS.map((a, ai) => {
-    const icon = '<svg viewBox="0 0 120 90" aria-hidden="true"><rect width="120" height="90" fill="hsl(' + appHue(a.t) + ',42%,30%)"/><text x="60" y="60" font-family="Inter,Arial,sans-serif" font-size="36" font-weight="800" fill="#ffffff" text-anchor="middle">' + escHtml(a.t.slice(0, 1).toUpperCase()) + '</text></svg>';
-    const logo = a.lg ? '<img class="applogo" loading="lazy" alt="" src="' + proxied('https://cdn.simpleicons.org/' + a.lg + '/white') + '" onerror="this.remove()">' : a.fi ? '<img class="appfav" loading="lazy" alt="" src="' + proxied('https://www.google.com/s2/favicons?domain=' + a.fi + '&sz=128') + '" onerror="this.remove()">' : '';
-    return `<a class="card" href="/play?u=${encodeURIComponent(a.u)}&t=${encodeURIComponent(a.t)}" data-s="${escHtml((a.t + ' ' + a.c).toLowerCase())}" data-c="${escHtml(a.c)}" data-u="${escHtml(a.u)}" data-i="${ai}">
-      <div class="noimg gicon">${icon}${logo}</div>
-      <span class="fav" data-f="${escHtml(a.u)}">☆</span><div class="gt">${escHtml(a.t)}</div></a>`;
+    const dom = (() => { try { return new URL(a.u).hostname.replace(/^www\./, ''); } catch (err) { return a.u; } })();
+    const iconDom = a.t === 'WhatsApp' ? 'whatsapp.com' : a.t === 'VS Code' ? 'code.visualstudio.com' : dom;
+    const fav = proxied('https://www.google.com/s2/favicons?domain=' + iconDom + '&sz=128');
+    const brand = a.lg ? proxied('https://cdn.simpleicons.org/' + a.lg) : '';
+    const letter = '<span class="appLetter" style="background:hsl(' + appHue(a.t) + ',42%,32%)">' + escHtml(a.t.slice(0, 1).toUpperCase()) + '</span>';
+    return `<a class="card appRow" href="/appplay?u=${encodeURIComponent(a.u)}&t=${encodeURIComponent(a.t)}" data-s="${escHtml((a.t + ' ' + a.c).toLowerCase())}" data-c="${escHtml(a.c)}" data-u="${escHtml(a.u)}" data-i="${ai}">
+      <span class="appIcon">${letter}<img class="appLogo" loading="lazy" alt="" src="${fav}" data-brand="${brand}"></span>
+      <span class="appMeta"><b>${escHtml(a.t)}</b><i>${escHtml(a.c)} · ${escHtml(dom)}</i></span>
+      <span class="fav" data-f="${escHtml(a.u)}">☆</span></a>`;
   }).join('');
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{position:absolute;top:6px;right:8px;z-index:2;font-size:19px;line-height:1;color:rgba(255,255,255,.85);text-shadow:0 1px 6px rgba(0,0,0,.85);cursor:pointer;padding:3px 5px}.fav.on{color:#fbbf24}.chip{background:rgba(94,142,255,.14);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:700;font-family:inherit}.chip.on{background:rgba(94,142,255,.45)}.noimg{position:relative}.card img.applogo{position:absolute;inset:0;margin:auto;width:54%;height:54%;object-fit:contain;background:transparent}.card img.appfav{position:absolute;inset:0;margin:auto;width:46%;height:62%;object-fit:contain;background:transparent}</style></head><body>${STAR_CANVAS}<div class="wrap">
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{position:absolute;top:6px;right:8px;z-index:2;font-size:19px;line-height:1;color:rgba(255,255,255,.85);text-shadow:0 1px 6px rgba(0,0,0,.85);cursor:pointer;padding:3px 5px}.fav.on{color:#fbbf24}.chip{background:rgba(94,142,255,.14);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:700;font-family:inherit}.chip.on{background:rgba(94,142,255,.45)}#grid{display:flex;flex-direction:column;gap:10px;max-width:880px;margin:16px auto}
+.card.appRow{display:flex;align-items:center;gap:14px;background:#101012;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:12px 14px;text-decoration:none;aspect-ratio:auto;height:auto;min-height:0}
+.card.appRow:hover{border-color:rgba(255,255,255,.32)}
+.appIcon{position:relative;width:52px;height:52px;flex:none;border-radius:14px;overflow:hidden;background:#f4f4f5;display:flex;align-items:center;justify-content:center}
+.appLetter{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff}
+.card img.appLogo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:7px;box-sizing:border-box;background:#f4f4f5}
+.appMeta{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;text-align:left}
+.appMeta b{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appMeta i{font-style:normal;opacity:.6;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card.appRow .fav{position:static;flex:none;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:19px;padding:0}
+</style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/home">← 6ixNetworks</a>
 <h1>6ix<span>Networks</span> apps</h1>
 
@@ -708,6 +722,11 @@ grid.addEventListener('click', function(e){
   if(card && card.dataset.u){ var r=recents().filter(function(x){ return x!==card.dataset.u; }); r.unshift(card.dataset.u); try{ localStorage.setItem('gx_arecent', JSON.stringify(r.slice(0,12))); }catch(err){} }
 });
 paintFavs();
+document.querySelectorAll('.appLogo').forEach(function(img){
+  function bad(){ var b=img.getAttribute('data-brand'); if(b && !img.dataset.fb){ img.dataset.fb='1'; img.src=b; } else { img.remove(); } }
+  img.addEventListener('error', bad);
+  if(img.complete && img.naturalWidth===0) bad();
+});
 </script>
 </body>
 </html>`;
@@ -870,6 +889,74 @@ gf.addEventListener('load', function(){ setTimeout(check, 3000); });
 </body>
 </html>`;
 }
+
+function appPlayPageUv(u, t) {
+  if (!/^https:\/\//i.test(u || '')) {
+    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad app link — <a style="color:#9db9ff" href="/apps">back to apps</a></body>';
+  }
+  const prox = '/uv/service/' + uvEncodeUrl(u);
+  const alt = proxied(u);
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CANVAS}
+<div class="top"><a href="/apps">← apps</a><span class="title">${escHtml(t || 'App')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
+<button class="on" onclick="useNet()">network</button>
+<button onclick="retry()">retry</button>
+<button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
+<button onclick="cloakTab('google')">cloak: google</button>
+<button onclick="cloakTab('drive')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()">cloaked tab</button></div>
+<iframe class="gameframe" id="gf" src="about:blank" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
+<div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
+<script src="/cloak.js"></script>
+<script src="/stars.js"></script>
+<script src="/uv-assets/baremux/index.js?e=67"></script>
+<script>
+var BOOTING=true;
+var PROX=${JSON.stringify(prox)}, ALT=${JSON.stringify(alt)}, stage=0;
+var gf=document.getElementById('gf'), stEl=document.getElementById('st');
+var MKEY='gx_mode_'+location.search;
+function saveMode(){ try{ localStorage.setItem(MKEY, stage===0 ? 'prox' : 'alt'); }catch(e){} }
+var startAlt=false; try{ startAlt = localStorage.getItem(MKEY)==='alt'; }catch(e){}
+try{ var gu=new URLSearchParams(location.search).get('u'); if(gu){ var R=[]; try{ R=JSON.parse(localStorage.getItem('gx_arecent'))||[]; }catch(e){} R=[gu].concat(R.filter(function(x){ return x!==gu; })).slice(0,12); localStorage.setItem('gx_arecent', JSON.stringify(R)); } }catch(e){}
+function dead(){
+  try{
+    var d=gf.contentDocument;
+    if(!d || !d.body) return false;
+    var t=d.body.innerText||'';
+    if(/proxy could not reach|that host is blocked|bad proxy path|error processing your request/i.test(t)) return true;
+    if(d.querySelector('canvas,iframe,video,embed,object')) return false;
+    return d.body.innerHTML.length < 5000;
+  }catch(e){ return false; }
+}
+function check(){
+  if(BOOTING) return;
+  if(!dead()){ saveMode(); if(stEl) stEl.textContent=''; return; }
+  if(stage===0){ stage=1; if(stEl) stEl.textContent='switching route…'; gf.src=ALT; arm(); }
+  else if(stage===1){ stage=2; if(stEl) stEl.textContent=''; document.getElementById('dead').style.display='block'; }
+}
+function arm(){ [5000, 11000, 18000, 30000].forEach(function(ms){ setTimeout(check, ms); }); }
+function useNet(){ stage=0; document.getElementById('dead').style.display='none'; if(stEl) stEl.textContent=''; gf.src=PROX; arm(); }
+function retry(){ useNet(); }
+gf.addEventListener('load', function(){ setTimeout(check, 3000); });
+(async function(){
+  try {
+    if ('serviceWorker' in navigator) {
+      await navigator.serviceWorker.register('/sw.js');
+      await navigator.serviceWorker.ready;
+      if (!navigator.serviceWorker.controller) await new Promise(function(res){ var to=setTimeout(res, 7000); navigator.serviceWorker.addEventListener('controllerchange', function(){ clearTimeout(to); res(); }); });
+    }
+    var conn = new BareMux.BareMuxConnection('/uv-assets/baremux/worker.js?e=67');
+    if ((await conn.getTransport()) !== '/uv-assets/epoxy/index.mjs?e=67') await conn.setTransport('/uv-assets/epoxy/index.mjs?e=67', [{ wisp: (window.GX_WISP || (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/') }]);
+  } catch (e) {}
+  BOOTING=false;
+  if (startAlt) { stage=1; gf.src=ALT; } else { gf.src=PROX; }
+  arm();
+})();
+</script>
+</body>
+</html>`;
+}
 function playPage(u, t) {
   if (!/^https:\/\//i.test(u || '')) {
     return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#9db9ff" href="/gs">back to games</a></body>';
@@ -897,6 +984,58 @@ var MKEY='gx_mode_'+location.search;
 function saveMode(){ try{ localStorage.setItem(MKEY, stage===0 ? 'prox' : 'alt'); }catch(e){} }
 try{ if(localStorage.getItem(MKEY)==='alt'){ stage=1; gf.src=ALT; } }catch(e){}
 try{ var gu=new URLSearchParams(location.search).get('u'); if(gu){ var R=[]; try{ R=JSON.parse(localStorage.getItem('gx_recent'))||[]; }catch(e){} R=[gu].concat(R.filter(function(x){ return x!==gu; })).slice(0,12); localStorage.setItem('gx_recent', JSON.stringify(R)); } }catch(e){}
+function dead(){
+  try{
+    var d=gf.contentDocument;
+    if(!d || !d.body) return false;
+    var t=d.body.innerText||'';
+    if(/proxy could not reach|that host is blocked|bad proxy path/i.test(t)) return true;
+    if(d.querySelector('canvas,iframe,video,embed,object')) return false;
+    return d.body.innerHTML.length < 5000;
+  }catch(e){ return false; }
+}
+function check(){
+  if(!dead()){ saveMode(); if(stEl) stEl.textContent=''; return; }
+  if(stage===0){ stage=1; if(stEl) stEl.textContent='switching route…'; gf.src=ALT; arm(); }
+  else if(stage===1){ stage=2; if(stEl) stEl.textContent=''; document.getElementById('dead').style.display='block'; }
+}
+function arm(){ [5000, 11000, 18000, 30000].forEach(function(ms){ setTimeout(check, ms); }); }
+function useNet(){ stage=0; document.getElementById('dead').style.display='none'; if(stEl) stEl.textContent=''; gf.src=PROX; arm(); }
+function retry(){ useNet(); }
+gf.addEventListener('load', function(){ setTimeout(check, 3000); });
+arm();
+</script>
+</body>
+</html>`;
+}
+
+function appPlayPage(u, t) {
+  if (!/^https:\/\//i.test(u || '')) {
+    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad app link — <a style="color:#9db9ff" href="/apps">back to apps</a></body>';
+  }
+  const prox = gproxied(u);
+  const alt = proxied(u);
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CANVAS}
+<div class="top"><a href="/apps">← apps</a><span class="title">${escHtml(t || 'App')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
+<button class="on" onclick="useNet()">network</button>
+<button onclick="retry()">retry</button>
+<button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
+<button onclick="cloakTab('google')">cloak: google</button>
+<button onclick="cloakTab('drive')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()">cloaked tab</button></div>
+<iframe class="gameframe" id="gf" src="${prox}" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
+<div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
+<script src="/cloak.js"></script>
+<script src="/stars.js"></script>
+<script>
+var PROX=${JSON.stringify(prox)}, ALT=${JSON.stringify(alt)}, stage=0;
+var gf=document.getElementById('gf'), stEl=document.getElementById('st');
+var MKEY='gx_mode_'+location.search;
+function saveMode(){ try{ localStorage.setItem(MKEY, stage===0 ? 'prox' : 'alt'); }catch(e){} }
+try{ if(localStorage.getItem(MKEY)==='alt'){ stage=1; gf.src=ALT; } }catch(e){}
+try{ var gu=new URLSearchParams(location.search).get('u'); if(gu){ var R=[]; try{ R=JSON.parse(localStorage.getItem('gx_arecent'))||[]; }catch(e){} R=[gu].concat(R.filter(function(x){ return x!==gu; })).slice(0,12); localStorage.setItem('gx_arecent', JSON.stringify(R)); } }catch(e){}
 function dead(){
   try{
     var d=gf.contentDocument;
@@ -2672,7 +2811,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style>
 .tabav{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;flex:none;font-size:17px}
 .tabtx{min-width:0}.tabtx b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14.5px}
 .tabtx span{opacity:.6;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
-.tabx{position:absolute;top:5px;right:5px;background:transparent;border:0;color:#a1a1aa;cursor:pointer;font-size:12px;padding:4px;line-height:1}
+.tabx{position:absolute;top:5px;right:5px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:transparent;border:0;color:#a1a1aa;cursor:pointer;font-size:12px;padding:0;line-height:1}
 .sech{width:100%;max-width:860px;margin:28px auto 2px;font-size:19px;text-align:left}
 #addtab{display:flex;gap:8px;width:100%;max-width:860px;margin:12px auto;flex-wrap:wrap}
 #addtab input{flex:1;min-width:130px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:10px 12px;color:#f4f4f5;font-family:inherit;font-size:15px}
@@ -2682,8 +2821,8 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style>
 .btab.on{background:#1e1e22;border-color:rgba(94,142,255,.65)}
 .bav{width:20px;height:20px;border-radius:6px;background:#3f3f46;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex:none}
 .btt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
-.bx{margin-left:auto;background:transparent;border:0;color:#a1a1aa;cursor:pointer;font-size:11px;padding:2px;line-height:1}
-#newtab{flex:none;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;font-size:18px;cursor:pointer;align-self:center;line-height:1}
+.bx{margin-left:auto;width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;background:transparent;border:0;color:#a1a1aa;cursor:pointer;font-size:11px;padding:0;line-height:1}
+#newtab{flex:none;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;cursor:pointer;align-self:center;display:flex;align-items:center;justify-content:center;padding:0}
 #stage{width:100%;max-width:1180px;margin:8px auto 0}
 #stage iframe{width:100%;height:70dvh;border:1px solid rgba(255,255,255,.16);border-radius:16px;background:#000}
 </style></head>
@@ -2763,7 +2902,7 @@ function renderBtabs(){
     d.addEventListener('click', function(){ switchBtab(ix); });
     strip.appendChild(d);
   });
-  var add=document.createElement('button'); add.id='newtab'; add.type='button'; add.textContent='+'; add.setAttribute('aria-label','new tab');
+  var add=document.createElement('button'); add.id='newtab'; add.type='button'; add.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'; add.setAttribute('aria-label','new tab');
   add.addEventListener('click', function(){ newBtab(); });
   strip.appendChild(add);
   var stage=bEl('stage'); var act=btabs[bactive];
@@ -4192,6 +4331,11 @@ const server = http.createServer(async (req, res) => {
     if (UV_OK() && u.searchParams.get('u')) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageUv(u.searchParams.get('u') || '', u.searchParams.get('t') || 'Game')); }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(playPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'Game'));
+  }
+  if (u.pathname === '/appplay') {
+    if (UV_OK() && u.searchParams.get('u')) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(appPlayPageUv(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App')); }
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
+    return res.end(appPlayPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App'));
   }
   if (u.pathname === '/yt') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
