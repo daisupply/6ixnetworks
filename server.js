@@ -1945,6 +1945,7 @@ function aiPage() {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+html,body{height:100%}body{display:block;padding:0;margin:0}
 .aiapp{display:flex;height:100dvh;overflow:hidden}
 .airail{width:264px;flex:none;background:#101012;border-right:1px solid rgba(255,255,255,.09);display:flex;flex-direction:column;padding:18px 14px;gap:12px}
 .aibrand{font-size:21px;font-weight:800;color:#fafafa}.aibrand span{color:#9db9ff}
@@ -1963,13 +1964,25 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .bub{max-width:85%;margin:8px 0;padding:10px 13px;border-radius:14px;word-break:break-word;white-space:pre-wrap;text-align:left}
 .bub.me{margin-left:auto;background:rgba(94,142,255,.35)}
 .bub.six{margin-right:auto;background:rgba(255,255,255,.07)}
-.bar{display:flex;gap:8px;align-items:center;padding:10px 12px;background:#101012;border-top:1px solid rgba(255,255,255,.09)}
+.bar{display:flex;gap:8px;align-items:center;padding:10px 12px;background:#101012}
 .bar input[type=text]{flex:1;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:11px 16px;font-family:inherit;min-width:0}
 .bar button[type=submit]{background:#5e8eff;color:#fff;border:0;border-radius:50%;width:42px;height:42px;flex:none;font-size:18px;font-weight:800;cursor:pointer;font-family:inherit}
 @media (max-width:900px){ .airail{display:none} .aihead{display:flex} }
-@media (max-width:820px){ .bar{margin-bottom:86px} }
+.dockwrap{position:relative;background:#101012;border-top:1px solid rgba(255,255,255,.09);padding:8px 12px 2px}
+#sugpanel{position:absolute;left:12px;right:12px;bottom:calc(100% + 6px);background:#111113;border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:8px;z-index:40;box-shadow:0 14px 34px rgba(0,0,0,.55);max-height:62vh;overflow-y:auto}
+.sughead{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#a1a1aa;padding:4px 8px}
+.sugrow{display:block;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid rgba(255,255,255,.06);color:#f4f4f5;padding:10px 8px;font-size:14.5px;cursor:pointer;font-family:inherit;border-radius:8px}
+.sugrow:hover{background:rgba(94,142,255,.14)}
+.sugfoot{display:flex;gap:8px;padding-top:8px}
+.sugact{flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#f4f4f5;border-radius:9px;padding:8px;font-family:inherit;cursor:pointer;font-size:13.5px}
+.sugbtn:active,.sugbtn:focus{background:rgba(255,255,255,.06);color:#d4d4d8}
+.sugbtn{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.16);color:#d4d4d8;border-radius:999px;padding:7px 13px;font-size:13.5px;cursor:pointer;font-family:inherit}
+.imgbtn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:50%;width:42px;height:42px;flex:none;font-size:17px;cursor:pointer;color:#fff}
+.imgbtn.on{background:rgba(94,142,255,.5);border-color:rgba(94,142,255,.85)}
+.aimini{background:#f4f4f5;color:#0a0a0b;border:0;border-radius:9px;padding:7px 12px;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit}
+
 </style></head><body>${STAR_CANVAS}
-<div class="aiapp">
+<div class="aiapp app6">
 <aside class="airail">
 <div class="aibrand">six <span>&#10022; ai</span></div>
 <button class="ainew" id="newchat" type="button">+ new chat</button>
@@ -1977,19 +1990,20 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <div class="aifoot">${CLOAK_BAR}<a class="aiback" href="/home">&larr; 6ixnetworks</a></div>
 </aside>
 <main class="aimain">
-<div class="aihead"><span>six &#10022; ai</span><span style="flex:1"></span><button class="chip" id="newchat2" type="button">+ new</button></div>
+<div class="aihead"><span>six &#10022; ai</span><span style="flex:1"></span><button class="aimini" id="newchat2" type="button">+ new</button></div>
 <div id="log"></div>
-<div id="ideabox">
-<div style="display:flex;gap:8px;flex-wrap:wrap">
-<button class="chip q" type="button">what can this site do?</button>
-<button class="chip q" type="button">help me study chemistry</button>
-<button class="chip q" type="button">pick a game for me</button>
+<div class="dockwrap">
+<div id="sugpanel" hidden>
+<div class="sughead">suggestions</div>
+<button class="sugrow q" type="button">what can this site do?</button>
+<button class="sugrow q" type="button">help me study chemistry</button>
+<button class="sugrow q" type="button">pick a game for me</button>
+<div id="ideaRow"></div>
+<div class="sugfoot"><button class="sugact" id="ideashuffle" type="button">&#127922; shuffle</button><button class="sugact" id="ideai" type="button">&#10024; ai ideas</button></div>
 </div>
-<div style="display:flex;gap:8px;margin:10px 0"><button class="chip pchip" id="imgmode" type="button">&#127912; image mode: off</button></div>
-<div style="margin:6px 0 2px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-weight:700">need an idea?</span><button class="chip" id="ideashuffle" type="button">&#127922; shuffle</button><button class="chip" id="ideai" type="button">&#10024; ai ideas</button></div>
-<div id="ideaRow" style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0"></div>
+<button class="sugbtn" id="sugbtn" type="button">&#10022; suggestions <span>&#9662;</span></button>
 </div>
-<form class="bar" id="askbar"><input type="text" id="q" placeholder="ask six anything..." autocomplete="off" maxlength="1000"><button type="submit" aria-label="send">&#8593;</button></form>
+<form class="bar" id="askbar"><button class="imgbtn" id="imgmode" type="button" aria-label="image mode">&#127912;</button><input type="text" id="q" placeholder="ask six anything..." autocomplete="off" maxlength="1000"><button type="submit" aria-label="send">&#8593;</button></form>
 </main>
 </div>
 ${TABBAR_HTML}
@@ -1997,7 +2011,7 @@ ${TABBAR_HTML}
 <script src="/stars.js"></script>
 <script>
 var IDEA_VAULT = ["roast me like u actually mean it", "roast my fit: black hoodie, gray sweats, beat forces", "give me a comeback for 'u fell off'", "write a diss track verse about my opp", "clown somebody who talks big but never pulls up", "what do i text back to 'k.'", "she left me on delivered 3 hours, whats the move", "write my apology text to my girl but make it sound real", "give me a flirty first text that aint corny", "how do i slide in her dms without bein weird", "what business could i start with $100 in waseca", "give me a side hustle that actually works in a small town", "how do i flip $50 into $200 this week", "is tiktok shop reselling worth it, be real", "write me a 7 day money plan for a broke student", "give me a tiktok idea that could actually blow up", "write me a stretchtok overlay thats mean as hell", "invent a volt city episode in 10 lines", "give me a caption for a siege clip where i go crazy", "what sound should i use for a gaming clip rn", "best siege operator for solo queue and why", "give me a warmup routine to stop bein bronze", "whats the most annoying operator in r6 rn", "make a tier list of siege maps worst to best", "how do i aim train without gettin bored", "would u rather lose ur phone or ur girl for a week", "rank these: money, love, clout, peace", "is a hotdog a sandwich, argue ur case", "whats ur most controversial food take", "if u had 24 hours invisible what u doin", "zombies or aliens, which invasion u survivin", "fight one horse sized duck or 100 duck sized horses", "whats the worst superpower to have", "time travel to the past or future and why", "if animals could talk which one is the biggest hater", "write a horror story in 5 lines set in waseca", "make up a conspiracy theory about my school", "write a fake news headline about me that sounds real", "give me a villain origin story for a waseca kid", "write a rap bar about bein broke but dangerous", "explain taxes like im not tryna hear a lecture", "how do i stop bein lazy fr", "give me a morning routine that aint corny", "what do i say in a job interview when they ask my weakness", "write my resume summary but make me sound hireable", "best gas station snack combo under $5", "rank fast food fries worst to best", "whats the perfect 2am meal", "is cereal better dry or with milk, defend it", "make a tier list of little debbie snacks", "act like my evil twin for the next answer", "talk like a waseca local the whole answer", "answer me like ur my conscience at 3am", "be my hype man for 30 seconds", "tell me a secret about the internet nobody talks about", "what should i post on my story today", "give me a bio for tiktok thats cold", "write a fake comment section arguing about my clip", "whats a username idea for a backup account", "give me 3 hooks for the first 2 seconds of a video", "how do i get out of a speeding ticket convo with a cop (hypothetically)", "whats the dumbest law u know", "if i ran waseca for a day whats my first law", "give me a fake excuse generator for bein late", "how do i act normal when im high at the function (joke answer only)", "best drake song for a late night drive", "make me a playlist vibe: sad but dangerous", "what song should be my alarm", "write a 4 bar hook about my life rn", "rank lucki, drake, d4vd for a night drive", "whats my red flag be honest", "give me an ego check in one line", "tell me why im the main character", "what would my villain arc look like", "rate my life choices so far out of 10 and explain", "teach me a card trick i can do with no setup", "give me a pickup line thats so bad its good", "write a roast battle between me and a raccoon", "what does my dream life look like in 5 years, paint it", "end this with the realest sentence u got", "give me a would u rather thats actually hard", "unpopular opinion generator, go", "whats a hill u would die on", "two truths and a lie about the moon, i gotta guess", "make a fake group chat argument about whos broke", "how do i make $20 today no cap", "write an ad for my shop dai supply that sounds expensive", "give me a product description for sunglasses that sells itself", "what should dai supply sell next", "write a monday deal post for my shop ig story", "say something thatll make me lock in", "give me a quote to put on my wall", "what do i do when everybody sleepin on me", "talk me out of texting my ex", "last one: surprise me with somethin i aint expect", "give me a fake fortune cookie message thats oddly specific", "whats the best excuse to leave a function early", "invent a holiday that should exist", "describe my aura in 3 words and explain", "write a diss to monday mornings"];
-function showIdeas(list){ var row = document.getElementById('ideaRow'); row.innerHTML = ''; list.forEach(function(p){ var b = document.createElement('button'); b.type = 'button'; b.className = 'chip idea'; b.textContent = p; b.addEventListener('click', function(){ var q = document.getElementById('q'); q.value = p; document.getElementById('askbar').requestSubmit(); }); row.appendChild(b); }); }
+function showIdeas(list){ var row = document.getElementById('ideaRow'); row.innerHTML = ''; list.forEach(function(p){ var b = document.createElement('button'); b.type = 'button'; b.className = 'sugrow'; b.textContent = p; b.addEventListener('click', function(){ var q = document.getElementById('q'); q.value = p; document.getElementById('askbar').requestSubmit(); }); row.appendChild(b); }); }
 function rollIdeas(){ var pool = IDEA_VAULT.slice(), out = []; while (out.length < 6 && pool.length) { out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]); } showIdeas(out); }
 document.getElementById('ideashuffle').addEventListener('click', rollIdeas);
 document.getElementById('ideai').addEventListener('click', function(){ var btn = this; btn.disabled = true; btn.textContent = 'cookin...'; fetch('/ai/ask', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'user', content: 'list exactly 6 short wild funny questions or challenges i could ask u next. one per line, start each line with a dash. no intro, no outro, just the 6 lines. make them different from the usual stuff.' }] }) }).then(function(r){ return r.json(); }).then(function(o){ var lines = ((o && o.text) || '').split('\\n').map(function(l){ return l.replace(/^[-*0-9. )]+/, '').trim(); }).filter(function(l){ return l.length > 8; }).slice(0, 6); if (lines.length >= 3) showIdeas(lines); else rollIdeas(); }).catch(function(){ rollIdeas(); }).finally(function(){ btn.disabled = false; btn.innerHTML = '&#10024; ai ideas'; }); });
@@ -2007,7 +2021,7 @@ rollIdeas();
 var logEl=document.getElementById('log'), qEl=document.getElementById('q'), hist=[];
 var GREET = 'yo ✦ im six — one ai, six brains fused into it, so im smarter than i got any right to be. ask me anything: homework, games, ideas, ur google doc disasters. or tell me to DO something on this site — open a game, run a search, spin u up a private room — n ill just do it. talk crazy to me tho n im talking crazier back';
 var THREADS = [], CUR = null;
-function saveThread(){ try { if(!CUR) return; CUR.hist = hist.slice(-60); var fu = hist.find(function(m){ return m.role === 'user'; }); CUR.name = fu ? fu.content.slice(0, 34) : 'new chat'; localStorage.setItem('gx_ai_threads_v1', JSON.stringify(THREADS.slice(0, 12))); localStorage.setItem('gx_ai_cur', CUR.id); renderThreads(); var ib = document.getElementById('ideabox'); if(ib) ib.style.display = fu ? 'none' : ''; } catch(e){} }
+function saveThread(){ try { if(!CUR) return; CUR.hist = hist.slice(-60); var fu = hist.find(function(m){ return m.role === 'user'; }); CUR.name = fu ? fu.content.slice(0, 34) : 'new chat'; localStorage.setItem('gx_ai_threads_v1', JSON.stringify(THREADS.slice(0, 12))); localStorage.setItem('gx_ai_cur', CUR.id); renderThreads(); } catch(e){} }
 function renderThreads(){ var tl = document.getElementById('threads'); if(!tl) return; tl.innerHTML = ''; THREADS.forEach(function(th){ var b2 = document.createElement('button'); b2.type = 'button'; b2.className = 'aithread' + (CUR && th.id === CUR.id ? ' on' : ''); b2.textContent = th.name || 'new chat'; b2.addEventListener('click', function(){ openThread(th.id); }); tl.appendChild(b2); }); }
 function openThread(id){ var th = THREADS.find(function(x){ return x.id === id; }); if(!th) return; CUR = th; hist = th.hist.slice(); logEl.innerHTML = ''; hist.forEach(function(m){ bubble(m.role === 'user' ? 'me' : 'six', m.content, m.role === 'user' ? null : 'six'); }); if(!hist.length) bubble('six', GREET); saveThread(); }
 function newThread(){ THREADS.unshift({ id: 't' + Date.now(), name: 'new chat', hist: [] }); openThread(THREADS[0].id); qEl.focus(); }
@@ -2068,11 +2082,14 @@ function runAct(act, wait){
   } catch(e){}
 }
 var imgMode=false;
-document.getElementById('imgmode').addEventListener('click', function(){ imgMode=!imgMode; this.textContent='🎨 image mode: '+(imgMode?'on':'off'); this.classList.toggle('on', imgMode); });
+document.getElementById('imgmode').addEventListener('click', function(){ imgMode=!imgMode; this.classList.toggle('on', imgMode); });
 document.getElementById('askbar').addEventListener('submit', function(ev){ ev.preventDefault(); var t=qEl.value.trim(); if(!t) return; qEl.value=''; ask(t); });
 Array.prototype.forEach.call(document.querySelectorAll('.q'), function(b){ b.addEventListener('click', function(){ ask(b.textContent); }); });
 </script>
 <script>openThread((THREADS.find(function(x){ return x.id === _sid; }) || THREADS[0]).id);</script>
+
+<script>(function(){ var btn = document.getElementById('sugbtn'), panel = document.getElementById('sugpanel'); if(!btn || !panel) return; btn.addEventListener('click', function(ev){ ev.stopPropagation(); panel.hidden = !panel.hidden; }); document.addEventListener('click', function(ev){ if(!panel.hidden && !panel.contains(ev.target)) panel.hidden = true; }); panel.addEventListener('click', function(ev){ if(ev.target.classList && ev.target.classList.contains('sugrow')) panel.hidden = true; }); })();</script>
+<script>(function(){ var app = document.querySelector(".app6"); if (!app || !window.visualViewport) return; function fit(){ app.style.height = window.visualViewport.height + "px"; } window.visualViewport.addEventListener("resize", fit); window.addEventListener("orientationchange", fit); fit(); })();</script>
 </body>
 </html>`;
 }
