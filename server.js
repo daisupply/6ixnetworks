@@ -1965,8 +1965,8 @@ html,body{height:100%}body{display:block;padding:0;margin:0}
 .bub.me{margin-left:auto;background:rgba(94,142,255,.35)}
 .bub.six{margin-right:auto;background:rgba(255,255,255,.07)}
 .bar{display:flex;gap:8px;align-items:center;padding:10px 12px;background:#101012}
-.bar input[type=text]{flex:1;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:11px 16px;font-family:inherit;min-width:0}
-.bar button[type=submit]{background:#5e8eff;color:#fff;border:0;border-radius:50%;width:42px;height:42px;flex:none;font-size:18px;font-weight:800;cursor:pointer;font-family:inherit}
+.bar input[type=text]{flex:1;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:11px 16px;font-family:inherit;min-width:0;font-size:16px;height:44px;box-sizing:border-box}
+.bar button[type=submit]{background:#5e8eff;color:#fff;border:0;border-radius:50%;width:44px;height:44px;flex:none;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;padding:0}
 @media (max-width:900px){ .airail{display:none} .aihead{display:flex} }
 .dockwrap{position:relative;background:#101012;border-top:1px solid rgba(255,255,255,.09);padding:8px 12px 2px}
 #sugpanel{position:absolute;left:12px;right:12px;bottom:calc(100% + 6px);background:#111113;border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:8px;z-index:40;box-shadow:0 14px 34px rgba(0,0,0,.55);max-height:62vh;overflow-y:auto}
@@ -1974,10 +1974,10 @@ html,body{height:100%}body{display:block;padding:0;margin:0}
 .sugrow{display:block;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid rgba(255,255,255,.06);color:#f4f4f5;padding:10px 8px;font-size:14.5px;cursor:pointer;font-family:inherit;border-radius:8px}
 .sugrow:hover{background:rgba(94,142,255,.14)}
 .sugfoot{display:flex;gap:8px;padding-top:8px}
-.sugact{flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#f4f4f5;border-radius:9px;padding:8px;font-family:inherit;cursor:pointer;font-size:13.5px}
+.sugact{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#f4f4f5;border-radius:9px;padding:8px;font-family:inherit;cursor:pointer;font-size:13.5px}
 .sugbtn:active,.sugbtn:focus{background:rgba(255,255,255,.06);color:#d4d4d8}
-.sugbtn{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.16);color:#d4d4d8;border-radius:999px;padding:7px 13px;font-size:13.5px;cursor:pointer;font-family:inherit}
-.imgbtn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:50%;width:42px;height:42px;flex:none;font-size:17px;cursor:pointer;color:#fff}
+.sugbtn{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.16);color:#d4d4d8;border-radius:999px;padding:7px 13px;font-size:13.5px;cursor:pointer;font-family:inherit}
+.imgbtn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:50%;width:44px;height:44px;flex:none;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;padding:0}
 .imgbtn.on{background:rgba(94,142,255,.5);border-color:rgba(94,142,255,.85)}
 .aimini{background:#f4f4f5;color:#0a0a0b;border:0;border-radius:9px;padding:7px 12px;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit}
 
@@ -1999,11 +1999,11 @@ html,body{height:100%}body{display:block;padding:0;margin:0}
 <button class="sugrow q" type="button">help me study chemistry</button>
 <button class="sugrow q" type="button">pick a game for me</button>
 <div id="ideaRow"></div>
-<div class="sugfoot"><button class="sugact" id="ideashuffle" type="button">&#127922; shuffle</button><button class="sugact" id="ideai" type="button">&#10024; ai ideas</button></div>
+<div class="sugfoot"><button class="sugact" id="ideashuffle" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.4" cy="8.4" r="1.5" fill="currentColor" stroke="none"/><circle cx="15.6" cy="8.4" r="1.5" fill="currentColor" stroke="none"/><circle cx="8.4" cy="15.6" r="1.5" fill="currentColor" stroke="none"/><circle cx="15.6" cy="15.6" r="1.5" fill="currentColor" stroke="none"/></svg>shuffle</button><button class="sugact" id="ideai" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z"/></svg>ai ideas</button></div>
 </div>
-<button class="sugbtn" id="sugbtn" type="button">&#10022; suggestions <span>&#9662;</span></button>
+<button class="sugbtn" id="sugbtn" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z"/></svg>suggestions<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
 </div>
-<form class="bar" id="askbar"><button class="imgbtn" id="imgmode" type="button" aria-label="image mode">&#127912;</button><input type="text" id="q" placeholder="ask six anything..." autocomplete="off" maxlength="1000"><button type="submit" aria-label="send">&#8593;</button></form>
+<form class="bar" id="askbar"><button class="imgbtn" id="imgmode" type="button" aria-label="image mode"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.6-4.6L6 21"/></svg></button><input type="text" id="q" placeholder="ask six anything..." autocomplete="off" maxlength="1000"><button type="submit" aria-label="send"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></button></form>
 </main>
 </div>
 ${TABBAR_HTML}
