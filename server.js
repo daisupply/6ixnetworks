@@ -403,6 +403,23 @@ button,a{touch-action:manipulation}
 #sb{padding-bottom:env(safe-area-inset-bottom)}
 #sbBtn{top:calc(14px + env(safe-area-inset-top))}
 @media(max-width:820px){ input[type=text],input[type=number],input[type=search],input[type=password],textarea,select{font-size:16px} }
+::selection{background:rgba(94,142,255,.35)}
+html{scrollbar-color:rgba(255,255,255,.22) transparent}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:8px;border:2px solid #0a0a0b}
+::-webkit-scrollbar-track{background:transparent}
+button,.btn,.chip{cursor:pointer;transition:background .15s ease,border-color .15s ease,color .15s ease,opacity .15s ease}
+button:hover,.btn:hover,.chip:hover{border-color:rgba(255,255,255,.32)}
+button:active,.btn:active,.chip:active{transform:scale(.98)}
+:focus{outline:none}
+:focus-visible{outline:2px solid rgba(94,142,255,.75);outline-offset:2px}
+button:disabled,.btn:disabled,.chip:disabled{opacity:.45;cursor:not-allowed;transform:none}
+input,textarea,select{transition:border-color .15s ease,background .15s ease}
+input:focus,textarea:focus,select:focus{border-color:rgba(94,142,255,.65)}
+.card{transition:border-color .15s ease,background .15s ease}
+.card:hover{border-color:rgba(255,255,255,.28);background:#141416}
+a{transition:color .15s ease}
+
 `;
 const PWA_MANIFEST = JSON.stringify({ name: '6ixNetworks', short_name: '6ix', description: '6ixNetworks — search, games, 6ixChat, six ai', start_url: '/', scope: '/', display: 'standalone', background_color: '#0a0a0b', theme_color: '#0a0a0b', icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }] });
 const SW_JS = `self.addEventListener('install', function(e){ self.skipWaiting(); });
@@ -798,6 +815,24 @@ body{display:block;padding:0}
 .head6 svg{color:#9db9ff;flex:none}
 .head6-sub{margin-left:auto;font-size:12px;font-weight:600;opacity:.45}
 .main6 #msgs{flex:1;min-height:0;border:0;border-radius:0;background:transparent;padding:16px 18px}
+.main6 .msg{display:flex;gap:10px;margin:2px 0;padding:4px 8px;border-radius:10px;word-break:break-word}
+.main6 .msg:hover{background:rgba(255,255,255,.025)}
+.main6 .msg.top{margin-top:15px}
+.main6 .mav{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;margin-top:1px}
+.main6 .msg.grp .mav{visibility:hidden}
+.main6 .mbody{flex:1;min-width:0}
+.main6 .mhead{display:flex;align-items:baseline;gap:8px}
+.main6 .mhead b{color:#fafafa;font-size:14.5px}
+.main6 .msg.bot .mhead b{color:#9db9ff}
+.main6 .mtime{font-size:11px;opacity:.45}
+.main6 .mtext{white-space:pre-wrap;line-height:1.45}
+.main6 .sys{text-align:center;opacity:.5;font-size:12px;margin:10px 0}
+#msgs:empty{display:flex;align-items:center;justify-content:center}
+#msgs:empty::after{content:'this room is quiet — say the first thing';opacity:.45;font-size:14px}
+.main6 .bar{align-items:center}
+.main6 .bar button[type=submit]{background:rgba(94,142,255,.92);border:1px solid transparent;color:#fff;border-radius:50%;width:40px;height:40px;padding:0;display:flex;align-items:center;justify-content:center;flex:none}
+.main6 .bar button[type=submit]:hover{background:#5e8eff}
+
 .main6 #vmembers,.main6 #vcontrols{margin:10px 16px 0}
 .main6 #privbar{margin:12px 16px 0}
 .main6 .bar{margin:0;padding:12px 16px;border-top:1px solid rgba(255,255,255,.09);background:#101012;flex:none}
@@ -887,7 +922,7 @@ ${CLOAK_BAR}
 </div>
 </div>
 <div id="msgs"></div>
-<form class="bar" id="sendbar"><button type="button" id="attach" title="send an image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="vertical-align:-2px"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button><input type="text" id="text" placeholder="message…  (/ai asks six · /img draws · paste an image)" autocomplete="off" maxlength="500"><button type="submit">send</button></form>
+<form class="bar" id="sendbar"><button type="button" id="attach" title="send an image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="vertical-align:-2px"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button><input type="text" id="text" placeholder="message…  (/ai asks six · /img draws · paste an image)" autocomplete="off" maxlength="500"><button type="submit" id="sendbtn" aria-label="send"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button></form>
 <input type="file" id="chatfile" accept="image/*" style="display:none">
 
 </div>
@@ -914,40 +949,60 @@ function goRoom(r){
   leaveVoice();
   room=r;
   Array.prototype.forEach.call(document.querySelectorAll('.room'), function(b){ b.classList.toggle('on', b.getAttribute('data-room')===r); });
-  msgsEl.innerHTML=''; lastTs=0; stopPoll();
+  msgsEl.innerHTML=''; lastTs=0; lastMsgKey=''; lastMsgTs=0; stopPoll();
   if(ws) try{ ws.close(); }catch(e){}
   try{ history.replaceState(null,'','/chat?room='+encodeURIComponent(r)); }catch(e){}
   showPriv(); connect();
 }
 function curName(){ return (nameEl.value||'').trim()||myName; }
+var lastMsgKey = '', lastMsgTs = 0;
+function msgTime(ts){ var d = new Date(ts); var h = d.getHours(); var ap = h >= 12 ? 'PM' : 'AM'; h = h % 12; if (h === 0) h = 12; var mm = d.getMinutes(); return h + ':' + (mm < 10 ? '0' : '') + mm + ' ' + ap; }
+function avColor(name){ var h = 0; for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360; return 'hsl(' + h + ',42%,36%)'; }
 function line(m){
-  var d=document.createElement('div');
-  if(m.sys){ d.className='sys'; d.textContent=m.text; }
-  else {
-    d.className='msg'+(m.bot?' bot':'');
-    var b=document.createElement('b'); b.textContent=(m.bot?'✦ ':'')+m.name; d.appendChild(b);
-    if(m.text){ var s=document.createElement('span'); s.textContent=' '+m.text; d.appendChild(s); }
-    var mediaUrl = (!m.img && m.text && /^https?:\\/\\/\\S+$/.test(m.text.trim())) ? m.text.trim() : null;
-    if(m.img){
-      var im=document.createElement('img'); im.src=m.img; im.alt='image';
-      im.setAttribute('style','display:block;max-width:280px;width:100%;border-radius:12px;margin-top:6px;cursor:pointer');
-      im.addEventListener('click', function(){ lightbox(m.img); });
-      d.appendChild(im);
-    } else if(m.imgGone){
-      var g=document.createElement('div'); g.textContent='🖼 image scrolled away'; g.setAttribute('style','opacity:.55;font-size:13px;margin-top:4px'); d.appendChild(g);
-    } else if(mediaUrl && /\\.(mp4|webm|mov)(\\?\\S*)?$/i.test(mediaUrl)){
-      var v=document.createElement('video'); v.controls=true; v.setAttribute('playsinline',''); v.preload='metadata';
-      v.src=pxUrl(mediaUrl);
-      v.setAttribute('style','display:block;max-width:300px;width:100%;border-radius:12px;margin-top:6px');
-      d.appendChild(v);
-    } else if(mediaUrl && /\\.(gif|png|jpe?g|webp)(\\?\\S*)?$/i.test(mediaUrl)){
-      var im2=document.createElement('img'); im2.src=pxUrl(mediaUrl); im2.alt='image';
-      im2.setAttribute('style','display:block;max-width:280px;width:100%;border-radius:12px;margin-top:6px;cursor:pointer');
-      im2.addEventListener('click', function(){ lightbox(pxUrl(mediaUrl)); });
-      d.appendChild(im2);
-    }
+  if(m.sys){ lastMsgKey = ''; var sd = document.createElement('div'); sd.className = 'sys'; sd.textContent = m.text; msgsEl.appendChild(sd); return; }
+  var nearBottom = msgsEl.scrollHeight - msgsEl.scrollTop - msgsEl.clientHeight < 160;
+  var key = (m.bot ? 'bot:' : 'usr:') + (m.name || '');
+  var grouped = key === lastMsgKey && !!m.ts && !!lastMsgTs && (m.ts - lastMsgTs) < 180000;
+  lastMsgKey = key; if (m.ts) lastMsgTs = m.ts;
+  var d = document.createElement('div');
+  d.className = 'msg' + (m.bot ? ' bot' : '') + (grouped ? ' grp' : ' top');
+  var av = document.createElement('div'); av.className = 'mav';
+  if (m.bot) { av.textContent = '✦'; av.style.background = 'rgba(94,142,255,.85)'; }
+  else { av.textContent = (m.name || 'a').slice(0, 1).toUpperCase(); av.style.background = avColor(m.name || 'anon'); }
+  d.appendChild(av);
+  var body = document.createElement('div'); body.className = 'mbody';
+  if (!grouped) {
+    var head = document.createElement('div'); head.className = 'mhead';
+    var b = document.createElement('b'); b.textContent = m.bot ? 'six ✦ ai' : (m.name || 'anon'); head.appendChild(b);
+    if (m.ts) { var tm = document.createElement('span'); tm.className = 'mtime'; tm.textContent = msgTime(m.ts); head.appendChild(tm); }
+    body.appendChild(head);
   }
-  msgsEl.appendChild(d); msgsEl.scrollTop=msgsEl.scrollHeight;
+  var mediaUrl = (!m.img && m.text && /^https?:\\/\\/\\S+$/.test(m.text.trim())) ? m.text.trim() : null;
+  var isVid = !!mediaUrl && /\\.(mp4|webm|mov)(\\?\\S*)?$/i.test(mediaUrl);
+  var isImg = !!mediaUrl && /\\.(gif|png|jpe?g|webp)(\\?\\S*)?$/i.test(mediaUrl);
+  if (m.text && !(isVid || isImg)) { var tx = document.createElement('div'); tx.className = 'mtext'; tx.textContent = m.text; body.appendChild(tx); }
+  if (m.img) {
+    var im = document.createElement('img'); im.src = m.img; im.alt = 'image';
+    im.setAttribute('style', 'display:block;max-width:280px;width:100%;border-radius:12px;margin-top:6px;cursor:pointer');
+    im.addEventListener('click', function(){ lightbox(m.img); });
+    body.appendChild(im);
+  } else if (m.imgGone) {
+    var g = document.createElement('div'); g.textContent = 'image scrolled away'; g.setAttribute('style', 'opacity:.55;font-size:13px;margin-top:4px');
+    body.appendChild(g);
+  } else if (isVid) {
+    var v = document.createElement('video'); v.controls = true; v.setAttribute('playsinline', ''); v.preload = 'metadata';
+    v.src = pxUrl(mediaUrl);
+    v.setAttribute('style', 'display:block;max-width:300px;width:100%;border-radius:12px;margin-top:6px');
+    body.appendChild(v);
+  } else if (isImg) {
+    var im2 = document.createElement('img'); im2.src = pxUrl(mediaUrl); im2.alt = 'image';
+    im2.setAttribute('style', 'display:block;max-width:280px;width:100%;border-radius:12px;margin-top:6px;cursor:pointer');
+    im2.addEventListener('click', function(){ lightbox(pxUrl(mediaUrl)); });
+    body.appendChild(im2);
+  }
+  d.appendChild(body);
+  msgsEl.appendChild(d);
+  if (nearBottom) msgsEl.scrollTop = msgsEl.scrollHeight;
 }
 function b64url(s){ return btoa(unescape(encodeURIComponent(s))).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,''); }
 function pxUrl(u){
