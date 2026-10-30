@@ -558,6 +558,8 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <h1>6ix<span>Networks</span> — youtube mode</h1>
 
 <form action="/yt/search" method="get"><input name="q" type="text" placeholder="search youtube" autocomplete="off" autofocus><button type="submit">search</button></form>
+<a href="/go?q=https://www.youtube.com" style="display:block;text-align:center;background:#5e8eff;color:#fff;font-weight:800;border-radius:999px;padding:13px 20px;margin:16px auto 4px;max-width:430px;text-decoration:none;font-size:16px">enter youtube →</a>
+<div style="text-align:center;opacity:.65;font-size:13px">the real youtube inside the network — or search above for the fast player</div>
 <div class="links">
 
 <a href="/home">← back to 6ixnetworks</a>
@@ -2991,7 +2993,7 @@ function ytSearchPage(query, hit) {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}<div class="wrap">
-<a class="back" href="/yt">← youtube</a>
+<a class="back" href="/yt">← youtube</a> <a href="/go?q=https://www.youtube.com" style="display:inline-block;float:right;background:#5e8eff;color:#fff;font-weight:700;border-radius:999px;padding:6px 14px;text-decoration:none;font-size:13.5px">enter youtube →</a>
 <h1>6ix<span>Networks</span></h1>
 <form action="/yt/search" method="get"><input name="q" type="text" value="${escHtml(query)}" placeholder="search youtube ✦" autocomplete="off"><button type="submit">go</button></form>
 <div class="grid" style="margin-top:18px">${cards}</div>
@@ -3234,6 +3236,178 @@ PILL.addEventListener('click', function(){
 setTimeout(function(){
   if(mode==='stream' && VID.readyState<2 && !VID.error){ PILL.style.display='block'; setStat('still loading… tap for a fresh route, or pick another video'); }
 }, 14000);
+</script>
+</body>
+</html>`;
+}
+
+function ytWatchPage2(id, hit, phit, uvUrl) {
+  // stream mode is the primary player: a muxed mp4 file relayed through
+  // /yt/stream (piped proxy first) — verified actually playing in a real
+  // browser. youtube's embed is the manual backup: through the proxy it
+  // renders black (and bare embed urls error 153 without a referer), so
+  // it only loads when the user taps for it.
+  const embedSrc = gproxied('https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id) + '?autoplay=1&rel=0&playsinline=1');
+  const progUrl = '/yt/stream?v=' + encodeURIComponent(id) + '&kind=p';
+  let title = '', poster = '', recs = '';
+  if (hit) {
+    const d = hit.data;
+    const abs = (u) => { try { return new URL(u, hit.inst).href; } catch { return u; } };
+    const thumbs = (d.videoThumbnails || []).slice().sort((a, b) => (b.width || 0) - (a.width || 0));
+    title = d.title || '';
+    poster = thumbs.length ? proxied(abs(thumbs[0].url)) : '';
+    recs = (d.recommendedVideos || []).slice(0, 12).map(rv => {
+      const t0 = (rv.videoThumbnails || [])[0];
+      const img = t0 ? proxied(abs(t0.url)) : '';
+      return `<a class="card" href="/yt/watch?v=${encodeURIComponent(rv.videoId)}">${img ? `<img loading="lazy" src="${img}" alt="">` : '<div class="noimg">✦</div>'}<div class="gt">${escHtml(rv.title || '')}</div></a>`;
+    }).join('');
+  } else if (phit) {
+    const d = phit.data;
+    title = d.title || '';
+    poster = d.thumbnailUrl ? proxied(d.thumbnailUrl) : '';
+    recs = (d.relatedStreams || []).slice(0, 12).map(rv => {
+      const rid = (String(rv.url || '').split('v=')[1] || '').split('&')[0];
+      if (!rid) return '';
+      return `<a class="card" href="/yt/watch?v=${encodeURIComponent(rid)}">${rv.thumbnail ? `<img loading="lazy" src="${proxied(rv.thumbnail)}" alt="">` : '<div class="noimg">✦</div>'}<div class="gt">${escHtml(rv.title || '')}</div></a>`;
+    }).join('');
+  }
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
+<div class="wrap">
+<a class="back" href="/yt">← youtube</a>
+<a href="/go?q=https://www.youtube.com" style="display:inline-block;float:right;background:#5e8eff;color:#fff;font-weight:700;border-radius:999px;padding:6px 14px;text-decoration:none;font-size:13.5px">enter youtube →</a>
+<iframe id="ytuv" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="width:100%;aspect-ratio:16/9;border:0;border-radius:18px;background:#000;margin-top:12px"></iframe>
+<video id="vid" controls playsinline preload="auto" ${poster ? `poster="${poster}"` : ''} style="width:100%;border-radius:18px;background:#000;aspect-ratio:16/9;margin-top:12px;display:none"></video>
+<iframe id="ytembed" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="width:100%;aspect-ratio:16/9;border:0;border-radius:18px;background:#000;margin-top:12px;display:none"></iframe>
+<div style="display:flex;gap:8px;margin:12px 2px 4px;flex-wrap:wrap;align-items:center">
+<button id="modeUv" style="background:rgba(94,142,255,.25);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:700">✦ youtube mode</button>
+<button id="modeStream" style="background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:700;opacity:.65">stream mode</button>
+<button id="modeEmbed" style="background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:700;opacity:.65">embed player</button>
+<span id="ytstat" style="opacity:.75;font-size:13px">youtube mode — the real youtube, through the network</span>
+</div>
+<p style="margin:10px 2px 20px;font-weight:700">${escHtml(title || '')}</p>
+<div id="ytretry" style="display:none;margin:0 2px 14px;background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700;width:fit-content">✦ tap for a fresh route</div>
+<div class="grid">${recs}</div>
+${CLOAK_BAR}
+</div>
+<script src="/cloak.js"></script>
+<script>
+var EMBED=document.getElementById('ytembed'), VID=document.getElementById('vid'), STAT=document.getElementById('ytstat'), PILL=document.getElementById('ytretry');
+var PROG=${JSON.stringify(progUrl)}, EMBEDSRC=${JSON.stringify(embedSrc)};
+var mode='uv', retries=0, embedWatch=null, eChecks=0;
+function setStat(t){ if(STAT) STAT.textContent=t; }
+function tryPlay(){
+  var p=VID.play();
+  if(p && p.catch) p.catch(function(){ try{ VID.muted=true; var q=VID.play(); if(q && q.catch) q.catch(function(){}); }catch(e){} });
+}
+
+function toStream(){
+  if(embedWatch){ clearInterval(embedWatch); embedWatch=null; }
+  mode='stream';
+  UVF.style.display='none'; stopWatch();
+  EMBED.style.display='none'; VID.style.display='block';
+  if(!VID.getAttribute('src')){ VID.src=PROG; }
+  tryPlay();
+  setStat('stream mode — the file itself, straight through the network');
+  document.getElementById('modeEmbed').style.opacity='.65';
+  document.getElementById('modeStream').style.opacity='1';
+  document.getElementById('modeUv').style.opacity='.65';
+}
+function toEmbed(){
+  mode='embed'; eChecks=0;
+  UVF.style.display='none'; stopWatch();
+  try{ VID.pause(); }catch(e){}
+  VID.style.display='none'; EMBED.style.display='block';
+  if(!EMBED.getAttribute('src')) EMBED.src=EMBEDSRC;
+  setStat('embed player — the normal youtube player, inside the network');
+  document.getElementById('modeStream').style.opacity='.65';
+  document.getElementById('modeEmbed').style.opacity='1';
+  document.getElementById('modeUv').style.opacity='.65';
+  if(embedWatch) clearInterval(embedWatch);
+  embedWatch=setInterval(function(){
+    eChecks++;
+    if(mode!=='embed'){ clearInterval(embedWatch); embedWatch=null; return; }
+    if(eChecks>8){ clearInterval(embedWatch); embedWatch=null; setStat('embed still black… stream mode is the one that works — tap it'); return; }
+    var doc=null;
+    try{ doc=EMBED.contentWindow && EMBED.contentWindow.document; }catch(e){}
+    if(!doc || !doc.body) return;
+    var v=doc.querySelector('video');
+    if(v && (v.readyState>=2 || v.currentTime>0)){ setStat('playing ✦'); clearInterval(embedWatch); embedWatch=null; return; }
+    var t=(doc.body.innerText || '').toLowerCase();
+    if(t.indexOf('video is unavailable')>=0 || t.indexOf('video unavailable')>=0 || t.indexOf('sign in')>=0 || t.indexOf('configuration error')>=0 || (t.indexOf('error')>=0 && t.indexOf('occurred')>=0)){
+      clearInterval(embedWatch); embedWatch=null;
+      setStat('the embed got refused — tap stream mode, that is the one that works');
+    }
+  }, 2500);
+}
+document.getElementById('modeStream').addEventListener('click', toStream);
+document.getElementById('modeEmbed').addEventListener('click', toEmbed);
+VID.addEventListener('error', function(){
+  if(mode!=='stream') return;
+  PILL.style.display='block';
+  setStat('stream mode could not load this one — tap for a fresh route, or try another video');
+}, true);
+PILL.addEventListener('click', function(){
+  retries++;
+  PILL.style.display='none';
+  if(retries>2){ location.reload(); return; }
+  setStat('getting a fresh route…');
+  VID.src=PROG + '&fresh=1&n=' + retries;
+  tryPlay();
+});
+setTimeout(function(){
+  if(mode==='stream' && VID.readyState<2 && !VID.error){ PILL.style.display='block'; setStat('still loading… tap for a fresh route, or pick another video'); }
+}, 14000);
+</script>
+<script src="/uv-assets/baremux/index.js?e=67"></script>
+<script>
+var UVF=document.getElementById('ytuv'), UVURL=${JSON.stringify(uvUrl)}, uvWatch=null, uvChecks=0, uvBooted=false;
+function stopWatch(){ if(uvWatch){ clearInterval(uvWatch); uvWatch=null; } }
+function startWatch(){
+  stopWatch(); uvChecks=0;
+  uvWatch=setInterval(function(){
+    uvChecks++;
+    if(mode!=='uv'){ stopWatch(); return; }
+    if(uvChecks>14){ stopWatch(); setStat('youtube through the engine is taking long \u2014 stream mode instead'); toStream(); return; }
+    var doc=null;
+    try{ doc=UVF.contentWindow && UVF.contentWindow.document; }catch(e){}
+    if(!doc || !doc.body) return;
+    var v=doc.querySelector('video');
+    if(v && (v.readyState>=2 || v.currentTime>0)){ setStat('playing on youtube \u2726'); stopWatch(); return; }
+    var t=(doc.body.innerText || '').toLowerCase();
+    if(t.indexOf('sign in to confirm')>=0 || t.indexOf('video is unavailable')>=0 || t.indexOf('video unavailable')>=0 || t.indexOf('error processing your request')>=0){
+      stopWatch(); setStat('youtube walled that one through the engine \u2014 stream mode instead'); toStream();
+    }
+  }, 2500);
+}
+function toUv(){
+  mode='uv';
+  try{ VID.pause(); }catch(e){}
+  VID.style.display='none'; EMBED.style.display='none'; UVF.style.display='block';
+  if(embedWatch){ clearInterval(embedWatch); embedWatch=null; }
+  setStat('youtube mode \u2014 the real youtube, through the network');
+  document.getElementById('modeStream').style.opacity='.65';
+  document.getElementById('modeEmbed').style.opacity='.65';
+  document.getElementById('modeUv').style.opacity='1';
+  if(uvBooted && !UVF.getAttribute('src')) UVF.src=UVURL;
+  startWatch();
+}
+document.getElementById('modeUv').addEventListener('click', toUv);
+(async function(){
+  try {
+    if ('serviceWorker' in navigator) {
+      await navigator.serviceWorker.register('/sw.js');
+      await navigator.serviceWorker.ready;
+      if (!navigator.serviceWorker.controller) await new Promise(function(res){ var to=setTimeout(res, 7000); navigator.serviceWorker.addEventListener('controllerchange', function(){ clearTimeout(to); res(); }); });
+    }
+    var conn = new BareMux.BareMuxConnection('/uv-assets/baremux/worker.js?e=67');
+    if ((await conn.getTransport()) !== '/uv-assets/epoxy/index.mjs?e=67') await conn.setTransport('/uv-assets/epoxy/index.mjs?e=67', [{ wisp: (window.GX_WISP || (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/') }]);
+  } catch (e) {}
+  uvBooted=true;
+  if (mode==='uv' && !UVF.getAttribute('src')) { UVF.src=UVURL; startWatch(); }
+})();
 </script>
 </body>
 </html>`;
@@ -3929,7 +4103,8 @@ const server = http.createServer(async (req, res) => {
     const hit = await fetchVideoInfo(vidId);
     const phit = hit ? null : await fetchPipedStreams(vidId);
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
-    return res.end(ytWatchPage(vidId, hit, phit));
+    const uvUrl = UV_OK() ? '/uv/service/' + uvEncodeUrl('https://www.youtube.com/watch?v=' + vidId) : null;
+    return res.end(uvUrl ? ytWatchPage2(vidId, hit, phit, uvUrl) : ytWatchPage(vidId, hit, phit));
   }
   if (u.pathname === '/yt/stream') {
     const vidId = (u.searchParams.get('v') || '').trim();
