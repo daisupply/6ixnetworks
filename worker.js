@@ -876,8 +876,8 @@ function sendImageFile(f){
     var c=document.createElement('canvas'); c.width=w; c.height=h;
     c.getContext('2d').drawImage(img, 0, 0, w, h);
     var data=c.toDataURL('image/jpeg', 0.78);
-    if(data.length > 700000) data=c.toDataURL('image/jpeg', 0.6);
-    if(data.length > 700000){ line({sys:true, text:'that image is too chunky even squished — try a smaller one'}); return; }
+    if(data.length > 1400000) data=c.toDataURL('image/jpeg', 0.6);
+    if(data.length > 2800000){ line({sys:true, text:'that image is too chunky even squished — try a smaller one'}); return; }
     fetch('/chat/send', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ room: room, name: curName(), img: data }) })
       .then(function(){ if(!(ws && ws.readyState===1)) setTimeout(poll, 150); })
       .catch(function(){ line({sys:true, text:'image send failed'}); });
@@ -2141,7 +2141,7 @@ export class ChatRoom {
       const bot = request.headers.get('x-six-bot') === '1';
       const text = cleanText(b.text);
       let img = null;
-      if (typeof b.img === 'string' && b.img.startsWith('data:image/') && b.img.length <= 720000) img = b.img;
+      if (typeof b.img === 'string' && b.img.startsWith('data:image/') && b.img.length <= 2800000) img = b.img;
       if (!text && !img) return new Response('{"ok":false}', { headers: { 'content-type': 'application/json' } });
       const msg = { name: bot ? (String(b.botName || 'six ✦ ai').replace(/[<>&"']/g, '').trim().slice(0, 24) || 'six ✦ ai') : cleanName(b.name), text, ts: Date.now(), bot };
       if (img) msg.img = img;
@@ -2309,7 +2309,11 @@ export default {
       }
       if (u.pathname === '/chat/send') {
         const b = await request.json().catch(() => ({}));
-        const r = await stub.fetch('https://chat/send?room=' + encodeURIComponent(cleanRoom(u.searchParams.get('room'))), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: cleanName(b.name), text: cleanText(b.text) }) });
+        const roomName = cleanRoom(u.searchParams.get('room') || b.room);
+        const payload = { name: cleanName(b.name), text: cleanText(b.text) };
+        if (typeof b.img === 'string' && b.img.startsWith('data:image/') && b.img.length <= 2800000) payload.img = b.img;
+        const stub2 = env.CHAT.get(env.CHAT.idFromName(roomName));
+        const r = await stub2.fetch('https://chat/send?room=' + encodeURIComponent(roomName), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
         return new Response(await r.text(), { headers: { 'content-type': 'application/json' } });
       }
       const r = await stub.fetch('https://chat/poll?room=' + encodeURIComponent(cleanRoom(u.searchParams.get('room'))) + '&since=' + encodeURIComponent(u.searchParams.get('since') || '0'));

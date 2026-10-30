@@ -888,8 +888,8 @@ function sendImageFile(f){
     var c=document.createElement('canvas'); c.width=w; c.height=h;
     c.getContext('2d').drawImage(img, 0, 0, w, h);
     var data=c.toDataURL('image/jpeg', 0.78);
-    if(data.length > 700000) data=c.toDataURL('image/jpeg', 0.6);
-    if(data.length > 700000){ line({sys:true, text:'that image is too chunky even squished — try a smaller one'}); return; }
+    if(data.length > 1400000) data=c.toDataURL('image/jpeg', 0.6);
+    if(data.length > 2800000){ line({sys:true, text:'that image is too chunky even squished — try a smaller one'}); return; }
     fetch('/chat/send', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ room: room, name: curName(), img: data }) })
       .then(function(){ if(!(ws && ws.readyState===1)) setTimeout(poll, 150); })
       .catch(function(){ line({sys:true, text:'image send failed'}); });
@@ -2217,10 +2217,10 @@ const server = http.createServer(async (req, res) => {
     return res.end(JSON.stringify({ room: 'p-' + code, code }));
   }
   if (u.pathname === '/chat/send' && req.method === 'POST') {
-    const b = await readJsonBody(req, 900000);
+    const b = await readJsonBody(req, 3000000);
     const text = cleanText(b.text);
     let img = null;
-    if (typeof b.img === 'string' && b.img.startsWith('data:image/') && b.img.length <= 720000) img = b.img;
+    if (typeof b.img === 'string' && b.img.startsWith('data:image/') && b.img.length <= 2800000) img = b.img;
     if (text || img) { const rn = cleanRoom(b.room); const msg = { name: cleanName(b.name), text, ts: Date.now(), bot: false }; if (img) msg.img = img; chatPost(rn, msg); chatRoomOf(rn).pollAct = Date.now(); }
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end('{"ok":true}');
