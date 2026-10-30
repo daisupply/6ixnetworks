@@ -747,6 +747,12 @@ function chatPage() {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+.chatbar{background:rgba(18,18,20,.55);border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:12px 14px;margin:12px 0;display:flex;flex-direction:column;gap:10px;text-align:left}
+.cb-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.cb-label{font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;opacity:.45;width:52px;flex:none}
+.cb-div{height:1px;background:rgba(255,255,255,.1)}
+.cb-hint{opacity:.55;font-size:12px}
+.callbar{background:rgba(18,18,20,.45);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:10px 12px}
 #msgs{height:52vh;overflow-y:auto;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:14px;text-align:left}
 .msg{margin:7px 0;word-break:break-word}
 .msg b{color:#9db9ff}
@@ -765,27 +771,31 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 </style></head><body>${STAR_CANVAS}${SIDEBAR_HTML}<div class="wrap">
 <a class="back" href="/home">← home</a> · <a class="back" href="/ai">ask six ✦</a>
 <h1>6ix<span>Networks</span> chat</h1>
-<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0">
+<div class="chatbar">
+<div class="cb-row"><span class="cb-label">rooms</span>
 <button class="chip room on" data-room="lobby" type="button">lobby</button>
 <button class="chip room" data-room="games" type="button">games</button>
 <button class="chip room" data-room="random" type="button">random</button>
-<span id="pres" style="opacity:.7;font-size:13px">connecting…</span>
-<input id="name" type="text" maxlength="24" placeholder="ur name" style="margin-left:auto;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:8px 10px;font-family:inherit;width:130px">
-</div>
-<div id="privbar" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid rgba(255,255,255,.4);border-radius:12px;background:rgba(255,255,255,.08);font-size:14px;text-align:left"></div>
-<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">
 <button class="chip" id="mkpriv" type="button">🔒 new private room</button>
 <input id="joincode" type="text" maxlength="12" placeholder="room code" style="background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:8px 10px;font-family:inherit;width:120px">
 <button class="chip" id="joinpriv" type="button">join private</button>
-<span style="opacity:.6;font-size:12px">private rooms wipe themselves right after everyone leaves</span>
 </div>
-<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">
+<div class="cb-row"><span class="cb-label"></span><span class="cb-hint">private rooms wipe themselves right after everyone leaves</span></div>
+<div class="cb-div"></div>
+<div class="cb-row"><span class="cb-label">call</span>
 <button class="chip" id="vjoin" type="button">🎙 join voice</button>
 <button class="chip" id="vjoinv" type="button">📹 join video</button>
 <span id="vstat" style="opacity:.65;font-size:13px">voice is off — hop in, it runs peer-to-peer thru the room</span>
 </div>
-<div id="vmembers" style="display:none;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0"></div>
-<div id="vcontrols" style="display:none;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">
+<div class="cb-div"></div>
+<div class="cb-row"><span class="cb-label">you</span>
+<input id="name" type="text" maxlength="24" placeholder="ur name" style="background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:8px 10px;font-family:inherit;width:150px">
+<span id="pres" style="opacity:.7;font-size:13px">connecting…</span>
+</div>
+</div>
+<div id="privbar" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid rgba(255,255,255,.4);border-radius:12px;background:rgba(255,255,255,.08);font-size:14px;text-align:left"></div>
+<div id="vmembers" class="callbar" style="display:none;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0"></div>
+<div id="vcontrols" class="callbar" style="display:none;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">
 <button class="chip" id="vmute" type="button">🎙 mute</button>
 <button class="chip" id="vdeaf" type="button">🔊 deafen</button>
 <button class="chip" id="vptt" type="button">push-to-talk: off</button>
