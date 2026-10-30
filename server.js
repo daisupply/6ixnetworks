@@ -2167,9 +2167,11 @@ const GEMINI_IMAGE_MODELS = ['gemini-3.1-flash-image', 'gemini-3-pro-image', 'ge
 let geminiImageWinner = null;
 let geminiImageLastErr = '';
 let geminiImageNoModalities = false;
+let geminiImageErrs = {};
 async function askGeminiImage(env, prompt) {
   const keys = geminiKeys(env);
   if (!keys.length || !prompt) return null;
+  geminiImageErrs = {};
   const order = geminiImageWinner ? [geminiImageWinner].concat(GEMINI_IMAGE_MODELS.filter(mo => mo !== geminiImageWinner)) : GEMINI_IMAGE_MODELS;
   for (const model of order) {
     for (let ki = 0; ki < keys.length; ki++) {
@@ -2180,7 +2182,7 @@ async function askGeminiImage(env, prompt) {
           headers: { 'content-type': 'application/json', 'x-goog-api-key': keys[kIdx] },
           body: JSON.stringify(geminiImageNoModalities ? { contents: [{ parts: [{ text: String(prompt).slice(0, 500) }] }] } : { contents: [{ parts: [{ text: String(prompt).slice(0, 500) }] }], generationConfig: { responseModalities: ['TEXT', 'IMAGE'] } })
         });
-        if (!r.ok) { const etxt = (await r.text().catch(() => '')).slice(0, 300); geminiImageLastErr = model + ' key' + (kIdx + 1) + ' HTTP ' + r.status + ': ' + etxt.slice(0, 200); if (etxt.indexOf('responseModalities') >= 0 || etxt.indexOf('generationConfig') >= 0) geminiImageNoModalities = true; if (r.status === 404) break; continue; }
+        if (!r.ok) { const etxt = (await r.text().catch(() => '')).slice(0, 300); if (!geminiImageErrs[model]) geminiImageErrs[model] = 'key' + (kIdx + 1) + ' HTTP ' + r.status + ': ' + etxt.slice(0, 110).replace(/\s+/g, ' '); geminiImageLastErr = order.map(mo => geminiImageErrs[mo] ? mo + ' \u2192 ' + geminiImageErrs[mo] : null).filter(Boolean).join(' | ').slice(0, 1100); if (etxt.indexOf('responseModalities') >= 0 || etxt.indexOf('generationConfig') >= 0) geminiImageNoModalities = true; if (r.status === 400 && !geminiImageNoModalities) { geminiImageNoModalities = true; ki--; continue; } if (r.status === 404) break; continue; }
         const j = await r.json().catch(() => null);
         const parts = j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts;
         const img = Array.isArray(parts) ? parts.find(p => p && p.inlineData && p.inlineData.data) : null;
