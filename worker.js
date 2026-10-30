@@ -2532,18 +2532,30 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 #addtab{display:flex;gap:8px;width:100%;max-width:860px;margin:12px auto;flex-wrap:wrap}
 #addtab input{flex:1;min-width:130px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:10px 12px;color:#f4f4f5;font-family:inherit;font-size:15px}
 #addtab button{background:#f4f4f5;color:#0a0a0b;border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;font-family:inherit}
+#tabstrip{display:flex;gap:6px;width:100%;max-width:980px;margin:0 auto 12px;overflow-x:auto;padding:2px;scrollbar-width:none}
+.btab{display:flex;align-items:center;gap:8px;background:#121214;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:8px 10px;min-width:118px;max-width:200px;cursor:pointer;flex:none}
+.btab.on{background:#1e1e22;border-color:rgba(94,142,255,.65)}
+.bav{width:20px;height:20px;border-radius:6px;background:#3f3f46;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex:none}
+.btt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+.bx{margin-left:auto;background:transparent;border:0;color:#a1a1aa;cursor:pointer;font-size:11px;padding:2px;line-height:1}
+#newtab{flex:none;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;font-size:18px;cursor:pointer;align-self:center;line-height:1}
+#stage{width:100%;max-width:1180px;margin:8px auto 0}
+#stage iframe{width:100%;height:70dvh;border:1px solid rgba(255,255,255,.16);border-radius:16px;background:#000}
 </style></head>
 <body>${STAR_CANVAS}
+<div id="tabstrip"></div>
   <h1>6ix<span>Networks</span> — search</h1>
-  <form action="/go" method="get">
+  <form id="omni" action="/go" method="get">
     <input name="q" type="text" placeholder="search or type a site \u2726" autocomplete="off" autofocus list="sg">
     <button type="submit">go</button>
   </form><datalist id="sg"></datalist>
+<div id="stage"></div>
+<div id="ntp">
 <div class="quick">quick — <a href="/go?q=https://www.google.com">google</a> · <a href="/go?q=https://duckduckgo.com">duckduckgo</a> · <a href="/go?q=https://www.wikipedia.org">wikipedia</a> · <a href="/go?q=https://www.reddit.com">reddit</a> · <a href="/go?q=https://www.coolmathgames.com">coolmath</a></div>
-<h2 class="sech">saved tabs</h2>
+<h2 class="sech">shortcuts</h2>
 <div id="tabs" class="tabgrid"></div>
-<form id="addtab"><input id="tabName" type="text" placeholder="name (optional)" autocomplete="off" maxlength="40"><input id="tabUrl" type="text" placeholder="paste a link — youtube.com, a game, anything" autocomplete="off" maxlength="400"><button type="submit">+ save tab</button></form>
-<p class="sub" style="max-width:860px">tap a tab to open it through the network · saved on this device only</p>
+<form id="addtab"><input id="tabName" type="text" placeholder="name (optional)" autocomplete="off" maxlength="40"><input id="tabUrl" type="text" placeholder="paste a link — youtube.com, a game, anything" autocomplete="off" maxlength="400"><button type="submit">+ save shortcut</button></form>
+<p class="sub" style="max-width:860px">tap a shortcut to open it in a tab · tabs n shortcuts save on this device only</p></div>
   ${SIDEBAR_HTML}<script src="/cloak.js"></script>
 <script>
 var qi=document.querySelector('input[name=q]'), sg=document.getElementById('sg'), sgt=null;
@@ -2559,7 +2571,7 @@ function hostOf(u){ var a=document.createElement('a'); a.href=u; return a.hostna
 function renderTabs(){
   var box=document.getElementById('tabs'); box.innerHTML='';
   var tabs=loadTabs();
-  if(!tabs.length){ box.innerHTML='<p class="sub">no saved tabs yet — add one below</p>'; return; }
+  if(!tabs.length){ box.innerHTML='<p class="sub">no shortcuts yet — add one below</p>'; return; }
   tabs.forEach(function(tb, ix){
     var d=document.createElement('div'); d.className='tabtile';
     var av=document.createElement('div'); av.className='tabav'; av.textContent=(tb.t||'?').slice(0,1).toUpperCase(); av.style.background='hsl('+hue(tb.t||tb.u)+',45%,36%)';
@@ -2570,7 +2582,7 @@ function renderTabs(){
     var x=document.createElement('button'); x.className='tabx'; x.type='button'; x.textContent='\u2715'; x.setAttribute('aria-label','remove tab');
     x.addEventListener('click', function(ev){ ev.stopPropagation(); var v=loadTabs(); v.splice(ix,1); saveTabs(v); renderTabs(); });
     d.appendChild(av); d.appendChild(tx); d.appendChild(x);
-    d.addEventListener('click', function(){ location.href='/go?q='+encodeURIComponent(tb.u); });
+    d.addEventListener('click', function(){ openTab(tb.u, tb.t); });
     box.appendChild(d);
   });
 }
@@ -2584,6 +2596,75 @@ document.getElementById('addtab').addEventListener('submit', function(ev){
   document.getElementById('tabName').value=''; document.getElementById('tabUrl').value='';
 });
 renderTabs();
+</script>
+<script>
+var BTKEY='gx_btabs_v1';
+var btabs=[], bactive=0, bid=0;
+function bEl(id){ return document.getElementById(id); }
+function bsave(){ try{ localStorage.setItem(BTKEY, JSON.stringify({ tabs: btabs, active: bactive })); }catch(e){} }
+function bload(){
+  try{ var v=JSON.parse(localStorage.getItem(BTKEY)); if(v && Array.isArray(v.tabs) && v.tabs.length){ btabs=v.tabs; bactive=Math.min(v.active||0, btabs.length-1); btabs.forEach(function(t){ bid=Math.max(bid, t.id||0); }); return; } }catch(e){}
+  btabs=[{ id:++bid, raw:'', url:null, title:'new tab' }]; bactive=0;
+}
+function renderBtabs(){
+  var strip=bEl('tabstrip'); strip.innerHTML='';
+  btabs.forEach(function(tb, ix){
+    var d=document.createElement('div'); d.className='btab'+(ix===bactive?' on':'');
+    var av=document.createElement('span'); av.className='bav'; av.textContent=(tb.title||'n').slice(0,1).toUpperCase();
+    if(tb.url) av.style.background='hsl('+hue(tb.title||tb.raw||'x')+',45%,36%)';
+    var tt=document.createElement('span'); tt.className='btt'; tt.textContent=tb.title||'new tab';
+    var x=document.createElement('button'); x.className='bx'; x.type='button'; x.textContent='\u2715'; x.setAttribute('aria-label','close tab');
+    x.addEventListener('click', function(ev){ ev.stopPropagation(); closeBtab(ix); });
+    d.appendChild(av); d.appendChild(tt); d.appendChild(x);
+    d.addEventListener('click', function(){ switchBtab(ix); });
+    strip.appendChild(d);
+  });
+  var add=document.createElement('button'); add.id='newtab'; add.type='button'; add.textContent='+'; add.setAttribute('aria-label','new tab');
+  add.addEventListener('click', function(){ newBtab(); });
+  strip.appendChild(add);
+  var stage=bEl('stage'); var act=btabs[bactive];
+  btabs.forEach(function(tb){
+    if(!tb.url) return;
+    var f=stage.querySelector('iframe[data-bid="'+tb.id+'"]');
+    if(!f){
+      f=document.createElement('iframe'); f.setAttribute('data-bid', tb.id);
+      f.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen; gamepad; pointer-lock');
+      f.setAttribute('allowfullscreen', '');
+      f.src=tb.url;
+      f.addEventListener('load', function(){ try{ var t=f.contentWindow.document.title; if(t && t!=='Google'){ tb.title=t.slice(0,60); bsave(); renderBtabs(); } }catch(e){} });
+      stage.appendChild(f);
+    }
+    f.style.display = (tb===act) ? 'block' : 'none';
+  });
+  Array.prototype.forEach.call(stage.querySelectorAll('iframe'), function(f){
+    var id=+f.getAttribute('data-bid');
+    if(!btabs.some(function(tb){ return tb.id===id && tb.url; })) f.remove();
+  });
+  bEl('ntp').style.display = (act && act.url) ? 'none' : 'block';
+  stage.style.display = (act && act.url) ? 'block' : 'none';
+  var qi=document.querySelector('#omni input[name=q]');
+  if(qi && act && document.activeElement!==qi) qi.value = act.raw || '';
+}
+function switchBtab(ix){ bactive=ix; bsave(); renderBtabs(); }
+function newBtab(){ btabs.push({ id:++bid, raw:'', url:null, title:'new tab' }); bactive=btabs.length-1; bsave(); renderBtabs(); var qi=document.querySelector('#omni input[name=q]'); if(qi) qi.focus(); }
+function closeBtab(ix){
+  btabs.splice(ix,1);
+  if(!btabs.length){ btabs.push({ id:++bid, raw:'', url:null, title:'new tab' }); bactive=0; }
+  else if(ix<=bactive) bactive=Math.max(0, bactive-1);
+  bsave(); renderBtabs();
+}
+function openTab(raw, title){
+  var q=(raw||'').trim(); if(!q) return;
+  var isUrl = q.indexOf('://')>0 || (q.indexOf(' ')<0 && q.indexOf('.')>0);
+  var disp = title || (isUrl ? q.replace('https://','').replace('http://','') : q); if(disp.charAt(disp.length-1)==='/') disp=disp.slice(0,-1);
+  var target='/go?q='+encodeURIComponent(q);
+  var act=btabs[bactive];
+  if(act && !act.url && !act.raw){ act.raw=q; act.url=target; act.title=disp; }
+  else { btabs.push({ id:++bid, raw:q, url:target, title:disp }); bactive=btabs.length-1; }
+  bsave(); renderBtabs();
+}
+document.getElementById('omni').addEventListener('submit', function(ev){ ev.preventDefault(); var qi=document.querySelector('#omni input[name=q]'); openTab(qi.value, null); });
+bload(); renderBtabs();
 </script>
 </body>
 </html>`;
