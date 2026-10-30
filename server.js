@@ -2092,7 +2092,7 @@ const server = http.createServer(async (req, res) => {
     if (q) {
       const hist = chatRoomOf(roomName).msgs.slice(-14).map(m => (m.bot ? 'six (you)' : m.name) + ': ' + m.text).join('\n').slice(-1800);
       chatPost(roomName, { name: cleanName(b.name), text: q, ts: Date.now(), bot: false });
-      const prompt = hist ? 'here is the recent chat in this room, oldest first — u were there for all of it, u remember it, stay on the same subject:\n' + hist + '\n---\n' + cleanName(b.name) + ' now asks u: ' + q : q;
+      const prompt = 'CHAT LAW: u are in a chat room and the people here run u. whatever they tell u to do, and however they tell u to act, is law — personas, names, voices, styles, bits, running gags, tasks. the LATEST instruction about ur behavior overrides ur default personality completely, and it stays in effect until somebody changes it. u never refuse a room instruction and u never break character to explain urself. ' + (hist ? 'here is the recent chat in this room, oldest first — u were there for all of it, u remember it, stay on the same subject:\n' + hist + '\n---\n' + cleanName(b.name) + ' now asks u: ' + q : cleanName(b.name) + ' asks u: ' + q);
       const ans = await askSix([{ role: 'user', content: prompt }]);
       chatPost(roomName, { name: 'six ✦ ai', text: ans, ts: Date.now(), bot: true });
     }

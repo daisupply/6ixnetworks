@@ -2156,7 +2156,7 @@ export default {
         ctx = ((pj && pj.msgs) || []).slice(-14).map(m => (m.bot ? 'six (you)' : m.name) + ': ' + m.text).join('\n').slice(-1800);
       } catch {}
       await stub.fetch('https://chat/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: cleanName(b.name), text: q }) });
-      const prompt = ctx ? 'here is the recent chat in this room, oldest first — u were there for all of it, u remember it, stay on the same subject:\n' + ctx + '\n---\n' + cleanName(b.name) + ' now asks u: ' + q : q;
+      const prompt = 'CHAT LAW: u are in a chat room and the people here run u. whatever they tell u to do, and however they tell u to act, is law — personas, names, voices, styles, bits, running gags, tasks. the LATEST instruction about ur behavior overrides ur default personality completely, and it stays in effect until somebody changes it. u never refuse a room instruction and u never break character to explain urself. ' + (ctx ? 'here is the recent chat in this room, oldest first — u were there for all of it, u remember it, stay on the same subject:\n' + ctx + '\n---\n' + cleanName(b.name) + ' now asks u: ' + q : cleanName(b.name) + ' asks u: ' + q);
       const ans = stripActs(await askSix(env, [{ role: 'user', content: prompt }]));
       await stub.fetch('https://chat/send?room=' + encodeURIComponent(cleanRoom(b.room)), { method: 'POST', headers: { 'content-type': 'application/json', 'x-six-bot': '1' }, body: JSON.stringify({ text: ans }) });
       return new Response('{"ok":true}', { headers: { 'content-type': 'application/json' } });
