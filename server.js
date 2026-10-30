@@ -3210,6 +3210,8 @@ function ensureSj() {
     sjCtl = new Ctor({ prefix: '/scramjet/', files: { wasm: '/sj-assets/scramjet/scramjet.wasm.wasm', all: '/sj-assets/scramjet/scramjet.all.js', sync: '/sj-assets/scramjet/scramjet.sync.js' }, flags: { rewriterLogs: false } });
     sjConn = new BareMux.BareMuxConnection('/sj-assets/baremux/worker.js');
     await navigator.serviceWorker.register('/sw.js');
+    await navigator.serviceWorker.ready;
+    if (!navigator.serviceWorker.controller) { stat('waking the service worker…'); await new Promise(function(res) { var to = setTimeout(res, 7000); navigator.serviceWorker.addEventListener('controllerchange', function() { clearTimeout(to); res(); }); }); }
     await sjConn.setTransport('/sj-assets/epoxy/index.mjs', [{ wisp: (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/' }]);
     await sjCtl.init();
   })();
