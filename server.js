@@ -2597,7 +2597,6 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style>
   </form><datalist id="sg"></datalist>
 <div id="stage"></div>
 <div id="ntp">
-<div class="quick">quick — <a href="/go?q=https://www.google.com">google</a> · <a href="/go?q=https://duckduckgo.com">duckduckgo</a> · <a href="/go?q=https://www.wikipedia.org">wikipedia</a> · <a href="/go?q=https://www.reddit.com">reddit</a> · <a href="/go?q=https://www.coolmathgames.com">coolmath</a></div>
 <h2 class="sech">shortcuts</h2>
 <div id="tabs" class="tabgrid"></div>
 <form id="addtab"><input id="tabName" type="text" placeholder="name (optional)" autocomplete="off" maxlength="40"><input id="tabUrl" type="text" placeholder="paste a link — youtube.com, a game, anything" autocomplete="off" maxlength="400"><button type="submit">+ save shortcut</button></form>
