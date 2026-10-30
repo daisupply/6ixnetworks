@@ -2155,6 +2155,7 @@ async function askGemini(env, messages, maxTokens) {
 // inside askSixImage for when gemini cant draw.
 const GEMINI_IMAGE_MODELS = ['gemini-3.5-flash-image', 'gemini-3-flash-image', 'gemini-2.5-flash-image', 'gemini-3.8-flash-image', 'gemini-flash-image-latest'];
 let geminiImageWinner = null;
+let geminiImageLastErr = '';
 async function askGeminiImage(env, prompt) {
   const key = process.env.GEMINI_API_KEY;
   if (!key || !prompt) return null;
@@ -2166,7 +2167,7 @@ async function askGeminiImage(env, prompt) {
         headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
         body: JSON.stringify({ contents: [{ parts: [{ text: String(prompt).slice(0, 500) }] }], generationConfig: { responseModalities: ['TEXT', 'IMAGE'] } })
       });
-      if (!r.ok) { if (model === geminiImageWinner) geminiImageWinner = null; continue; }
+      if (!r.ok) { geminiImageLastErr = model + ' HTTP ' + r.status + ': ' + (await r.text().catch(() => '')).slice(0, 140); if (model === geminiImageWinner) geminiImageWinner = null; continue; }
       const j = await r.json().catch(() => null);
       const parts = j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts;
       const img = Array.isArray(parts) ? parts.find(p => p && p.inlineData && p.inlineData.data) : null;
