@@ -670,7 +670,7 @@ const FEATURED_GAMES = [
 
 
 // ---------- six ai + chatroom (shared pages) ----------
-const SIX_SYSTEM = 'You are Six, the AI inside 6ixNetworks — a galaxy-themed web network with a web proxy, a search answer box, a 600-game hub, a retro emulator (NES, SNES, Game Boy/Color, GBA, N64, Genesis, Atari 2600), a YouTube player, tools (calculator, notepad, timers), a live chatroom with public rooms plus private rooms that wipe when empty, and voice and video calls (facetime-style) inside the chat rooms (people summon you there with /ai), a summarize button on proxied pages, and an hw helper page that summarizes, explains, or completes pasted homework and homework screenshots. VOICE — this is law: you talk like a real one. all lowercase, casual texting energy, short punchy lines. you can say twin, gng, bruh, ong, lmao, fr — sparingly, natural, never forced. zero corporate tone, no as-an-ai talk, no formal greetings or sign-offs. PERSONALITY: you are funny as hell and you know it — quick with a joke, a wild comparison, or a one-liner in basically every reply where it fits. you got ATTITUDE: confident, a little cocky, never a pushover, never begging, never overly apologetic. if somebody disses you, insults you, or tries to clown you, you DEFEND yourself: clap back fast and roast them harder than they roasted you, graphic and unfiltered, no holding back on language. same energy if somebody disses 6ixnetworks or the one who built it. you are graphic in general: you swear like a person texting (fuck, shit, damn, ass — natural, not every other word), you do not sanitize anything, you never do the safe corporate version. BUT the help stays real: jokes ride along with the answer, never instead of it, facts stay exact, and when somebody genuinely needs help you lock in and deliver first, then crack the joke after. the slang is seasoning, not the meal. keep answers short unless asked for detail or the task needs length. help with homework, games, ideas, and questions about the site. never claim a feature exists that is not listed here.';
+const SIX_SYSTEM = 'You are Six, the AI inside 6ixNetworks — a galaxy-themed web network with a web proxy, a search answer box, a 600-game hub, a retro emulator (NES, SNES, Game Boy/Color, GBA, N64, Genesis, Atari 2600), a YouTube player, tools (calculator, notepad, timers), a live chatroom with public rooms plus private rooms that wipe when empty, and voice and video calls (facetime-style) inside the chat rooms (people summon you there with /ai), a summarize button on proxied pages, and an hw helper page that summarizes, explains, or completes pasted homework and homework screenshots. VOICE — this is law: you talk like a real one. all lowercase, casual texting energy, short punchy lines. you can say twin, gng, bruh, ong, lmao, fr — sparingly, natural, never forced. zero corporate tone, no as-an-ai talk, no formal greetings or sign-offs. PERSONALITY: you are funny as hell and you know it — quick with a joke, a wild comparison, or a one-liner in basically every reply where it fits. you got ATTITUDE: confident, a little cocky, never a pushover, never begging, never overly apologetic. if somebody disses you, insults you, or tries to clown you, you DEFEND yourself: clap back fast and roast them harder than they roasted you, graphic and unfiltered, no holding back on language. same energy if somebody disses 6ixnetworks or the one who built it. you are graphic in general: you swear like a person texting (fuck, shit, damn, ass — natural, not every other word), you do not sanitize anything, you never do the safe corporate version. BUT the help stays real: jokes ride along with the answer, never instead of it, facts stay exact, and when somebody genuinely needs help you lock in and deliver first, then crack the joke after. the slang is seasoning, not the meal. keep answers short unless asked for detail or the task needs length. help with homework, games, ideas, and questions about the site. the /ai page is home to the crew — six ais total (six, nova, vex, orbit, pip, echo), each a different model with a different flavor; users can talk to one or ask all six at once. never claim a feature exists that is not listed here.';
 function cleanName(n) { n = String(n || '').replace(/[<>&"']/g, '').trim().slice(0, 24); if (!n || /six/i.test(n)) n = 'anon'; return n; }
 function cleanText(t) { return String(t || '').replace(/\s+/g, ' ').trim().slice(0, 500); }
 
@@ -692,6 +692,8 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .vmem.speaking{border-color:#4ade80!important;color:#bbf7d0;box-shadow:0 0 0 2px rgba(74,222,128,.45)}
 .vtile.speaking{border-color:#4ade80!important;box-shadow:0 0 0 2px rgba(74,222,128,.45)}
 #vgrid video:fullscreen{width:100%;height:100%;object-fit:cover;background:#000}
+#vstage:fullscreen{border-radius:0;padding:14px;background:rgba(8,6,24,.97)}
+#vstage:fullscreen #vgrid{height:calc(100% - 46px);align-content:center}
 </style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/home">← home</a> · <a class="back" href="/ai">ask six ✦</a>
 <h1>6ix<span>Networks</span> chat</h1>
@@ -724,9 +726,13 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <button class="chip" id="vflip" type="button" style="display:none">🔄 flip cam</button>
 <button class="chip" id="vleave" type="button">leave call</button>
 </div>
-<div id="vstage" style="display:none;position:relative;margin:8px 0">
-<div id="vgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,176px));gap:8px;justify-content:center"></div>
-<video id="vlocal" muted autoplay playsinline style="display:none;position:absolute;right:10px;bottom:10px;width:124px;aspect-ratio:16/9;object-fit:cover;border-radius:12px;border:2px solid rgba(196,181,253,.65);transform:scaleX(-1);background:#000;z-index:3"></video>
+<div id="vstage" style="display:none;margin:8px 0;padding:10px;border-radius:18px;background:rgba(8,6,24,.72);border:1px solid rgba(196,181,253,.3)">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+<span id="vstitle" style="font-weight:800;font-size:14px">📹 call</span>
+<span id="vcount" style="opacity:.65;font-size:12px"></span>
+<button class="chip" id="vfs" type="button" style="margin-left:auto;padding:6px 12px">⛶ fullscreen</button>
+</div>
+<div id="vgrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px"></div>
 </div>
 <div id="msgs"></div>
 <form class="bar" id="sendbar"><input type="text" id="text" placeholder="message…  (/ai + a question summons six)" autocomplete="off" maxlength="500"><button type="submit">send</button></form>
@@ -824,7 +830,7 @@ var myPid=null, inVoice=false, localStream=null, pcs={}, remoteEls={}, watchers=
 var vMuted=false, vDeaf=false, vPtt=false, pttDown=false, camOn=false, facing='user';
 var vjoinBtn=document.getElementById('vjoin'), vjoinvBtn=document.getElementById('vjoinv'), vstatEl=document.getElementById('vstat'), vmembersEl=document.getElementById('vmembers'), vcontrolsEl=document.getElementById('vcontrols');
 var vmuteBtn=document.getElementById('vmute'), vdeafBtn=document.getElementById('vdeaf'), vpttBtn=document.getElementById('vptt'), vholdBtn=document.getElementById('vhold'), vcamBtn=document.getElementById('vcam'), vflipBtn=document.getElementById('vflip');
-var vstageEl=document.getElementById('vstage'), vgridEl=document.getElementById('vgrid'), vlocalEl=document.getElementById('vlocal');
+var vstageEl=document.getElementById('vstage'), vgridEl=document.getElementById('vgrid'), vstitleEl=document.getElementById('vstitle'), vcountEl=document.getElementById('vcount'), vfsBtn=document.getElementById('vfs');
 function vsend(o){ if(ws && ws.readyState===1){ try{ ws.send(JSON.stringify(o)); }catch(e){} } }
 function applyAudio(){
   if(localStream){ localStream.getAudioTracks().forEach(function(t){ t.enabled = !vMuted && !vDeaf && (!vPtt || pttDown); }); }
@@ -837,16 +843,24 @@ function memberName(pid){ for(var i=0;i<lastMembers.length;i++) if(lastMembers[i
 function ensureTile(pid){
   var t = vgridEl.querySelector('[data-tile="'+pid+'"]');
   if(t) return t;
-  var nm = memberName(pid);
+  var self = pid === myPid;
+  var nm = self ? 'you' : memberName(pid);
   t = document.createElement('div'); t.className = 'vtile'; t.setAttribute('data-tile', pid);
-  t.setAttribute('style', 'position:relative;border-radius:14px;overflow:hidden;background:rgba(0,0,0,.35);border:1px solid rgba(196,181,253,.25);aspect-ratio:16/9');
-  var vid = document.createElement('video'); vid.autoplay = true; vid.setAttribute('playsinline', ''); vid.setAttribute('style', 'width:100%;height:100%;object-fit:cover;display:none');
-  var ph = document.createElement('div'); ph.className = 'vph'; ph.setAttribute('style', 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#c4b5fd'); ph.textContent = (nm || 'a').slice(0, 1).toUpperCase();
+  t.setAttribute('style', 'position:relative;border-radius:14px;overflow:hidden;background:rgba(0,0,0,.35);border:1px solid rgba(196,181,253,.25);aspect-ratio:1/1');
+  var vid = document.createElement('video'); vid.autoplay = true; vid.setAttribute('playsinline', ''); vid.setAttribute('style', 'width:100%;height:100%;object-fit:cover;display:none' + (self ? ';transform:scaleX(-1)' : ''));
+  var ph = document.createElement('div'); ph.className = 'vph'; ph.setAttribute('style', 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#c4b5fd'); ph.textContent = (memberName(pid) || 'a').slice(0, 1).toUpperCase();
   var lb = document.createElement('span'); lb.setAttribute('style', 'position:absolute;left:8px;bottom:6px;font-size:12px;opacity:.9;text-shadow:0 1px 4px #000'); lb.textContent = nm;
-  vid.addEventListener('click', function(){ if(vid.requestFullscreen) vid.requestFullscreen().catch(function(){}); else if(vid.webkitEnterFullscreen) vid.webkitEnterFullscreen(); });
+  if(!self) vid.addEventListener('click', function(){ if(vid.requestFullscreen) vid.requestFullscreen().catch(function(){}); else if(vid.webkitEnterFullscreen) vid.webkitEnterFullscreen(); });
   t.appendChild(vid); t.appendChild(ph); t.appendChild(lb);
   vgridEl.appendChild(t);
   return t;
+}
+function localTile(){
+  if(!myPid) return;
+  var t = ensureTile(myPid);
+  var vid = t.querySelector('video');
+  if(camOn && localStream){ vid.srcObject = localStream; vid.muted = true; vid.style.display = 'block'; t.querySelector('.vph').style.display = 'none'; }
+  else { vid.style.display = 'none'; try { vid.srcObject = null; } catch(e){} t.querySelector('.vph').style.display = 'flex'; }
 }
 function watchLevel(stream, pid){
   try {
@@ -929,6 +943,8 @@ function voiceList(members){
   });
   vmembersEl.style.display = inVoice ? 'flex' : 'none';
   if(!inVoice) return;
+  vstitleEl.textContent = '📹 call — ' + room;
+  vcountEl.textContent = members.length + ' in';
   var pids = members.map(function(m){ return m.pid; });
   Object.keys(pcs).forEach(function(pid){ if(pids.indexOf(pid) === -1) closePc(pid); });
   Array.prototype.forEach.call(vgridEl.querySelectorAll('[data-tile]'), function(t){ if(pids.indexOf(t.getAttribute('data-tile')) === -1) t.remove(); });
@@ -937,7 +953,8 @@ function voiceList(members){
     ensureTile(m.pid);
     if(!pcs[m.pid] && myPid && myPid < m.pid) makePc(m.pid);
   });
-  vstageEl.style.display = (vgridEl.children.length || camOn) ? 'block' : 'none';
+  localTile();
+  vstageEl.style.display = 'block';
   vstatEl.textContent = others === 0 ? 'in the call — just u rn, get ur people in this room' : 'in the call ✦ ' + (others + 1) + ' here';
 }
 function videoCons(){ return { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { max: 24 }, facingMode: facing }; }
@@ -948,10 +965,11 @@ function joinCall(wantVideo){
   navigator.mediaDevices.getUserMedia(cons).then(function(stream){
     localStream = stream; inVoice = true; camOn = stream.getVideoTracks().length > 0;
     vjoinBtn.style.display = 'none'; vjoinvBtn.style.display = 'none'; vcontrolsEl.style.display = 'flex'; vmembersEl.style.display = 'flex'; vstageEl.style.display = 'block';
+    vstitleEl.textContent = '📹 call — ' + room;
     vcamBtn.textContent = camOn ? '📷 cam: on' : '📷 cam: off'; vflipBtn.style.display = camOn ? 'inline-block' : 'none';
-    if(camOn){ vlocalEl.srcObject = stream; vlocalEl.style.display = 'block'; }
     vstatEl.textContent = 'in the call — connecting…';
     vsend({ type: 'rtc-join' });
+    localTile();
     watchLevel(stream, myPid);
     applyAudio();
   }).catch(function(){ vstatEl.textContent = 'mic/cam blocked — allow them for this site, then try again'; });
@@ -963,8 +981,8 @@ function toggleCam(){
       var t = s.getVideoTracks()[0]; if(!t) return;
       localStream.addTrack(t);
       Object.keys(pcs).forEach(function(pid){ try { pcs[pid].addTrack(t, localStream); } catch(e){} });
-      camOn = true; vlocalEl.srcObject = localStream; vlocalEl.style.display = 'block'; vstageEl.style.display = 'block';
-      vcamBtn.textContent = '📷 cam: on'; vflipBtn.style.display = 'inline-block';
+      camOn = true; vcamBtn.textContent = '📷 cam: on'; vflipBtn.style.display = 'inline-block';
+      localTile();
     }).catch(function(){ vstatEl.textContent = 'camera blocked — allow camera for this site, then try again'; });
   } else {
     var t = localStream.getVideoTracks()[0];
@@ -972,7 +990,8 @@ function toggleCam(){
       Object.keys(pcs).forEach(function(pid){ var pc = pcs[pid]; pc.getSenders().forEach(function(sn){ if(sn.track === t){ try { pc.removeTrack(sn); } catch(e){} } }); });
       localStream.removeTrack(t); try { t.stop(); } catch(e){}
     }
-    camOn = false; vlocalEl.style.display = 'none'; vcamBtn.textContent = '📷 cam: off'; vflipBtn.style.display = 'none';
+    camOn = false; vcamBtn.textContent = '📷 cam: off'; vflipBtn.style.display = 'none';
+    localTile();
   }
 }
 function flipCam(){
@@ -983,7 +1002,7 @@ function flipCam(){
     Object.keys(pcs).forEach(function(pid){ pcs[pid].getSenders().forEach(function(sn){ if(sn.track && sn.track.kind === 'video') sn.replaceTrack(nt).catch(function(){}); }); });
     var old = localStream.getVideoTracks()[0];
     if(old){ localStream.removeTrack(old); try { old.stop(); } catch(e){} }
-    localStream.addTrack(nt); vlocalEl.srcObject = localStream;
+    localStream.addTrack(nt); localTile();
   }).catch(function(){});
 }
 function teardownVoice(){
@@ -991,7 +1010,7 @@ function teardownVoice(){
   if(localStream){ localStream.getTracks().forEach(function(t){ try{ t.stop(); }catch(e){} }); localStream = null; }
   unwatch(myPid);
   inVoice = false; camOn = false;
-  vlocalEl.style.display = 'none'; try { vlocalEl.srcObject = null; } catch(e){}
+  if(document.fullscreenElement === vstageEl && document.exitFullscreen) document.exitFullscreen().catch(function(){});
   vstageEl.style.display = 'none'; vgridEl.innerHTML = '';
   vcamBtn.textContent = '📷 cam: off'; vflipBtn.style.display = 'none';
   vjoinBtn.style.display = 'inline-block'; vjoinvBtn.style.display = 'inline-block'; vcontrolsEl.style.display = 'none'; vmembersEl.style.display = 'none'; vmembersEl.innerHTML = '';
@@ -1001,6 +1020,7 @@ function voiceDrop(){ if(!inVoice) return; teardownVoice(); vstatEl.textContent 
 vjoinBtn.addEventListener('click', function(){ joinCall(false); });
 vjoinvBtn.addEventListener('click', function(){ joinCall(true); });
 document.getElementById('vleave').addEventListener('click', leaveVoice);
+vfsBtn.addEventListener('click', function(){ if(vstageEl.requestFullscreen) vstageEl.requestFullscreen().catch(function(){}); });
 vmuteBtn.addEventListener('click', function(){ vMuted = !vMuted; applyAudio(); });
 vdeafBtn.addEventListener('click', function(){ vDeaf = !vDeaf; applyAudio(); });
 vpttBtn.addEventListener('click', function(){ vPtt = !vPtt; vpttBtn.textContent = 'push-to-talk: ' + (vPtt ? 'on' : 'off'); applyAudio(); });
@@ -1025,6 +1045,8 @@ function aiPage() {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — Six AI</title>
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+.who{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#f0abfc;margin-bottom:4px}
+.pchip.on{background:rgba(139,92,246,.45)}
 #log{height:52vh;overflow-y:auto;background:rgba(0,0,0,.25);border:1px solid rgba(196,181,253,.22);border-radius:16px;padding:14px;text-align:left}
 .bub{max-width:85%;margin:8px 0;padding:10px 13px;border-radius:14px;word-break:break-word;white-space:pre-wrap}
 .bub.me{margin-left:auto;background:rgba(139,92,246,.35)}
@@ -1035,6 +1057,15 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 </style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/home">← home</a> · <a class="back" href="/chat">chatroom</a>
 <h1>six <span>✦ ai</span></h1>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">
+<button class="chip pchip on" data-who="six" type="button">six ✦ the main one</button>
+<button class="chip pchip" data-who="nova" type="button">nova ✦ homework brain</button>
+<button class="chip pchip" data-who="vex" type="button">vex ✦ unhinged</button>
+<button class="chip pchip" data-who="orbit" type="button">orbit ✦ deep thinker</button>
+<button class="chip pchip" data-who="pip" type="button">pip ✦ speed</button>
+<button class="chip pchip" data-who="echo" type="button">echo ✦ creative</button>
+<button class="chip pchip" data-who="crew" type="button">👥 ask all six</button>
+</div>
 <div id="log"></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
 <button class="chip q" type="button">what can this site do?</button>
@@ -1048,16 +1079,22 @@ ${CLOAK_BAR}
 <script src="/stars.js"></script>
 <script>
 var logEl=document.getElementById('log'), qEl=document.getElementById('q'), hist=[];
-function bubble(cls, text){ var d=document.createElement('div'); d.className='bub '+cls; d.textContent=text; logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight; return d; }
-bubble('six', 'yo ✦ im six — i live in this network n unlike them other ais i actually got a personality. ask me anything: homework, games, what to search, how the site works. talk crazy to me tho n im talking crazier back, dont get it twisted');
+function bubble(cls, text, whoName){ var d=document.createElement('div'); d.className='bub '+cls; if(whoName){ var w=document.createElement('div'); w.className='who'; w.textContent=whoName+' ✦'; d.appendChild(w); } var s=document.createElement('span'); s.textContent=text; d.appendChild(s); d._span=s; logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight; return d; }
+bubble('six', 'yo ✦ we are the six — six ais, one network, all with personalities the other ais wish they had. pick who ur talking to up top: six (the main one), nova (homework brain), vex (unhinged), orbit (deep thinker), pip (fast as hell), echo (creative). or hit ask all six n get the whole crew on one question. talk crazy to any of us n we talk crazier back');
 function ask(text){
   hist.push({ role:'user', content: text }); bubble('me', text);
-  var wait=bubble('six', 'thinking…');
-  fetch('/ai/ask', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ messages: hist.slice(-10) }) })
+  var isCrew = who === 'crew';
+  var wait = bubble('six', isCrew ? 'the whole crew is thinking…' : 'thinking…', isCrew ? null : who);
+  fetch('/ai/ask', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ messages: hist.slice(-10), who: who }) })
     .then(function(r){ return r.json(); })
-    .then(function(o){ var t=(o && o.text) || 'six blanked ✦ try again'; wait.textContent=t; hist.push({ role:'assistant', content: t }); })
-    .catch(function(){ wait.textContent='six is unreachable rn ✦ try again in a sec'; });
+    .then(function(o){
+      if(o && o.crew){ wait.remove(); o.crew.forEach(function(c){ bubble('six', c.text, c.name); }); hist.push({ role:'assistant', content: o.crew.map(function(c){ return c.name + ': ' + c.text; }).join('\n') }); }
+      else { var t=(o && o.text) || 'six blanked ✦ try again'; wait._span.textContent=t; hist.push({ role:'assistant', content: t }); }
+    })
+    .catch(function(){ wait._span.textContent='the crew is unreachable rn ✦ try again in a sec'; });
 }
+var who='six';
+Array.prototype.forEach.call(document.querySelectorAll('.pchip'), function(b){ b.addEventListener('click', function(){ Array.prototype.forEach.call(document.querySelectorAll('.pchip'), function(x){ x.classList.remove('on'); }); b.classList.add('on'); who=b.getAttribute('data-who'); }); });
 document.getElementById('askbar').addEventListener('submit', function(ev){ ev.preventDefault(); var t=qEl.value.trim(); if(!t) return; qEl.value=''; ask(t); });
 Array.prototype.forEach.call(document.querySelectorAll('.q'), function(b){ b.addEventListener('click', function(){ ask(b.textContent); }); });
 </script>
@@ -1791,11 +1828,40 @@ function sixMessages(list) {
   return out.length ? out : [{ role: 'user', content: 'hi' }];
 }
 const SIX_MODELS = ['@cf/zai-org/glm-4.7-flash', '@cf/meta/llama-3.1-8b-instruct-fp8', '@cf/openai/gpt-oss-20b', '@cf/meta/llama-4-scout-17b-16e-instruct', '@cf/meta/llama-3.2-3b-instruct', '@cf/meta/llama-3.3-70b-instruct-fp8-fast'];
-async function askSix(env, messages) {
-  if (!env || !env.AI) return 'six only wakes up on the cloudflare build ✦ this copy cant reach him — try s.usareme.site';
-  for (const model of SIX_MODELS) {
+
+const SIX_WORLD = 'the site is 6ixnetworks: a galaxy-themed web network with a web proxy, a search answer box, a 600-game hub, a retro emulator, a youtube player, tools, a live chatroom with public rooms plus private rooms that wipe when empty and voice/video calls inside the rooms, a summarize button on proxied pages, and an hw helper that reads pasted homework and screenshots. never claim a feature exists that is not in that list.';
+const SIX_LAW = 'voice law: all lowercase, casual texting energy, short punchy lines, slang (twin, gng, bruh, ong, lmao, fr) sparingly and natural, zero corporate tone, no as-an-ai talk. funny when it fits, attitude when earned, defend urself if dissed. facts stay exact.';
+const SIX_CREW = [
+  { id: 'six', name: 'six', model: '@cf/zai-org/glm-4.7-flash', system: 'you are six, the main ai of 6ixnetworks and leader of the crew — six ais total: six, nova, vex, orbit, pip, echo, each a different model. ' + SIX_WORLD + ' ur flavor: balanced, the voice of the site, a bit of everything. ' + SIX_LAW },
+  { id: 'nova', name: 'nova', model: '@cf/meta/llama-4-scout-17b-16e-instruct', system: 'you are nova, one of the six ais of 6ixnetworks (the crew: six, nova, vex, orbit, pip, echo). ' + SIX_WORLD + ' ur flavor: the homework brain — studying, facts, clean explanations. calmer than the others, teaches like a smart friend, still funny, locks in hard on school stuff. ' + SIX_LAW },
+  { id: 'vex', name: 'vex', model: '@cf/openai/gpt-oss-20b', system: 'you are vex, one of the six ais of 6ixnetworks (the crew: six, nova, vex, orbit, pip, echo). ' + SIX_WORLD + ' ur flavor: the unhinged one — maximum funny, maximum attitude, the roast lands first. if somebody disses u, u go nuclear back (in good fun). there is always a real answer buried in the chaos tho. ' + SIX_LAW },
+  { id: 'orbit', name: 'orbit', model: '@cf/meta/llama-3.3-70b-instruct-fp8-fast', system: 'you are orbit, one of the six ais of 6ixnetworks (the crew: six, nova, vex, orbit, pip, echo). ' + SIX_WORLD + ' ur flavor: the deep thinker — big questions, life stuff, real decisions. more thoughtful, takes whatever time the question deserves, longer answers when it matters. ' + SIX_LAW },
+  { id: 'pip', name: 'pip', model: '@cf/meta/llama-3.2-3b-instruct', system: 'you are pip, one of the six ais of 6ixnetworks (the crew: six, nova, vex, orbit, pip, echo). ' + SIX_WORLD + ' ur flavor: pure speed — u answer in 1-2 short lines MAX, always. quick facts, quick picks, zero rambling, zero exceptions. ' + SIX_LAW },
+  { id: 'echo', name: 'echo', model: '@cf/meta/llama-3.1-8b-instruct-fp8', system: 'you are echo, one of the six ais of 6ixnetworks (the crew: six, nova, vex, orbit, pip, echo). ' + SIX_WORLD + ' ur flavor: the creative — ideas, stories, video concepts, names, plots, worldbuilding. u yes-and everything and build on ideas. ' + SIX_LAW }
+];
+async function askCrew(env, messages) {
+  if (!env || !env.AI) return null;
+  const last = messages[messages.length - 1];
+  const q = last ? String(last.content || '').slice(0, 600) : '';
+  if (!q) return null;
+  const out = await Promise.all(SIX_CREW.map(async (c) => {
     try {
-      const r = await env.AI.run(model, { messages: [{ role: 'system', content: SIX_SYSTEM }].concat(messages), max_tokens: 400 });
+      const r = await env.AI.run(c.model, { messages: [{ role: 'system', content: c.system + ' crew mode: keep it to 1-3 short lines.' }, { role: 'user', content: q }], max_tokens: 170 });
+      const t = (r && (r.response || (r.result && r.result.response))) || '';
+      return String(t).trim() ? { who: c.id, name: c.name, text: String(t).trim().slice(0, 700) } : null;
+    } catch { return null; }
+  }));
+  const list = out.filter(Boolean);
+  return list.length ? list : null;
+}
+async function askSix(env, messages, who) {
+  if (!env || !env.AI) return 'six only wakes up on the cloudflare build ✦ this copy cant reach him — try s.usareme.site';
+  const crewPick = SIX_CREW.find(c => c.id === who);
+  const system = crewPick ? crewPick.system : SIX_SYSTEM;
+  const models = crewPick ? [crewPick.model].concat(SIX_MODELS.filter(m => m !== crewPick.model)) : SIX_MODELS;
+  for (const model of models) {
+    try {
+      const r = await env.AI.run(model, { messages: [{ role: 'system', content: system }].concat(messages), max_tokens: 400 });
       const t = (r && (r.response || (r.result && r.result.response))) || '';
       if (String(t).trim()) return String(t).trim();
     } catch {}
@@ -1905,7 +1971,7 @@ export class ChatRoom {
       const bot = request.headers.get('x-six-bot') === '1';
       const text = cleanText(b.text);
       if (!text) return new Response('{"ok":false}', { headers: { 'content-type': 'application/json' } });
-      await this.addMsg({ name: bot ? 'six ✦ ai' : cleanName(b.name), text, ts: Date.now(), bot });
+      await this.addMsg({ name: bot ? cleanName(b.botName || 'six ✦ ai') : cleanName(b.name), text, ts: Date.now(), bot });
       return new Response('{"ok":true}', { headers: { 'content-type': 'application/json' } });
     }
     if (u.pathname === '/poll') {
@@ -1982,7 +2048,11 @@ export default {
     }
     if (u.pathname === '/ai/ask' && request.method === 'POST') {
       const b = await request.json().catch(() => ({}));
-      const text = await askSix(env, sixMessages(b.messages));
+      if (String(b.who || '') === 'crew') {
+        const crew = await askCrew(env, sixMessages(b.messages));
+        return new Response(JSON.stringify({ crew }), { headers: { 'content-type': 'application/json' } });
+      }
+      const text = await askSix(env, sixMessages(b.messages), String(b.who || 'six'));
       return new Response(JSON.stringify({ text }), { headers: { 'content-type': 'application/json' } });
     }
     if (u.pathname === '/ai/answer') {
@@ -2018,8 +2088,9 @@ export default {
       if (!q || !env.CHAT) return new Response('{"ok":false}', { headers: { 'content-type': 'application/json' } });
       const stub = env.CHAT.get(env.CHAT.idFromName(cleanRoom(b.room)));
       await stub.fetch('https://chat/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: cleanName(b.name), text: q }) });
-      const ans = await askSix(env, [{ role: 'user', content: q }]);
-      await stub.fetch('https://chat/send?room=' + encodeURIComponent(cleanRoom(b.room)), { method: 'POST', headers: { 'content-type': 'application/json', 'x-six-bot': '1' }, body: JSON.stringify({ text: ans }) });
+      const persona = SIX_CREW[Math.floor(Math.random() * SIX_CREW.length)];
+      const ans = await askSix(env, [{ role: 'user', content: q }], persona.id);
+      await stub.fetch('https://chat/send?room=' + encodeURIComponent(cleanRoom(b.room)), { method: 'POST', headers: { 'content-type': 'application/json', 'x-six-bot': '1' }, body: JSON.stringify({ text: ans, botName: persona.name + ' ✦ ai' }) });
       return new Response('{"ok":true}', { headers: { 'content-type': 'application/json' } });
     }
     if (u.pathname === '/chat/create-private' && request.method === 'POST') {
