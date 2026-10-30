@@ -1091,7 +1091,7 @@ function ask(text){
     .then(function(r){ return r.json(); })
     .then(function(o){
       var t = (o && o.text) || 'six blanked ✦ try again';
-      var m = t.match(/\[\[act:(\{[\s\S]*?\})\]\]/);
+      var m = t.match(/\\[\\[act:(\\{[\\s\\S]*?\\})\\]\\]/);
       var act = null;
       if(m){ try { act = JSON.parse(m[1]); } catch(e){ try { act = JSON.parse(m[1].split(String.fromCharCode(92)).join('')); } catch(e2){} } t = t.replace(m[0], '').trim() || 'on it ✦'; }
       wait._span.textContent = t;
@@ -1108,7 +1108,7 @@ function runAct(act, wait){
     else if(act.t === 'game' && act.q){
       fetch('/ai/game?q=' + encodeURIComponent(act.q)).then(function(r){ return r.json(); }).then(function(o){
         if(o && o.url) location.href = o.url;
-        else wait._span.textContent += '\n(that game aint in the hub tho)';
+        else wait._span.textContent += '\\n(that game aint in the hub tho)';
       }).catch(function(){});
     }
     else if(act.t === 'privroom'){
@@ -1194,7 +1194,7 @@ function setImg(b64){
   else { prevEl.style.display='none'; rmBtn.style.display='none'; dropLabel.textContent='📸 drop a screenshot of the hw here, click to pick one, or just paste it (ctrl+v) — six can read images too'; }
 }
 function handleFile(f){
-  if(!f || !/^image\//.test(f.type||'')) return;
+  if(!f || !/^image\\//.test(f.type||'')) return;
   var img=new Image();
   img.onload=function(){
     var sc=Math.min(1, 1280/Math.max(img.width, img.height));
@@ -1209,7 +1209,7 @@ dropEl.addEventListener('click', function(){ fileEl.click(); });
 fileEl.addEventListener('change', function(){ handleFile(fileEl.files && fileEl.files[0]); });
 dropEl.addEventListener('dragover', function(ev){ ev.preventDefault(); });
 dropEl.addEventListener('drop', function(ev){ ev.preventDefault(); var f=ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0]; handleFile(f); });
-document.addEventListener('paste', function(ev){ var items=(ev.clipboardData||{}).items||[]; for(var i=0;i<items.length;i++){ if(/^image\//.test(items[i].type)){ handleFile(items[i].getAsFile()); break; } } });
+document.addEventListener('paste', function(ev){ var items=(ev.clipboardData||{}).items||[]; for(var i=0;i<items.length;i++){ if(/^image\\//.test(items[i].type)){ handleFile(items[i].getAsFile()); break; } } });
 rmBtn.addEventListener('click', function(ev){ ev.stopPropagation(); setImg(''); });
 copyBtn.addEventListener('click', function(){
   var done=function(){ statEl.textContent='copied ✦'; };
@@ -1255,7 +1255,7 @@ var cg=document.getElementById('cgrid');
 keys.forEach(function(k){ var b=document.createElement('button'); b.type='button'; b.textContent=k; b.addEventListener('click', function(){
   if(k==='C'){ expr=''; }
   else if(k==='⌫'){ expr=expr.slice(0,-1); }
-  else if(k==='='){ if(/^[0-9+\-*/.() ]+$/.test(expr)){ try{ var v=Function('return ('+expr+')')(); expr=String(Math.round(v*1e10)/1e10); }catch(e){ expr=''; cd.textContent='error'; return; } } }
+  else if(k==='='){ if(/^[0-9+\\-*/.() ]+$/.test(expr)){ try{ var v=Function('return ('+expr+')')(); expr=String(Math.round(v*1e10)/1e10); }catch(e){ expr=''; cd.textContent='error'; return; } } }
   else { expr+=k; }
   cd.textContent = expr || '0';
 }); cg.appendChild(b); });
