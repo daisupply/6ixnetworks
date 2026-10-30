@@ -283,7 +283,7 @@ const CLOAK_BAR = `<div style="margin-top:26px;display:flex;gap:8px;flex-wrap:wr
 <button onclick="cloakTab('docs')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">docs</button>
 <button onclick="cloakTab('drive')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">open in cloaked tab</button></div>`;
 const TABBAR_HTML = `<nav id="tabbar"><a href="/home"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg><span>home</span></a><a href="/gs"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg><span>games</span></a><a href="/chat"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span>6ixchat</span></a><a href="/ai"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>six ai</span></a><button id="tabMore" type="button"><svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg><span>more</span></button></nav>
-<div id="tabSheet"><a href="/yt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg><span>youtube</span></a><a href="/hw"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>hw helper</span></a><a href="/emu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="16.5" cy="11" r=".4" fill="currentColor"/><circle cx="18.5" cy="14" r=".4" fill="currentColor"/></svg><span>emulator</span></a><a href="/tools"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>tools</span></a><a href="/account"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>account</span></a><div class="tsh-sec">disguise</div><div class="tsh-cloak"><button onclick="cloakTab('google')">google</button><button onclick="cloakTab('classroom')">classroom</button><button onclick="cloakTab('docs')">docs</button><button onclick="cloakTab('drive')">drive</button><button onclick="cloakOpen()">open cloaked tab</button></div></div>
+<div id="tabSheet"><a href="/search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span>search</span></a><a href="/yt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg><span>youtube</span></a><a href="/hw"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>hw helper</span></a><a href="/emu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="16.5" cy="11" r=".4" fill="currentColor"/><circle cx="18.5" cy="14" r=".4" fill="currentColor"/></svg><span>emulator</span></a><a href="/tools"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>tools</span></a><a href="/account"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>account</span></a><div class="tsh-sec">disguise</div><div class="tsh-cloak"><button onclick="cloakTab('google')">google</button><button onclick="cloakTab('classroom')">classroom</button><button onclick="cloakTab('docs')">docs</button><button onclick="cloakTab('drive')">drive</button><button onclick="cloakOpen()">open cloaked tab</button></div></div>
 <script>
 (function(){ if (window.parent !== window) { document.documentElement.classList.add('gx-framed'); var bar0 = document.getElementById('tabbar'); if (bar0) bar0.style.bottom = '6px'; var sh0 = document.getElementById('tabSheet'); if (sh0) sh0.style.bottom = '80px'; } var p = location.pathname; document.querySelectorAll('#tabbar a, #tabSheet a').forEach(function(a){ if (a.getAttribute('href') === p) a.classList.add('on'); }); var tm = document.getElementById('tabMore'), sh = document.getElementById('tabSheet'); if (tm && sh) { tm.addEventListener('click', function(){ sh.classList.toggle('open'); }); document.addEventListener('click', function(e){ if (sh.classList.contains('open') && !sh.contains(e.target) && !tm.contains(e.target)) sh.classList.remove('open'); }); } })();
 </script>`;
@@ -292,6 +292,7 @@ const SIDEBAR_HTML = `<button id="sbBtn" aria-label="menu"><svg width="19" heigh
 <a class="sb-logo" href="/home">6ix<span>networks</span></a>
 <nav>
 <a href="/home"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>home</a>
+<a href="/search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>search</a>
 <a href="/gs"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>games</a>
 <a href="/yt"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg>youtube</a>
 <a href="/chat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>6ixchat</a>
@@ -2516,14 +2517,86 @@ swDraw();
 }
 
 
+const SEARCH = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+.tabgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:10px;width:100%;max-width:860px;margin:10px auto}
+.tabtile{position:relative;display:flex;gap:10px;align-items:center;background:#101012;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px;cursor:pointer;text-align:left}
+.tabtile:hover{border-color:rgba(255,255,255,.32)}
+.tabav{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;flex:none;font-size:17px}
+.tabtx{min-width:0}.tabtx b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14.5px}
+.tabtx span{opacity:.6;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.tabx{position:absolute;top:5px;right:5px;background:transparent;border:0;color:#a1a1aa;cursor:pointer;font-size:12px;padding:4px;line-height:1}
+.sech{width:100%;max-width:860px;margin:28px auto 2px;font-size:19px;text-align:left}
+#addtab{display:flex;gap:8px;width:100%;max-width:860px;margin:12px auto;flex-wrap:wrap}
+#addtab input{flex:1;min-width:130px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:10px 12px;color:#f4f4f5;font-family:inherit;font-size:15px}
+#addtab button{background:#f4f4f5;color:#0a0a0b;border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;font-family:inherit}
+</style></head>
+<body>${STAR_CANVAS}
+  <h1>6ix<span>Networks</span> — search</h1>
+  <form action="/go" method="get">
+    <input name="q" type="text" placeholder="search or type a site \u2726" autocomplete="off" autofocus list="sg">
+    <button type="submit">go</button>
+  </form><datalist id="sg"></datalist>
+<div class="quick">quick — <a href="/go?q=https://www.google.com">google</a> · <a href="/go?q=https://duckduckgo.com">duckduckgo</a> · <a href="/go?q=https://www.wikipedia.org">wikipedia</a> · <a href="/go?q=https://www.reddit.com">reddit</a> · <a href="/go?q=https://www.coolmathgames.com">coolmath</a></div>
+<h2 class="sech">saved tabs</h2>
+<div id="tabs" class="tabgrid"></div>
+<form id="addtab"><input id="tabName" type="text" placeholder="name (optional)" autocomplete="off" maxlength="40"><input id="tabUrl" type="text" placeholder="paste a link — youtube.com, a game, anything" autocomplete="off" maxlength="400"><button type="submit">+ save tab</button></form>
+<p class="sub" style="max-width:860px">tap a tab to open it through the network · saved on this device only</p>
+  ${SIDEBAR_HTML}<script src="/cloak.js"></script>
+<script>
+var qi=document.querySelector('input[name=q]'), sg=document.getElementById('sg'), sgt=null;
+if(qi && sg){ qi.addEventListener('input', function(){ clearTimeout(sgt); var v=qi.value.trim(); if(v.length<2){ sg.innerHTML=''; return; } sgt=setTimeout(function(){ fetch('/suggest?q='+encodeURIComponent(v)).then(function(r){ return r.json(); }).then(function(list){ sg.innerHTML=''; (list||[]).forEach(function(s){ var o=document.createElement('option'); o.value=s; sg.appendChild(o); }); }).catch(function(){}); }, 160); }); }
+</script>
+<script>
+var TKEY='gx_tabs_v1';
+var DEF=[{t:'YouTube',u:'https://www.youtube.com'},{t:'Krunker',u:'https://krunker.io'},{t:'Roblox',u:'https://www.roblox.com/home'},{t:'Cool Math Games',u:'https://www.coolmathgames.com'}];
+function loadTabs(){ try{ var v=JSON.parse(localStorage.getItem(TKEY)); if(Array.isArray(v)) return v; }catch(e){} return DEF.slice(); }
+function saveTabs(v){ try{ localStorage.setItem(TKEY, JSON.stringify(v)); }catch(e){} }
+function hue(s){ var h=0; for(var i=0;i<s.length;i++) h=(h*31 + s.charCodeAt(i)) % 360; return h; }
+function hostOf(u){ var a=document.createElement('a'); a.href=u; return a.hostname || u; }
+function renderTabs(){
+  var box=document.getElementById('tabs'); box.innerHTML='';
+  var tabs=loadTabs();
+  if(!tabs.length){ box.innerHTML='<p class="sub">no saved tabs yet — add one below</p>'; return; }
+  tabs.forEach(function(tb, ix){
+    var d=document.createElement('div'); d.className='tabtile';
+    var av=document.createElement('div'); av.className='tabav'; av.textContent=(tb.t||'?').slice(0,1).toUpperCase(); av.style.background='hsl('+hue(tb.t||tb.u)+',45%,36%)';
+    var tx=document.createElement('div'); tx.className='tabtx';
+    var b=document.createElement('b'); b.textContent=tb.t||tb.u;
+    var sp=document.createElement('span'); sp.textContent=hostOf(tb.u);
+    tx.appendChild(b); tx.appendChild(sp);
+    var x=document.createElement('button'); x.className='tabx'; x.type='button'; x.textContent='\u2715'; x.setAttribute('aria-label','remove tab');
+    x.addEventListener('click', function(ev){ ev.stopPropagation(); var v=loadTabs(); v.splice(ix,1); saveTabs(v); renderTabs(); });
+    d.appendChild(av); d.appendChild(tx); d.appendChild(x);
+    d.addEventListener('click', function(){ location.href='/go?q='+encodeURIComponent(tb.u); });
+    box.appendChild(d);
+  });
+}
+document.getElementById('addtab').addEventListener('submit', function(ev){
+  ev.preventDefault();
+  var name=document.getElementById('tabName').value.trim();
+  var url=document.getElementById('tabUrl').value.trim();
+  if(!url) return;
+  if(url.indexOf('://')<0) url='https://'+url;
+  var v=loadTabs(); v.unshift({ t: name || hostOf(url), u: url }); saveTabs(v.slice(0,24)); renderTabs();
+  document.getElementById('tabName').value=''; document.getElementById('tabUrl').value='';
+});
+renderTabs();
+</script>
+</body>
+</html>`;
+
 const HOME = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <h1>6ix<span>Networks</span></h1>
 
-<form action="/go" method="get"><input name="q" type="text" placeholder="search ✦" autocomplete="off" autofocus list="sg"><button type="submit">go</button></form><datalist id="sg"></datalist>
+  <p class="sub" style="max-width:560px;margin:0 auto 10px">welcome in ✦ everything here stays inside the network — games, youtube, chat, six ai, n the whole web through the search page. pick ur door:</p>
 <div class="launch">
+<a class="lcard" href="/search"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><b>search</b><span>the web + ur saved tabs</span></a>
 <a class="lcard" href="/gs"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg><b>games</b><span>600+ games, all through the network</span></a>
 <a class="lcard" href="/yt"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg><b>youtube</b><span>watch without ever leaving</span></a>
 <a class="lcard" href="/chat"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><b>6ixchat</b><span>rooms, voice + video, the group chat</span></a>
@@ -2531,13 +2604,8 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <a class="lcard" href="/hw"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><b>hw helper</b><span>paste the hw or a screenshot, six handles it</span></a>
 <a class="lcard" href="/emu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="16.5" cy="11" r=".4" fill="currentColor"/><circle cx="18.5" cy="14" r=".4" fill="currentColor"/></svg><b>emulator</b><span>retro consoles in the browser</span></a>
 </div>
-<div class="quick">quick — <a href="/go?q=https://www.google.com">google</a> · <a href="/go?q=https://duckduckgo.com">duckduckgo</a> · <a href="/go?q=https://www.wikipedia.org">wikipedia</a> · <a href="/go?q=https://www.reddit.com">reddit</a> · <a href="/go?q=https://www.coolmathgames.com">coolmath</a></div>
 ${SIDEBAR_HTML}<script src="/cloak.js"></script>
 
-<script>
-var qi=document.querySelector('input[name=q]'), sg=document.getElementById('sg'), sgt=null;
-if(qi && sg){ qi.addEventListener('input', function(){ clearTimeout(sgt); var v=qi.value.trim(); if(v.length<2){ sg.innerHTML=''; return; } sgt=setTimeout(function(){ fetch('/suggest?q='+encodeURIComponent(v)).then(function(r){ return r.json(); }).then(function(list){ sg.innerHTML=''; (list||[]).forEach(function(s){ var o=document.createElement('option'); o.value=s; sg.appendChild(o); }); }).catch(function(){}); }, 160); }); }
-</script>
 </body></html>`;
 
 
@@ -3479,6 +3547,9 @@ export default {
     }
     if (u.pathname === '/home') {
       return new Response(cfBoot(HOME), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
+    }
+    if (u.pathname === '/search') {
+      return new Response(cfBoot(SEARCH), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
     }
     if (u.pathname === '/stars.js') {
       return new Response(STARS_JS, { headers: { 'content-type': 'text/javascript; charset=utf-8' } });
