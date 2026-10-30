@@ -2592,6 +2592,17 @@ if(qi && sg){ qi.addEventListener('input', function(){ clearTimeout(sgt); var v=
 </body>
 </html>`;
 
+function isSearchDest(dest) {
+  try {
+    const u = new URL(dest);
+    const h = u.hostname.replace(/^www\./, '').toLowerCase();
+    if (h === 'bing.com' && u.pathname.includes('/search')) return true;
+    if (h.startsWith('google.') && u.pathname === '/search') return true;
+    if (h === 'duckduckgo.com' && u.searchParams.has('q')) return true;
+    if (h === 'search.brave.com' || h === 'search.yahoo.com') return true;
+    return false;
+  } catch (e) { return false; }
+}
 function normalizeInput(q) {
   const s = (q || '').trim();
   if (!s) return null;
@@ -3816,6 +3827,7 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/go') {
     const dest = normalizeInput(u.searchParams.get('q') || '');
     if (!dest) { res.writeHead(302, { location: '/home' }); return res.end(); }
+    if (isSearchDest(dest)) { res.writeHead(302, { location: proxied(dest) }); return res.end(); }
     if (UV_OK()) { res.writeHead(302, { location: '/uv/service/' + uvEncodeUrl(dest) }); return res.end(); }
     res.writeHead(302, { location: proxied(dest) });
     return res.end();
@@ -3880,6 +3892,7 @@ const server = http.createServer(async (req, res) => {
   }
   if (u.pathname === '/uv' || u.pathname === '/sj') {
     const dest = normalizeInput(u.searchParams.get('url') || '');
+    if (dest && isSearchDest(dest)) { res.writeHead(302, { location: proxied(dest) }); return res.end(); }
     if (UV_OK() && dest) { res.writeHead(302, { location: '/uv/service/' + uvEncodeUrl(dest) }); return res.end(); }
     res.writeHead(302, { location: '/home' });
     return res.end();

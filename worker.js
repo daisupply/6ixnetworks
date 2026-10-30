@@ -554,6 +554,17 @@ function isStaticAsset(target, ct) {
   return /\.(?:png|jpe?g|gif|webp|svg|ico|avif|css|mjs|js|woff2?|ttf|otf)$/i.test(target.pathname);
 }
 
+function isSearchDest(dest) {
+  try {
+    const u = new URL(dest);
+    const h = u.hostname.replace(/^www\./, '').toLowerCase();
+    if (h === 'bing.com' && u.pathname.includes('/search')) return true;
+    if (h.startsWith('google.') && u.pathname === '/search') return true;
+    if (h === 'duckduckgo.com' && u.searchParams.has('q')) return true;
+    if (h === 'search.brave.com' || h === 'search.yahoo.com') return true;
+    return false;
+  } catch (e) { return false; }
+}
 function normalizeInput(q) {
   const s = (q || '').trim();
   if (!s) return null;
@@ -3750,12 +3761,14 @@ async function chatIdentity(env, request, wantName) {
     }
     if (u.pathname === '/uv' || u.pathname === '/sj') {
       const dest = normalizeInput(u.searchParams.get('url') || '');
+      if (dest && isSearchDest(dest)) return Response.redirect(u.origin + proxied(dest), 302);
       if (dest) return Response.redirect(u.origin + '/uv/service/' + cfXorEncode(dest), 302);
       return Response.redirect(u.origin + '/home', 302);
     }
     if (u.pathname === '/go') {
       const dest = normalizeInput(u.searchParams.get('q') || '');
       if (!dest) return Response.redirect(u.origin + '/home', 302);
+      if (isSearchDest(dest)) return Response.redirect(u.origin + proxied(dest), 302);
       return Response.redirect(u.origin + '/uv/service/' + cfXorEncode(dest), 302);
     }
     if (u.pathname.startsWith('/px/')) {
