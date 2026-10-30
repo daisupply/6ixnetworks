@@ -44,3 +44,8 @@ from `package.json`.
 Vercel/Netlify serverless: function timeouts and streaming limits fight
 a proxy's long-lived range/stream responses. Possible in pieces, worse
 in practice — use any option above instead.
+
+
+## scramjet on the node build (v54)
+
+When this repo runs as the **node build** (Render / Railway / Fly / Docker / any `node server.js`), browsing runs on **Scramjet** instead of the classic shim: searches and game launches route to `/sj`, the service worker at `/sw.js` becomes the Scramjet worker, and the Wisp tunnel answers on `/wisp/` (same process, no extra service). Logins, streaming sites and websocket/multiplayer games work there. The **Cloudflare Worker build is unchanged** — it keeps the classic proxy. The classic proxy also stays as the fallback link under the Scramjet stage. Render: the blueprint already sets `buildCommand: npm install` so the Scramjet packages land; free plan sleeps when idle, first hit after sleep is a cold start.

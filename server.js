@@ -3145,6 +3145,94 @@ function chatUpgrade(req, socket) {
   socket.on('end', () => { cleanup(); try { socket.end(); } catch {} });
 }
 
+
+// ---------- scramjet engine (node build only — the cloudflare worker keeps the classic shim) ----------
+let SJ_WISP = null, SJ_DIR = null, SJ_BAREMUX_DIR = null, SJ_EPOXY_DIR = null;
+try {
+  const fs2 = require('fs'); const path2 = require('path');
+  const wmod = require('@mercuryworkshop/wisp-js/server');
+  SJ_WISP = wmod.server;
+  try { if (wmod.logging) wmod.logging.set_level(wmod.logging.NONE); } catch (e) {}
+  try { Object.assign(SJ_WISP.options, { allow_udp_streams: false, hostname_blacklist: [/^localhost$/, /^127\./, /^10\./, /^192\.168\./, /^172\.(1[6-9]|2[0-9]|3[01])\./, /^::1$/, /\.local$/] }); } catch (e) {}
+  SJ_DIR = require('@mercuryworkshop/scramjet/path').scramjetPath;
+  try { SJ_BAREMUX_DIR = require('@mercuryworkshop/bare-mux/node').baremuxPath; } catch (e) { SJ_BAREMUX_DIR = path2.join(path2.dirname(require.resolve('@mercuryworkshop/bare-mux')), 'dist'); }
+  SJ_EPOXY_DIR = path2.dirname(require.resolve('@mercuryworkshop/epoxy-transport'));
+  if (!fs2.existsSync(path2.join(SJ_DIR, 'scramjet.all.js'))) throw new Error('scramjet dist missing');
+  console.log('scramjet engine ready (wisp on /wisp/)');
+} catch (e) { console.log('scramjet engine unavailable, classic proxy only:', e.message); }
+const SJ_OK = () => !!SJ_WISP;
+const SJ_SW = `importScripts("/sj-assets/scramjet/scramjet.all.js");
+const { ScramjetServiceWorker } = $scramjetLoadWorker();
+const scramjet = new ScramjetServiceWorker();
+async function handleRequest(event) {
+  try { await scramjet.loadConfig(); if (scramjet.route(event)) return scramjet.fetch(event); } catch (e) {}
+  return fetch(event.request);
+}
+self.addEventListener("fetch", (event) => { event.respondWith(handleRequest(event)); });
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
+`;
+function scramjetPage(startUrl, title) {
+  const classic = startUrl ? proxied(startUrl) : '/home';
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+${FONT_LINKS}
+<title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>${GALAXY_CSS}
+.sjbar{display:flex;gap:8px;margin:10px 0}.sjbar input{flex:1}
+#sjstage{position:relative;height:calc(100dvh - 235px);min-height:320px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#0d0d10}
+#sjstage iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.sjnote{opacity:.65;font-size:12.5px}
+</style></head>
+<body><div class="wrap">
+${SIDEBAR_HTML}
+<main>
+<h1>browse <span style="color:var(--blue)">✦ scramjet</span></h1>
+<p class="sub">the real engine — logins, streams n multiplayer-grade sites ride this one. classic proxy is the backup under it.</p>
+<form class="sjbar" id="sjform"><input type="text" id="sjaddr" placeholder="paste a link or type a site…" autocomplete="off" value="${escHtml(startUrl || '')}"><button type="submit">go</button></form>
+<div id="sjstage"></div>
+<p class="sjnote" id="sjstat">scramjet idle — hit go.</p>
+<p class="sjnote">site beefin with scramjet? <a href="${classic}">open it in the classic proxy instead</a></p>
+</main>
+</div>
+<script src="/cloak.js"></script>
+<script src="/sj-assets/scramjet/scramjet.all.js"></script>
+<script src="/sj-assets/baremux/index.js"></script>
+<script>
+var SJ_START = ${JSON.stringify(startUrl || '')};
+var statEl = document.getElementById('sjstat'), addrEl = document.getElementById('sjaddr');
+function stat(t){ statEl.textContent = t; }
+var sjCtl = null, sjConn = null, sjFrame = null, sjReady = null;
+function ensureSj() {
+  if (!sjReady) sjReady = (async function() {
+    var Ctor = $scramjetLoadController().ScramjetController;
+    sjCtl = new Ctor({ prefix: '/scramjet/', files: { wasm: '/sj-assets/scramjet/scramjet.wasm.wasm', all: '/sj-assets/scramjet/scramjet.all.js', sync: '/sj-assets/scramjet/scramjet.sync.js' }, flags: { rewriterLogs: false } });
+    sjConn = new BareMux.BareMuxConnection('/sj-assets/baremux/worker.js');
+    await navigator.serviceWorker.register('/sw.js');
+    await sjConn.setTransport('/sj-assets/epoxy/index.mjs', [{ wisp: (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/' }]);
+    await sjCtl.init();
+  })();
+  return sjReady;
+}
+async function goSj(raw) {
+  var url = (raw || '').trim(); if (!url) return;
+  if (!/^https?:\\/\\//i.test(url)) url = 'https://' + url;
+  addrEl.value = url;
+  stat('connecting scramjet…');
+  try {
+    await ensureSj();
+    if (!sjFrame) { sjFrame = sjCtl.createFrame(); document.getElementById('sjstage').appendChild(sjFrame.frame); }
+    sjFrame.go(url);
+    stat('ridin scramjet — ' + url);
+  } catch (e) { stat('scramjet fumbled: ' + e.message + ' — classic proxy link is under the stage'); }
+}
+document.getElementById('sjform').addEventListener('submit', function(ev) { ev.preventDefault(); goSj(addrEl.value); });
+if (SJ_START) goSj(SJ_START);
+</script>
+</body></html>`;
+}
+
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://localhost');
   if (u.pathname === '/' || u.pathname === '/index.html') {
@@ -3185,6 +3273,7 @@ const server = http.createServer(async (req, res) => {
     return res.end(PWA_MANIFEST);
   }
   if (u.pathname === '/sw.js') {
+    if (SJ_OK()) { res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(SJ_SW); }
     res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(SW_JS);
   }
@@ -3354,6 +3443,7 @@ const server = http.createServer(async (req, res) => {
     return res.end(gamesPage(FEATURED_GAMES.concat(games)));
   }
   if (u.pathname === '/play') {
+    if (SJ_OK() && u.searchParams.get('u')) { res.writeHead(302, { location: '/sj?url=' + encodeURIComponent(u.searchParams.get('u')) + '&t=' + encodeURIComponent(u.searchParams.get('t') || '') }); return res.end(); }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(playPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'Game'));
   }
@@ -3422,6 +3512,7 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/go') {
     const dest = normalizeInput(u.searchParams.get('q') || '');
     if (!dest) { res.writeHead(302, { location: '/home' }); return res.end(); }
+    if (SJ_OK()) { res.writeHead(302, { location: '/sj?url=' + encodeURIComponent(dest) }); return res.end(); }
     res.writeHead(302, { location: proxied(dest) });
     return res.end();
   }
@@ -3457,6 +3548,23 @@ const server = http.createServer(async (req, res) => {
     if (u.search) targetStr += (targetStr.includes('?') ? '&' : '?') + u.search.slice(1);
     return handleProxy(req, res, targetStr);
   }
+  if (u.pathname === '/sj') {
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp' });
+    return res.end(scramjetPage(u.searchParams.get('url') || '', u.searchParams.get('t') || ''));
+  }
+  if (u.pathname.startsWith('/sj-assets/')) {
+    const rel = u.pathname.slice('/sj-assets/'.length);
+    const parts = rel.split('/'); const kind = parts[0]; const file = parts.slice(1).join('/');
+    const base = kind === 'scramjet' ? SJ_DIR : kind === 'baremux' ? SJ_BAREMUX_DIR : kind === 'epoxy' ? SJ_EPOXY_DIR : null;
+    if (!base || !file || file.includes('..')) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('not found'); }
+    const fsx = require('fs'); const pathx = require('path');
+    const fp = pathx.join(base, file);
+    if (!fp.startsWith(base) || !fsx.existsSync(fp)) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('not found'); }
+    const ext = pathx.extname(fp).toLowerCase();
+    const mime = ext === '.wasm' ? 'application/wasm' : ext === '.json' ? 'application/json' : ext === '.map' ? 'application/json' : 'text/javascript; charset=utf-8';
+    res.writeHead(200, { 'content-type': mime, 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' });
+    return fsx.createReadStream(fp).pipe(res);
+  }
   if (u.pathname === '/healthz') {
     res.writeHead(200, { 'content-type': 'text/plain' });
     return res.end('ok');
@@ -3465,5 +3573,8 @@ const server = http.createServer(async (req, res) => {
   res.end('not found');
 });
 
-server.on('upgrade', chatUpgrade);
+server.on('upgrade', (req, socket, head) => {
+  try { const p = new URL(req.url, 'http://x').pathname; if (SJ_WISP && p.startsWith('/wisp')) return SJ_WISP.routeRequest(req, socket, head); } catch (e) {}
+  return chatUpgrade(req, socket, head);
+});
 server.listen(PORT, () => console.log('web proxy listening on ' + PORT));
