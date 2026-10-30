@@ -72,13 +72,13 @@ function sixAnswerSnippet(tgt) {
   if (!/(^|\.)bing\.com$/i.test(t.hostname) || !t.pathname.startsWith('/search')) return '';
   const q = (t.searchParams.get('q') || '').trim();
   if (!q) return '';
-  const js = "(function(){var Q=" + JSON.stringify(q) + ";function init(){if(document.getElementById('sixbox'))return;var st=document.createElement('style');st.textContent='#sixbox{max-width:648px;margin:14px 0 6px;padding:14px 18px;border:1px solid rgba(167,139,250,.55);border-radius:16px;background:linear-gradient(135deg,rgba(38,22,84,.92),rgba(14,10,34,.94));color:#ece9ff;font-family:system-ui,-apple-system,sans-serif;box-shadow:0 6px 30px rgba(88,28,175,.35)}#sixbox .h{font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#c4b5fd;margin-bottom:6px}#sixbox .b{font-size:16px;line-height:1.5;white-space:pre-wrap}#sixbox .f{margin-top:8px;font-size:11px;opacity:.55}';document.head.appendChild(st);var box=document.createElement('div');box.id='sixbox';box.innerHTML='<div class=h>\u2726 six</div><div class=b>thinking\u2026</div>';var host=document.querySelector('#b_content')||document.body;host.insertBefore(box,host.firstChild);fetch(location.origin+'/ai/answer?q='+encodeURIComponent(Q)).then(function(r){return r.json()}).then(function(j){if(j&&j.answer){box.querySelector('.b').textContent=j.answer;var f=document.createElement('div');f.className='f';f.textContent='ai answer \u2014 the real results are right below';box.appendChild(f);}else{box.remove();}}).catch(function(){box.remove();});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();})();";
+  const js = "(function(){var Q=" + JSON.stringify(q) + ";function init(){if(document.getElementById('sixbox'))return;var st=document.createElement('style');st.textContent='#sixbox{max-width:648px;margin:14px 0 6px;padding:14px 18px;border:1px solid rgba(94,142,255,.55);border-radius:16px;background:linear-gradient(135deg,rgba(18,18,20,.92),rgba(12,12,14,.94));color:#f4f4f5;font-family:system-ui,-apple-system,sans-serif;box-shadow:0 6px 30px rgba(0,0,0,.35)}#sixbox .h{font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#9db9ff;margin-bottom:6px}#sixbox .b{font-size:16px;line-height:1.5;white-space:pre-wrap}#sixbox .f{margin-top:8px;font-size:11px;opacity:.55}';document.head.appendChild(st);var box=document.createElement('div');box.id='sixbox';box.innerHTML='<div class=h>\u2726 six</div><div class=b>thinking\u2026</div>';var host=document.querySelector('#b_content')||document.body;host.insertBefore(box,host.firstChild);fetch(location.origin+'/ai/answer?q='+encodeURIComponent(Q)).then(function(r){return r.json()}).then(function(j){if(j&&j.answer){box.querySelector('.b').textContent=j.answer;var f=document.createElement('div');f.className='f';f.textContent='ai answer \u2014 the real results are right below';box.appendChild(f);}else{box.remove();}}).catch(function(){box.remove();});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();})();";
   return '<script>' + js + '</' + 'script>';
 }
 
 function summarizeSnippet(tgt) {
   const ub = JSON.stringify(b64urlEncode(tgt));
-  const js = "(function(){if(location.pathname.indexOf('/browse/')!==0)return;function init(){if(document.getElementById('sixsum')||!document.body)return;var b=document.createElement('button');b.id='sixsum';b.textContent='\u2726 summarize';b.setAttribute('style','position:fixed;left:14px;bottom:14px;z-index:2147483640;background:rgba(30,20,60,.92);color:#e9d5ff;border:1px solid rgba(196,181,253,.65);border-radius:999px;padding:9px 15px;font:600 13px system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.45)');var p=document.createElement('div');p.setAttribute('style','position:fixed;left:14px;bottom:60px;z-index:2147483640;max-width:min(440px,86vw);max-height:48vh;overflow-y:auto;background:rgba(18,12,38,.97);color:#f3efff;border:1px solid rgba(196,181,253,.5);border-radius:14px;padding:14px 16px;font:14px/1.55 system-ui,sans-serif;display:none;box-shadow:0 10px 34px rgba(0,0,0,.5)');var h=document.createElement('div');h.textContent='\u2726 six summary';h.setAttribute('style','font-weight:800;color:#c4b5fd;margin-bottom:6px');var t=document.createElement('div');t.style.whiteSpace='pre-wrap';p.appendChild(h);p.appendChild(t);var done=false;b.addEventListener('click',function(){if(p.style.display==='block'){p.style.display='none';return;}p.style.display='block';if(done)return;t.textContent='reading the page\u2026';fetch(location.origin+'/ai/summarize?u='+" + ub + ").then(function(r){return r.json()}).then(function(o){done=true;t.textContent=(o&&o.summary)?o.summary:'six couldnt summarize this one \u2014 some pages hide their text from readers.';}).catch(function(){t.textContent='six couldnt summarize this one.';});});document.body.appendChild(b);document.body.appendChild(p);}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();})();";
+  const js = "(function(){if(location.pathname.indexOf('/browse/')!==0)return;function init(){if(document.getElementById('sixsum')||!document.body)return;var b=document.createElement('button');b.id='sixsum';b.textContent='\u2726 summarize';b.setAttribute('style','position:fixed;left:14px;bottom:14px;z-index:2147483640;background:rgba(16,16,18,.92);color:#e4e4e7;border:1px solid rgba(255,255,255,.65);border-radius:999px;padding:9px 15px;font:600 13px system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.45)');var p=document.createElement('div');p.setAttribute('style','position:fixed;left:14px;bottom:60px;z-index:2147483640;max-width:min(440px,86vw);max-height:48vh;overflow-y:auto;background:rgba(12,12,14,.97);color:#f4f4f5;border:1px solid rgba(255,255,255,.5);border-radius:14px;padding:14px 16px;font:14px/1.55 system-ui,sans-serif;display:none;box-shadow:0 10px 34px rgba(0,0,0,.5)');var h=document.createElement('div');h.textContent='\u2726 six summary';h.setAttribute('style','font-weight:800;color:#9db9ff;margin-bottom:6px');var t=document.createElement('div');t.style.whiteSpace='pre-wrap';p.appendChild(h);p.appendChild(t);var done=false;b.addEventListener('click',function(){if(p.style.display==='block'){p.style.display='none';return;}p.style.display='block';if(done)return;t.textContent='reading the page\u2026';fetch(location.origin+'/ai/summarize?u='+" + ub + ").then(function(r){return r.json()}).then(function(o){done=true;t.textContent=(o&&o.summary)?o.summary:'six couldnt summarize this one \u2014 some pages hide their text from readers.';}).catch(function(){t.textContent='six couldnt summarize this one.';});});document.body.appendChild(b);document.body.appendChild(p);}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();})();";
   return '<script>' + js + '</' + 'script>';
 }
 function privCode() {
@@ -293,55 +293,51 @@ function cloakOpen(){
 (function(){ var want='google'; try{ var v=localStorage.getItem('six_disguise'); if(v==='google'||v==='classroom'||v==='docs'||v==='drive') want=v; }catch(e){} cloakTab(want); })();
 `;
 const CLOAK_BAR = `<div style="margin-top:26px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;color:#9a9a9a;font-size:13px">
-<button onclick="cloakTab('google')" style="background:rgba(139,92,246,.13);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:7px 13px;cursor:pointer">google</button>
-<button onclick="cloakTab('classroom')" style="background:rgba(139,92,246,.13);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:7px 13px;cursor:pointer">classroom</button>
-<button onclick="cloakTab('docs')" style="background:rgba(139,92,246,.13);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:7px 13px;cursor:pointer">docs</button>
-<button onclick="cloakTab('drive')" style="background:rgba(139,92,246,.13);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()" style="background:rgba(139,92,246,.13);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:7px 13px;cursor:pointer">open in cloaked tab</button></div>`;
+<button onclick="cloakTab('google')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">google</button>
+<button onclick="cloakTab('classroom')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">classroom</button>
+<button onclick="cloakTab('docs')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">docs</button>
+<button onclick="cloakTab('drive')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">open in cloaked tab</button></div>`;
 // ---------- galaxy theme ----------
 // relaxing deep-space look shared by every page: layered nebula gradients,
 // a slow twinkling starfield canvas (served from /stars.js), glass panels,
-// soft rounded type (Comfortaa + Nunito), all-lowercase niche copy.
-const FONT_LINKS = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">';
-const STAR_CANVAS = '<canvas id="stars"></canvas><script src="/stars.js"></script>';
+// soft rounded type (Inter + Inter), all-lowercase niche copy.
+const FONT_LINKS = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">';
+const STAR_CANVAS = ''; // minimal theme: no starfield
 const GALAXY_CSS = `
 *{box-sizing:border-box;margin:0}
-html{background:#05030f}
-body{background:radial-gradient(1200px 800px at 85% -10%, rgba(88,60,180,.28), transparent 60%),radial-gradient(1000px 700px at -10% 110%, rgba(30,80,160,.20), transparent 60%),linear-gradient(180deg,#070418 0%,#05030f 45%,#030209 100%);color:#ece9ff;font-family:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:56px 16px 48px;overflow-x:hidden}
-body::before{content:'';position:fixed;inset:-12%;z-index:0;pointer-events:none;background:radial-gradient(560px 380px at 18% 26%, rgba(139,92,246,.20), transparent 65%),radial-gradient(640px 420px at 82% 18%, rgba(236,121,196,.13), transparent 65%),radial-gradient(760px 520px at 55% 88%, rgba(56,150,255,.12), transparent 65%);filter:blur(6px);animation:nebula 26s ease-in-out infinite alternate}
-@keyframes nebula{from{transform:translate3d(-1.5%,-1%,0) scale(1)}to{transform:translate3d(1.5%,1.2%,0) scale(1.05)}}
-#stars{position:fixed;inset:0;z-index:0;pointer-events:none}
-body>*:not(#stars){position:relative;z-index:1}
-h1{font-family:'Comfortaa','Nunito',sans-serif;font-size:clamp(30px,6vw,44px);font-weight:700;letter-spacing:.04em;text-transform:lowercase;background:linear-gradient(92deg,#c4b5fd 0%,#f0abfc 48%,#7dd3fc 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 18px rgba(167,139,250,.35));margin-bottom:10px;text-align:center}
-p.sub{color:#b3a8e8;margin-bottom:30px;font-size:15px;text-align:center;max-width:600px;line-height:1.55;font-weight:600;letter-spacing:.02em}
+html{background:#0a0a0b}
+body{background:#0a0a0b;color:#f4f4f5;font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:56px 16px 48px;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+h1{font-size:clamp(28px,5vw,38px);font-weight:600;letter-spacing:-.02em;text-transform:lowercase;color:#fafafa;margin-bottom:10px;text-align:center}
+p.sub{color:#a1a1aa;margin-bottom:30px;font-size:15px;text-align:center;max-width:600px;line-height:1.55;font-weight:400}
 form{display:flex;width:100%;max-width:640px;gap:10px}
-input{flex:1;background:rgba(255,255,255,.055);border:1px solid rgba(196,181,253,.28);border-radius:16px;color:#fff;padding:15px 18px;font-size:16px;outline:none;font-family:inherit;backdrop-filter:blur(10px);transition:border-color .25s, box-shadow .25s}
-input::placeholder{color:#8f86c9}
-input:focus{border-color:rgba(240,171,252,.75);box-shadow:0 0 0 4px rgba(167,139,250,.16),0 0 24px rgba(167,139,250,.22)}
-button{background:linear-gradient(120deg,#8b5cf6,#ec4899);color:#fff;border:0;border-radius:16px;padding:15px 24px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.03em;box-shadow:0 6px 24px rgba(168,85,247,.35);transition:transform .2s, box-shadow .2s}
-button:hover{transform:translateY(-1px);box-shadow:0 10px 30px rgba(236,72,153,.4)}
-.links{margin-top:32px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:680px}
-.links a{color:#ded7ff;text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(196,181,253,.25);padding:10px 16px;border-radius:999px;font-size:14px;font-weight:600;backdrop-filter:blur(8px);transition:border-color .2s, background .2s}
-.links a:hover{border-color:rgba(240,171,252,.7);background:rgba(167,139,250,.14)}
-footer,.foot{margin-top:auto;padding-top:44px;color:#7e74ad;font-size:12.5px;text-align:center;max-width:640px;line-height:1.6}
-::selection{background:rgba(167,139,250,.45)}
-::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:rgba(167,139,250,.35);border-radius:8px}::-webkit-scrollbar-track{background:transparent}
+input{flex:1;background:#131315;border:1px solid rgba(255,255,255,.12);border-radius:10px;color:#fff;padding:13px 16px;font-size:16px;outline:none;font-family:inherit;transition:border-color .15s, box-shadow .15s}
+input::placeholder{color:#63636b}
+input:focus{border-color:rgba(255,255,255,.35);box-shadow:0 0 0 3px rgba(255,255,255,.08)}
+button{background:#fafafa;color:#0a0a0b;border:1px solid #fafafa;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s, border-color .15s}
+button:hover{background:#e4e4e7;border-color:#e4e4e7}
+.links{margin-top:32px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:680px}
+.links a{color:#d4d4d8;text-decoration:none;background:#131315;border:1px solid rgba(255,255,255,.1);padding:9px 15px;border-radius:999px;font-size:14px;font-weight:500;transition:border-color .15s, background .15s}
+.links a:hover{border-color:rgba(255,255,255,.28);background:#1a1a1d}
+footer,.foot{margin-top:auto;padding-top:44px;color:#63636b;font-size:12.5px;text-align:center;max-width:640px;line-height:1.6}
+::selection{background:rgba(94,142,255,.4)}
+::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:#2c2c30;border-radius:8px}::-webkit-scrollbar-track{background:transparent}
 .wrap{width:100%;max-width:1120px;margin:0 auto}
-a.back{color:#c4b5fd;text-decoration:none;font-size:14px;font-weight:700}
+a.back{color:#9db9ff;text-decoration:none;font-size:14px;font-weight:600}
 .bar{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 20px;width:100%;max-width:1120px}
-.bar input{flex:1;min-width:200px;padding:13px 16px;font-size:15px}
-.bar select{background:rgba(20,14,48,.88);border:1px solid rgba(196,181,253,.28);border-radius:16px;color:#ece9ff;padding:13px;font-size:15px;font-family:inherit;outline:none}
+.bar input{flex:1;min-width:200px;padding:12px 15px;font-size:15px}
+.bar select{background:#131315;border:1px solid rgba(255,255,255,.12);border-radius:10px;color:#f4f4f5;padding:12px;font-size:15px;font-family:inherit;outline:none}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;width:100%;max-width:1120px}
-.card{background:rgba(255,255,255,.045);border:1px solid rgba(196,181,253,.16);border-radius:18px;overflow:hidden;text-decoration:none;color:#ece9ff;display:block;backdrop-filter:blur(8px);transition:transform .22s, border-color .22s, box-shadow .22s}
-.card:hover{transform:translateY(-4px);border-color:rgba(240,171,252,.65);box-shadow:0 14px 34px rgba(88,60,180,.35)}
-.card img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:rgba(255,255,255,.03)}
-.noimg{width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;color:#7e74ad;background:rgba(255,255,255,.03);font-size:12px}
-.gt{padding:10px 12px 2px;font-size:14px;font-weight:700}
-.gc{padding:0 12px 12px;font-size:12px;color:#9d92d6}
+.card{background:#101012;border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;text-decoration:none;color:#f4f4f5;display:block;transition:border-color .15s}
+.card:hover{border-color:rgba(255,255,255,.24)}
+.card img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#17171a}
+.noimg{width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;color:#63636b;background:#17171a;font-size:12px}
+.gt{padding:10px 12px 2px;font-size:14px;font-weight:600}
+.gc{padding:0 12px 12px;font-size:12px;color:#8b8b93}
 body.playbody{padding:0;height:100vh}
-.top{display:flex;gap:8px;align-items:center;padding:9px 12px;background:rgba(10,6,28,.72);border-bottom:1px solid rgba(196,181,253,.18);flex-wrap:wrap;width:100%;backdrop-filter:blur(12px)}
-.top .title{font-weight:700;margin-right:auto;font-size:15px;font-family:'Comfortaa',sans-serif;letter-spacing:.02em}
-.top a,.top button{background:rgba(255,255,255,.06);color:#ded7ff;border:1px solid rgba(196,181,253,.3);border-radius:12px;padding:8px 13px;cursor:pointer;text-decoration:none;font-size:13px;font-weight:700;box-shadow:none;font-family:inherit}
-.top button.on{border-color:#f0abfc;color:#fff;background:rgba(236,72,153,.18)}
+.top{display:flex;gap:8px;align-items:center;padding:9px 12px;background:#0e0e10;border-bottom:1px solid rgba(255,255,255,.09);flex-wrap:wrap;width:100%}
+.top .title{font-weight:600;margin-right:auto;font-size:15px;letter-spacing:-.01em}
+.top a,.top button{background:#17171a;color:#e4e4e7;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:8px 13px;cursor:pointer;text-decoration:none;font-size:13px;font-weight:600;font-family:inherit}
+.top button.on{border-color:#5e8eff;color:#fff;background:rgba(94,142,255,.16)}
 iframe.gameframe{flex:1;width:100%;border:0;background:#000}
 `;
 const STARS_JS = `
@@ -359,7 +355,7 @@ const STARS_JS = `
     for(var i=0;i<stars.length;i++){ var st=stars[i]; st.p+=st.s*0.016; st.y-=st.d; if(st.y<-2){ st.y=H+2; st.x=Math.random()*W; }
       var a=0.35+0.65*Math.abs(Math.sin(st.p));
       ctx.beginPath(); ctx.arc(st.x,st.y,st.r,0,6.2832); ctx.fillStyle='rgba(230,225,255,'+(a*0.9)+')'; ctx.fill();
-      if(st.r>1.15){ ctx.beginPath(); ctx.arc(st.x,st.y,st.r*3.2,0,6.2832); ctx.fillStyle='rgba(167,139,250,'+(a*0.10)+')'; ctx.fill(); }
+      if(st.r>1.15){ ctx.beginPath(); ctx.arc(st.x,st.y,st.r*3.2,0,6.2832); ctx.fillStyle='rgba(94,142,255,'+(a*0.10)+')'; ctx.fill(); }
     }
     if(!meteor && !reduced && Math.random()<0.0022){ meteor={x:Math.random()*W*0.7+W*0.2,y:Math.random()*H*0.25,vx:-7-Math.random()*3,vy:4+Math.random()*2,l:1}; }
     if(meteor){ meteor.x+=meteor.vx; meteor.y+=meteor.vy; meteor.l-=0.016;
@@ -506,7 +502,7 @@ function gamesPage(games) {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{position:absolute;top:6px;right:8px;z-index:2;font-size:19px;line-height:1;color:rgba(255,255,255,.85);text-shadow:0 1px 6px rgba(0,0,0,.85);cursor:pointer;padding:3px 5px}.fav.on{color:#fbbf24}.chip{background:rgba(139,92,246,.14);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:700;font-family:inherit}.chip.on{background:rgba(139,92,246,.45)}</style></head><body>${STAR_CANVAS}<div class="wrap">
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{position:absolute;top:6px;right:8px;z-index:2;font-size:19px;line-height:1;color:rgba(255,255,255,.85);text-shadow:0 1px 6px rgba(0,0,0,.85);cursor:pointer;padding:3px 5px}.fav.on{color:#fbbf24}.chip{background:rgba(94,142,255,.14);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:700;font-family:inherit}.chip.on{background:rgba(94,142,255,.45)}</style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/home">← 6ixNetworks</a>
 <h1>6ix<span>Networks</span> games</h1>
 
@@ -550,7 +546,7 @@ paintFavs();
 }
 function playPage(u, t) {
   if (!/^https:\/\//i.test(u || '')) {
-    return '<!DOCTYPE html><body style="background:#070313;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#c084fc" href="/gs">back to games</a></body>';
+    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#9db9ff" href="/gs">back to games</a></body>';
   }
   const prox = gproxied(u);
   const alt = proxied(u);
@@ -563,9 +559,9 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CA
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
 <button onclick="cloakTab('google')">cloak: google</button>
-<button onclick="cloakTab('drive')" style="background:rgba(139,92,246,.13);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()">cloaked tab</button></div>
+<button onclick="cloakTab('drive')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()">cloaked tab</button></div>
 <iframe class="gameframe" id="gf" src="${prox}" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
-<div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(20,14,48,.92);border:1px solid rgba(196,181,253,.45);color:#ece9ff;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
+<div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
 <script src="/cloak.js"></script>
 <script src="/stars.js"></script>
 <script>
@@ -614,12 +610,12 @@ function emuPage() {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
-.panel{background:rgba(20,14,48,.55);border:1px solid rgba(196,181,253,.25);border-radius:18px;padding:16px;margin-top:16px}
+.panel{background:rgba(18,18,20,.55);border:1px solid rgba(255,255,255,.25);border-radius:18px;padding:16px;margin-top:16px}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
-.row select,.row input[type=text]{background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:10px;padding:10px;font-family:inherit}
+.row select,.row input[type=text]{background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:10px;font-family:inherit}
 .row input[type=text]{flex:1;min-width:200px}
 #game{width:100%;aspect-ratio:4/3;background:#000;border-radius:14px;overflow:hidden}
-button.play{background:rgba(139,92,246,.3);color:#fff;border:1px solid rgba(196,181,253,.5);border-radius:999px;padding:11px 26px;font-weight:800;cursor:pointer;font-family:inherit;font-size:15px}
+button.play{background:rgba(94,142,255,.3);color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:999px;padding:11px 26px;font-weight:800;cursor:pointer;font-family:inherit;font-size:15px}
 </style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/gs">← games</a>
 <h1>6ix<span>Networks</span> emulator</h1>
@@ -702,20 +698,20 @@ function chatPage() {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
-#msgs{height:52vh;overflow-y:auto;background:rgba(0,0,0,.25);border:1px solid rgba(196,181,253,.22);border-radius:16px;padding:14px;text-align:left}
+#msgs{height:52vh;overflow-y:auto;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:14px;text-align:left}
 .msg{margin:7px 0;word-break:break-word}
-.msg b{color:#c4b5fd}
-.msg.bot b{color:#f0abfc}
+.msg b{color:#9db9ff}
+.msg.bot b{color:#fafafa}
 .sys{text-align:center;opacity:.55;font-size:12px;margin:8px 0}
 .bar{display:flex;gap:8px;margin-top:10px}
-.bar input[type=text]{flex:1;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:10px;padding:11px;font-family:inherit}
-.bar button{background:rgba(139,92,246,.3);color:#fff;border:1px solid rgba(196,181,253,.5);border-radius:10px;padding:11px 18px;font-weight:800;cursor:pointer;font-family:inherit}
-.chip.on{background:rgba(139,92,246,.45)}
+.bar input[type=text]{flex:1;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:11px;font-family:inherit}
+.bar button{background:rgba(94,142,255,.3);color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:10px;padding:11px 18px;font-weight:800;cursor:pointer;font-family:inherit}
+.chip.on{background:rgba(94,142,255,.45)}
 .vmem{transition:all .15s}
 .vmem.speaking{border-color:#4ade80!important;color:#bbf7d0;box-shadow:0 0 0 2px rgba(74,222,128,.45)}
 .vtile.speaking{border-color:#4ade80!important;box-shadow:0 0 0 2px rgba(74,222,128,.45)}
 #vgrid video:fullscreen{width:100%;height:100%;object-fit:cover;background:#000}
-#vstage:fullscreen{border-radius:0;padding:14px;background:rgba(8,6,24,.97)}
+#vstage:fullscreen{border-radius:0;padding:14px;background:rgba(10,10,11,.97)}
 #vstage:fullscreen #vgrid{height:calc(100% - 46px);align-content:center}
 </style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/home">← home</a> · <a class="back" href="/ai">ask six ✦</a>
@@ -725,12 +721,12 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <button class="chip room" data-room="games" type="button">games</button>
 <button class="chip room" data-room="random" type="button">random</button>
 <span id="pres" style="opacity:.7;font-size:13px">connecting…</span>
-<input id="name" type="text" maxlength="24" placeholder="ur name" style="margin-left:auto;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:10px;padding:8px 10px;font-family:inherit;width:130px">
+<input id="name" type="text" maxlength="24" placeholder="ur name" style="margin-left:auto;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:8px 10px;font-family:inherit;width:130px">
 </div>
-<div id="privbar" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid rgba(240,171,252,.4);border-radius:12px;background:rgba(240,171,252,.08);font-size:14px;text-align:left"></div>
+<div id="privbar" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid rgba(255,255,255,.4);border-radius:12px;background:rgba(255,255,255,.08);font-size:14px;text-align:left"></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">
 <button class="chip" id="mkpriv" type="button">🔒 new private room</button>
-<input id="joincode" type="text" maxlength="12" placeholder="room code" style="background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:10px;padding:8px 10px;font-family:inherit;width:120px">
+<input id="joincode" type="text" maxlength="12" placeholder="room code" style="background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:8px 10px;font-family:inherit;width:120px">
 <button class="chip" id="joinpriv" type="button">join private</button>
 <span style="opacity:.6;font-size:12px">private rooms wipe themselves right after everyone leaves</span>
 </div>
@@ -751,7 +747,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <button class="chip" id="vtalk" type="button" style="display:none">🎙 hold to talk to six</button>
 <button class="chip" id="vleave" type="button">leave call</button>
 </div>
-<div id="vstage" style="display:none;margin:8px 0;padding:10px;border-radius:18px;background:rgba(8,6,24,.72);border:1px solid rgba(196,181,253,.3)">
+<div id="vstage" style="display:none;margin:8px 0;padding:10px;border-radius:18px;background:rgba(10,10,11,.72);border:1px solid rgba(255,255,255,.3)">
 <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
 <span id="vstitle" style="font-weight:800;font-size:14px">📹 call</span>
 <span id="vcount" style="opacity:.65;font-size:12px"></span>
@@ -957,9 +953,9 @@ function ensureTile(pid){
   var self = pid === myPid;
   var nm = self ? 'you' : memberName(pid);
   t = document.createElement('div'); t.className = 'vtile'; t.setAttribute('data-tile', pid);
-  t.setAttribute('style', 'position:relative;border-radius:14px;overflow:hidden;background:rgba(0,0,0,.35);border:1px solid rgba(196,181,253,.25);aspect-ratio:1/1');
+  t.setAttribute('style', 'position:relative;border-radius:14px;overflow:hidden;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.25);aspect-ratio:1/1');
   var vid = document.createElement('video'); vid.autoplay = true; vid.setAttribute('playsinline', ''); vid.setAttribute('style', 'width:100%;height:100%;object-fit:cover;display:none' + (self ? ';transform:scaleX(-1)' : ''));
-  var ph = document.createElement('div'); ph.className = 'vph'; ph.setAttribute('style', 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#c4b5fd'); ph.textContent = (memberName(pid) || 'a').slice(0, 1).toUpperCase();
+  var ph = document.createElement('div'); ph.className = 'vph'; ph.setAttribute('style', 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#9db9ff'); ph.textContent = (memberName(pid) || 'a').slice(0, 1).toUpperCase();
   var lb = document.createElement('span'); lb.setAttribute('style', 'position:absolute;left:8px;bottom:6px;font-size:12px;opacity:.9;text-shadow:0 1px 4px #000'); lb.textContent = nm;
   if(!self) vid.addEventListener('click', function(){ if(vid.requestFullscreen) vid.requestFullscreen().catch(function(){}); else if(vid.webkitEnterFullscreen) vid.webkitEnterFullscreen(); });
   t.appendChild(vid); t.appendChild(ph); t.appendChild(lb);
@@ -1135,8 +1131,8 @@ function sixTileShow(){
   if(!inVoice || !sixVoice) return;
   if(vgridEl.querySelector('[data-tile="sixbot"]')) return;
   var t=document.createElement('div'); t.className='vtile'; t.setAttribute('data-tile','sixbot');
-  t.setAttribute('style','position:relative;border-radius:14px;overflow:hidden;background:rgba(88,28,135,.35);border:1px solid rgba(240,171,252,.45);aspect-ratio:1/1');
-  var ph=document.createElement('div'); ph.setAttribute('style','position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#f0abfc'); ph.textContent='✦';
+  t.setAttribute('style','position:relative;border-radius:14px;overflow:hidden;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.45);aspect-ratio:1/1');
+  var ph=document.createElement('div'); ph.setAttribute('style','position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#fafafa'); ph.textContent='✦';
   var lb=document.createElement('span'); lb.setAttribute('style','position:absolute;left:8px;bottom:6px;font-size:12px;opacity:.9;text-shadow:0 1px 4px #000'); lb.textContent='six ✦ ai';
   t.appendChild(ph); t.appendChild(lb); vgridEl.appendChild(t);
 }
@@ -1211,15 +1207,15 @@ function aiPage() {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
-.who{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#f0abfc;margin-bottom:4px}
-.pchip.on{background:rgba(139,92,246,.45)}
-#log{height:52vh;overflow-y:auto;background:rgba(0,0,0,.25);border:1px solid rgba(196,181,253,.22);border-radius:16px;padding:14px;text-align:left}
+.who{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#fafafa;margin-bottom:4px}
+.pchip.on{background:rgba(94,142,255,.45)}
+#log{height:52vh;overflow-y:auto;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:14px;text-align:left}
 .bub{max-width:85%;margin:8px 0;padding:10px 13px;border-radius:14px;word-break:break-word;white-space:pre-wrap}
-.bub.me{margin-left:auto;background:rgba(139,92,246,.35)}
+.bub.me{margin-left:auto;background:rgba(94,142,255,.35)}
 .bub.six{margin-right:auto;background:rgba(255,255,255,.07)}
 .bar{display:flex;gap:8px;margin-top:10px}
-.bar input[type=text]{flex:1;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:10px;padding:11px;font-family:inherit}
-.bar button{background:rgba(139,92,246,.3);color:#fff;border:1px solid rgba(196,181,253,.5);border-radius:10px;padding:11px 18px;font-weight:800;cursor:pointer;font-family:inherit}
+.bar input[type=text]{flex:1;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:11px;font-family:inherit}
+.bar button{background:rgba(94,142,255,.3);color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:10px;padding:11px 18px;font-weight:800;cursor:pointer;font-family:inherit}
 </style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/home">← home</a> · <a class="back" href="/chat">chatroom</a>
 <h1>six <span>✦ ai</span></h1>
@@ -1315,16 +1311,16 @@ function hwPage() {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
-#doc{width:100%;height:30vh;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:14px;padding:13px;font-family:inherit;font-size:14px;line-height:1.5;resize:vertical}
-#out{display:none;text-align:left;background:rgba(0,0,0,.25);border:1px solid rgba(196,181,253,.22);border-radius:16px;padding:16px;margin-top:14px;white-space:pre-wrap;word-break:break-word;line-height:1.6}
-.act{background:rgba(139,92,246,.3);color:#fff;border:1px solid rgba(196,181,253,.5);border-radius:10px;padding:11px 16px;font-weight:800;cursor:pointer;font-family:inherit}
-.act.alt{background:rgba(240,171,252,.18);border-color:rgba(240,171,252,.5)}
+#doc{width:100%;height:30vh;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:14px;padding:13px;font-family:inherit;font-size:14px;line-height:1.5;resize:vertical}
+#out{display:none;text-align:left;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:16px;margin-top:14px;white-space:pre-wrap;word-break:break-word;line-height:1.6}
+.act{background:rgba(94,142,255,.3);color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:10px;padding:11px 16px;font-weight:800;cursor:pointer;font-family:inherit}
+.act.alt{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.5)}
 </style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/home">← home</a> · <a class="back" href="/ai">ask six ✦</a>
 <h1>hw <span>helper</span></h1>
 <p style="opacity:.7;margin:6px 0 12px">paste the hw or drop a screenshot of it — six will summarize it, dumb it down, or just do it for u</p>
 <textarea id="doc" placeholder="paste the whole doc here…" maxlength="12000"></textarea>
-<div id="drop" style="margin-top:10px;border:1.5px dashed rgba(196,181,253,.45);border-radius:14px;padding:16px;text-align:center;cursor:pointer">
+<div id="drop" style="margin-top:10px;border:1.5px dashed rgba(255,255,255,.45);border-radius:14px;padding:16px;text-align:center;cursor:pointer">
 <span id="droplabel">📸 drop a screenshot of the hw here, click to pick one, or just paste it (ctrl+v) — six can read images too</span>
 <img id="prev" style="display:none;max-width:100%;max-height:220px;border-radius:10px;margin:10px auto 0">
 <button class="act" id="rmimg" type="button" style="display:none;margin-top:10px;padding:7px 12px">remove screenshot</button>
@@ -1338,7 +1334,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <span id="count" style="opacity:.6;font-size:12px"></span>
 <span id="stat" style="opacity:.8;font-size:13px"></span>
 </div>
-<input id="editq" type="text" maxlength="300" placeholder="editing? tell six what to change — make it longer, fix the grammar, rewrite it like a student wrote it…" style="width:100%;margin-top:10px;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:10px;padding:11px;font-family:inherit">
+<input id="editq" type="text" maxlength="300" placeholder="editing? tell six what to change — make it longer, fix the grammar, rewrite it like a student wrote it…" style="width:100%;margin-top:10px;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:11px;font-family:inherit">
 <div id="out"></div>
 <button class="act" id="copy" type="button" style="display:none;margin-top:10px">copy the text</button>
 <p style="opacity:.6;font-size:13px;margin-top:14px">nothing leaves the network — six reads it right here, screenshots included. drafts are a starting point, make it sound like u before u turn it in</p>
@@ -1405,9 +1401,9 @@ function accountPage() {
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .acc{max-width:430px;margin:0 auto;text-align:left}
-.acc input{width:100%;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:10px;padding:11px;font-family:inherit;margin:5px 0 10px}
+.acc input{width:100%;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:11px;font-family:inherit;margin:5px 0 10px}
 .acc h3{margin:20px 0 4px}
-#out{margin-top:14px;min-height:22px;color:#f0abfc}
+#out{margin-top:14px;min-height:22px;color:#fafafa}
 </style></head>
 <body><div class="stars"></div>
 <div class="wrap">
@@ -1439,7 +1435,7 @@ function showState(user){
     formsEl.style.display='none';
     stateEl.innerHTML='';
     var d=document.createElement('div');
-    d.setAttribute('style','background:rgba(88,28,135,.3);border:1px solid rgba(196,181,253,.35);border-radius:14px;padding:14px');
+    d.setAttribute('style','background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.35);border-radius:14px;padding:14px');
     var t=document.createElement('div'); t.textContent='🔒 logged in as '+user; t.setAttribute('style','font-weight:800;margin-bottom:8px');
     var go=document.createElement('a'); go.href='/chat'; go.className='chip'; go.textContent='go chat as '+user; go.setAttribute('style','text-decoration:none;margin-right:8px');
     var lo=document.createElement('button'); lo.className='chip'; lo.type='button'; lo.textContent='log out';
@@ -1471,15 +1467,15 @@ function toolsPage() {
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:16px}
-.panel{background:rgba(20,14,48,.55);border:1px solid rgba(196,181,253,.25);border-radius:18px;padding:16px}
+.panel{background:rgba(18,18,20,.55);border:1px solid rgba(255,255,255,.25);border-radius:18px;padding:16px}
 .panel h2{margin:0 0 12px;font-size:17px}
 #cdisp{background:rgba(0,0,0,.35);border-radius:12px;padding:12px;font-size:24px;text-align:right;min-height:30px;word-break:break-all}
 .cgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
-.cgrid button,.tbtn{background:rgba(139,92,246,.16);color:#ece9ff;border:1px solid rgba(196,181,253,.3);border-radius:12px;padding:12px 10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
-#note{width:100%;min-height:170px;background:rgba(0,0,0,.3);color:#f2f2f2;border:1px solid rgba(196,181,253,.25);border-radius:12px;padding:10px;font-family:inherit;font-size:14px;box-sizing:border-box}
+.cgrid button,.tbtn{background:rgba(94,142,255,.16);color:#f4f4f5;border:1px solid rgba(255,255,255,.3);border-radius:12px;padding:12px 10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
+#note{width:100%;min-height:170px;background:rgba(0,0,0,.3);color:#f2f2f2;border:1px solid rgba(255,255,255,.25);border-radius:12px;padding:10px;font-family:inherit;font-size:14px;box-sizing:border-box}
 #sw{font-size:38px;text-align:center;font-weight:800;margin:8px 0 12px}
 .trow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;align-items:center}
-#tmin{width:70px;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:10px;padding:9px;text-align:center;font-family:inherit}
+#tmin{width:70px;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:9px;text-align:center;font-family:inherit}
 </style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/home">← 6ixNetworks</a>
 <h1>6ix<span>Networks</span> tools</h1>
@@ -1847,7 +1843,7 @@ async function handleYtSearch(req, res, q) {
     } catch { /* try next instance */ }
   }
   res.writeHead(502, { 'content-type': 'text/html; charset=utf-8' });
-  res.end('<!DOCTYPE html><body style="background:#070313;color:#f2f2f2;font-family:system-ui;padding:40px">all search instances are down rn — <a style="color:#c084fc" href="/yt/search?q=' + encodeURIComponent(query) + '">retry</a></body>');
+  res.end('<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">all search instances are down rn — <a style="color:#9db9ff" href="/yt/search?q=' + encodeURIComponent(query) + '">retry</a></body>');
 }
 
 
@@ -1966,12 +1962,12 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <video id="vid" controls playsinline preload="auto" ${poster ? `poster="${poster}"` : ''} style="width:100%;border-radius:18px;background:#000;aspect-ratio:16/9;margin-top:12px"></video>
 <iframe id="ytembed" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="width:100%;aspect-ratio:16/9;border:0;border-radius:18px;background:#000;margin-top:12px;display:none"></iframe>
 <div style="display:flex;gap:8px;margin:12px 2px 4px;flex-wrap:wrap;align-items:center">
-<button id="modeStream" style="background:rgba(124,58,237,.25);border:1px solid rgba(196,181,253,.45);color:#ece9ff;border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:700">✦ stream mode</button>
-<button id="modeEmbed" style="background:rgba(20,14,48,.92);border:1px solid rgba(196,181,253,.45);color:#ece9ff;border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:700;opacity:.65">embed player</button>
+<button id="modeStream" style="background:rgba(94,142,255,.25);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:700">✦ stream mode</button>
+<button id="modeEmbed" style="background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:700;opacity:.65">embed player</button>
 <span id="ytstat" style="opacity:.75;font-size:13px">stream mode — the file itself, straight through the network</span>
 </div>
 <p style="margin:10px 2px 20px;font-weight:700">${escHtml(title || '')}</p>
-<div id="ytretry" style="display:none;margin:0 2px 14px;background:rgba(20,14,48,.92);border:1px solid rgba(196,181,253,.45);color:#ece9ff;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700;width:fit-content">✦ tap for a fresh route</div>
+<div id="ytretry" style="display:none;margin:0 2px 14px;background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700;width:fit-content">✦ tap for a fresh route</div>
 <div class="grid">${recs}</div>
 ${CLOAK_BAR}
 </div>
@@ -2057,11 +2053,11 @@ function shellPage(servers) {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-<style>html,body{margin:0;height:100%;background:#070313;overflow:hidden}iframe{position:fixed;inset:0;width:100%;height:100%;border:0}
-#dot{position:fixed;right:14px;bottom:14px;z-index:9;width:30px;height:30px;border-radius:50%;border:1px solid rgba(196,181,253,.35);background:rgba(16,10,38,.55);color:#c4b5fd;opacity:.35;cursor:pointer;font-size:14px;line-height:1}
+<style>html,body{margin:0;height:100%;background:#0a0a0b;overflow:hidden}iframe{position:fixed;inset:0;width:100%;height:100%;border:0}
+#dot{position:fixed;right:14px;bottom:14px;z-index:9;width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(14,14,16,.55);color:#9db9ff;opacity:.35;cursor:pointer;font-size:14px;line-height:1}
 #dot:hover{opacity:1}
-#menu{position:fixed;right:14px;bottom:52px;z-index:9;display:none;flex-direction:column;gap:6px;background:rgba(12,8,30,.94);border:1px solid rgba(196,181,253,.3);border-radius:14px;padding:10px}
-#menu button{background:rgba(139,92,246,.14);color:#e6e0ff;border:1px solid rgba(196,181,253,.3);border-radius:999px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;text-align:left;font-family:system-ui}
+#menu{position:fixed;right:14px;bottom:52px;z-index:9;display:none;flex-direction:column;gap:6px;background:rgba(11,11,13,.94);border:1px solid rgba(255,255,255,.3);border-radius:14px;padding:10px}
+#menu button{background:rgba(94,142,255,.14);color:#f4f4f5;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;text-align:left;font-family:system-ui}
 </style></head><body>
 <iframe id="f" allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone" allowfullscreen></iframe>
 <button id="dot">✦</button>
