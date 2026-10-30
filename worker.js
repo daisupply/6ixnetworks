@@ -617,60 +617,61 @@ function escHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 const APPS = [
-  { t: 'Discord', u: 'https://discord.com/app', c: 'Social' },
-  { t: 'Instagram', u: 'https://www.instagram.com', c: 'Social' },
-  { t: 'TikTok', u: 'https://www.tiktok.com', c: 'Social' },
-  { t: 'X', u: 'https://x.com', c: 'Social' },
-  { t: 'Reddit', u: 'https://www.reddit.com', c: 'Social' },
-  { t: 'Snapchat', u: 'https://web.snapchat.com', c: 'Social' },
-  { t: 'WhatsApp', u: 'https://web.whatsapp.com', c: 'Social' },
-  { t: 'Telegram', u: 'https://web.telegram.org', c: 'Social' },
-  { t: 'Pinterest', u: 'https://www.pinterest.com', c: 'Social' },
-  { t: 'Facebook', u: 'https://www.facebook.com', c: 'Social' },
-  { t: 'YouTube', u: 'https://www.youtube.com', c: 'Video' },
-  { t: 'Twitch', u: 'https://www.twitch.tv', c: 'Video' },
-  { t: 'Kick', u: 'https://kick.com', c: 'Video' },
-  { t: 'Tubi', u: 'https://tubitv.com', c: 'Video' },
-  { t: 'Pluto TV', u: 'https://pluto.tv', c: 'Video' },
-  { t: 'Rumble', u: 'https://rumble.com', c: 'Video' },
-  { t: 'Dailymotion', u: 'https://www.dailymotion.com', c: 'Video' },
-  { t: 'Spotify', u: 'https://open.spotify.com', c: 'Music' },
-  { t: 'SoundCloud', u: 'https://soundcloud.com', c: 'Music' },
-  { t: 'YouTube Music', u: 'https://music.youtube.com', c: 'Music' },
-  { t: 'Apple Music', u: 'https://music.apple.com', c: 'Music' },
-  { t: 'Audiomack', u: 'https://audiomack.com', c: 'Music' },
-  { t: 'ChatGPT', u: 'https://chatgpt.com', c: 'AI' },
-  { t: 'Gemini', u: 'https://gemini.google.com', c: 'AI' },
-  { t: 'Claude', u: 'https://claude.ai', c: 'AI' },
-  { t: 'Perplexity', u: 'https://www.perplexity.ai', c: 'AI' },
-  { t: 'Character AI', u: 'https://character.ai', c: 'AI' },
-  { t: 'Gmail', u: 'https://mail.google.com', c: 'Google' },
-  { t: 'Drive', u: 'https://drive.google.com', c: 'Google' },
-  { t: 'Docs', u: 'https://docs.google.com', c: 'Google' },
-  { t: 'Maps', u: 'https://www.google.com/maps', c: 'Google' },
-  { t: 'Photos', u: 'https://photos.google.com', c: 'Google' },
-  { t: 'Classroom', u: 'https://classroom.google.com', c: 'Google' },
-  { t: 'Photopea', u: 'https://www.photopea.com', c: 'Tools' },
-  { t: 'Canva', u: 'https://www.canva.com', c: 'Tools' },
-  { t: 'CapCut', u: 'https://www.capcut.com', c: 'Tools' },
-  { t: 'VS Code', u: 'https://vscode.dev', c: 'Tools' },
-  { t: 'GitHub', u: 'https://github.com', c: 'Tools' },
-  { t: 'Wikipedia', u: 'https://www.wikipedia.org', c: 'Tools' },
-  { t: 'Internet Archive', u: 'https://archive.org', c: 'Tools' }
+  { t: 'Discord', u: 'https://discord.com/app', c: 'Social', lg: 'discord' },
+  { t: 'Instagram', u: 'https://www.instagram.com', c: 'Social', lg: 'instagram' },
+  { t: 'TikTok', u: 'https://www.tiktok.com', c: 'Social', lg: 'tiktok' },
+  { t: 'X', u: 'https://x.com', c: 'Social', lg: 'x' },
+  { t: 'Reddit', u: 'https://www.reddit.com', c: 'Social', lg: 'reddit' },
+  { t: 'Snapchat', u: 'https://web.snapchat.com', c: 'Social', lg: 'snapchat' },
+  { t: 'WhatsApp', u: 'https://web.whatsapp.com', c: 'Social', lg: 'whatsapp' },
+  { t: 'Telegram', u: 'https://web.telegram.org', c: 'Social', lg: 'telegram' },
+  { t: 'Pinterest', u: 'https://www.pinterest.com', c: 'Social', lg: 'pinterest' },
+  { t: 'Facebook', u: 'https://www.facebook.com', c: 'Social', lg: 'facebook' },
+  { t: 'YouTube', u: 'https://www.youtube.com', c: 'Video', lg: 'youtube' },
+  { t: 'Twitch', u: 'https://www.twitch.tv', c: 'Video', lg: 'twitch' },
+  { t: 'Kick', u: 'https://kick.com', c: 'Video', lg: 'kick' },
+  { t: 'Tubi', u: 'https://tubitv.com', c: 'Video', lg: 'tubi' },
+  { t: 'Pluto TV', u: 'https://pluto.tv', c: 'Video', fi: 'pluto.tv' },
+  { t: 'Rumble', u: 'https://rumble.com', c: 'Video', lg: 'rumble' },
+  { t: 'Dailymotion', u: 'https://www.dailymotion.com', c: 'Video', lg: 'dailymotion' },
+  { t: 'Spotify', u: 'https://open.spotify.com', c: 'Music', lg: 'spotify' },
+  { t: 'SoundCloud', u: 'https://soundcloud.com', c: 'Music', lg: 'soundcloud' },
+  { t: 'YouTube Music', u: 'https://music.youtube.com', c: 'Music', lg: 'youtubemusic' },
+  { t: 'Apple Music', u: 'https://music.apple.com', c: 'Music', lg: 'applemusic' },
+  { t: 'Audiomack', u: 'https://audiomack.com', c: 'Music', lg: 'audiomack' },
+  { t: 'ChatGPT', u: 'https://chatgpt.com', c: 'AI', fi: 'chatgpt.com' },
+  { t: 'Gemini', u: 'https://gemini.google.com', c: 'AI', lg: 'googlegemini' },
+  { t: 'Claude', u: 'https://claude.ai', c: 'AI', lg: 'claude' },
+  { t: 'Perplexity', u: 'https://www.perplexity.ai', c: 'AI', lg: 'perplexity' },
+  { t: 'Character AI', u: 'https://character.ai', c: 'AI', fi: 'character.ai' },
+  { t: 'Gmail', u: 'https://mail.google.com', c: 'Google', lg: 'gmail' },
+  { t: 'Drive', u: 'https://drive.google.com', c: 'Google', lg: 'googledrive' },
+  { t: 'Docs', u: 'https://docs.google.com', c: 'Google', lg: 'googledocs' },
+  { t: 'Maps', u: 'https://www.google.com/maps', c: 'Google', lg: 'googlemaps' },
+  { t: 'Photos', u: 'https://photos.google.com', c: 'Google', lg: 'googlephotos' },
+  { t: 'Classroom', u: 'https://classroom.google.com', c: 'Google', lg: 'googleclassroom' },
+  { t: 'Photopea', u: 'https://www.photopea.com', c: 'Tools', lg: 'photopea' },
+  { t: 'Canva', u: 'https://www.canva.com', c: 'Tools', fi: 'canva.com' },
+  { t: 'CapCut', u: 'https://www.capcut.com', c: 'Tools', fi: 'capcut.com' },
+  { t: 'VS Code', u: 'https://vscode.dev', c: 'Tools', fi: 'vscode.dev' },
+  { t: 'GitHub', u: 'https://github.com', c: 'Tools', lg: 'github' },
+  { t: 'Wikipedia', u: 'https://www.wikipedia.org', c: 'Tools', lg: 'wikipedia' },
+  { t: 'Internet Archive', u: 'https://archive.org', c: 'Tools', lg: 'internetarchive' }
 ];
 function appHue(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360; return h; }
 function appsPage() {
   const cats = [...new Set(APPS.map(a => a.c))].sort();
   const cards = APPS.map((a, ai) => {
     const icon = '<svg viewBox="0 0 120 90" aria-hidden="true"><rect width="120" height="90" fill="hsl(' + appHue(a.t) + ',42%,30%)"/><text x="60" y="60" font-family="Inter,Arial,sans-serif" font-size="36" font-weight="800" fill="#ffffff" text-anchor="middle">' + escHtml(a.t.slice(0, 1).toUpperCase()) + '</text></svg>';
+    const logo = a.lg ? '<img class="applogo" loading="lazy" alt="" src="' + proxied('https://cdn.simpleicons.org/' + a.lg + '/white') + '" onerror="this.remove()">' : a.fi ? '<img class="appfav" loading="lazy" alt="" src="' + proxied('https://www.google.com/s2/favicons?domain=' + a.fi + '&sz=128') + '" onerror="this.remove()">' : '';
     return `<a class="card" href="/play?u=${encodeURIComponent(a.u)}&t=${encodeURIComponent(a.t)}" data-s="${escHtml((a.t + ' ' + a.c).toLowerCase())}" data-c="${escHtml(a.c)}" data-u="${escHtml(a.u)}" data-i="${ai}">
-      <div class="noimg gicon">${icon}</div>
+      <div class="noimg gicon">${icon}${logo}</div>
       <span class="fav" data-f="${escHtml(a.u)}">☆</span><div class="gt">${escHtml(a.t)}</div></a>`;
   }).join('');
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{position:absolute;top:6px;right:8px;z-index:2;font-size:19px;line-height:1;color:rgba(255,255,255,.85);text-shadow:0 1px 6px rgba(0,0,0,.85);cursor:pointer;padding:3px 5px}.fav.on{color:#fbbf24}.chip{background:rgba(94,142,255,.14);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:700;font-family:inherit}.chip.on{background:rgba(94,142,255,.45)}</style></head><body>${STAR_CANVAS}<div class="wrap">
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{position:absolute;top:6px;right:8px;z-index:2;font-size:19px;line-height:1;color:rgba(255,255,255,.85);text-shadow:0 1px 6px rgba(0,0,0,.85);cursor:pointer;padding:3px 5px}.fav.on{color:#fbbf24}.chip{background:rgba(94,142,255,.14);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:700;font-family:inherit}.chip.on{background:rgba(94,142,255,.45)}.noimg{position:relative}.card img.applogo{position:absolute;inset:0;margin:auto;width:54%;height:54%;object-fit:contain;background:transparent}.card img.appfav{position:absolute;inset:0;margin:auto;width:46%;height:62%;object-fit:contain;background:transparent}</style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/home">← 6ixNetworks</a>
 <h1>6ix<span>Networks</span> apps</h1>
 
