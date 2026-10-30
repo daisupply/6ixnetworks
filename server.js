@@ -1310,8 +1310,9 @@ vtalkBtn.addEventListener('mouseup', sixListenStop);
 vtalkBtn.addEventListener('mouseleave', function(){ if(sixRec) sixListenStop(); });
 vtalkBtn.addEventListener('touchstart', function(ev){ ev.preventDefault(); sixListenStart(); });
 vtalkBtn.addEventListener('touchend', function(){ sixListenStop(); });
-vjoinBtn.addEventListener('click', function(){ joinCall(false); });
-vjoinvBtn.addEventListener('click', function(){ joinCall(true); });
+function startCall(wantVideo){ try { sessionStorage.setItem('gx_call', JSON.stringify({ room: room, mode: wantVideo ? 'video' : 'voice' })); } catch(e){} location.href = '/chat/call'; }
+vjoinBtn.addEventListener('click', function(){ startCall(false); });
+vjoinvBtn.addEventListener('click', function(){ startCall(true); });
 document.getElementById('vleave').addEventListener('click', leaveVoice);
 vfsBtn.addEventListener('click', function(){ if(vstageEl.requestFullscreen) vstageEl.requestFullscreen().catch(function(){}); });
 vmuteBtn.addEventListener('click', function(){ vMuted = !vMuted; applyAudio(); });
@@ -1334,6 +1335,349 @@ connect();
 </body>
 </html>`;
 }
+function callPage() {
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script>
+<title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+body{display:block;padding:0}
+.callapp{display:flex;flex-direction:column;height:100vh;height:100dvh;background:#08080a;text-align:left}
+.vs-head{display:flex;align-items:center;gap:10px;padding:14px 18px;padding-top:max(14px, env(safe-area-inset-top));border-bottom:1px solid rgba(255,255,255,.09);background:#101012;flex:none;flex-wrap:wrap}
+.vs-brand{font-weight:800;font-size:16px}
+.vs-brand span{color:#9db9ff}
+.vs-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9db9ff;border:1px solid rgba(94,142,255,.4);border-radius:999px;padding:3px 9px}
+.vs-timer{font-size:13px;opacity:.6;font-variant-numeric:tabular-nums}
+#vgrid{flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;padding:18px;align-content:start;align-content:safe center;max-width:1400px;width:100%;margin:0 auto;box-sizing:border-box}
+.vtile{aspect-ratio:16/9!important;border-radius:16px!important;border:1px solid rgba(255,255,255,.12)!important;background:#17171a!important}
+.vtile.speaking{border-color:#4ade80!important;box-shadow:0 0 0 2px rgba(74,222,128,.45)}
+.vmem{transition:all .15s}
+.vmem.speaking{border-color:#4ade80!important;color:#bbf7d0;box-shadow:0 0 0 2px rgba(74,222,128,.45)}
+#vgrid video:fullscreen{width:100%;height:100%;object-fit:cover;background:#000}
+#vmembers{justify-content:center;padding:0 18px 10px}
+#vstat{text-align:center;opacity:.78;font-size:13px;padding:2px 16px 10px}
+#vcontrols{justify-content:center;align-items:center;gap:9px;margin:0 auto 14px;background:rgba(16,16,18,.88);border:1px solid rgba(255,255,255,.11);border-radius:999px;padding:10px 14px;width:fit-content;max-width:94vw;flex-wrap:wrap}
+#vcontrols .chip{border-radius:999px}
+#vleave{background:rgba(220,38,38,.9)!important;color:#fff!important;border-color:transparent!important}
+.callfoot{display:flex;align-items:center;gap:10px;padding:10px 16px;padding-bottom:calc(10px + env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.08);background:#101012;flex:none;flex-wrap:wrap}
+.callfoot .cloakbar{margin:0}
+</style></head><body>
+<div class="callapp">
+<div class="vs-head"><span class="vs-brand">6ix<span>Chat</span></span><span id="vstitle" style="font-weight:800;font-size:14px">call</span><span id="vcount" style="opacity:.65;font-size:12px"></span><span id="privbadge" class="vs-badge" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> private</span><span id="vtimer" class="vs-timer">00:00</span><button class="chip" id="vfs" type="button" style="margin-left:auto;padding:6px 12px">fullscreen</button></div>
+<div id="vgrid"></div>
+<div id="vmembers" style="display:none;gap:8px;flex-wrap:wrap;align-items:center"></div>
+<div id="vstat">connecting…</div>
+<div id="vcontrols" style="display:none;gap:8px;flex-wrap:wrap;align-items:center">
+<button class="chip" id="vmute" type="button">mute</button>
+<button class="chip" id="vdeaf" type="button">deafen</button>
+<button class="chip" id="vptt" type="button">push-to-talk: off</button>
+<button class="chip" id="vhold" type="button" style="display:none">hold to talk</button>
+<button class="chip" id="vcam" type="button">cam: off</button>
+<button class="chip" id="vflip" type="button" style="display:none">flip cam</button>
+<button class="chip" id="vsix" type="button">six voice: off</button>
+<button class="chip" id="vtalk" type="button" style="display:none">hold to talk to six</button>
+<button class="chip" id="vleave" type="button">leave call</button>
+</div>
+<div class="callfoot"><a class="chip" href="#" id="callback" style="text-decoration:none">← back to chat</a><span style="flex:1"></span>${CLOAK_BAR}</div>
+</div>
+<script src="/cloak.js"></script>
+<script>
+var room = 'lobby', ws = null, wantVideo = false, autoJoined = false;
+try { var cfg = JSON.parse(sessionStorage.getItem('gx_call') || 'null'); if (cfg && cfg.room) { room = String(cfg.room); wantVideo = cfg.mode === 'video'; } } catch (e) {}
+try { var qs = new URLSearchParams(location.search); if (qs.get('room')) room = qs.get('room'); if (qs.get('mode')) wantVideo = qs.get('mode') === 'video'; } catch (e) {}
+room = room.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 24) || 'lobby';
+var myName = ''; try { myName = localStorage.getItem('six_name') || ''; } catch (e) {}
+var vstatEl = document.getElementById('vstat');
+function curName() { return myName || 'anon'; }
+function line(m) { if (m && m.sys) vstatEl.textContent = m.text; }
+if (room.indexOf('p-') === 0) { var pb = document.getElementById('privbadge'); if (pb) pb.style.display = 'inline-flex'; document.getElementById('vstitle').textContent = 'call — private'; }
+var callT0 = null, callIv = null;
+function startTimer() { if (callIv) return; callT0 = Date.now(); callIv = setInterval(function () { var s = Math.floor((Date.now() - callT0) / 1000); var mm = Math.floor(s / 60); var ss = s % 60; document.getElementById('vtimer').textContent = (mm < 10 ? '0' : '') + mm + ':' + (ss < 10 ? '0' : '') + ss; }, 1000); }
+function handle(o) {
+  if (!o) return;
+  if (o.type === 'rtc-id') { myPid = o.id; if (!autoJoined) { autoJoined = true; joinCall(wantVideo); startTimer(); } }
+  else if (o.type === 'voice') { voiceList(o.members || []); }
+  else if (o.type === 'rtc') { rtcMsg(o.from, o.data); }
+  else if (o.type === 'msg') { if (o.msg && o.msg.bot && o.msg.ts > joinedAt) speakSix(o.msg.text); }
+}
+function connect() {
+  try { ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/chat/ws?room=' + encodeURIComponent(room) + '&name=' + encodeURIComponent(curName())); }
+  catch (e) { vstatEl.textContent = 'calls need the live connection — this network blocks websockets'; return; }
+  ws.onmessage = function (ev) { try { handle(JSON.parse(ev.data)); } catch (e) {} };
+  ws.onclose = function () { voiceDrop(); };
+  ws.onerror = function () { try { ws.close(); } catch (e) {} };
+}
+window.addEventListener('pagehide', function () { try { vsend({ type: 'rtc-leave' }); } catch (e) {} });
+document.getElementById('callback').addEventListener('click', function (ev) { ev.preventDefault(); try { leaveVoice(); } catch (e) {} location.href = '/chat?room=' + encodeURIComponent(room); });
+var booted = false;
+function boot() { if (booted) return; booted = true; connect(); }
+fetch('/auth/me').then(function (r) { return r.json(); }).then(function (o) { if (o && o.user) { myName = o.user; try { localStorage.setItem('six_name', o.user); } catch (e) {} } boot(); }).catch(function () { boot(); });
+setTimeout(boot, 700);
+var myPid=null, inVoice=false, localStream=null, pcs={}, remoteEls={}, watchers={}, actx=null, lastMembers=[];
+var vMuted=false, vDeaf=false, vPtt=false, pttDown=false, camOn=false, facing='user';
+var vjoinBtn=document.getElementById('vjoin'), vjoinvBtn=document.getElementById('vjoinv'), vstatEl=document.getElementById('vstat'), vmembersEl=document.getElementById('vmembers'), vcontrolsEl=document.getElementById('vcontrols');
+var vmuteBtn=document.getElementById('vmute'), vdeafBtn=document.getElementById('vdeaf'), vpttBtn=document.getElementById('vptt'), vholdBtn=document.getElementById('vhold'), vcamBtn=document.getElementById('vcam'), vflipBtn=document.getElementById('vflip');
+var vstageEl=document.getElementById('vstage'), vgridEl=document.getElementById('vgrid'), vstitleEl=document.getElementById('vstitle'), vcountEl=document.getElementById('vcount'), vfsBtn=document.getElementById('vfs');
+function vsend(o){ if(ws && ws.readyState===1){ try{ ws.send(JSON.stringify(o)); }catch(e){} } }
+function applyAudio(){
+  if(localStream){ localStream.getAudioTracks().forEach(function(t){ t.enabled = !vMuted && !vDeaf && (!vPtt || pttDown); }); }
+  Object.keys(remoteEls).forEach(function(pid){ remoteEls[pid].muted = vDeaf; });
+  vmuteBtn.textContent = vMuted ? 'unmute' : 'mute';
+  vdeafBtn.textContent = vDeaf ? 'undeafen' : 'deafen';
+  vholdBtn.style.display = vPtt ? 'inline-block' : 'none';
+}
+function memberName(pid){ for(var i=0;i<lastMembers.length;i++) if(lastMembers[i].pid === pid) return lastMembers[i].name; return 'anon'; }
+function ensureTile(pid){
+  var t = vgridEl.querySelector('[data-tile="'+pid+'"]');
+  if(t) return t;
+  var self = pid === myPid;
+  var nm = self ? 'you' : memberName(pid);
+  t = document.createElement('div'); t.className = 'vtile'; t.setAttribute('data-tile', pid);
+  t.setAttribute('style', 'position:relative;border-radius:14px;overflow:hidden;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.25);aspect-ratio:1/1');
+  var vid = document.createElement('video'); vid.autoplay = true; vid.setAttribute('playsinline', ''); vid.setAttribute('style', 'width:100%;height:100%;object-fit:cover;display:none' + (self ? ';transform:scaleX(-1)' : ''));
+  var ph = document.createElement('div'); ph.className = 'vph'; ph.setAttribute('style', 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#9db9ff'); ph.textContent = (memberName(pid) || 'a').slice(0, 1).toUpperCase();
+  var lb = document.createElement('span'); lb.setAttribute('style', 'position:absolute;left:8px;bottom:6px;font-size:12px;opacity:.9;text-shadow:0 1px 4px #000'); lb.textContent = nm;
+  if(!self) vid.addEventListener('click', function(){ if(vid.requestFullscreen) vid.requestFullscreen().catch(function(){}); else if(vid.webkitEnterFullscreen) vid.webkitEnterFullscreen(); });
+  t.appendChild(vid); t.appendChild(ph); t.appendChild(lb);
+  vgridEl.appendChild(t);
+  return t;
+}
+function localTile(){
+  if(!myPid) return;
+  var t = ensureTile(myPid);
+  var vid = t.querySelector('video');
+  if(camOn && localStream){ vid.srcObject = localStream; vid.muted = true; vid.style.display = 'block'; t.querySelector('.vph').style.display = 'none'; }
+  else { vid.style.display = 'none'; try { vid.srcObject = null; } catch(e){} t.querySelector('.vph').style.display = 'flex'; }
+}
+function watchLevel(stream, pid){
+  try {
+    if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)();
+    var srcNode = actx.createMediaStreamSource(stream);
+    var an = actx.createAnalyser(); an.fftSize = 256; srcNode.connect(an);
+    var data = new Uint8Array(an.frequencyBinCount);
+    var iv = setInterval(function(){
+      an.getByteFrequencyData(data);
+      var sum = 0; for(var i=0;i<data.length;i++) sum += data[i];
+      var on = sum / data.length > 20;
+      var el = vmembersEl.querySelector('[data-pid="'+pid+'"]');
+      if(el){ if(on) el.classList.add('speaking'); else el.classList.remove('speaking'); }
+      var tl = vgridEl.querySelector('[data-tile="'+pid+'"]');
+      if(tl){ if(on) tl.classList.add('speaking'); else tl.classList.remove('speaking'); }
+    }, 120);
+    watchers[pid] = iv;
+  } catch(e){}
+}
+function unwatch(pid){ if(watchers[pid]){ clearInterval(watchers[pid]); delete watchers[pid]; } }
+function makePc(pid){
+  var pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun.cloudflare.com:3478' }] });
+  pcs[pid] = pc;
+  if(localStream) localStream.getTracks().forEach(function(t){ pc.addTrack(t, localStream); });
+  pc.onnegotiationneeded = function(){
+    pc.createOffer().then(function(o){ return pc.setLocalDescription(o); }).then(function(){ vsend({ type:'rtc', to: pid, data: { kind:'offer', sdp: pc.localDescription } }); }).catch(function(){});
+  };
+  pc.onicecandidate = function(ev){ if(ev.candidate) vsend({ type:'rtc', to: pid, data: { kind:'ice', candidate: ev.candidate } }); };
+  pc.ontrack = function(ev){
+    var tile = ensureTile(pid);
+    var vid = tile.querySelector('video');
+    if(ev.streams && ev.streams[0]){ vid.srcObject = ev.streams[0]; remoteEls[pid] = vid; watchLevel(ev.streams[0], pid); }
+    if(ev.track.kind === 'video'){
+      vid.style.display = 'block'; tile.querySelector('.vph').style.display = 'none';
+      ev.track.onmute = function(){ vid.style.display = 'none'; tile.querySelector('.vph').style.display = 'flex'; };
+      ev.track.onunmute = function(){ vid.style.display = 'block'; tile.querySelector('.vph').style.display = 'none'; };
+    }
+    applyAudio();
+  };
+  pc.onconnectionstatechange = function(){
+    if(pc.connectionState === 'failed') vstatEl.textContent = 'couldnt reach somebody — strict networks (a lot of school wifi) block peer-to-peer calls. a different network usually fixes it';
+    if(pc.connectionState === 'closed') closePc(pid);
+  };
+  return pc;
+}
+function closePc(pid){
+  if(pcs[pid]){ try{ pcs[pid].close(); }catch(e){} delete pcs[pid]; }
+  delete remoteEls[pid];
+  var t = vgridEl.querySelector('[data-tile="'+pid+'"]'); if(t) t.remove();
+  unwatch(pid);
+}
+async function rtcMsg(from, data){
+  if(!inVoice || !from || !data) return;
+  try {
+    if(data.kind === 'offer'){
+      var pc = pcs[from] || makePc(from);
+      if(pc.signalingState !== 'stable'){
+        if(myPid && myPid < from) return;
+        try { await pc.setLocalDescription({ type: 'rollback' }); } catch(e){}
+      }
+      await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+      var ans = await pc.createAnswer();
+      await pc.setLocalDescription(ans);
+      vsend({ type:'rtc', to: from, data: { kind:'answer', sdp: pc.localDescription } });
+    } else if(data.kind === 'answer'){
+      var pc2 = pcs[from]; if(pc2) await pc2.setRemoteDescription(new RTCSessionDescription(data.sdp));
+    } else if(data.kind === 'ice'){
+      var pc3 = pcs[from]; if(pc3 && data.candidate){ try { await pc3.addIceCandidate(new RTCIceCandidate(data.candidate)); } catch(e){} }
+    }
+  } catch(e){}
+}
+function voiceList(members){
+  lastMembers = members;
+  vmembersEl.innerHTML = '';
+  var others = 0;
+  members.forEach(function(m){
+    var d = document.createElement('span'); d.className = 'chip vmem'; d.setAttribute('data-pid', m.pid); d.textContent = (m.pid === myPid ? '🎙 ' : '') + m.name;
+    vmembersEl.appendChild(d);
+    if(m.pid !== myPid) others++;
+  });
+  vmembersEl.style.display = inVoice ? 'flex' : 'none';
+  if(!inVoice) return;
+  vstitleEl.textContent = room.indexOf('p-') === 0 ? 'call — private' : 'call — ' + room;
+  vcountEl.textContent = members.length + ' in';
+  var pids = members.map(function(m){ return m.pid; });
+  Object.keys(pcs).forEach(function(pid){ if(pids.indexOf(pid) === -1) closePc(pid); });
+  Array.prototype.forEach.call(vgridEl.querySelectorAll('[data-tile]'), function(t){ var tp=t.getAttribute('data-tile'); if(tp !== 'sixbot' && pids.indexOf(tp) === -1) t.remove(); });
+  members.forEach(function(m){
+    if(m.pid === myPid) return;
+    ensureTile(m.pid);
+    if(!pcs[m.pid] && myPid && myPid < m.pid) makePc(m.pid);
+  });
+  localTile();
+  sixTileShow();
+  
+  vstatEl.textContent = others === 0 ? 'in the call — just u rn, get ur people in this room' : 'in the call ✦ ' + (others + 1) + ' here';
+}
+function videoCons(){ return { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { max: 24 }, facingMode: facing }; }
+function joinCall(wantVideo){
+  if(!(ws && ws.readyState === 1)){ vstatEl.textContent = 'calls need the live connection — ur on the polling fallback rn (this network blocks websockets)'; return; }
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ vstatEl.textContent = 'this browser wont hand over a mic/camera in here'; return; }
+  var cons = { audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: wantVideo ? videoCons() : false };
+  navigator.mediaDevices.getUserMedia(cons).then(function(stream){
+    localStream = stream; inVoice = true; camOn = stream.getVideoTracks().length > 0;
+    vcontrolsEl.style.display = 'flex'; vmembersEl.style.display = 'flex'; 
+    vstitleEl.textContent = room.indexOf('p-') === 0 ? 'call — private' : 'call — ' + room;
+    vcamBtn.textContent = camOn ? 'cam: on' : 'cam: off'; vflipBtn.style.display = camOn ? 'inline-block' : 'none';
+    vstatEl.textContent = 'in the call — connecting…';
+    vsend({ type: 'rtc-join' });
+    localTile();
+    watchLevel(stream, myPid);
+    applyAudio();
+  }).catch(function(){ vstatEl.textContent = 'mic/cam blocked — allow them for this site, then try again'; });
+}
+function toggleCam(){
+  if(!inVoice) return;
+  if(!camOn){
+    navigator.mediaDevices.getUserMedia({ video: videoCons() }).then(function(s){
+      var t = s.getVideoTracks()[0]; if(!t) return;
+      localStream.addTrack(t);
+      Object.keys(pcs).forEach(function(pid){ try { pcs[pid].addTrack(t, localStream); } catch(e){} });
+      camOn = true; vcamBtn.textContent = 'cam: on'; vflipBtn.style.display = 'inline-block';
+      localTile();
+    }).catch(function(){ vstatEl.textContent = 'camera blocked — allow camera for this site, then try again'; });
+  } else {
+    var t = localStream.getVideoTracks()[0];
+    if(t){
+      Object.keys(pcs).forEach(function(pid){ var pc = pcs[pid]; pc.getSenders().forEach(function(sn){ if(sn.track === t){ try { pc.removeTrack(sn); } catch(e){} } }); });
+      localStream.removeTrack(t); try { t.stop(); } catch(e){}
+    }
+    camOn = false; vcamBtn.textContent = 'cam: off'; vflipBtn.style.display = 'none';
+    localTile();
+  }
+}
+function flipCam(){
+  if(!camOn || !localStream) return;
+  facing = facing === 'user' ? 'environment' : 'user';
+  navigator.mediaDevices.getUserMedia({ video: videoCons() }).then(function(s){
+    var nt = s.getVideoTracks()[0]; if(!nt) return;
+    Object.keys(pcs).forEach(function(pid){ pcs[pid].getSenders().forEach(function(sn){ if(sn.track && sn.track.kind === 'video') sn.replaceTrack(nt).catch(function(){}); }); });
+    var old = localStream.getVideoTracks()[0];
+    if(old){ localStream.removeTrack(old); try { old.stop(); } catch(e){} }
+    localStream.addTrack(nt); localTile();
+  }).catch(function(){});
+}
+function teardownVoice(){
+  Object.keys(pcs).forEach(closePc);
+  if(localStream){ localStream.getTracks().forEach(function(t){ try{ t.stop(); }catch(e){} }); localStream = null; }
+  unwatch(myPid);
+  inVoice = false; camOn = false;
+  if(document.fullscreenElement === vstageEl && document.exitFullscreen) document.exitFullscreen().catch(function(){});
+  vgridEl.innerHTML = '';
+  vcamBtn.textContent = 'cam: off'; vflipBtn.style.display = 'none';
+  vcontrolsEl.style.display = 'none'; vmembersEl.style.display = 'none'; vmembersEl.innerHTML = '';
+}
+function leaveVoice(){ if(!inVoice) return; vsend({ type: 'rtc-leave' }); teardownVoice(); vstatEl.textContent = 'voice is off — hop in, it runs peer-to-peer thru the room'; }
+function voiceDrop(){ if(!inVoice) return; teardownVoice(); vstatEl.textContent = 'call dropped — it needs the live connection. rejoin when ur back'; }
+var sixVoice=false, sixRec=null, joinedAt=Date.now();
+var vsixBtn=document.getElementById('vsix'), vtalkBtn=document.getElementById('vtalk');
+function sixTileShow(){
+  if(!inVoice || !sixVoice) return;
+  if(vgridEl.querySelector('[data-tile="sixbot"]')) return;
+  var t=document.createElement('div'); t.className='vtile'; t.setAttribute('data-tile','sixbot');
+  t.setAttribute('style','position:relative;border-radius:14px;overflow:hidden;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.45);aspect-ratio:1/1');
+  var ph=document.createElement('div'); ph.setAttribute('style','position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#fafafa'); ph.textContent='✦';
+  var lb=document.createElement('span'); lb.setAttribute('style','position:absolute;left:8px;bottom:6px;font-size:12px;opacity:.9;text-shadow:0 1px 4px #000'); lb.textContent='six ✦ ai';
+  t.appendChild(ph); t.appendChild(lb); vgridEl.appendChild(t);
+}
+function sixTileHide(){ var t=vgridEl.querySelector('[data-tile="sixbot"]'); if(t) t.remove(); }
+function sixGlow(on){ var t=vgridEl.querySelector('[data-tile="sixbot"]'); if(t){ if(on) t.classList.add('speaking'); else t.classList.remove('speaking'); } }
+function speakSix(text){
+  if(!sixVoice || !inVoice || !('speechSynthesis' in window)) return;
+  var clean=String(text||'').replace(/\\[\\[act:[\\s\\S]*?\\]\\]/g,'').slice(0,420);
+  if(!clean) return;
+  try {
+    var u=new SpeechSynthesisUtterance(clean);
+    u.rate=1.05; u.pitch=0.85;
+    try { var vs=speechSynthesis.getVoices(); for(var i=0;i<vs.length;i++){ if(/^en[-_]US$/i.test(vs[i].lang) && /google/i.test(vs[i].name)){ u.voice=vs[i]; break; } } } catch(e){}
+    u.onstart=function(){ sixGlow(true); };
+    u.onend=function(){ sixGlow(false); };
+    u.onerror=function(){ sixGlow(false); };
+    speechSynthesis.speak(u);
+  } catch(e){}
+}
+function summonSix(q){
+  line({sys:true, text:'asking six…'});
+  fetch('/ai/room', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ room: room, name: curName(), question: q }) }).catch(function(){});
+}
+vsixBtn.addEventListener('click', function(){
+  sixVoice=!sixVoice;
+  vsixBtn.textContent='six voice: '+(sixVoice?'on':'off');
+  vtalkBtn.style.display=sixVoice?'inline-block':'none';
+  if(sixVoice){ sixTileShow(); vstatEl.textContent='six is in the call ✦ his /ai answers come out loud now — hold the talk button n speak to him'; }
+  else { sixTileHide(); if('speechSynthesis' in window) try{ speechSynthesis.cancel(); }catch(e){} }
+});
+function sixListenStart(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ vstatEl.textContent='this browser cant hear u (chrome does it best) — type /ai instead'; return; }
+  try {
+    sixRec=new SR(); sixRec.lang='en-US'; sixRec.interimResults=false; sixRec.maxAlternatives=1;
+    sixRec.onresult=function(ev){ var s=''; try{ s=ev.results[0][0].transcript||''; }catch(e){} if(s.trim()){ line({sys:true, text:'u said: '+s}); summonSix(s); } };
+    sixRec.onerror=function(){ vstatEl.textContent='six didnt catch that — hold n try again'; };
+    sixRec.start(); vtalkBtn.textContent='listening… release to send';
+  } catch(e){}
+}
+function sixListenStop(){ if(sixRec){ try{ sixRec.stop(); }catch(e){} sixRec=null; } vtalkBtn.textContent='hold to talk to six'; }
+vtalkBtn.addEventListener('mousedown', sixListenStart);
+vtalkBtn.addEventListener('mouseup', sixListenStop);
+vtalkBtn.addEventListener('mouseleave', function(){ if(sixRec) sixListenStop(); });
+vtalkBtn.addEventListener('touchstart', function(ev){ ev.preventDefault(); sixListenStart(); });
+vtalkBtn.addEventListener('touchend', function(){ sixListenStop(); });
+document.getElementById('vleave').addEventListener('click', function(){ leaveVoice(); location.href = '/chat?room=' + encodeURIComponent(room); });
+vfsBtn.addEventListener('click', function(){ var el = document.querySelector('.callapp'); if(el && el.requestFullscreen) el.requestFullscreen().catch(function(){}); });
+vmuteBtn.addEventListener('click', function(){ vMuted = !vMuted; applyAudio(); });
+vdeafBtn.addEventListener('click', function(){ vDeaf = !vDeaf; applyAudio(); });
+vpttBtn.addEventListener('click', function(){ vPtt = !vPtt; vpttBtn.textContent = 'push-to-talk: ' + (vPtt ? 'on' : 'off'); applyAudio(); });
+vcamBtn.addEventListener('click', toggleCam);
+vflipBtn.addEventListener('click', flipCam);
+vholdBtn.addEventListener('mousedown', function(){ pttDown = true; applyAudio(); });
+vholdBtn.addEventListener('mouseup', function(){ pttDown = false; applyAudio(); });
+vholdBtn.addEventListener('mouseleave', function(){ if(pttDown){ pttDown = false; applyAudio(); } });
+vholdBtn.addEventListener('touchstart', function(ev){ ev.preventDefault(); pttDown = true; applyAudio(); });
+vholdBtn.addEventListener('touchend', function(){ pttDown = false; applyAudio(); });
+document.addEventListener('keydown', function(ev){ if(vPtt && inVoice && ev.code === 'Space' && !/INPUT|TEXTAREA/.test((document.activeElement||{}).tagName || '')){ ev.preventDefault(); pttDown = true; applyAudio(); } });
+document.addEventListener('keyup', function(ev){ if(ev.code === 'Space' && pttDown){ pttDown = false; applyAudio(); } });
+</script>
+</body>
+</html>`;
+}
+
 
 function aiPage() {
   return `<!DOCTYPE html>
@@ -2687,6 +3031,10 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/chat') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(chatPage());
+  }
+  if (u.pathname === '/chat/call') {
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
+    return res.end(callPage());
   }
   if (u.pathname === '/ai') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
