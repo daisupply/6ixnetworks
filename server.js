@@ -276,6 +276,7 @@ function cloakTab(kind){
     drive:{t:'My Drive - Google Drive',i:'https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png'}
   };
   var p=presets[kind]||presets.google;
+  try{ localStorage.setItem('six_disguise', kind); }catch(e){}
   document.title=p.t;
   var l=document.querySelector("link[rel~='icon']")||document.createElement('link');
   l.rel='icon'; l.href=p.i; document.head.appendChild(l);
@@ -285,12 +286,17 @@ function cloakOpen(){
   if(!w){ alert('popups are blocked — allow popups, then hit it again'); return; }
   w.document.write('<!DOCTYPE html><html><head><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico"></head><body style="margin:0"><iframe src="'+location.href+'" style="border:0;width:100vw;height:100vh" allow="camera; microphone; autoplay; fullscreen"></iframe></body></html>');
   w.document.close();
-}`;
+}
+// every tab cloaks itself on load: the saved disguise (picked anywhere on
+// the site) applies everywhere; no choice saved yet = google by default,
+// so a fresh tab never shows the real name either.
+(function(){ var want='google'; try{ var v=localStorage.getItem('six_disguise'); if(v==='google'||v==='classroom'||v==='docs'||v==='drive') want=v; }catch(e){} cloakTab(want); })();
+`;
 const CLOAK_BAR = `<div style="margin-top:26px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;color:#9a9a9a;font-size:13px">
 <button onclick="cloakTab('google')" style="background:rgba(139,92,246,.13);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:7px 13px;cursor:pointer">google</button>
 <button onclick="cloakTab('classroom')" style="background:rgba(139,92,246,.13);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:7px 13px;cursor:pointer">classroom</button>
 <button onclick="cloakTab('docs')" style="background:rgba(139,92,246,.13);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:7px 13px;cursor:pointer">docs</button>
-<button onclick="cloakOpen()" style="background:rgba(139,92,246,.13);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:7px 13px;cursor:pointer">open in cloaked tab</button></div>`;
+<button onclick="cloakTab('drive')" style="background:rgba(139,92,246,.13);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()" style="background:rgba(139,92,246,.13);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:7px 13px;cursor:pointer">open in cloaked tab</button></div>`;
 // ---------- galaxy theme ----------
 // relaxing deep-space look shared by every page: layered nebula gradients,
 // a slow twinkling starfield canvas (served from /stars.js), glass panels,
@@ -430,7 +436,7 @@ function internalMirror(target) {
 }
 const YT_HOME = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — YouTube</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <h1>6ix<span>Networks</span> — youtube mode</h1>
 
@@ -499,7 +505,7 @@ function gamesPage(games) {
   }).join('');
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — Games</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{position:absolute;top:6px;right:8px;z-index:2;font-size:19px;line-height:1;color:rgba(255,255,255,.85);text-shadow:0 1px 6px rgba(0,0,0,.85);cursor:pointer;padding:3px 5px}.fav.on{color:#fbbf24}.chip{background:rgba(139,92,246,.14);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:700;font-family:inherit}.chip.on{background:rgba(139,92,246,.45)}</style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/home">← 6ixNetworks</a>
 <h1>6ix<span>Networks</span> games</h1>
@@ -550,14 +556,14 @@ function playPage(u, t) {
   const alt = proxied(u);
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><title>${escHtml(t || 'Game')}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CANVAS}
 <div class="top"><a href="/gs">← games</a><span class="title">${escHtml(t || 'Game')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
 <button class="on" onclick="useNet()">network</button>
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
 <button onclick="cloakTab('google')">cloak: google</button>
-<button onclick="cloakOpen()">cloaked tab</button></div>
+<button onclick="cloakTab('drive')" style="background:rgba(139,92,246,.13);color:#e6e0ff;border:1px solid rgba(196,181,253,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()">cloaked tab</button></div>
 <iframe class="gameframe" id="gf" src="${prox}" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
 <div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(20,14,48,.92);border:1px solid rgba(196,181,253,.45);color:#ece9ff;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
 <script src="/cloak.js"></script>
@@ -606,7 +612,7 @@ function emuPage() {
   const data = '/px/' + b64urlEncode('https://cdn.emulatorjs.org/stable/data/') + '/';
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — Emulator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .panel{background:rgba(20,14,48,.55);border:1px solid rgba(196,181,253,.25);border-radius:18px;padding:16px;margin-top:16px}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
@@ -694,7 +700,7 @@ function cleanText(t) { return String(t || '').replace(/\s+/g, ' ').trim().slice
 function chatPage() {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — Chat</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 #msgs{height:52vh;overflow-y:auto;background:rgba(0,0,0,.25);border:1px solid rgba(196,181,253,.22);border-radius:16px;padding:14px;text-align:left}
 .msg{margin:7px 0;word-break:break-word}
@@ -1203,7 +1209,7 @@ connect();
 function aiPage() {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — Six AI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .who{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#f0abfc;margin-bottom:4px}
 .pchip.on{background:rgba(139,92,246,.45)}
@@ -1301,7 +1307,7 @@ async function askSixDoc(env, text, mode) {
 function hwPage() {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — HW Helper</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 #doc{width:100%;height:30vh;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:14px;padding:13px;font-family:inherit;font-size:14px;line-height:1.5;resize:vertical}
 #out{display:none;text-align:left;background:rgba(0,0,0,.25);border:1px solid rgba(196,181,253,.22);border-radius:16px;padding:16px;margin-top:14px;white-space:pre-wrap;word-break:break-word;line-height:1.6}
@@ -1390,7 +1396,7 @@ copyBtn.addEventListener('click', function(){
 function accountPage() {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — Account</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .acc{max-width:430px;margin:0 auto;text-align:left}
 .acc input{width:100%;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:10px;padding:11px;font-family:inherit;margin:5px 0 10px}
@@ -1456,7 +1462,7 @@ document.getElementById('blogin').addEventListener('click', function(){ auth('lo
 function toolsPage() {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — Tools</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:16px}
 .panel{background:rgba(20,14,48,.55);border:1px solid rgba(196,181,253,.25);border-radius:18px;padding:16px}
@@ -1515,7 +1521,7 @@ const HOME = `<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>6ixNetworks</title>
+<title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style>
 </head>
 <body>${STAR_CANVAS}
@@ -1563,7 +1569,7 @@ function blockPage(targetStr) {
   const again = proxied(targetStr);
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><title>blocked — 6ixNetworks</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/home">← 6ixNetworks</a>
 <h1>6ix<span>Networks</span></h1>
@@ -1782,7 +1788,7 @@ function ytSearchPage(query, hit) {
   }).join('');
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><title>${escHtml(query)} — 6ixNetworks</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/yt">← youtube</a>
 <h1>6ix<span>Networks</span></h1>
@@ -1947,7 +1953,7 @@ function ytWatchPage(id, hit, phit) {
   }
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><title>${escHtml(title || 'video')}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <div class="wrap">
 <a class="back" href="/yt">← youtube</a>
