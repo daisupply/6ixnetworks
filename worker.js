@@ -762,7 +762,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 #vgrid video:fullscreen{width:100%;height:100%;object-fit:cover;background:#000}
 #vstage:fullscreen{border-radius:0;padding:14px;background:rgba(10,10,11,.97)}
 #vstage:fullscreen #vgrid{height:calc(100% - 46px);align-content:center}
-</style></head><body>${STAR_CANVAS}<div class="wrap">
+</style></head><body>${STAR_CANVAS}${SIDEBAR_HTML}<div class="wrap">
 <a class="back" href="/home">← home</a> · <a class="back" href="/ai">ask six ✦</a>
 <h1>6ix<span>Networks</span> chat</h1>
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0">
@@ -808,7 +808,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <form class="bar" id="sendbar"><button type="button" id="attach" title="send an image">📎</button><input type="text" id="text" placeholder="message…  (/ai asks six · /img draws · paste an image)" autocomplete="off" maxlength="500"><button type="submit">send</button></form>
 <input type="file" id="chatfile" accept="image/*" style="display:none">
 <p style="opacity:.65;font-size:13px">real people, live ✦ public rooms are public — grab a private room for just ur people</p>
-${CLOAK_BAR}
+
 </div>
 <script src="/cloak.js"></script>
 <script src="/stars.js"></script>
@@ -1580,9 +1580,16 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:16px}
 .panel{background:rgba(18,18,20,.55);border:1px solid rgba(255,255,255,.25);border-radius:18px;padding:16px}
 .panel h2{margin:0 0 12px;font-size:17px}
-#cdisp{background:rgba(0,0,0,.35);border-radius:12px;padding:12px;font-size:24px;text-align:right;min-height:30px;word-break:break-all}
-.cgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
-.cgrid button,.tbtn{background:rgba(94,142,255,.16);color:#f4f4f5;border:1px solid rgba(255,255,255,.3);border-radius:12px;padding:12px 10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
+.solver{grid-column:span 2}
+@media(max-width:760px){.solver{grid-column:span 1}}
+#min{flex:1;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:12px;font-family:inherit;font-size:16px;min-width:0}
+.kgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}
+.kgrid button,.tbtn{background:rgba(94,142,255,.16);color:#f4f4f5;border:1px solid rgba(255,255,255,.3);border-radius:12px;padding:12px 6px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
+.kgrid button:hover,.tbtn:hover{border-color:rgba(255,255,255,.55)}
+#mout{font-size:23px;font-weight:800;margin-top:14px;word-break:break-word}
+#msteps{margin-top:8px;font-size:14px;line-height:1.7;opacity:.92}
+#msteps div{border-left:2px solid rgba(94,142,255,.4);padding-left:10px;margin:4px 0}
+#mhist{margin-top:12px;font-size:12.5px;opacity:.6;line-height:1.65}
 #note{width:100%;min-height:170px;background:rgba(0,0,0,.3);color:#f2f2f2;border:1px solid rgba(255,255,255,.25);border-radius:12px;padding:10px;font-family:inherit;font-size:14px;box-sizing:border-box}
 #sw{font-size:38px;text-align:center;font-weight:800;margin:8px 0 12px}
 .trow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;align-items:center}
@@ -1591,7 +1598,14 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <a class="back" href="/home">← 6ixNetworks</a>
 <h1>6ix<span>Networks</span> tools</h1>
 <div class="tools">
-<div class="panel"><h2>calculator</h2><div id="cdisp">0</div><div class="cgrid" id="cgrid"></div></div>
+<div class="panel solver"><h2>math solver</h2>
+<div style="display:flex;gap:8px"><input id="min" type="text" placeholder="type anything — 2x+6=12 · sqrt(144) · x^2-5x+6=0 · 20% of 50" autocomplete="off"><button class="tbtn" id="msolve" style="padding:12px 20px">solve</button></div>
+<div class="kgrid" id="kgrid"></div>
+<div id="mout"></div>
+<div id="msteps"></div>
+<canvas id="mplot" width="640" height="300" style="display:none;width:100%;border:1px solid rgba(255,255,255,.14);border-radius:12px;margin-top:12px;background:rgba(0,0,0,.25)"></canvas>
+<div id="mhist"></div>
+</div>
 <div class="panel"><h2>notepad</h2><textarea id="note" placeholder="type here — it saves itself ✦"></textarea><div id="ncount" style="opacity:.7;font-size:12px;margin-top:6px"></div></div>
 <div class="panel"><h2>stopwatch + timer</h2><div id="sw">00:00.0</div>
 <div class="trow"><button class="tbtn" id="swgo">start</button><button class="tbtn" id="swreset">reset</button></div>
@@ -1600,34 +1614,230 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 ${SIDEBAR_HTML}
 </div>
 <script src="/cloak.js"></script>
-<script src="/stars.js"></script>
 <script>
-var cd=document.getElementById('cdisp'), expr='';
-var keys=['C','(',')','/','7','8','9','*','4','5','6','-','1','2','3','+','0','.','⌫','='];
-var cg=document.getElementById('cgrid');
-keys.forEach(function(k){ var b=document.createElement('button'); b.type='button'; b.textContent=k; b.addEventListener('click', function(){
-  if(k==='C'){ expr=''; }
-  else if(k==='⌫'){ expr=expr.slice(0,-1); }
-  else if(k==='='){ if(/^[0-9+\\-*/.() ]+$/.test(expr)){ try{ var v=Function('return ('+expr+')')(); expr=String(Math.round(v*1e10)/1e10); }catch(e){ expr=''; cd.textContent='error'; return; } } }
-  else { expr+=k; }
-  cd.textContent = expr || '0';
-}); cg.appendChild(b); });
-var note=document.getElementById('note'), nc=document.getElementById('ncount');
-try{ note.value=localStorage.getItem('gx_note')||''; }catch(e){}
-function nupd(){ nc.textContent=note.value.length+' chars — saved ✦'; try{ localStorage.setItem('gx_note', note.value); }catch(e){} }
+// ---------- math solver: hand-rolled parser, no eval, nothing to break ----------
+var FUNCS = { sqrt: 1, sin: 1, cos: 1, tan: 1, log: 1, ln: 1, abs: 1 };
+function fmt(n) { if (!isFinite(n)) return 'undefined'; if (Math.abs(n - Math.round(n)) < 1e-10) return String(Math.round(n)); return String(Math.round(n * 1e10) / 1e10); }
+function fracHint(n) { if (!isFinite(n) || Math.abs(n - Math.round(n)) < 1e-10) return ''; for (var d = 2; d <= 16; d++) { var p = n * d; if (Math.abs(p - Math.round(p)) < 1e-9 && Math.round(p) !== 0) return '  (≈ ' + Math.round(p) + '/' + d + ')'; } return ''; }
+function tokenize(s) {
+  var toks = [], i = 0;
+  while (i < s.length) {
+    var c = s[i];
+    if (c === ' ') { i++; continue; }
+    if ((c >= '0' && c <= '9') || c === '.') { var j = i, dot = 0; while (j < s.length && ((s[j] >= '0' && s[j] <= '9') || s[j] === '.')) { if (s[j] === '.') dot++; j++; } if (dot > 1) throw new Error('too many dots in one number'); var num = parseFloat(s.slice(i, j)); if (isNaN(num)) throw new Error('bad number'); toks.push({ t: 'num', v: num }); i = j; continue; }
+    if (c >= 'a' && c <= 'z') { var k = i; while (k < s.length && s[k] >= 'a' && s[k] <= 'z') k++; var w = s.slice(i, k);
+      if (w === 'of') toks.push({ t: 'op', v: '*' });
+      else if (w === 'pi') toks.push({ t: 'num', v: Math.PI });
+      else if (w === 'e') toks.push({ t: 'num', v: Math.E });
+      else if (w === 'x') toks.push({ t: 'var' });
+      else if (FUNCS[w]) toks.push({ t: 'func', v: w });
+      else throw new Error('not sure what "' + w + '" means yet');
+      i = k; continue; }
+    if (c === 'π') { toks.push({ t: 'num', v: Math.PI }); i++; continue; }
+    if (c === '√') { toks.push({ t: 'func', v: 'sqrt' }); i++; continue; }
+    if ('+-*/^%()'.indexOf(c) >= 0) { toks.push({ t: c === '(' || c === ')' ? c : 'op', v: c }); i++; continue; }
+    throw new Error('weird character: ' + c);
+  }
+  // implicit multiplication: 2x, 3(, )(, x(, 2pi...
+  var out = [];
+  for (var m = 0; m < toks.length; m++) {
+    if (m > 0) { var A = toks[m - 1], B = toks[m];
+      var aEnd = A.t === 'num' || A.t === 'var' || A.t === ')';
+      var bStart = B.t === 'num' || B.t === 'var' || B.t === 'func' || B.t === '(';
+      if (aEnd && bStart && !(A.t === 'num' && B.t === 'num')) out.push({ t: 'op', v: '*' });
+    }
+    out.push(toks[m]);
+  }
+  return out;
+}
+function parse(toks) {
+  var pos = 0;
+  function peek() { return toks[pos]; }
+  function parseExpr() { var n = parseTerm(); while (peek() && peek().t === 'op' && (peek().v === '+' || peek().v === '-')) { var op = toks[pos++].v; n = { k: 'bin', op: op, l: n, r: parseTerm() }; } return n; }
+  function parseTerm() { var n = parseUnary(); while (peek() && peek().t === 'op' && (peek().v === '*' || peek().v === '/')) { var op = toks[pos++].v; n = { k: 'bin', op: op, l: n, r: parseUnary() }; } return n; }
+  function parseUnary() { if (peek() && peek().t === 'op' && peek().v === '-') { pos++; return { k: 'neg', a: parseUnary() }; } if (peek() && peek().t === 'op' && peek().v === '+') { pos++; return parseUnary(); } return parsePower(); }
+  function parsePower() { var base = parsePostfix(); if (peek() && peek().t === 'op' && peek().v === '^') { pos++; return { k: 'bin', op: '^', l: base, r: parseUnary() }; } return base; }
+  function parsePostfix() { var n = parsePrimary(); while (peek() && peek().t === 'op' && peek().v === '%') { pos++; n = { k: 'pct', a: n }; } return n; }
+  function parsePrimary() {
+    var tk = peek(); if (!tk) throw new Error('it ends too early — check the problem');
+    if (tk.t === 'num') { pos++; return { k: 'num', v: tk.v }; }
+    if (tk.t === 'var') { pos++; return { k: 'var' }; }
+    if (tk.t === 'func') { pos++; if (!peek() || peek().t !== '(') throw new Error(tk.v + ' needs ( ) — like ' + tk.v + '(9)'); pos++; var arg = parseExpr(); if (!peek() || peek().t !== ')') throw new Error('missing a closing )'); pos++; return { k: 'func', name: tk.v, a: arg }; }
+    if (tk.t === '(') { pos++; var inner = parseExpr(); if (!peek() || peek().t !== ')') throw new Error('missing a closing )'); pos++; return inner; }
+    throw new Error('unexpected "' + (tk.v || tk.t) + '"');
+  }
+  var ast = parseExpr();
+  if (pos < toks.length) throw new Error('extra stuff at the end — check the parentheses');
+  return ast;
+}
+function applyFunc(name, v) {
+  if (name === 'sqrt') { if (v < 0) throw new Error('sqrt of a negative — not in real numbers'); return Math.sqrt(v); }
+  if (name === 'sin') return Math.sin(v * Math.PI / 180);
+  if (name === 'cos') return Math.cos(v * Math.PI / 180);
+  if (name === 'tan') return Math.tan(v * Math.PI / 180);
+  if (name === 'log') { if (v <= 0) throw new Error('log of zero or a negative'); return Math.log10(v); }
+  if (name === 'ln') { if (v <= 0) throw new Error('ln of zero or a negative'); return Math.log(v); }
+  if (name === 'abs') return Math.abs(v);
+  return v;
+}
+function evalNum(n, x) {
+  if (n.k === 'num') return n.v;
+  if (n.k === 'var') { if (x === undefined) throw new Error('that has an x in it'); return x; }
+  if (n.k === 'neg') return -evalNum(n.a, x);
+  if (n.k === 'pct') return evalNum(n.a, x) / 100;
+  if (n.k === 'func') return applyFunc(n.name, evalNum(n.a, x));
+  var l = evalNum(n.l, x), r = evalNum(n.r, x);
+  if (n.op === '+') return l + r;
+  if (n.op === '-') return l - r;
+  if (n.op === '*') return l * r;
+  if (n.op === '/') { if (r === 0) throw new Error('cant divide by zero'); return l / r; }
+  if (n.op === '^') return Math.pow(l, r);
+  return NaN;
+}
+function evalSteps(n, steps) {
+  if (n.k === 'num') return n.v;
+  if (n.k === 'var') throw new Error('that has an x in it');
+  if (n.k === 'neg') return -evalSteps(n.a, steps);
+  if (n.k === 'pct') { var pv = evalSteps(n.a, steps); if (steps.length < 14) steps.push(fmt(pv) + '% = ' + fmt(pv / 100)); return pv / 100; }
+  if (n.k === 'func') { var av = evalSteps(n.a, steps); var res = applyFunc(n.name, av); if (steps.length < 14) steps.push(n.name + '(' + fmt(av) + ((n.name === 'sin' || n.name === 'cos' || n.name === 'tan') ? '°' : '') + ') = ' + fmt(res)); return res; }
+  var l = evalSteps(n.l, steps), r = evalSteps(n.r, steps), res;
+  if (n.op === '+') res = l + r; else if (n.op === '-') res = l - r; else if (n.op === '*') res = l * r;
+  else if (n.op === '/') { if (r === 0) throw new Error('cant divide by zero'); res = l / r; }
+  else res = Math.pow(l, r);
+  if (steps.length < 14) steps.push(fmt(l) + ' ' + n.op + ' ' + fmt(r) + ' = ' + fmt(res));
+  return res;
+}
+function evalPoly(n) {
+  if (n.k === 'num') return [n.v, 0, 0];
+  if (n.k === 'var') return [0, 1, 0];
+  if (n.k === 'neg') { var q = evalPoly(n.a); return q ? [-q[0], -q[1], -q[2]] : null; }
+  if (n.k === 'pct') { var p2 = evalPoly(n.a); return p2 ? [p2[0] / 100, p2[1] / 100, p2[2] / 100] : null; }
+  if (n.k === 'func') { var ap = evalPoly(n.a); if (ap && Math.abs(ap[1]) < 1e-12 && Math.abs(ap[2]) < 1e-12) return [applyFunc(n.name, ap[0]), 0, 0]; return null; }
+  var L = evalPoly(n.l), R = evalPoly(n.r);
+  if (!L || !R) return null;
+  if (n.op === '+') return [L[0] + R[0], L[1] + R[1], L[2] + R[2]];
+  if (n.op === '-') return [L[0] - R[0], L[1] - R[1], L[2] - R[2]];
+  if (n.op === '*') { if ((L[2] !== 0 && (R[1] !== 0 || R[2] !== 0)) || (R[2] !== 0 && (L[1] !== 0 || L[2] !== 0)) || (L[2] !== 0 && R[2] !== 0)) return null; return [L[0] * R[0], L[0] * R[1] + L[1] * R[0], L[0] * R[2] + L[1] * R[1] + L[2] * R[0]]; }
+  if (n.op === '/') { if (Math.abs(R[1]) > 1e-12 || Math.abs(R[2]) > 1e-12 || R[0] === 0) return null; return [L[0] / R[0], L[1] / R[0], L[2] / R[0]]; }
+  if (n.op === '^') { if (Math.abs(R[1]) > 1e-12 || Math.abs(R[2]) > 1e-12) return null; var e = R[0]; if (e === 0) return [1, 0, 0]; if (e === 1) return L; if (e === 2) { if (L[2] !== 0) return null; return [L[0] * L[0], 2 * L[0] * L[1], L[1] * L[1]]; } if (Math.abs(L[1]) < 1e-12 && Math.abs(L[2]) < 1e-12) return [Math.pow(L[0], e), 0, 0]; return null; }
+  return null;
+}
+function hasVar(n) { if (n.k === 'var') return true; if (n.k === 'num') return false; if (n.k === 'bin') return hasVar(n.l) || hasVar(n.r); return hasVar(n.a); }
+function polyStr(p) {
+  var terms = [];
+  function term(c, sym) { if (Math.abs(c) < 1e-12) return; var a = Math.abs(c); var body = sym === '' ? fmt(a) : (a === 1 ? sym : fmt(a) + sym); terms.push({ neg: c < 0, body: body }); }
+  term(p[2], 'x²'); term(p[1], 'x'); term(p[0], '');
+  if (!terms.length) return '0';
+  var out = (terms[0].neg ? '-' : '') + terms[0].body;
+  for (var i = 1; i < terms.length; i++) out += terms[i].neg ? ' - ' + terms[i].body : ' + ' + terms[i].body;
+  return out;
+}
+function solveRoots(R) {
+  var steps = [], a = R[2], b = R[1], c = R[0], head;
+  if (Math.abs(a) > 1e-12) {
+    steps.push('quadratic — use the formula: x = (-b ± √(b² - 4ac)) / 2a');
+    steps.push('a = ' + fmt(a) + ', b = ' + fmt(b) + ', c = ' + fmt(c));
+    var D = b * b - 4 * a * c;
+    steps.push('discriminant: b² - 4ac = ' + fmt(D));
+    if (D < 0) { head = 'no real solutions'; steps.push('the discriminant is negative, so the graph never crosses zero'); }
+    else if (Math.abs(D) < 1e-10) { var x0 = -b / (2 * a); head = 'x = ' + fmt(x0) + fracHint(x0); steps.push('one solution: x = ' + fmt(-b) + ' / ' + fmt(2 * a) + ' = ' + fmt(x0)); }
+    else { var sq = Math.sqrt(D), x1 = (-b + sq) / (2 * a), x2 = (-b - sq) / (2 * a); steps.push('√' + fmt(D) + ' = ' + fmt(sq)); steps.push('x = (' + fmt(-b) + ' + ' + fmt(sq) + ') / ' + fmt(2 * a) + ' = ' + fmt(x1)); steps.push('x = (' + fmt(-b) + ' - ' + fmt(sq) + ') / ' + fmt(2 * a) + ' = ' + fmt(x2)); head = 'x = ' + fmt(x1) + '  or  x = ' + fmt(x2); }
+    return { head: head, steps: steps };
+  }
+  if (Math.abs(b) > 1e-12) {
+    if (Math.abs(c) > 1e-12) steps.push('move the constant over: ' + fmt(b) + 'x = ' + fmt(-c));
+    var xv = -c / b;
+    steps.push('divide both sides by ' + fmt(b) + ': x = ' + fmt(xv));
+    return { head: 'x = ' + fmt(xv) + fracHint(xv), steps: steps };
+  }
+  if (Math.abs(c) < 1e-12) return { head: 'true for every x', steps: ['both sides are the same — it holds for any x'] };
+  return { head: 'no solution', steps: ['that statement is just false — no x can fix it'] };
+}
+function solveMath(raw) {
+  function bad(msg) { return { ok: 0, head: 'hmm — ' + msg, steps: [] }; }
+  var s = String(raw || '').toLowerCase().split('×').join('*').split('÷').join('/').split('−').join('-').trim();
+  if (!s) return bad('type a problem first');
+  var eq = s.split('=');
+  if (eq.length > 2) return bad('one = at a time');
+  try {
+    if (eq.length === 2) {
+      if (!eq[0].trim() || !eq[1].trim()) return bad('both sides of the = need something');
+      var lp = evalPoly(parse(tokenize(eq[0]))), rp = evalPoly(parse(tokenize(eq[1])));
+      if (!lp || !rp) return bad('this solver handles linear + quadratic equations in x — that one is past it. six (the ai tab) can take a swing at it tho');
+      var R = [lp[0] - rp[0], lp[1] - rp[1], lp[2] - rp[2]];
+      var sol = solveRoots(R);
+      var steps = ['get everything on one side: ' + polyStr(R) + ' = 0'].concat(sol.steps);
+      return { ok: 1, head: sol.head, steps: steps };
+    }
+    var ast = parse(tokenize(s));
+    if (hasVar(ast)) {
+      var steps2 = [], pp = evalPoly(ast);
+      if (pp) { var rs = solveRoots(pp); steps2.push('where it crosses zero: ' + rs.head); }
+      steps2.push('graphed below, x from -10 to 10');
+      return { ok: 1, head: 'f(x) = ' + s, steps: steps2, ast: ast };
+    }
+    var steps3 = [];
+    var v = evalSteps(ast, steps3);
+    if (!isFinite(v)) return bad('that blows up — division by zero?');
+    if (!steps3.length) steps3.push('nothing to simplify — it is what it is');
+    return { ok: 1, head: '= ' + fmt(v) + fracHint(v), steps: steps3 };
+  } catch (e) { return bad(e.message || 'could not parse that'); }
+}
+// ---------- solver ui ----------
+var minEl = document.getElementById('min'), mout = document.getElementById('mout'), msteps = document.getElementById('msteps'), mplot = document.getElementById('mplot'), mhist = document.getElementById('mhist'), hist = [];
+function drawPlot(ast) {
+  var ctx = mplot.getContext('2d'), W = mplot.width, H = mplot.height, i, x, y, pts = [], ymax = 4;
+  for (i = 0; i <= 200; i++) { x = -10 + i / 10; try { y = evalNum(ast, x); } catch (e) { y = NaN; } pts.push(y); if (isFinite(y) && Math.abs(y) > ymax && Math.abs(y) < 400) ymax = Math.abs(y); }
+  ctx.clearRect(0, 0, W, H);
+  ctx.strokeStyle = 'rgba(255,255,255,.09)'; ctx.lineWidth = 1;
+  for (i = 1; i < 20; i++) { ctx.beginPath(); ctx.moveTo(W * i / 20, 0); ctx.lineTo(W * i / 20, H); ctx.stroke(); }
+  for (i = 1; i < 10; i++) { ctx.beginPath(); ctx.moveTo(0, H * i / 10); ctx.lineTo(W, H * i / 10); ctx.stroke(); }
+  ctx.strokeStyle = 'rgba(255,255,255,.35)';
+  ctx.beginPath(); ctx.moveTo(W / 2, 0); ctx.lineTo(W / 2, H); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2); ctx.stroke();
+  ctx.strokeStyle = '#9db9ff'; ctx.lineWidth = 2; ctx.beginPath();
+  var pen = false;
+  for (i = 0; i <= 200; i++) { y = pts[i]; if (!isFinite(y)) { pen = false; continue; } var px = W * i / 200, py = H / 2 - (y / ymax) * (H / 2 - 10); if (py < -60 || py > H + 60) { pen = false; continue; } if (!pen) { ctx.moveTo(px, py); pen = true; } else ctx.lineTo(px, py); }
+  ctx.stroke();
+}
+function doSolve() {
+  var r = solveMath(minEl.value);
+  mout.textContent = r.head;
+  msteps.innerHTML = '';
+  r.steps.forEach(function(line) { var d = document.createElement('div'); d.textContent = line; msteps.appendChild(d); });
+  if (r.ast) { mplot.style.display = 'block'; drawPlot(r.ast); } else { mplot.style.display = 'none'; }
+  if (r.ok) { hist.unshift(minEl.value + '  →  ' + r.head); if (hist.length > 5) hist.pop(); mhist.innerHTML = ''; hist.forEach(function(h) { var d = document.createElement('div'); d.textContent = h; mhist.appendChild(d); }); }
+}
+document.getElementById('msolve').addEventListener('click', doSolve);
+minEl.addEventListener('keydown', function(e) { if (e.key === 'Enter') doSolve(); });
+var mkeys = ['7','8','9','/','⌫','4','5','6','*','(','1','2','3','-',')','0','.','x','+','^','C','√','π','%','='];
+var kg = document.getElementById('kgrid');
+mkeys.forEach(function(k) { var b = document.createElement('button'); b.type = 'button'; b.textContent = k; b.addEventListener('click', function() {
+  if (k === 'C') { minEl.value = ''; mout.textContent = ''; msteps.innerHTML = ''; mplot.style.display = 'none'; }
+  else if (k === '⌫') { minEl.value = minEl.value.slice(0, -1); }
+  else if (k === '=') { doSolve(); return; }
+  else if (k === '√') { minEl.value += 'sqrt('; }
+  else if (k === 'π') { minEl.value += 'pi'; }
+  else { minEl.value += k; }
+  minEl.focus();
+}); kg.appendChild(b); });
+// ---------- notepad + stopwatch (unchanged, they already worked) ----------
+var note = document.getElementById('note'), nc = document.getElementById('ncount');
+try { note.value = localStorage.getItem('gx_note') || ''; } catch (e) {}
+function nupd() { nc.textContent = note.value.length + ' chars — saved ✦'; try { localStorage.setItem('gx_note', note.value); } catch (e) {} }
 note.addEventListener('input', nupd); nupd();
-var swEl=document.getElementById('sw'), swT0=0, swAcc=0, swRun=null;
-function fmt(ms){ var t=Math.floor(ms/100), s=Math.floor(t/10), m=Math.floor(s/60); function p(n,l){ return String(n).padStart(l,'0'); } return p(m,2)+':'+p(s%60,2)+'.'+(t%10); }
-function swDraw(){ swEl.textContent=fmt(swAcc + (swT0 ? Date.now()-swT0 : 0)); }
-document.getElementById('swgo').addEventListener('click', function(){ if(swT0){ swAcc+=Date.now()-swT0; swT0=0; clearInterval(swRun); this.textContent='start'; } else { swT0=Date.now(); swRun=setInterval(swDraw, 47); this.textContent='pause'; } });
-document.getElementById('swreset').addEventListener('click', function(){ swAcc=0; swT0=0; clearInterval(swRun); document.getElementById('swgo').textContent='start'; swDraw(); });
-var tInt=null;
-document.getElementById('tgo').addEventListener('click', function(){ var m=parseFloat(document.getElementById('tmin').value)||0, st=document.getElementById('tstat'); if(tInt){ clearInterval(tInt); tInt=null; } if(m<=0){ st.textContent=''; return; } var left=Math.round(m*60); st.textContent=left+'s left'; tInt=setInterval(function(){ left--; if(left<=0){ clearInterval(tInt); tInt=null; st.textContent='done ✦'; try{ var ac=new (window.AudioContext||window.webkitAudioContext)(), o=ac.createOscillator(), g=ac.createGain(); o.connect(g); g.connect(ac.destination); o.frequency.value=880; g.gain.value=0.15; o.start(); setTimeout(function(){ o.stop(); ac.close(); }, 700); }catch(e){} return; } st.textContent=left+'s left'; }, 1000); });
+var swEl = document.getElementById('sw'), swT0 = 0, swAcc = 0, swRun = null;
+function fmtT(ms) { var t = Math.floor(ms / 100), s = Math.floor(t / 10), m = Math.floor(s / 60); function p(n, l) { return String(n).padStart(l, '0'); } return p(m, 2) + ':' + p(s % 60, 2) + '.' + (t % 10); }
+function swDraw() { swEl.textContent = fmtT(swAcc + (swT0 ? Date.now() - swT0 : 0)); }
+document.getElementById('swgo').addEventListener('click', function() { if (swT0) { swAcc += Date.now() - swT0; swT0 = 0; clearInterval(swRun); this.textContent = 'start'; } else { swT0 = Date.now(); swRun = setInterval(swDraw, 47); this.textContent = 'pause'; } });
+document.getElementById('swreset').addEventListener('click', function() { swAcc = 0; swT0 = 0; clearInterval(swRun); document.getElementById('swgo').textContent = 'start'; swDraw(); });
+var tInt = null;
+document.getElementById('tgo').addEventListener('click', function() { var m = parseFloat(document.getElementById('tmin').value) || 0, st = document.getElementById('tstat'); if (tInt) { clearInterval(tInt); tInt = null; } if (m <= 0) { st.textContent = ''; return; } var left = Math.round(m * 60); st.textContent = left + 's left'; tInt = setInterval(function() { left--; if (left <= 0) { clearInterval(tInt); tInt = null; st.textContent = 'done ✦'; try { var ac = new (window.AudioContext || window.webkitAudioContext)(), o = ac.createOscillator(), g = ac.createGain(); o.connect(g); g.connect(ac.destination); o.frequency.value = 880; g.gain.value = 0.15; o.start(); setTimeout(function() { o.stop(); ac.close(); }, 700); } catch (e) {} return; } st.textContent = left + 's left'; }, 1000); });
 swDraw();
 </script>
-</body>
-</html>`;
+</body></html>`;
 }
+
 
 const HOME = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
