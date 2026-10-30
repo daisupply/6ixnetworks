@@ -3152,11 +3152,12 @@ try {
   const fs2 = require('fs'); const path2 = require('path');
   const wmod = require('@mercuryworkshop/wisp-js/server');
   SJ_WISP = wmod.server;
-  try { if (wmod.logging) wmod.logging.set_level(wmod.logging.NONE); } catch (e) {}
+  try { if (wmod.logging) wmod.logging.set_level(process.env.WISP_LOG ? (wmod.logging[process.env.WISP_LOG] ?? wmod.logging.NONE) : wmod.logging.NONE); } catch (e) {}
   try { Object.assign(SJ_WISP.options, { allow_udp_streams: false, hostname_blacklist: [/^localhost$/, /^127\./, /^10\./, /^192\.168\./, /^172\.(1[6-9]|2[0-9]|3[01])\./, /^::1$/, /\.local$/] }); } catch (e) {}
   SJ_DIR = require('@mercuryworkshop/scramjet/path').scramjetPath;
   try { SJ_BAREMUX_DIR = require('@mercuryworkshop/bare-mux/node').baremuxPath; } catch (e) { SJ_BAREMUX_DIR = path2.join(path2.dirname(require.resolve('@mercuryworkshop/bare-mux')), 'dist'); }
-  SJ_EPOXY_DIR = path2.dirname(require.resolve('@mercuryworkshop/epoxy-transport'));
+  SJ_EPOXY_DIR = (() => { const cands = []; try { const rp = require.resolve('@mercuryworkshop/epoxy-transport'); const marker = 'node_modules/@mercuryworkshop/epoxy-transport'; const ix = rp.replace(/\\/g, '/').indexOf(marker); if (ix >= 0) cands.push(rp.slice(0, ix + marker.length) + '/dist'); cands.push(path2.dirname(rp)); } catch (e) {}
+    for (const c of cands) { try { if (fs2.existsSync(path2.join(c, 'index.mjs'))) return c; } catch (e) {} } return cands[0] || null; })();
   if (!fs2.existsSync(path2.join(SJ_DIR, 'scramjet.all.js'))) throw new Error('scramjet dist missing');
   console.log('scramjet engine ready (wisp on /wisp/)');
 } catch (e) { console.log('scramjet engine unavailable, classic proxy only:', e.message); }
@@ -3660,6 +3661,27 @@ const server = http.createServer(async (req, res) => {
     // keep any query string the browser appended
     if (u.search) targetStr += (targetStr.includes('?') ? '&' : '?') + u.search.slice(1);
     return handleProxy(req, res, targetStr);
+  }
+  if (u.pathname === '/uv-test') {
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
+    return res.end('<!doctype html><meta charset="utf-8"><title>uv test</title><div id="out">running</div>' +
+    '<script src="/uv-assets/baremux/index.js"></' + 'script>' +
+    '<script>' +
+    'var out = document.getElementById("out");' +
+    'function log(t) { var d = document.createElement("div"); d.textContent = t; out.appendChild(d); }' +
+    '(async function() {' +
+    '  try {' +
+    '    var conn = new BareMux.BareMuxConnection("/uv-assets/baremux/worker.js");' +
+    '    await conn.setTransport("/uv-assets/epoxy/index.mjs", [{ wisp: (location.protocol === "https:" ? "wss:" : "ws:") + "//" + location.host + "/wisp/" }]);' +
+    '    log("transport set ok");' +
+    '    var client = new BareMux.BareClient();' +
+    '    var r = await client.fetch("https://example.com/");' +
+    '    log("bareclient fetch status: " + r.status);' +
+    '    var t = await r.text();' +
+    '    log("body head: " + t.slice(0, 120));' +
+    '  } catch (e) { log("BARECLIENT ERROR: " + (e && e.stack || e)); }' +
+    '})();' +
+    '</' + 'script>');
   }
   if (u.pathname === '/uv') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
