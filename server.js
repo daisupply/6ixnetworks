@@ -1431,10 +1431,14 @@ body{display:block;padding:0}
 #vleave{background:rgba(220,38,38,.9)!important;color:#fff!important;border-color:transparent!important}
 .callfoot{display:flex;align-items:center;gap:10px;padding:10px 16px;padding-bottom:calc(10px + env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.08);background:#101012;flex:none;flex-wrap:wrap}
 .callfoot .cloakbar{margin:0}
+.callapp{position:relative}
+#joingate{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;background:rgba(8,8,10,.8)}
+#joinbtn{font-size:16px;padding:14px 28px;border-radius:999px}
 </style></head><body>
 <div class="callapp">
 <div class="vs-head"><span class="vs-brand">6ix<span>Chat</span></span><span id="vstitle" style="font-weight:800;font-size:14px">call</span><span id="vcount" style="opacity:.65;font-size:12px"></span><span id="privbadge" class="vs-badge" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> private</span><span id="vtimer" class="vs-timer">00:00</span><button class="chip" id="vfs" type="button" style="margin-left:auto;padding:6px 12px">fullscreen</button></div>
 <div id="vgrid"></div>
+<div id="joingate" style="display:none"><button class="btn" id="joinbtn" type="button">tap to join</button><div style="opacity:.65;font-size:13px;text-align:center;padding:0 30px">safari needs a tap before it hands over ur mic + camera</div></div>
 <div id="vmembers" style="display:none;gap:8px;flex-wrap:wrap;align-items:center"></div>
 <div id="vstat">connecting…</div>
 <div id="vcontrols" style="display:none;gap:8px;flex-wrap:wrap;align-items:center">
@@ -1463,9 +1467,18 @@ function line(m) { if (m && m.sys) vstatEl.textContent = m.text; }
 if (room.indexOf('p-') === 0) { var pb = document.getElementById('privbadge'); if (pb) pb.style.display = 'inline-flex'; document.getElementById('vstitle').textContent = 'call — private'; }
 var callT0 = null, callIv = null;
 function startTimer() { if (callIv) return; callT0 = Date.now(); callIv = setInterval(function () { var s = Math.floor((Date.now() - callT0) / 1000); var mm = Math.floor(s / 60); var ss = s % 60; document.getElementById('vtimer').textContent = (mm < 10 ? '0' : '') + mm + ':' + (ss < 10 ? '0' : '') + ss; }, 1000); }
+var IS_IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function armGate() {
+  var g = document.getElementById('joingate');
+  if (!g) { joinCall(wantVideo); startTimer(); return; }
+  var b = document.getElementById('joinbtn');
+  b.textContent = wantVideo ? 'tap to join with camera' : 'tap to join voice';
+  g.style.display = 'flex';
+  b.onclick = function () { b.disabled = true; b.textContent = 'connecting…'; joinCall(wantVideo); startTimer(); };
+}
 function handle(o) {
   if (!o) return;
-  if (o.type === 'rtc-id') { myPid = o.id; if (!autoJoined) { autoJoined = true; joinCall(wantVideo); startTimer(); } }
+  if (o.type === 'rtc-id') { myPid = o.id; if (!autoJoined) { autoJoined = true; if (IS_IOS) armGate(); else { joinCall(wantVideo); startTimer(); } } }
   else if (o.type === 'voice') { voiceList(o.members || []); }
   else if (o.type === 'rtc') { rtcMsg(o.from, o.data); }
   else if (o.type === 'msg') { if (o.msg && o.msg.bot && o.msg.ts > joinedAt) speakSix(o.msg.text); }
@@ -1543,7 +1556,7 @@ function localTile(){
 }
 function watchLevel(stream, pid){
   try {
-    if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)();
+    if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)(); if (actx.state === 'suspended') { try { actx.resume(); } catch(e){} }
     var srcNode = actx.createMediaStreamSource(stream);
     var an = actx.createAnalyser(); an.fftSize = 256; srcNode.connect(an);
     var data = new Uint8Array(an.frequencyBinCount);
@@ -1650,11 +1663,11 @@ function joinCall(wantVideo){
     vstitleEl.textContent = room.indexOf('p-') === 0 ? 'call — private' : 'call — ' + room;
     vcamBtn.textContent = camOn ? 'cam: on' : 'cam: off'; vflipBtn.style.display = camOn ? 'inline-block' : 'none';
     vstatEl.textContent = 'in the call — connecting…';
-    vsend({ type: 'rtc-join' });
+    vsend({ type: 'rtc-join' }); var jg = document.getElementById('joingate'); if (jg) jg.style.display = 'none';
     localTile();
     watchLevel(stream, myPid);
     applyAudio();
-  }).catch(function(){ vstatEl.textContent = 'mic/cam blocked — allow them for this site, then try again'; });
+  }).catch(function(){ var g2 = document.getElementById('joingate'); if (g2) { g2.style.display = 'flex'; var b2 = document.getElementById('joinbtn'); if (b2) { b2.disabled = false; b2.textContent = 'try again — tap to join'; } } vstatEl.textContent = 'mic/cam blocked — on safari: tap the aA icon in the address bar, then website settings, set camera + mic to allow, then tap join again'; });
 }
 function toggleCam(){
   if(!inVoice) return;
@@ -1679,13 +1692,20 @@ function toggleCam(){
 function flipCam(){
   if(!camOn || !localStream) return;
   facing = facing === 'user' ? 'environment' : 'user';
-  navigator.mediaDevices.getUserMedia({ video: videoCons() }).then(function(s){
+  var old = localStream.getVideoTracks()[0];
+  if(old){ try { old.stop(); } catch(e){} try { localStream.removeTrack(old); } catch(e){} }
+  function got(s){
     var nt = s.getVideoTracks()[0]; if(!nt) return;
+    localStream.addTrack(nt);
     Object.keys(pcs).forEach(function(pid){ pcs[pid].getSenders().forEach(function(sn){ if(sn.track && sn.track.kind === 'video') sn.replaceTrack(nt).catch(function(){}); }); });
-    var old = localStream.getVideoTracks()[0];
-    if(old){ localStream.removeTrack(old); try { old.stop(); } catch(e){} }
-    localStream.addTrack(nt); localTile();
-  }).catch(function(){});
+    localTile();
+  }
+  function flop(){
+    camOn = false; vcamBtn.textContent = 'cam: off'; vflipBtn.style.display = 'none'; localTile();
+    vstatEl.textContent = 'flip didnt work on this browser — cam stopped, tap cam: off to turn it back on';
+  }
+  var exact = { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { max: 30 }, facingMode: { exact: facing } };
+  navigator.mediaDevices.getUserMedia({ video: exact }).then(got).catch(function(){ navigator.mediaDevices.getUserMedia({ video: videoCons() }).then(got).catch(flop); });
 }
 function teardownVoice(){
   Object.keys(pcs).forEach(closePc);
