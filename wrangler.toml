@@ -10,12 +10,17 @@ routes = [{ pattern = "s.usareme.site", custom_domain = true }]
 
 [durable_objects]
 bindings = [
-  { name = "CHAT", class_name = "ChatRoom" }
+  { name = "CHAT", class_name = "ChatRoom" },
+  { name = "ACCOUNTS", class_name = "Accounts" }
 ]
 
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["ChatRoom"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["Accounts"]
 
 [ai]
 binding = "AI"
