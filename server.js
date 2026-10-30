@@ -1431,6 +1431,12 @@ body{display:block;padding:0}
 #vleave{background:rgba(220,38,38,.9)!important;color:#fff!important;border-color:transparent!important}
 .callfoot{display:flex;align-items:center;gap:10px;padding:10px 16px;padding-bottom:calc(10px + env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.08);background:#101012;flex:none;flex-wrap:wrap}
 .callfoot .cloakbar{margin:0}
+.vctl{width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#f4f4f5;display:inline-flex;align-items:center;justify-content:center;position:relative;padding:0;flex:none}
+.vctl:hover{background:rgba(255,255,255,.16)}
+.vctl.off{background:rgba(220,38,38,.88);border-color:transparent;color:#fff}
+.vctl.off::after{content:'';position:absolute;left:50%;top:50%;width:27px;height:2.5px;background:#fff;border-radius:2px;transform:translate(-50%,-50%) rotate(-45deg)}
+.vctl.on{background:rgba(94,142,255,.88);border-color:transparent;color:#fff}
+
 .callapp{position:relative}
 #joingate{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;background:rgba(8,8,10,.8)}
 #joinbtn{font-size:16px;padding:14px 28px;border-radius:999px}
@@ -1442,15 +1448,15 @@ body{display:block;padding:0}
 <div id="vmembers" style="display:none;gap:8px;flex-wrap:wrap;align-items:center"></div>
 <div id="vstat">connecting…</div>
 <div id="vcontrols" style="display:none;gap:8px;flex-wrap:wrap;align-items:center">
-<button class="chip" id="vmute" type="button">mute</button>
-<button class="chip" id="vdeaf" type="button">deafen</button>
-<button class="chip" id="vptt" type="button">push-to-talk: off</button>
+<button class="vctl" id="vmute" type="button" aria-label="mute"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4"/><path d="M8 22h8"/></svg></button>
+<button class="vctl" id="vdeaf" type="button" aria-label="deafen"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13.5" width="4.4" height="6.5" rx="1.8"/><rect x="17.1" y="13.5" width="4.4" height="6.5" rx="1.8"/></svg></button>
+<button class="vctl" id="vptt" type="button" aria-label="push to talk mode"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6"/><path d="M15.8 8.2a5.4 5.4 0 0 1 0 7.6"/><path d="M5.6 5.6a9 9 0 0 0 0 12.8"/><path d="M18.4 5.6a9 9 0 0 1 0 12.8"/></svg></button>
 <button class="chip" id="vhold" type="button" style="display:none">hold to talk</button>
-<button class="chip" id="vcam" type="button">cam: off</button>
-<button class="chip" id="vflip" type="button" style="display:none">flip cam</button>
-<button class="chip" id="vsix" type="button">six voice: off</button>
+<button class="vctl" id="vcam" type="button" aria-label="camera"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="13.5" height="12" rx="2.5"/><path d="M15.5 10.5 22 7v10l-6.5-3.5"/></svg></button>
+<button class="vctl" id="vflip" type="button" style="display:none" aria-label="flip camera"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>
+<button class="vctl" id="vsix" type="button" aria-label="six voice"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5 14 10l7.5 2-7.5 2-2 7.5L10 14 2.5 12 10 10z"/></svg></button>
 <button class="chip" id="vtalk" type="button" style="display:none">hold to talk to six</button>
-<button class="chip" id="vleave" type="button">leave call</button>
+<button class="vctl" id="vleave" type="button" aria-label="leave call"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
 </div>
 <div class="callfoot"><a class="chip" href="#" id="callback" style="text-decoration:none">← back to chat</a><span style="flex:1"></span>${CLOAK_BAR}</div>
 </div>
@@ -1475,6 +1481,13 @@ function armGate() {
   b.textContent = wantVideo ? 'tap to join with camera' : 'tap to join voice';
   g.style.display = 'flex';
   b.onclick = function () { b.disabled = true; b.textContent = 'connecting…'; joinCall(wantVideo); startTimer(); };
+}
+function paintCtl() {
+  var m = document.getElementById('vmute'); if (m) m.classList.toggle('off', !!vMuted);
+  var d = document.getElementById('vdeaf'); if (d) d.classList.toggle('off', !!vDeaf);
+  var c = document.getElementById('vcam'); if (c) c.classList.toggle('off', !camOn);
+  var s = document.getElementById('vsix'); if (s) s.classList.toggle('on', !!sixVoice);
+  var p = document.getElementById('vptt'); if (p) p.classList.toggle('on', !!vPtt);
 }
 function handle(o) {
   if (!o) return;
@@ -1505,8 +1518,7 @@ function vsend(o){ if(ws && ws.readyState===1){ try{ ws.send(JSON.stringify(o));
 function applyAudio(){
   if(localStream){ localStream.getAudioTracks().forEach(function(t){ t.enabled = !vMuted && !vDeaf && (!vPtt || pttDown); }); }
   Object.keys(remoteEls).forEach(function(pid){ remoteEls[pid].muted = vDeaf; });
-  vmuteBtn.textContent = vMuted ? 'unmute' : 'mute';
-  vdeafBtn.textContent = vDeaf ? 'undeafen' : 'deafen';
+  paintCtl();
   vholdBtn.style.display = vPtt ? 'inline-block' : 'none';
 }
 function memberName(pid){ for(var i=0;i<lastMembers.length;i++) if(lastMembers[i].pid === pid) return lastMembers[i].name; return 'anon'; }
@@ -1661,7 +1673,7 @@ function joinCall(wantVideo){
     localStream = stream; inVoice = true; camOn = stream.getVideoTracks().length > 0;
     vcontrolsEl.style.display = 'flex'; vmembersEl.style.display = 'flex'; 
     vstitleEl.textContent = room.indexOf('p-') === 0 ? 'call — private' : 'call — ' + room;
-    vcamBtn.textContent = camOn ? 'cam: on' : 'cam: off'; vflipBtn.style.display = camOn ? 'inline-block' : 'none';
+    paintCtl(); vflipBtn.style.display = camOn ? 'inline-block' : 'none';
     vstatEl.textContent = 'in the call — connecting…';
     vsend({ type: 'rtc-join' }); var jg = document.getElementById('joingate'); if (jg) jg.style.display = 'none';
     localTile();
@@ -1676,7 +1688,7 @@ function toggleCam(){
       var t = s.getVideoTracks()[0]; if(!t) return;
       localStream.addTrack(t);
       Object.keys(pcs).forEach(function(pid){ try { pcs[pid].addTrack(t, localStream); } catch(e){} });
-      camOn = true; vcamBtn.textContent = 'cam: on'; vflipBtn.style.display = 'inline-block';
+      camOn = true; paintCtl(); vflipBtn.style.display = 'inline-block';
       localTile();
     }).catch(function(){ vstatEl.textContent = 'camera blocked — allow camera for this site, then try again'; });
   } else {
@@ -1685,7 +1697,7 @@ function toggleCam(){
       Object.keys(pcs).forEach(function(pid){ var pc = pcs[pid]; pc.getSenders().forEach(function(sn){ if(sn.track === t){ try { pc.removeTrack(sn); } catch(e){} } }); });
       localStream.removeTrack(t); try { t.stop(); } catch(e){}
     }
-    camOn = false; vcamBtn.textContent = 'cam: off'; vflipBtn.style.display = 'none';
+    camOn = false; paintCtl(); vflipBtn.style.display = 'none';
     localTile();
   }
 }
@@ -1701,7 +1713,7 @@ function flipCam(){
     localTile();
   }
   function flop(){
-    camOn = false; vcamBtn.textContent = 'cam: off'; vflipBtn.style.display = 'none'; localTile();
+    camOn = false; paintCtl(); vflipBtn.style.display = 'none'; localTile();
     vstatEl.textContent = 'flip didnt work on this browser — cam stopped, tap cam: off to turn it back on';
   }
   var exact = { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { max: 30 }, facingMode: { exact: facing } };
@@ -1714,7 +1726,7 @@ function teardownVoice(){
   inVoice = false; camOn = false;
   if(document.fullscreenElement === vstageEl && document.exitFullscreen) document.exitFullscreen().catch(function(){});
   vgridEl.innerHTML = '';
-  vcamBtn.textContent = 'cam: off'; vflipBtn.style.display = 'none';
+  paintCtl(); vflipBtn.style.display = 'none';
   vcontrolsEl.style.display = 'none'; vmembersEl.style.display = 'none'; vmembersEl.innerHTML = '';
 }
 function leaveVoice(){ if(!inVoice) return; vsend({ type: 'rtc-leave' }); teardownVoice(); vstatEl.textContent = 'voice is off — hop in, it runs peer-to-peer thru the room'; }
@@ -1752,7 +1764,7 @@ function summonSix(q){
 }
 vsixBtn.addEventListener('click', function(){
   sixVoice=!sixVoice;
-  vsixBtn.textContent='six voice: '+(sixVoice?'on':'off');
+  paintCtl();
   vtalkBtn.style.display=sixVoice?'inline-block':'none';
   if(sixVoice){ sixTileShow(); vstatEl.textContent='six is in the call ✦ his /ai answers come out loud now — hold the talk button n speak to him'; }
   else { sixTileHide(); if('speechSynthesis' in window) try{ speechSynthesis.cancel(); }catch(e){} }
@@ -1777,7 +1789,7 @@ document.getElementById('vleave').addEventListener('click', function(){ leaveVoi
 vfsBtn.addEventListener('click', function(){ var el = document.querySelector('.callapp'); if(el && el.requestFullscreen) el.requestFullscreen().catch(function(){}); });
 vmuteBtn.addEventListener('click', function(){ vMuted = !vMuted; applyAudio(); });
 vdeafBtn.addEventListener('click', function(){ vDeaf = !vDeaf; applyAudio(); });
-vpttBtn.addEventListener('click', function(){ vPtt = !vPtt; vpttBtn.textContent = 'push-to-talk: ' + (vPtt ? 'on' : 'off'); applyAudio(); });
+vpttBtn.addEventListener('click', function(){ vPtt = !vPtt; paintCtl(); applyAudio(); });
 vcamBtn.addEventListener('click', toggleCam);
 vflipBtn.addEventListener('click', flipCam);
 vholdBtn.addEventListener('mousedown', function(){ pttDown = true; applyAudio(); });
