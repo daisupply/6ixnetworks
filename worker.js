@@ -351,6 +351,7 @@ a.back{color:#9db9ff;text-decoration:none;font-size:14px;font-weight:600}
 .card:hover{border-color:rgba(255,255,255,.24)}
 .card img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#17171a}
 .noimg{width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;color:#63636b;background:#17171a;font-size:12px}
+.gicon{padding:0}.gicon svg{width:100%;height:100%;display:block}
 .gt{padding:10px 12px 2px;font-size:14px;font-weight:600}
 .gc{padding:0 12px 12px;font-size:12px;color:#8b8b93}
 body.playbody{padding:0;height:100vh}
@@ -605,7 +606,7 @@ function gamesPage(games) {
   const cards = games.map((g, gi) => {
     const thumb = g.img ? proxied(g.img) : '';
     return `<a class="card" href="/play?u=${encodeURIComponent(g.u)}&t=${encodeURIComponent(g.t)}" data-s="${escHtml((g.t + ' ' + g.c).toLowerCase())}" data-c="${escHtml(g.c)}" data-u="${escHtml(g.u)}" data-i="${gi}">
-      ${thumb ? `<img loading="lazy" src="${thumb}" alt="">` : '<div class="noimg">no preview</div>'}
+      ${thumb ? `<img loading="lazy" src="${thumb}" alt="">` : g.icon ? `<div class="noimg gicon">${g.icon}</div>` : '<div class="noimg">no preview</div>'}
       <span class="fav" data-f="${escHtml(g.u)}">☆</span><div class="gt">${escHtml(g.t)}</div></a>`;
   }).join('');
   return `<!DOCTYPE html>
@@ -786,9 +787,9 @@ document.getElementById('go').addEventListener('click', function(){
 }
 
 const FEATURED_GAMES = [
-  { t: 'Roblox', u: 'https://www.roblox.com/home', img: '', c: 'Featured', w: 800, h: 600 },
-  { t: 'Minecraft Classic', u: 'https://classic.minecraft.net', img: '', c: 'Featured', w: 800, h: 600 },
-  { t: 'Krunker', u: 'https://krunker.io', img: '', c: 'Featured', w: 800, h: 600 },
+  { t: 'Roblox', u: 'https://www.roblox.com/home', img: '', icon: '<svg viewBox="0 0 120 90" aria-hidden="true"><g transform="rotate(12 60 45)"><path fill="#e9e9ec" fill-rule="evenodd" d="M37 22h46v46H37zM49.5 34.5h21v21h-21z"/></g></svg>', c: 'Featured', w: 800, h: 600 },
+  { t: 'Minecraft Classic', u: 'https://classic.minecraft.net', img: '', icon: '<svg viewBox="0 0 120 90" aria-hidden="true"><rect width="120" height="90" fill="#5da23c"/><rect x="8" y="8" width="12" height="12" fill="#6fb54c"/><rect x="98" y="62" width="12" height="12" fill="#6fb54c"/><rect x="90" y="8" width="10" height="10" fill="#4c8f31"/><rect x="10" y="64" width="10" height="10" fill="#4c8f31"/><g fill="#16240f"><rect x="36" y="24" width="18" height="18"/><rect x="66" y="24" width="18" height="18"/><rect x="51" y="42" width="18" height="12"/><rect x="42" y="50" width="12" height="22"/><rect x="66" y="50" width="12" height="22"/></g></svg>', c: 'Featured', w: 800, h: 600 },
+  { t: 'Krunker', u: 'https://krunker.io', img: '', icon: '<svg viewBox="0 0 120 90" aria-hidden="true"><g stroke="#f5c531" stroke-width="6" stroke-linecap="round" fill="none"><circle cx="60" cy="45" r="17"/><path d="M60 10v14M60 66v14M25 45h14M81 45h14"/></g><circle cx="60" cy="45" r="3.5" fill="#f5c531"/></svg>', c: 'Featured', w: 800, h: 600 },
 ];
 
 
