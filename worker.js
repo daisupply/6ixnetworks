@@ -259,6 +259,7 @@ function cloakTab(kind){
   };
   var p=presets[kind]||presets.google;
   try{ localStorage.setItem('six_disguise', kind); }catch(e){}
+  if (window.parent !== window) { try { window.parent.postMessage({ sixCloak: kind }, '*'); } catch (e) {} }
   document.title=p.t;
   var l=document.querySelector("link[rel~='icon']")||document.createElement('link');
   l.rel='icon'; l.href=p.i; document.head.appendChild(l);
@@ -2120,6 +2121,7 @@ var SERVERS=${list} || [location.origin + '/'];
 var f=document.getElementById('f');
 var presets={ google:{t:'Google',i:'https://www.google.com/favicon.ico'}, classroom:{t:'Google Classroom',i:'https://ssl.gstatic.com/classroom/favicon.png'}, docs:{t:'Google Docs',i:'https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico'}, drive:{t:'My Drive - Google Drive',i:'https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png'} };
 function disguise(k){ try{ localStorage.setItem('six_disguise', k); }catch(e){} var p=presets[k]||presets.google; document.title=p.t; var l=document.querySelector("link[rel~='icon']")||document.createElement('link'); l.rel='icon'; l.href=p.i; document.head.appendChild(l); }
+window.addEventListener('message', function(e){ if (e && e.data && e.data.sixCloak) disguise(e.data.sixCloak); });
 function panic(){ disguise('classroom'); f.src='https://classroom.google.com/'; }
 document.addEventListener('keydown', function(e){ if(e.keyCode===192) panic(); });
 document.getElementById('dot').addEventListener('click', function(){ var m=document.getElementById('menu'); m.style.display = m.style.display==='flex' ? 'none' : 'flex'; });
