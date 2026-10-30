@@ -3204,16 +3204,33 @@ var SJ_START = ${JSON.stringify(startUrl || '')};
 var statEl = document.getElementById('sjstat'), addrEl = document.getElementById('sjaddr');
 function stat(t){ statEl.textContent = t; }
 var sjCtl = null, sjConn = null, sjFrame = null, sjReady = null;
+function sjKillDb() {
+  return (async function() {
+    var names = ['scramjet'];
+    try { var dbs = await indexedDB.databases(); dbs.forEach(function(d) { if (d.name && d.name.toLowerCase().indexOf('scramjet') >= 0 && names.indexOf(d.name) < 0) names.push(d.name); }); } catch (err) {}
+    await Promise.all(names.map(function(n) { return new Promise(function(res) { var rq; try { rq = indexedDB.deleteDatabase(n); } catch (err) { return res(); } var to = setTimeout(res, 2500); rq.onsuccess = rq.onerror = rq.onblocked = function() { clearTimeout(to); res(); }; }); }));
+  })();
+}
+async function sjBoot() {
+  var Ctor = $scramjetLoadController().ScramjetController;
+  sjCtl = new Ctor({ prefix: '/scramjet/', files: { wasm: '/sj-assets/scramjet/scramjet.wasm.wasm', all: '/sj-assets/scramjet/scramjet.all.js', sync: '/sj-assets/scramjet/scramjet.sync.js' }, flags: { rewriterLogs: false } });
+  sjConn = new BareMux.BareMuxConnection('/sj-assets/baremux/worker.js');
+  await navigator.serviceWorker.register('/sw.js');
+  await navigator.serviceWorker.ready;
+  if (!navigator.serviceWorker.controller) { stat('waking the service worker…'); await new Promise(function(res) { var to = setTimeout(res, 7000); navigator.serviceWorker.addEventListener('controllerchange', function() { clearTimeout(to); res(); }); }); }
+  await sjConn.setTransport('/sj-assets/epoxy/index.mjs', [{ wisp: (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/' }]);
+  await sjCtl.init();
+}
 function ensureSj() {
   if (!sjReady) sjReady = (async function() {
-    var Ctor = $scramjetLoadController().ScramjetController;
-    sjCtl = new Ctor({ prefix: '/scramjet/', files: { wasm: '/sj-assets/scramjet/scramjet.wasm.wasm', all: '/sj-assets/scramjet/scramjet.all.js', sync: '/sj-assets/scramjet/scramjet.sync.js' }, flags: { rewriterLogs: false } });
-    sjConn = new BareMux.BareMuxConnection('/sj-assets/baremux/worker.js');
-    await navigator.serviceWorker.register('/sw.js');
-    await navigator.serviceWorker.ready;
-    if (!navigator.serviceWorker.controller) { stat('waking the service worker…'); await new Promise(function(res) { var to = setTimeout(res, 7000); navigator.serviceWorker.addEventListener('controllerchange', function() { clearTimeout(to); res(); }); }); }
-    await sjConn.setTransport('/sj-assets/epoxy/index.mjs', [{ wisp: (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/' }]);
-    await sjCtl.init();
+    try { await sjBoot(); }
+    catch (e) {
+      if (!/object store|notfounderror|idbdatabase/i.test(String((e && e.message) || e))) throw e;
+      stat('fixing scramjet storage…');
+      await sjKillDb();
+      sjCtl = null; sjConn = null;
+      await sjBoot();
+    }
   })();
   return sjReady;
 }
