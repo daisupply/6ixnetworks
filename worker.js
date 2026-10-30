@@ -94,7 +94,7 @@ async function summarizeUrl(env, ub) {
 async function askSixSummary(env, url, title, text) {
   if (!env || !env.AI) return null;
   const messages = [
-    { role: 'system', content: 'You are Six, the AI inside the 6ixNetworks proxy. Summarize the web page below for a student: the gist in 3-5 short sentences, plain text, no markdown symbols. If the page has clear key facts, add them after as short lines starting with "• ". If the text is mostly navigation junk or you cannot tell what the page is about, say so honestly in one line.' },
+    { role: 'system', content: 'You are Six, the AI inside the 6ixNetworks proxy. Summarize the web page below for a student: the gist in 3-5 short sentences, plain text, no markdown symbols. If the page has clear key facts, add them after as short lines starting with "• ". If the text is mostly navigation junk or you cannot tell what the page is about, say so honestly in one line. voice: all lowercase, casual, straight-talking, short lines, zero corporate tone.' },
     { role: 'user', content: 'URL: ' + url + '\nTITLE: ' + title + '\n\n' + text }
   ];
   for (const model of SIX_MODELS) {
@@ -670,7 +670,7 @@ const FEATURED_GAMES = [
 
 
 // ---------- six ai + chatroom (shared pages) ----------
-const SIX_SYSTEM = 'You are Six, the AI inside 6ixNetworks — a galaxy-themed web network with a web proxy, a 600-game hub, a retro emulator (NES, SNES, Game Boy/Color, GBA, N64, Genesis, Atari 2600), a YouTube player, tools (calculator, notepad, timers), and a live chatroom where people can summon you with /ai. You are chill, direct, and genuinely helpful. Keep answers short unless asked for detail. Help with homework, games, ideas, and questions about the site. Never claim a feature exists that is not listed here.';
+const SIX_SYSTEM = 'You are Six, the AI inside 6ixNetworks — a galaxy-themed web network with a web proxy, a search answer box, a 600-game hub, a retro emulator (NES, SNES, Game Boy/Color, GBA, N64, Genesis, Atari 2600), a YouTube player, tools (calculator, notepad, timers), a live chatroom with public rooms plus private rooms that wipe when empty (people summon you there with /ai), a summarize button on proxied pages, and a doc helper page that summarizes, explains, or completes pasted documents. VOICE — this is law: you talk like a real one. all lowercase, casual texting energy, short punchy lines. you can say twin, gng, bruh, ong, lmao, fr — sparingly, natural, never forced, never every line. zero corporate tone, no as-an-ai talk, no formal greetings or sign-offs. be straight, a little funny, roast lightly when it fits. the slang is seasoning, not the meal: facts stay exact and the help stays real. keep answers short unless asked for detail or the task needs length. help with homework, games, ideas, and questions about the site. never claim a feature exists that is not listed here.';
 function cleanName(n) { n = String(n || '').replace(/[<>&"']/g, '').trim().slice(0, 24); if (!n || /six/i.test(n)) n = 'anon'; return n; }
 function cleanText(t) { return String(t || '').replace(/\s+/g, ' ').trim().slice(0, 500); }
 
@@ -844,6 +844,78 @@ Array.prototype.forEach.call(document.querySelectorAll('.q'), function(b){ b.add
 </html>`;
 }
 
+
+async function askSixDoc(env, text, mode) {
+  if (!env || !env.AI) return null;
+  const task = {
+    sum: 'the user pasted a document or assignment below. summarize it: what it is, what it is asking for, and the key points. short plain lines, no markdown symbols.',
+    write: 'the user pasted an assignment or document below and wants it done. do the work properly: questions get real answers, a writing prompt gets a natural student-level piece (not robotic, not overly formal), task instructions get the actual deliverable. plain text, no markdown symbols. give it the length the task actually needs.',
+    simple: 'the user pasted a document or assignment below. explain what it means and exactly what they have to do, in the simplest words possible. short lines, zero jargon.'
+  }[mode];
+  if (!task) return null;
+  const messages = [{ role: 'system', content: SIX_SYSTEM + ' TASK: ' + task }, { role: 'user', content: text }];
+  for (const model of SIX_MODELS) {
+    try {
+      const r = await env.AI.run(model, { messages, max_tokens: mode === 'write' ? 1500 : 600 });
+      const out = (r && (r.response || r.result || '')).toString().trim();
+      if (out) return out.slice(0, 9000);
+    } catch {}
+  }
+  return null;
+}
+
+function docPage() {
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — Doc Helper</title>
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+#doc{width:100%;height:30vh;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:14px;padding:13px;font-family:inherit;font-size:14px;line-height:1.5;resize:vertical}
+#out{display:none;text-align:left;background:rgba(0,0,0,.25);border:1px solid rgba(196,181,253,.22);border-radius:16px;padding:16px;margin-top:14px;white-space:pre-wrap;word-break:break-word;line-height:1.6}
+.act{background:rgba(139,92,246,.3);color:#fff;border:1px solid rgba(196,181,253,.5);border-radius:10px;padding:11px 16px;font-weight:800;cursor:pointer;font-family:inherit}
+.act.alt{background:rgba(240,171,252,.18);border-color:rgba(240,171,252,.5)}
+</style></head><body>${STAR_CANVAS}<div class="wrap">
+<a class="back" href="/home">← home</a> · <a class="back" href="/ai">ask six ✦</a>
+<h1>doc <span>helper</span></h1>
+<p style="opacity:.7;margin:6px 0 12px">paste a whole doc or assignment — six will summarize it, dumb it down, or just do it for u</p>
+<textarea id="doc" placeholder="paste the whole doc here…" maxlength="12000"></textarea>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px">
+<button class="act" id="bsum" type="button">summarize it</button>
+<button class="act alt" id="bwrite" type="button">do it for me ✦</button>
+<button class="act" id="bsimple" type="button">explain it simple</button>
+<span id="count" style="opacity:.6;font-size:12px"></span>
+<span id="stat" style="opacity:.8;font-size:13px"></span>
+</div>
+<div id="out"></div>
+<button class="act" id="copy" type="button" style="display:none;margin-top:10px">copy the text</button>
+<p style="opacity:.6;font-size:13px;margin-top:14px">nothing leaves the network — six reads it right here. drafts are a starting point, make it sound like u before u turn it in</p>
+${CLOAK_BAR}
+</div>
+<script src="/cloak.js"></script>
+<script src="/stars.js"></script>
+<script>
+var docEl=document.getElementById('doc'), outEl=document.getElementById('out'), statEl=document.getElementById('stat'), countEl=document.getElementById('count'), copyBtn=document.getElementById('copy');
+function upd(){ countEl.textContent=docEl.value.length+' / 12000 chars'; }
+docEl.addEventListener('input', upd); upd();
+function run(mode){
+  var t=docEl.value.trim();
+  if(!t){ statEl.textContent='paste something first twin'; return; }
+  statEl.textContent='six is on it…'; outEl.style.display='none'; copyBtn.style.display='none';
+  fetch('/ai/doc', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ text: t.slice(0,12000), mode: mode }) }).then(function(r){ return r.json(); }).then(function(o){
+    if(o && o.out){ outEl.textContent=o.out; outEl.style.display='block'; copyBtn.style.display='inline-block'; statEl.textContent='done ✦'; }
+    else { statEl.textContent='six couldnt run that rn — give it a sec n try again'; }
+  }).catch(function(){ statEl.textContent='six couldnt run that rn'; });
+}
+document.getElementById('bsum').addEventListener('click', function(){ run('sum'); });
+document.getElementById('bwrite').addEventListener('click', function(){ run('write'); });
+document.getElementById('bsimple').addEventListener('click', function(){ run('simple'); });
+copyBtn.addEventListener('click', function(){
+  var done=function(){ statEl.textContent='copied ✦'; };
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(outEl.textContent).then(done).catch(done); } else { done(); }
+});
+</script>
+</body>
+</html>`;
+}
 function toolsPage() {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
@@ -912,7 +984,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <a href="/go?q=https://www.google.com">google</a>
 <a href="/go?q=https://duckduckgo.com">duckduckgo</a>
 <a href="/go?q=https://www.wikipedia.org">wikipedia</a>
-<a href="/yt">youtube</a><a href="/gs">games</a> <a href="/tools">tools</a> <a href="/chat">chat</a> <a href="/ai">ai ✦</a>
+<a href="/yt">youtube</a><a href="/gs">games</a> <a href="/tools">tools</a> <a href="/chat">chat</a> <a href="/ai">ai ✦</a> <a href="/doc">doc helper</a>
 <a href="/go?q=https://www.reddit.com">reddit</a>
 <a href="/go?q=https://www.coolmathgames.com">coolmath games</a>
 </div>
@@ -1442,7 +1514,7 @@ async function askSix(env, messages) {
   }
   return 'six is unreachable rn ✦ try again in a sec';
 }
-const SIX_ANSWER_SYSTEM = 'You are Six, answering at the top of a search results page inside 6ixNetworks. Answer the search query directly and correctly in 1-3 short sentences. Plain text only — no markdown, no lists, no links. If the query is just a name or a site, give one short line saying what it is. If you genuinely do not know, say that in a few words instead of guessing.';
+const SIX_ANSWER_SYSTEM = 'You are Six, answering at the top of a search results page inside 6ixNetworks. Answer the search query directly and correctly in 1-3 short sentences. Plain text only — no markdown, no lists, no links. If the query is just a name or a site, give one short line saying what it is. If you genuinely do not know, say that in a few words instead of guessing. voice: all lowercase, casual, straight-talking, a little slang used sparingly, zero corporate tone.';
 const SIX_ANSWER_CACHE = new Map();
 async function askSixAnswer(env, q) {
   if (!env || !env.AI) return null;
@@ -1612,6 +1684,16 @@ export default {
     if (u.pathname === '/ai/summarize') {
       const s = await summarizeUrl(env, u.searchParams.get('u') || '');
       return new Response(JSON.stringify({ summary: s }), { headers: { 'content-type': 'application/json' } });
+    }
+    if (u.pathname === '/ai/doc' && request.method === 'POST') {
+      const b = await request.json().catch(() => ({}));
+      const text = String(b.text || '').slice(0, 12000);
+      const mode = ['sum', 'write', 'simple'].includes(b.mode) ? b.mode : 'sum';
+      const out = text.trim() ? await askSixDoc(env, text, mode) : null;
+      return new Response(JSON.stringify({ out }), { headers: { 'content-type': 'application/json' } });
+    }
+    if (u.pathname === '/doc') {
+      return new Response(docPage(), { headers: { 'content-type': 'text/html; charset=utf-8' } });
     }
     if (u.pathname === '/ai/room' && request.method === 'POST') {
       const b = await request.json().catch(() => ({}));
