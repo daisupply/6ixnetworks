@@ -756,11 +756,23 @@ function chatPage() {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
-.chatbar{background:rgba(18,18,20,.55);border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:12px 14px;margin:12px 0;display:flex;flex-direction:column;gap:10px;text-align:left}
-.cb-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.cb-label{font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;opacity:.45;width:52px;flex:none}
-.cb-div{height:1px;background:rgba(255,255,255,.1)}
-.cb-hint{opacity:.55;font-size:12px}
+.chatflex{display:flex;gap:14px;align-items:flex-start}
+.chatmain{flex:1;min-width:0}
+.chatrail{width:218px;flex:none;background:#101012;border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:14px 12px;display:flex;flex-direction:column;gap:4px;text-align:left;position:sticky;top:14px}
+.cr-sec{font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;opacity:.42;margin:12px 4px 5px}
+.cr-sec:first-child{margin-top:0}
+.cr-item{display:flex;align-items:center;gap:9px;width:100%;justify-content:flex-start;border-radius:10px;padding:9px 11px;background:transparent;border:1px solid transparent;color:#d4d4d8;font-size:13.5px;font-weight:600}
+.cr-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.cr-item svg{width:17px;height:17px;flex:none}
+.cr-item.on{background:rgba(94,142,255,.16);color:#fff;border-color:rgba(94,142,255,.3)}
+.cr-join{display:flex;gap:6px;margin-top:2px}
+.cr-join input{flex:1;min-width:0;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:8px 9px;font-family:inherit}
+.cr-join .chip{flex:none}
+.cr-hint{opacity:.55;font-size:12px;line-height:1.5;padding:2px 4px}
+.cr-you{display:flex;gap:8px;align-items:center}
+.cr-you svg{width:17px;height:17px;opacity:.6;flex:none}
+.cr-you input{flex:1;min-width:0;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:8px 10px;font-family:inherit}
+@media(max-width:820px){.chatflex{flex-direction:column}.chatrail{width:auto;position:static;order:-1;align-self:stretch}}
 .callbar{background:rgba(18,18,20,.45);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:10px 12px}
 #msgs{height:52vh;overflow-y:auto;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:14px;text-align:left}
 .msg{margin:7px 0;word-break:break-word}
@@ -780,53 +792,50 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 </style></head><body>${STAR_CANVAS}${SIDEBAR_HTML}<div class="wrap">
 <a class="back" href="/home">← home</a> · <a class="back" href="/ai">ask six ✦</a>
 <h1>6ix<span>Networks</span> chat</h1>
-<div class="chatbar">
-<div class="cb-row"><span class="cb-label">rooms</span>
-<button class="chip room on" data-room="lobby" type="button">lobby</button>
-<button class="chip room" data-room="games" type="button">games</button>
-<button class="chip room" data-room="random" type="button">random</button>
-<button class="chip" id="mkpriv" type="button">🔒 new private room</button>
-<input id="joincode" type="text" maxlength="12" placeholder="room code" style="background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:8px 10px;font-family:inherit;width:120px">
-<button class="chip" id="joinpriv" type="button">join private</button>
-</div>
-<div class="cb-row"><span class="cb-label"></span><span class="cb-hint">private rooms wipe themselves right after everyone leaves</span></div>
-<div class="cb-div"></div>
-<div class="cb-row"><span class="cb-label">call</span>
-<button class="chip" id="vjoin" type="button">🎙 join voice</button>
-<button class="chip" id="vjoinv" type="button">📹 join video</button>
-<span id="vstat" style="opacity:.65;font-size:13px">voice is off — hop in, it runs peer-to-peer thru the room</span>
-</div>
-<div class="cb-div"></div>
-<div class="cb-row"><span class="cb-label">you</span>
-<input id="name" type="text" maxlength="24" placeholder="ur name" style="background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:8px 10px;font-family:inherit;width:150px">
-<span id="pres" style="opacity:.7;font-size:13px">connecting…</span>
-</div>
-</div>
+<div class="chatflex"><div class="chatmain">
 <div id="privbar" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid rgba(255,255,255,.4);border-radius:12px;background:rgba(255,255,255,.08);font-size:14px;text-align:left"></div>
 <div id="vmembers" class="callbar" style="display:none;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0"></div>
 <div id="vcontrols" class="callbar" style="display:none;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">
-<button class="chip" id="vmute" type="button">🎙 mute</button>
-<button class="chip" id="vdeaf" type="button">🔊 deafen</button>
+<button class="chip" id="vmute" type="button">mute</button>
+<button class="chip" id="vdeaf" type="button">deafen</button>
 <button class="chip" id="vptt" type="button">push-to-talk: off</button>
-<button class="chip" id="vhold" type="button" style="display:none">🎙 hold to talk</button>
-<button class="chip" id="vcam" type="button">📷 cam: off</button>
-<button class="chip" id="vflip" type="button" style="display:none">🔄 flip cam</button>
-<button class="chip" id="vsix" type="button">🤖 six voice: off</button>
-<button class="chip" id="vtalk" type="button" style="display:none">🎙 hold to talk to six</button>
+<button class="chip" id="vhold" type="button" style="display:none">hold to talk</button>
+<button class="chip" id="vcam" type="button">cam: off</button>
+<button class="chip" id="vflip" type="button" style="display:none">flip cam</button>
+<button class="chip" id="vsix" type="button">six voice: off</button>
+<button class="chip" id="vtalk" type="button" style="display:none">hold to talk to six</button>
 <button class="chip" id="vleave" type="button">leave call</button>
 </div>
 <div id="vstage" style="display:none;margin:8px 0;padding:10px;border-radius:18px;background:rgba(10,10,11,.72);border:1px solid rgba(255,255,255,.3)">
 <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-<span id="vstitle" style="font-weight:800;font-size:14px">📹 call</span>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="vertical-align:-2px"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> <span id="vstitle" style="font-weight:800;font-size:14px">call</span>
 <span id="vcount" style="opacity:.65;font-size:12px"></span>
-<button class="chip" id="vfs" type="button" style="margin-left:auto;padding:6px 12px">⛶ fullscreen</button>
+<button class="chip" id="vfs" type="button" style="margin-left:auto;padding:6px 12px">fullscreen</button>
 </div>
 <div id="vgrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px"></div>
 </div>
 <div id="msgs"></div>
-<form class="bar" id="sendbar"><button type="button" id="attach" title="send an image">📎</button><input type="text" id="text" placeholder="message…  (/ai asks six · /img draws · paste an image)" autocomplete="off" maxlength="500"><button type="submit">send</button></form>
+<form class="bar" id="sendbar"><button type="button" id="attach" title="send an image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="vertical-align:-2px"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button><input type="text" id="text" placeholder="message…  (/ai asks six · /img draws · paste an image)" autocomplete="off" maxlength="500"><button type="submit">send</button></form>
 <input type="file" id="chatfile" accept="image/*" style="display:none">
 <p style="opacity:.65;font-size:13px">real people, live ✦ public rooms are public — grab a private room for just ur people</p>
+</div>
+<aside class="chatrail">
+<div class="cr-sec">rooms</div>
+<button class="chip room on cr-item" data-room="lobby" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> lobby</button>
+<button class="chip room cr-item" data-room="games" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4"/><path d="M8 10v4"/><path d="M15 13h.01"/><path d="M18 11h.01"/></svg> games</button>
+<button class="chip room cr-item" data-room="random" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg> random</button>
+<button class="chip cr-item" id="mkpriv" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> new private room</button>
+<div class="cr-join"><input id="joincode" type="text" maxlength="12" placeholder="room code"><button class="chip" id="joinpriv" type="button">join</button></div>
+<div class="cr-hint">private rooms wipe themselves right after everyone leaves</div>
+<div class="cr-sec">call</div>
+<button class="chip cr-item" id="vjoin" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg> join voice</button>
+<button class="chip cr-item" id="vjoinv" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> join video</button>
+<div class="cr-hint" id="vstat">voice is off — hop in, it runs peer-to-peer thru the room</div>
+<div class="cr-sec">you</div>
+<div class="cr-you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><input id="name" type="text" maxlength="24" placeholder="ur name"></div>
+<div class="cr-hint" id="pres">connecting…</div>
+</aside>
+</div>
 
 </div>
 <script src="/cloak.js"></script>
@@ -841,7 +850,7 @@ var privbar=document.getElementById('privbar');
 function showPriv(){
   if(room.indexOf('p-')===0){
     privbar.style.display='block'; privbar.innerHTML='';
-    var s=document.createElement('span'); s.textContent='🔒 private room · code: ';
+    var s=document.createElement('span'); s.textContent='private room · code: ';
     var c=document.createElement('b'); c.textContent=room.slice(2); c.style.fontSize='17px'; c.style.letterSpacing='2px';
     var t=document.createElement('span'); t.textContent=' — share it to invite ur people. history wipes itself right after everyone leaves ✦';
     privbar.appendChild(s); privbar.appendChild(c); privbar.appendChild(t);
@@ -979,7 +988,7 @@ fetch('/auth/me').then(function(r){ return r.json(); }).then(function(o){
     nameEl.title = 'locked to ur account';
     var hint = document.createElement('div');
     hint.setAttribute('style', 'font-size:12px;opacity:.75;margin-top:4px');
-    hint.textContent = '🔒 chatting as ' + o.user + ' — ur account name, nobody else can use it';
+    hint.textContent = 'chatting as ' + o.user + ' — ur account name, nobody else can use it';
     if(nameEl.parentNode) nameEl.parentNode.appendChild(hint);
     try { localStorage.setItem('six_name', o.user); } catch(e){}
     try { if(ws) ws.close(); } catch(e){}
@@ -1010,8 +1019,8 @@ function vsend(o){ if(ws && ws.readyState===1){ try{ ws.send(JSON.stringify(o));
 function applyAudio(){
   if(localStream){ localStream.getAudioTracks().forEach(function(t){ t.enabled = !vMuted && !vDeaf && (!vPtt || pttDown); }); }
   Object.keys(remoteEls).forEach(function(pid){ remoteEls[pid].muted = vDeaf; });
-  vmuteBtn.textContent = vMuted ? '🔇 unmute' : '🎙 mute';
-  vdeafBtn.textContent = vDeaf ? '🔇 undeafen' : '🔊 deafen';
+  vmuteBtn.textContent = vMuted ? 'unmute' : 'mute';
+  vdeafBtn.textContent = vDeaf ? 'undeafen' : 'deafen';
   vholdBtn.style.display = vPtt ? 'inline-block' : 'none';
 }
 function memberName(pid){ for(var i=0;i<lastMembers.length;i++) if(lastMembers[i].pid === pid) return lastMembers[i].name; return 'anon'; }
@@ -1118,7 +1127,7 @@ function voiceList(members){
   });
   vmembersEl.style.display = inVoice ? 'flex' : 'none';
   if(!inVoice) return;
-  vstitleEl.textContent = '📹 call — ' + room;
+  vstitleEl.textContent = 'call — ' + room;
   vcountEl.textContent = members.length + ' in';
   var pids = members.map(function(m){ return m.pid; });
   Object.keys(pcs).forEach(function(pid){ if(pids.indexOf(pid) === -1) closePc(pid); });
@@ -1141,8 +1150,8 @@ function joinCall(wantVideo){
   navigator.mediaDevices.getUserMedia(cons).then(function(stream){
     localStream = stream; inVoice = true; camOn = stream.getVideoTracks().length > 0;
     vjoinBtn.style.display = 'none'; vjoinvBtn.style.display = 'none'; vcontrolsEl.style.display = 'flex'; vmembersEl.style.display = 'flex'; vstageEl.style.display = 'block';
-    vstitleEl.textContent = '📹 call — ' + room;
-    vcamBtn.textContent = camOn ? '📷 cam: on' : '📷 cam: off'; vflipBtn.style.display = camOn ? 'inline-block' : 'none';
+    vstitleEl.textContent = 'call — ' + room;
+    vcamBtn.textContent = camOn ? 'cam: on' : 'cam: off'; vflipBtn.style.display = camOn ? 'inline-block' : 'none';
     vstatEl.textContent = 'in the call — connecting…';
     vsend({ type: 'rtc-join' });
     localTile();
@@ -1157,7 +1166,7 @@ function toggleCam(){
       var t = s.getVideoTracks()[0]; if(!t) return;
       localStream.addTrack(t);
       Object.keys(pcs).forEach(function(pid){ try { pcs[pid].addTrack(t, localStream); } catch(e){} });
-      camOn = true; vcamBtn.textContent = '📷 cam: on'; vflipBtn.style.display = 'inline-block';
+      camOn = true; vcamBtn.textContent = 'cam: on'; vflipBtn.style.display = 'inline-block';
       localTile();
     }).catch(function(){ vstatEl.textContent = 'camera blocked — allow camera for this site, then try again'; });
   } else {
@@ -1166,7 +1175,7 @@ function toggleCam(){
       Object.keys(pcs).forEach(function(pid){ var pc = pcs[pid]; pc.getSenders().forEach(function(sn){ if(sn.track === t){ try { pc.removeTrack(sn); } catch(e){} } }); });
       localStream.removeTrack(t); try { t.stop(); } catch(e){}
     }
-    camOn = false; vcamBtn.textContent = '📷 cam: off'; vflipBtn.style.display = 'none';
+    camOn = false; vcamBtn.textContent = 'cam: off'; vflipBtn.style.display = 'none';
     localTile();
   }
 }
@@ -1188,8 +1197,8 @@ function teardownVoice(){
   inVoice = false; camOn = false;
   if(document.fullscreenElement === vstageEl && document.exitFullscreen) document.exitFullscreen().catch(function(){});
   vstageEl.style.display = 'none'; vgridEl.innerHTML = '';
-  vcamBtn.textContent = '📷 cam: off'; vflipBtn.style.display = 'none';
-  vjoinBtn.style.display = 'inline-block'; vjoinvBtn.style.display = 'inline-block'; vcontrolsEl.style.display = 'none'; vmembersEl.style.display = 'none'; vmembersEl.innerHTML = '';
+  vcamBtn.textContent = 'cam: off'; vflipBtn.style.display = 'none';
+  vjoinBtn.style.display = ''; vjoinvBtn.style.display = ''; vcontrolsEl.style.display = 'none'; vmembersEl.style.display = 'none'; vmembersEl.innerHTML = '';
 }
 function leaveVoice(){ if(!inVoice) return; vsend({ type: 'rtc-leave' }); teardownVoice(); vstatEl.textContent = 'voice is off — hop in, it runs peer-to-peer thru the room'; }
 function voiceDrop(){ if(!inVoice) return; teardownVoice(); vstatEl.textContent = 'call dropped — it needs the live connection. rejoin when ur back'; }
@@ -1226,7 +1235,7 @@ function summonSix(q){
 }
 vsixBtn.addEventListener('click', function(){
   sixVoice=!sixVoice;
-  vsixBtn.textContent='🤖 six voice: '+(sixVoice?'on':'off');
+  vsixBtn.textContent='six voice: '+(sixVoice?'on':'off');
   vtalkBtn.style.display=sixVoice?'inline-block':'none';
   if(sixVoice){ sixTileShow(); vstatEl.textContent='six is in the call ✦ his /ai answers come out loud now — hold the talk button n speak to him'; }
   else { sixTileHide(); if('speechSynthesis' in window) try{ speechSynthesis.cancel(); }catch(e){} }
@@ -1238,10 +1247,10 @@ function sixListenStart(){
     sixRec=new SR(); sixRec.lang='en-US'; sixRec.interimResults=false; sixRec.maxAlternatives=1;
     sixRec.onresult=function(ev){ var s=''; try{ s=ev.results[0][0].transcript||''; }catch(e){} if(s.trim()){ line({sys:true, text:'u said: '+s}); summonSix(s); } };
     sixRec.onerror=function(){ vstatEl.textContent='six didnt catch that — hold n try again'; };
-    sixRec.start(); vtalkBtn.textContent='🔴 listening… release to send';
+    sixRec.start(); vtalkBtn.textContent='listening… release to send';
   } catch(e){}
 }
-function sixListenStop(){ if(sixRec){ try{ sixRec.stop(); }catch(e){} sixRec=null; } vtalkBtn.textContent='🎙 hold to talk to six'; }
+function sixListenStop(){ if(sixRec){ try{ sixRec.stop(); }catch(e){} sixRec=null; } vtalkBtn.textContent='hold to talk to six'; }
 vtalkBtn.addEventListener('mousedown', sixListenStart);
 vtalkBtn.addEventListener('mouseup', sixListenStop);
 vtalkBtn.addEventListener('mouseleave', function(){ if(sixRec) sixListenStop(); });
