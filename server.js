@@ -1299,9 +1299,15 @@ Array.prototype.forEach.call(document.querySelectorAll('.q'), function(b){ b.add
 
 
 async function askSixDoc(env, text, mode) {
-  const out = await askSix(null, [{ role: 'user', content: text }]);
-  if (!out || out.indexOf('six is') === 0 || out.indexOf('six only') === 0) return null;
-  return out;
+  const task = {
+    sum: 'the user pasted a document or assignment below. summarize it: what it is, what it is asking for, and the key points. short plain lines, no markdown symbols.',
+    write: 'the user pasted an assignment or document below and wants it done. do the work properly: questions get real answers, a writing prompt gets a natural student-level piece (not robotic, not overly formal), task instructions get the actual deliverable. plain text, no markdown symbols. give it the length the task actually needs.',
+    simple: 'the user pasted a document or assignment below. explain what it means and exactly what they have to do, in the simplest words possible. short lines, zero jargon.',
+    edit: 'the user pasted a document and wants it edited. instruction: "clean it up, fix the grammar and errors, keep their voice". apply the instruction and return the FULL edited document text only — no commentary before or after, no summary, no markdown code fences.'
+  }[mode];
+  if (!task) return null;
+  const g = await askGemini(null, [{ role: 'system', content: SIX_SYSTEM + ' TASK: ' + task }, { role: 'user', content: text }], (mode === 'write' || mode === 'edit') ? 1500 : 600);
+  return g ? stripActs(g).slice(0, 9000) : null;
 }
 
 function hwPage() {
@@ -2111,7 +2117,31 @@ function sixMessages(list) {
   }
   return out.length ? out : [{ role: 'user', content: 'hi' }];
 }
+
+// Gemini (Google AI Studio free tier) — Six's first text brain when a key
+// is configured (GEMINI_API_KEY secret). text is fungible, so gemini takes
+// the text load and the workers ai neuron budget survives for images and
+// vision, which only it can do here. any failure (no key, quota, safety
+// block, bad key) returns null and the workers ai chain takes over.
+async function askGemini(env, messages, maxTokens) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return null;
+  try {
+    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: 'Bearer ' + key },
+      body: JSON.stringify({ model: 'gemini-2.5-flash', messages, max_tokens: maxTokens || 800 })
+    });
+    if (!r.ok) return null;
+    const j = await r.json().catch(() => null);
+    const t = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+    return String(t || '').trim() || null;
+  } catch { return null; }
+}
 async function askSix(messages) {
+  const msgs = (messages && messages.length && messages[0].role === 'system') ? messages : [{ role: 'system', content: SIX_SYSTEM }].concat(messages || []);
+  const g = await askGemini(null, msgs, 800);
+  if (g) return g;
   return 'six only wakes up on the cloudflare build ✦ this copy cant reach him — try s.usareme.site';
 }
 async function askSixAnswer(q) {

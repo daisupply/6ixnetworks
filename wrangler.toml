@@ -24,3 +24,8 @@ new_sqlite_classes = ["Accounts"]
 
 [ai]
 binding = "AI"
+
+# optional secret — set it in the cloudflare dashboard (worker -> settings
+# -> variables and secrets), NEVER as a plain var or in the repo:
+# GEMINI_API_KEY: a Google AI Studio free key. six uses gemini first for
+# text and keeps the workers ai neuron budget for images + vision.

@@ -92,11 +92,13 @@ async function summarizeUrl(env, ub) {
   return s;
 }
 async function askSixSummary(env, url, title, text) {
-  if (!env || !env.AI) return null;
+  if (!env || (!env.AI && !env.GEMINI_API_KEY)) return null;
   const messages = [
     { role: 'system', content: 'You are Six, the AI inside the 6ixNetworks proxy. Summarize the web page below for a student: the gist in 3-5 short sentences, plain text, no markdown symbols. If the page has clear key facts, add them after as short lines starting with "• ". If the text is mostly navigation junk or you cannot tell what the page is about, say so honestly in one line. voice: all lowercase, casual, straight-talking, can be a little funny when it fits, short lines, zero corporate tone.' },
     { role: 'user', content: 'URL: ' + url + '\nTITLE: ' + title + '\n\n' + text }
   ];
+  const gSum = await askGemini(env, messages, 320);
+  if (gSum) return gSum.slice(0, 1800);
   for (const model of SIX_MODELS) {
     try {
       const r = await env.AI.run(model, { messages, max_tokens: 320 });
@@ -1288,7 +1290,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.q'), function(b){ b.add
 
 
 async function askSixDoc(env, text, mode, instruction) {
-  if (!env || !env.AI) return null;
+  if (!env || (!env.AI && !env.GEMINI_API_KEY)) return null;
   const task = {
     sum: 'the user pasted a document or assignment below. summarize it: what it is, what it is asking for, and the key points. short plain lines, no markdown symbols.',
     write: 'the user pasted an assignment or document below and wants it done. do the work properly: questions get real answers, a writing prompt gets a natural student-level piece (not robotic, not overly formal), task instructions get the actual deliverable. plain text, no markdown symbols. give it the length the task actually needs.',
@@ -1297,6 +1299,8 @@ async function askSixDoc(env, text, mode, instruction) {
   }[mode];
   if (!task) return null;
   const messages = [{ role: 'system', content: SIX_SYSTEM + ' TASK: ' + task }, { role: 'user', content: text }];
+  const g = await askGemini(env, messages, (mode === 'write' || mode === 'edit') ? 1500 : 600);
+  if (g) return stripActs(g).slice(0, 9000);
   for (const model of SIX_SMART) {
     try {
       const r = await env.AI.run(model, { messages, max_tokens: (mode === 'write' || mode === 'edit') ? 1500 : 600 });
@@ -2099,11 +2103,35 @@ function sixMessages(list) {
 const SIX_MODELS = ['@cf/zai-org/glm-4.7-flash', '@cf/meta/llama-3.1-8b-instruct-fp8', '@cf/openai/gpt-oss-20b', '@cf/meta/llama-4-scout-17b-16e-instruct', '@cf/meta/llama-3.2-3b-instruct', '@cf/meta/llama-3.3-70b-instruct-fp8-fast'];
 
 const SIX_SMART = ['@cf/meta/llama-3.3-70b-instruct-fp8-fast', '@cf/zai-org/glm-4.7-flash', '@cf/meta/llama-4-scout-17b-16e-instruct', '@cf/openai/gpt-oss-20b', '@cf/meta/llama-3.1-8b-instruct-fp8', '@cf/meta/llama-3.2-3b-instruct'];
+
+// Gemini (Google AI Studio free tier) — Six's first text brain when a key
+// is configured (GEMINI_API_KEY secret). text is fungible, so gemini takes
+// the text load and the workers ai neuron budget survives for images and
+// vision, which only it can do here. any failure (no key, quota, safety
+// block, bad key) returns null and the workers ai chain takes over.
+async function askGemini(env, messages, maxTokens) {
+  const key = env && env.GEMINI_API_KEY;
+  if (!key) return null;
+  try {
+    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: 'Bearer ' + key },
+      body: JSON.stringify({ model: 'gemini-2.5-flash', messages, max_tokens: maxTokens || 800 })
+    });
+    if (!r.ok) return null;
+    const j = await r.json().catch(() => null);
+    const t = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+    return String(t || '').trim() || null;
+  } catch { return null; }
+}
 async function askSix(env, messages, act) {
+  const full = [{ role: 'system', content: act ? SIX_SYSTEM + SIX_ACTIONS : SIX_SYSTEM }].concat(messages);
+  const g = await askGemini(env, full, 800);
+  if (g) return g;
   if (!env || !env.AI) return 'six only wakes up on the cloudflare build ✦ this copy cant reach him — try s.usareme.site';
   for (const model of SIX_SMART) {
     try {
-      const r = await env.AI.run(model, { messages: [{ role: 'system', content: act ? SIX_SYSTEM + SIX_ACTIONS : SIX_SYSTEM }].concat(messages), max_tokens: 800 });
+      const r = await env.AI.run(model, { messages: full, max_tokens: 800 });
       const t = (r && (r.response || (r.result && r.result.response))) || '';
       if (String(t).trim()) return String(t).trim();
     } catch {}
@@ -2133,10 +2161,12 @@ const stripActs = (t) => String(t || '').replace(/\[\[act:[\s\S]*?\]\]/g, '').tr
 const SIX_ANSWER_SYSTEM = 'You are Six, answering at the top of a search results page inside 6ixNetworks. Answer the search query directly and correctly in 1-3 short sentences. Plain text only — no markdown, no lists, no links. If the query is just a name or a site, give one short line saying what it is. If you genuinely do not know, say that in a few words instead of guessing. voice: all lowercase, casual, funny when it fits, a little slang, zero corporate tone — but the answer comes first, jokes second.';
 const SIX_ANSWER_CACHE = new Map();
 async function askSixAnswer(env, q) {
-  if (!env || !env.AI) return null;
+  if (!env || (!env.AI && !env.GEMINI_API_KEY)) return null;
   const key = q.toLowerCase();
   const c = SIX_ANSWER_CACHE.get(key);
   if (c && Date.now() - c.at < 600e3) return c.ans;
+  const gAns = await askGemini(env, [{ role: 'system', content: SIX_ANSWER_SYSTEM }, { role: 'user', content: q }], 160);
+  if (gAns) { const ans = gAns.slice(0, 500); SIX_ANSWER_CACHE.set(key, { at: Date.now(), ans }); if (SIX_ANSWER_CACHE.size > 100) SIX_ANSWER_CACHE.delete(SIX_ANSWER_CACHE.keys().next().value); return ans; }
   for (const model of SIX_MODELS) {
     try {
       const r = await env.AI.run(model, { messages: [{ role: 'system', content: SIX_ANSWER_SYSTEM }, { role: 'user', content: q }], max_tokens: 160 });
@@ -2149,6 +2179,13 @@ async function askSixAnswer(env, q) {
 }
 async function sixHealth(env) {
   const out = { binding: !!(env && env.AI), models: {} };
+  out.gemini = 'not set';
+  if (env && env.GEMINI_API_KEY) {
+    try {
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + env.GEMINI_API_KEY }, body: JSON.stringify({ model: 'gemini-2.5-flash', messages: [{ role: 'user', content: 'say ok' }], max_tokens: 8 }) });
+      out.gemini = r.ok ? 'ok' : 'ERR ' + r.status + ': ' + (await r.text()).slice(0, 160);
+    } catch (e) { out.gemini = 'ERR: ' + String((e && e.message) || e).slice(0, 160); }
+  }
   if (!env || !env.AI) return out;
   for (const model of SIX_MODELS) {
     try {
