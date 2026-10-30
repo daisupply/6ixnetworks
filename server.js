@@ -2123,21 +2123,30 @@ function sixMessages(list) {
 // the text load and the workers ai neuron budget survives for images and
 // vision, which only it can do here. any failure (no key, quota, safety
 // block, bad key) returns null and the workers ai chain takes over.
+const GEMINI_MODELS = ['gemini-3.6-flash', 'gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-flash-latest', 'gemini-flash-lite-latest'];
+let geminiWinner = null;
 async function askGemini(env, messages, maxTokens) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return null;
-  try {
-    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: 'Bearer ' + key },
-      body: JSON.stringify({ model: 'gemini-2.5-flash', messages, max_tokens: maxTokens || 800 })
-    });
-    if (!r.ok) return null;
-    const j = await r.json().catch(() => null);
-    const t = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
-    return String(t || '').trim() || null;
-  } catch { return null; }
+  const order = geminiWinner ? [geminiWinner].concat(GEMINI_MODELS.filter(mo => mo !== geminiWinner)) : GEMINI_MODELS;
+  for (const model of order) {
+    try {
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: 'Bearer ' + key },
+        body: JSON.stringify({ model, messages, max_tokens: maxTokens || 800 })
+      });
+      if (!r.ok) { if (model === geminiWinner) geminiWinner = null; continue; }
+      const j = await r.json().catch(() => null);
+      const t = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+      const out = String(t || '').trim();
+      if (out) { geminiWinner = model; return out; }
+      if (model === geminiWinner) geminiWinner = null;
+    } catch { if (model === geminiWinner) geminiWinner = null; }
+  }
+  return null;
 }
+
 async function askSix(messages) {
   const msgs = (messages && messages.length && messages[0].role === 'system') ? messages : [{ role: 'system', content: SIX_SYSTEM }].concat(messages || []);
   const g = await askGemini(null, msgs, 800);

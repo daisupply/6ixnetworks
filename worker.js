@@ -2109,21 +2109,30 @@ const SIX_SMART = ['@cf/meta/llama-3.3-70b-instruct-fp8-fast', '@cf/zai-org/glm-
 // the text load and the workers ai neuron budget survives for images and
 // vision, which only it can do here. any failure (no key, quota, safety
 // block, bad key) returns null and the workers ai chain takes over.
+const GEMINI_MODELS = ['gemini-3.6-flash', 'gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-flash-latest', 'gemini-flash-lite-latest'];
+let geminiWinner = null;
 async function askGemini(env, messages, maxTokens) {
   const key = env && env.GEMINI_API_KEY;
   if (!key) return null;
-  try {
-    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: 'Bearer ' + key },
-      body: JSON.stringify({ model: 'gemini-2.5-flash', messages, max_tokens: maxTokens || 800 })
-    });
-    if (!r.ok) return null;
-    const j = await r.json().catch(() => null);
-    const t = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
-    return String(t || '').trim() || null;
-  } catch { return null; }
+  const order = geminiWinner ? [geminiWinner].concat(GEMINI_MODELS.filter(mo => mo !== geminiWinner)) : GEMINI_MODELS;
+  for (const model of order) {
+    try {
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: 'Bearer ' + key },
+        body: JSON.stringify({ model, messages, max_tokens: maxTokens || 800 })
+      });
+      if (!r.ok) { if (model === geminiWinner) geminiWinner = null; continue; }
+      const j = await r.json().catch(() => null);
+      const t = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+      const out = String(t || '').trim();
+      if (out) { geminiWinner = model; return out; }
+      if (model === geminiWinner) geminiWinner = null;
+    } catch { if (model === geminiWinner) geminiWinner = null; }
+  }
+  return null;
 }
+
 async function askSix(env, messages, act) {
   const full = [{ role: 'system', content: act ? SIX_SYSTEM + SIX_ACTIONS : SIX_SYSTEM }].concat(messages);
   const g = await askGemini(env, full, 800);
@@ -2181,10 +2190,14 @@ async function sixHealth(env) {
   const out = { binding: !!(env && env.AI), models: {} };
   out.gemini = 'not set';
   if (env && env.GEMINI_API_KEY) {
-    try {
-      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + env.GEMINI_API_KEY }, body: JSON.stringify({ model: 'gemini-2.5-flash', messages: [{ role: 'user', content: 'say ok' }], max_tokens: 8 }) });
-      out.gemini = r.ok ? 'ok' : 'ERR ' + r.status + ': ' + (await r.text()).slice(0, 160);
-    } catch (e) { out.gemini = 'ERR: ' + String((e && e.message) || e).slice(0, 160); }
+    out.gemini = 'ERR: no gemini model answered';
+    for (const model of GEMINI_MODELS) {
+      try {
+        const r = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + env.GEMINI_API_KEY }, body: JSON.stringify({ model, messages: [{ role: 'user', content: 'say ok' }], max_tokens: 8 }) });
+        if (r.ok) { out.gemini = 'ok (' + model + ')'; geminiWinner = model; break; }
+        out.gemini = 'ERR ' + r.status + ' (' + model + '): ' + (await r.text()).slice(0, 120);
+      } catch (e) { out.gemini = 'ERR (' + model + '): ' + String((e && e.message) || e).slice(0, 120); }
+    }
   }
   if (!env || !env.AI) return out;
   for (const model of SIX_MODELS) {
