@@ -407,12 +407,12 @@ input:focus,textarea:focus,select:focus{border-color:rgba(94,142,255,.65)}
 a{transition:color .15s ease}
 #tabbar{display:none}
 @media (max-width:820px){
-#tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:50;background:rgba(13,13,15,.94);border-top:1px solid rgba(255,255,255,.1);padding:6px 6px calc(6px + env(safe-area-inset-bottom));justify-content:space-around;align-items:stretch}
-#tabbar a,#tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:0;color:#a1a1aa;font-size:10px;font-weight:600;letter-spacing:.02em;text-decoration:none;padding:5px 0 3px;border-radius:10px;cursor:pointer;font-family:inherit}
-#tabbar a.on{color:#fff}
+#tabbar{display:flex;position:fixed;left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:50;background:rgba(22,22,27,.52);-webkit-backdrop-filter:blur(22px) saturate(1.7);backdrop-filter:blur(22px) saturate(1.7);border:1px solid rgba(255,255,255,.16);border-radius:28px;box-shadow:0 10px 34px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.15),inset 0 -1px 0 rgba(255,255,255,.05);padding:7px 6px;justify-content:space-around;align-items:stretch}
+#tabbar a,#tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:0;color:#c9c9d1;font-size:10px;font-weight:600;letter-spacing:.02em;text-decoration:none;padding:6px 0 4px;border-radius:19px;cursor:pointer;font-family:inherit}
+#tabbar a.on{color:#fff;background:rgba(255,255,255,.13);box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
 #tabbar a.on svg{color:#9db9ff}
 #sbBtn{display:none}
-body.has-sb{padding-bottom:104px}
+body.has-sb{padding-bottom:118px}
 }
 
 
@@ -2872,7 +2872,7 @@ function shellPage(servers) {
 <style>html,body{margin:0;height:100%;height:100dvh;background:#0a0a0b;overflow:hidden}iframe{position:fixed;inset:0;width:100%;height:100%;height:100dvh;border:0}
 #dot{position:fixed;right:14px;bottom:14px;z-index:9;width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(14,14,16,.55);color:#9db9ff;opacity:.35;cursor:pointer;font-size:14px;line-height:1}
 #dot:hover{opacity:1}
-body.tabup #dot{bottom:96px}body.tabup #menu{bottom:134px}
+body.tabup #dot{bottom:120px}body.tabup #menu{bottom:160px}
 #menu{position:fixed;right:14px;bottom:52px;z-index:9;display:none;flex-direction:column;gap:6px;background:rgba(11,11,13,.94);border:1px solid rgba(255,255,255,.3);border-radius:14px;padding:10px}
 #menu button{background:rgba(94,142,255,.14);color:#f4f4f5;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;text-align:left;font-family:system-ui}
 </style></head><body>
@@ -2888,7 +2888,7 @@ body.tabup #dot{bottom:96px}body.tabup #menu{bottom:134px}
 </div>
 <script>
 var SERVERS=${list} || [location.origin + '/'];
-var f=document.getElementById('f'); function fitFrame(){ if(window.visualViewport){ f.style.height = window.visualViewport.height + 'px'; } } if(window.visualViewport){ window.visualViewport.addEventListener('resize', fitFrame); window.addEventListener('orientationchange', fitFrame); fitFrame(); } 
+var f=document.getElementById('f'); function fitFrame(){ if(window.visualViewport){ f.style.height = window.visualViewport.height + 'px'; } } if(window.visualViewport){ window.visualViewport.addEventListener('resize', fitFrame); window.addEventListener('orientationchange', fitFrame); fitFrame(); setTimeout(fitFrame, 350); setTimeout(fitFrame, 1200); window.addEventListener('scroll', fitFrame, { passive: true }); } 
 var presets={ google:{t:'Google',i:'https://www.google.com/favicon.ico'}, classroom:{t:'Google Classroom',i:'https://ssl.gstatic.com/classroom/favicon.png'}, docs:{t:'Google Docs',i:'https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico'}, drive:{t:'My Drive - Google Drive',i:'https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png'} };
 function disguise(k){ try{ localStorage.setItem('six_disguise', k); }catch(e){} var p=presets[k]||presets.google; document.title=p.t; var l=document.querySelector("link[rel~='icon']")||document.createElement('link'); l.rel='icon'; l.href=p.i; document.head.appendChild(l); }
 window.addEventListener('message', function(e){ if (e && e.data && e.data.sixCloak) disguise(e.data.sixCloak); if (e && e.data && e.data.sixChrome) document.body.classList.toggle('tabup', e.data.sixChrome === 'tabbar'); });
