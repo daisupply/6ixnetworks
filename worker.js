@@ -1340,17 +1340,21 @@ body{display:block;padding:0}
 .vs-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9db9ff;border:1px solid rgba(94,142,255,.4);border-radius:999px;padding:3px 9px}
 .vs-timer{font-size:13px;opacity:.6;font-variant-numeric:tabular-nums}
 #vgrid{flex:1;min-height:0;overflow-y:auto;display:flex;flex-wrap:wrap;gap:14px;padding:18px;align-content:center;justify-content:center;align-items:center;max-width:1400px;width:100%;margin:0 auto;box-sizing:border-box}
-#vgrid .vtile{flex:1 1 300px;max-width:560px}
-#vgrid[data-n="1"] .vtile{flex-basis:100%;max-width:1060px}
-#vgrid[data-n="2"] .vtile{flex-basis:calc(50% - 14px);max-width:700px}
-#vgrid[data-n="3"] .vtile,#vgrid[data-n="4"] .vtile{flex-basis:calc(50% - 14px);max-width:620px}
-#vgrid[data-n="5"] .vtile,#vgrid[data-n="6"] .vtile{flex-basis:calc(33.333% - 14px);max-width:460px}
-#vgrid .vtile.vvoice{flex:0 1 168px!important;max-width:168px;aspect-ratio:auto!important;min-height:178px;background:transparent!important;border-color:transparent!important;border-radius:16px!important}
-#vgrid[data-n="1"] .vtile.vvoice{flex-basis:168px}
-.vtile.vvoice .vph{inset:auto!important;left:50%;top:44%;transform:translate(-50%,-50%);width:96px;height:96px;border-radius:50%;background:rgba(94,142,255,.15);border:2px solid rgba(94,142,255,.45);font-size:38px!important}
+#vgrid .vtile{flex:none;display:grid;place-items:center}
+
+
+
+
+#vgrid .vtile.vvoice{width:168px;height:186px;aspect-ratio:auto!important;background:transparent!important;border-color:transparent!important;border-radius:16px!important}
+
+.vtile .vph{position:static!important;grid-area:1/1;z-index:2}
+.vtile>video{grid-area:1/1;width:100%!important;height:100%!important}
+.vtile>span{position:static!important;grid-area:1/1;align-self:end;justify-self:start;margin:0 0 7px 9px;z-index:2}
+.vtile.vvoice .vph{width:96px;height:96px;border-radius:50%;background:rgba(94,142,255,.15);border:2px solid rgba(94,142,255,.45);font-size:38px!important}
+.vtile.vvoice>span{justify-self:center;margin:0 0 4px 0;font-size:13px!important}
 .vtile.vvoice.speaking .vph{border-color:#4ade80;box-shadow:0 0 0 4px rgba(74,222,128,.4)}
-.vtile.vvoice>span{left:0!important;right:0;bottom:auto!important;top:calc(44% + 58px);text-align:center;font-size:13px!important}
-@media (max-width:640px){#vgrid[data-n="2"] .vtile{flex-basis:100%}#vgrid[data-n="3"] .vtile,#vgrid[data-n="4"] .vtile,#vgrid[data-n="5"] .vtile,#vgrid[data-n="6"] .vtile{flex-basis:calc(50% - 14px)}}
+
+
 .vtile{aspect-ratio:16/9!important;border-radius:16px!important;border:1px solid rgba(255,255,255,.12)!important;background:#17171a!important}
 .vtile.speaking{border-color:#4ade80!important;box-shadow:0 0 0 2px rgba(74,222,128,.45)}
 .vmem{transition:all .15s}
@@ -1429,7 +1433,27 @@ function applyAudio(){
   vholdBtn.style.display = vPtt ? 'inline-block' : 'none';
 }
 function memberName(pid){ for(var i=0;i<lastMembers.length;i++) if(lastMembers[i].pid === pid) return lastMembers[i].name; return 'anon'; }
-function fitGrid(){ vgridEl.setAttribute('data-n', vgridEl.querySelectorAll('[data-tile]').length); }
+function fitGrid(){
+  var tiles = vgridEl.querySelectorAll('[data-tile]');
+  vgridEl.setAttribute('data-n', tiles.length);
+  var W = vgridEl.clientWidth - 36, H = vgridEl.clientHeight - 36;
+  if (W <= 0 || H <= 0) return;
+  var vids = [];
+  Array.prototype.forEach.call(tiles, function(t){ if (!t.classList.contains('vvoice')) vids.push(t); });
+  var n = vids.length; if (!n) return;
+  var best = null;
+  for (var cols = 1; cols <= n; cols++) {
+    var rows = Math.ceil(n / cols);
+    var tw = (W - (cols - 1) * 14) / cols;
+    var th = (H - (rows - 1) * 14) / rows;
+    var w = Math.min(tw, th * 16 / 9);
+    var h = w * 9 / 16;
+    if (h <= th + 1 && (!best || w * h > best.w * best.h)) best = { w: w, h: h };
+  }
+  if (!best) return;
+  vids.forEach(function(t){ t.style.width = Math.floor(best.w) + 'px'; t.style.height = Math.floor(best.h) + 'px'; });
+}
+window.addEventListener('resize', fitGrid);
 function ensureTile(pid){
   var t = vgridEl.querySelector('[data-tile="'+pid+'"]');
   if(t) return t;
@@ -1450,7 +1474,8 @@ function localTile(){
   var t = ensureTile(myPid);
   var vid = t.querySelector('video');
   if(camOn && localStream){ t.classList.remove('vvoice'); t.classList.add('vvid'); vid.srcObject = localStream; vid.muted = true; vid.style.display = 'block'; t.querySelector('.vph').style.display = 'none'; }
-  else { t.classList.add('vvoice'); t.classList.remove('vvid'); vid.style.display = 'none'; try { vid.srcObject = null; } catch(e){} t.querySelector('.vph').style.display = 'flex'; }
+  else { t.classList.add('vvoice'); t.classList.remove('vvid'); t.style.width = ''; t.style.height = ''; vid.style.display = 'none'; try { vid.srcObject = null; } catch(e){} t.querySelector('.vph').style.display = 'flex'; }
+  fitGrid();
 }
 function watchLevel(stream, pid){
   try {
@@ -1485,8 +1510,8 @@ function makePc(pid){
     if(ev.streams && ev.streams[0]){ vid.srcObject = ev.streams[0]; remoteEls[pid] = vid; watchLevel(ev.streams[0], pid); }
     if(ev.track.kind === 'video'){
       vid.style.display = 'block'; tile.querySelector('.vph').style.display = 'none'; tile.classList.remove('vvoice'); tile.classList.add('vvid');
-      ev.track.onmute = function(){ vid.style.display = 'none'; tile.querySelector('.vph').style.display = 'flex'; tile.classList.add('vvoice'); tile.classList.remove('vvid'); };
-      ev.track.onunmute = function(){ vid.style.display = 'block'; tile.querySelector('.vph').style.display = 'none'; tile.classList.remove('vvoice'); tile.classList.add('vvid'); };
+      ev.track.onmute = function(){ vid.style.display = 'none'; tile.querySelector('.vph').style.display = 'flex'; tile.classList.add('vvoice'); tile.classList.remove('vvid'); tile.style.width = ''; tile.style.height = ''; fitGrid(); };
+      ev.track.onunmute = function(){ vid.style.display = 'block'; tile.querySelector('.vph').style.display = 'none'; tile.classList.remove('vvoice'); tile.classList.add('vvid'); fitGrid(); };
     }
     applyAudio();
   };
@@ -1550,7 +1575,7 @@ function voiceList(members){
   vstatEl.textContent = others === 0 ? 'in the call — just u rn, get ur people in this room' : 'in the call ✦ ' + (others + 1) + ' here';
   fitGrid();
 }
-function videoCons(){ return { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { max: 24 }, facingMode: facing }; }
+function videoCons(){ return { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { max: 30 }, facingMode: facing }; }
 function joinCall(wantVideo){
   if(!(ws && ws.readyState === 1)){ vstatEl.textContent = 'calls need the live connection — ur on the polling fallback rn (this network blocks websockets)'; return; }
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ vstatEl.textContent = 'this browser wont hand over a mic/camera in here'; return; }
