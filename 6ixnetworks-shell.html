@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script>
 <title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-<style>html,body{margin:0;height:100%;background:#070313;overflow:hidden}iframe{position:fixed;inset:0;width:100%;height:100%;border:0}
+<style>html,body{margin:0;height:100%;height:100dvh;background:#0a0a0b;overflow:hidden}iframe{position:fixed;inset:0;width:100%;height:100%;height:100dvh;border:0}
 #dot{position:fixed;right:14px;bottom:14px;z-index:9;width:30px;height:30px;border-radius:50%;border:1px solid rgba(196,181,253,.35);background:rgba(16,10,38,.55);color:#c4b5fd;opacity:.35;cursor:pointer;font-size:14px;line-height:1}
 #dot:hover{opacity:1}
 #menu{position:fixed;right:14px;bottom:52px;z-index:9;display:none;flex-direction:column;gap:6px;background:rgba(12,8,30,.94);border:1px solid rgba(196,181,253,.3);border-radius:14px;padding:10px}
@@ -20,7 +20,7 @@
 </div>
 <script>
 var SERVERS=["https://s.usareme.site/","https://sixsearch.deionmont1.workers.dev/"] || [location.origin + '/'];
-var f=document.getElementById('f');
+var f=document.getElementById('f'); function fitFrame(){ if(window.visualViewport){ f.style.height = window.visualViewport.height + 'px'; } } if(window.visualViewport){ window.visualViewport.addEventListener('resize', fitFrame); window.addEventListener('orientationchange', fitFrame); fitFrame(); } 
 var presets={ google:{t:'Google',i:'https://www.google.com/favicon.ico'}, classroom:{t:'Google Classroom',i:'https://ssl.gstatic.com/classroom/favicon.png'}, docs:{t:'Google Docs',i:'https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico'}, drive:{t:'My Drive - Google Drive',i:'https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png'} };
 function disguise(k){ try{ localStorage.setItem('six_disguise', k); }catch(e){} var p=presets[k]||presets.google; document.title=p.t; var l=document.querySelector("link[rel~='icon']")||document.createElement('link'); l.rel='icon'; l.href=p.i; document.head.appendChild(l); }
 function panic(){ location.href='https://classroom.google.com/'; } // real classroom, top-level: google sends X-Frame-Options SAMEORIGIN so it can never load inside the frame

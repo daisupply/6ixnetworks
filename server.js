@@ -1330,6 +1330,7 @@ showPriv();
 connect();
 </script>
 <script>(function(){ var t = document.getElementById("roomtitle"); var badge = document.getElementById("privbadge"); function setT(x){ if (t) t.textContent = x; if (badge) badge.style.display = (x === "private room") ? "inline-flex" : "none"; } document.querySelectorAll(".room").forEach(function(b){ b.addEventListener("click", function(){ setT(b.getAttribute("data-room")); }); }); var mk = document.getElementById("mkpriv"); if (mk) mk.addEventListener("click", function(){ setT("private room"); }); var jp = document.getElementById("joinpriv"); if (jp) jp.addEventListener("click", function(){ setT("private room"); }); var stage = document.getElementById("vstage"), timer = document.getElementById("vtimer"), iv = null; function fmt(ms){ var s = Math.floor(ms / 1000); var m = Math.floor(s / 60); var r = s % 60; return (m < 10 ? "0" : "") + m + ":" + (r < 10 ? "0" : "") + r; } if (stage && timer) { new MutationObserver(function(){ if (stage.style.display === "flex") { document.body.style.overflow = "hidden"; if (!iv) { var t0 = Date.now(); timer.textContent = "00:00"; iv = setInterval(function(){ timer.textContent = fmt(Date.now() - t0); }, 1000); } } else { document.body.style.overflow = ""; if (iv) { clearInterval(iv); iv = null; } timer.textContent = "00:00"; } }).observe(stage, { attributes: true, attributeFilter: ["style"] }); } })();</script>
+<script>(function(){ var app = document.querySelector(".app6"); if (!app || !window.visualViewport) return; function fit(){ app.style.height = window.visualViewport.height + "px"; } window.visualViewport.addEventListener("resize", fit); window.addEventListener("orientationchange", fit); fit(); })();</script>
 </body>
 </html>`;
 }
@@ -2162,9 +2163,9 @@ async function handleYtSearch(req, res, q) {
   const query = (q || '').trim();
   if (!query) { res.writeHead(302, { location: '/yt' }); return res.end(); }
   const pipedHit = await fetchPipedSearch(query);
-  if (pipedHit) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(ytSearchPage(query, pipedHit)); }
+  if (pipedHit) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(ytSearchPage(query, pipedHit)); }
   const apiHit = await fetchYtSearchApi(query);
-  if (apiHit) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(ytSearchPage(query, apiHit)); }
+  if (apiHit) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(ytSearchPage(query, apiHit)); }
   for (const inst of INVIDIOUS_INSTANCES) {
     try {
       const pageUrl = inst + '/search?q=' + encodeURIComponent(query);
@@ -2180,11 +2181,11 @@ async function handleYtSearch(req, res, q) {
       const text = await r.text();
       if (!text.includes('/watch?v=')) continue;
       const rewritten = rewriteHtml(text, pageUrl);
-      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
       return res.end(rewritten);
     } catch { /* try next instance */ }
   }
-  res.writeHead(502, { 'content-type': 'text/html; charset=utf-8' });
+  res.writeHead(502, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
   res.end('<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">all search instances are down rn — <a style="color:#9db9ff" href="/yt/search?q=' + encodeURIComponent(query) + '">retry</a></body>');
 }
 
@@ -2395,7 +2396,7 @@ function shellPage(servers) {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script>
 <title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-<style>html,body{margin:0;height:100%;background:#0a0a0b;overflow:hidden}iframe{position:fixed;inset:0;width:100%;height:100%;border:0}
+<style>html,body{margin:0;height:100%;height:100dvh;background:#0a0a0b;overflow:hidden}iframe{position:fixed;inset:0;width:100%;height:100%;height:100dvh;border:0}
 #dot{position:fixed;right:14px;bottom:14px;z-index:9;width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(14,14,16,.55);color:#9db9ff;opacity:.35;cursor:pointer;font-size:14px;line-height:1}
 #dot:hover{opacity:1}
 #menu{position:fixed;right:14px;bottom:52px;z-index:9;display:none;flex-direction:column;gap:6px;background:rgba(11,11,13,.94);border:1px solid rgba(255,255,255,.3);border-radius:14px;padding:10px}
@@ -2413,7 +2414,7 @@ function shellPage(servers) {
 </div>
 <script>
 var SERVERS=${list} || [location.origin + '/'];
-var f=document.getElementById('f');
+var f=document.getElementById('f'); function fitFrame(){ if(window.visualViewport){ f.style.height = window.visualViewport.height + 'px'; } } if(window.visualViewport){ window.visualViewport.addEventListener('resize', fitFrame); window.addEventListener('orientationchange', fitFrame); fitFrame(); } 
 var presets={ google:{t:'Google',i:'https://www.google.com/favicon.ico'}, classroom:{t:'Google Classroom',i:'https://ssl.gstatic.com/classroom/favicon.png'}, docs:{t:'Google Docs',i:'https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico'}, drive:{t:'My Drive - Google Drive',i:'https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png'} };
 function disguise(k){ try{ localStorage.setItem('six_disguise', k); }catch(e){} var p=presets[k]||presets.google; document.title=p.t; var l=document.querySelector("link[rel~='icon']")||document.createElement('link'); l.rel='icon'; l.href=p.i; document.head.appendChild(l); }
 window.addEventListener('message', function(e){ if (e && e.data && e.data.sixCloak) disguise(e.data.sixCloak); });
@@ -2634,11 +2635,11 @@ function chatUpgrade(req, socket) {
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://localhost');
   if (u.pathname === '/' || u.pathname === '/index.html') {
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(shellPage(null));
   }
   if (u.pathname === '/home') {
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(HOME);
   }  if (u.pathname === '/stars.js') {
     res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8' });
@@ -2646,11 +2647,11 @@ const server = http.createServer(async (req, res) => {
   }
   if (u.pathname === '/shell') {
     const servers = u.searchParams.has('ext') ? ['https://s.usareme.site/', 'https://sixsearch.deionmont1.workers.dev/'] : null;
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(shellPage(servers));
   }
     if (u.pathname === '/tools') {
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(toolsPage());
   }
   if (u.pathname === '/suggest') {
@@ -2684,11 +2685,11 @@ const server = http.createServer(async (req, res) => {
     return res.end(CLOAK_JS);
   }
   if (u.pathname === '/chat') {
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(chatPage());
   }
   if (u.pathname === '/ai') {
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(aiPage());
   }
   if (u.pathname === '/ai/health') {
@@ -2723,7 +2724,7 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end(JSON.stringify({ url }));
   }
-  if (u.pathname === '/account') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(accountPage()); }
+  if (u.pathname === '/account') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(accountPage()); }
   if (u.pathname.startsWith('/auth/')) {
     const kind = u.pathname.slice('/auth/'.length);
     const cookieTok = (req.headers.cookie || '').match(/six_sess=([a-f0-9]+)/);
@@ -2817,7 +2818,7 @@ const server = http.createServer(async (req, res) => {
     return res.end(JSON.stringify({ out }));
   }
   if (u.pathname === '/hw' || u.pathname === '/doc') {
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(hwPage());
   }
   if (u.pathname === '/ai/look' && req.method === 'POST') {
@@ -2827,20 +2828,20 @@ const server = http.createServer(async (req, res) => {
     return res.end(JSON.stringify({ out }));
   }
   if (u.pathname === '/emu') {
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(emuPage());
   }
   if (u.pathname === '/gs') {
     const games = await loadGames();
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(gamesPage(FEATURED_GAMES.concat(games)));
   }
   if (u.pathname === '/play') {
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(playPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'Game'));
   }
   if (u.pathname === '/yt') {
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(YT_HOME);
   }
   if (u.pathname === '/yt/watch') {
@@ -2851,7 +2852,7 @@ const server = http.createServer(async (req, res) => {
     // kills the watch page; it renders with whatever resolved
     const hit = await fetchVideoInfo(vidId);
     const phit = hit ? null : await fetchPipedStreams(vidId);
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(ytWatchPage(vidId, hit, phit));
   }
   if (u.pathname === '/yt/stream') {

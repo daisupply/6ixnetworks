@@ -1321,6 +1321,7 @@ showPriv();
 connect();
 </script>
 <script>(function(){ var t = document.getElementById("roomtitle"); var badge = document.getElementById("privbadge"); function setT(x){ if (t) t.textContent = x; if (badge) badge.style.display = (x === "private room") ? "inline-flex" : "none"; } document.querySelectorAll(".room").forEach(function(b){ b.addEventListener("click", function(){ setT(b.getAttribute("data-room")); }); }); var mk = document.getElementById("mkpriv"); if (mk) mk.addEventListener("click", function(){ setT("private room"); }); var jp = document.getElementById("joinpriv"); if (jp) jp.addEventListener("click", function(){ setT("private room"); }); var stage = document.getElementById("vstage"), timer = document.getElementById("vtimer"), iv = null; function fmt(ms){ var s = Math.floor(ms / 1000); var m = Math.floor(s / 60); var r = s % 60; return (m < 10 ? "0" : "") + m + ":" + (r < 10 ? "0" : "") + r; } if (stage && timer) { new MutationObserver(function(){ if (stage.style.display === "flex") { document.body.style.overflow = "hidden"; if (!iv) { var t0 = Date.now(); timer.textContent = "00:00"; iv = setInterval(function(){ timer.textContent = fmt(Date.now() - t0); }, 1000); } } else { document.body.style.overflow = ""; if (iv) { clearInterval(iv); iv = null; } timer.textContent = "00:00"; } }).observe(stage, { attributes: true, attributeFilter: ["style"] }); } })();</script>
+<script>(function(){ var app = document.querySelector(".app6"); if (!app || !window.visualViewport) return; function fit(){ app.style.height = window.visualViewport.height + "px"; } window.visualViewport.addEventListener("resize", fit); window.addEventListener("orientationchange", fit); fit(); })();</script>
 </body>
 </html>`;
 }
@@ -2090,7 +2091,7 @@ async function handleProxy(request, targetUrlStr, ctx, gameMode) {
         return new Response(rw, { headers: { 'content-type': 'text/html; charset=utf-8', 'x-6ixnetworks-route': 'relay' } });
       }
       if (upstream.status !== 200) {
-        return new Response(blockPage(target.toString()), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+        return new Response(blockPage(target.toString()), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
       }
     }
     let rewritten = ct.includes('text/html')
@@ -2154,9 +2155,9 @@ async function handleYtSearch(q, request) {
   const query = (q || '').trim();
   if (!query) return Response.redirect(new URL('/yt', request.url).toString(), 302);
   const pipedHit = await fetchPipedSearch(query);
-  if (pipedHit) return new Response(ytSearchPage(query, pipedHit), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+  if (pipedHit) return new Response(ytSearchPage(query, pipedHit), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
   const apiHit = await fetchYtSearchApi(query);
-  if (apiHit) return new Response(ytSearchPage(query, apiHit), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+  if (apiHit) return new Response(ytSearchPage(query, apiHit), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
   for (const inst of INVIDIOUS_INSTANCES) {
     try {
       const pageUrl = inst + '/search?q=' + encodeURIComponent(query);
@@ -2171,7 +2172,7 @@ async function handleYtSearch(q, request) {
       if (!r.ok) continue;
       const text = await r.text();
       if (!text.includes('/watch?v=')) continue;
-      return new Response(rewriteHtml(text, pageUrl), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+      return new Response(rewriteHtml(text, pageUrl), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
     } catch { /* try next instance */ }
   }
   return new Response('<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">all search instances are down rn — <a style="color:#9db9ff" href="/yt/search?q=' + encodeURIComponent(query) + '">retry</a></body>', { status: 502, headers: { 'content-type': 'text/html; charset=utf-8' } });
@@ -2384,7 +2385,7 @@ function shellPage(servers) {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script>
 <title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-<style>html,body{margin:0;height:100%;background:#0a0a0b;overflow:hidden}iframe{position:fixed;inset:0;width:100%;height:100%;border:0}
+<style>html,body{margin:0;height:100%;height:100dvh;background:#0a0a0b;overflow:hidden}iframe{position:fixed;inset:0;width:100%;height:100%;height:100dvh;border:0}
 #dot{position:fixed;right:14px;bottom:14px;z-index:9;width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(14,14,16,.55);color:#9db9ff;opacity:.35;cursor:pointer;font-size:14px;line-height:1}
 #dot:hover{opacity:1}
 #menu{position:fixed;right:14px;bottom:52px;z-index:9;display:none;flex-direction:column;gap:6px;background:rgba(11,11,13,.94);border:1px solid rgba(255,255,255,.3);border-radius:14px;padding:10px}
@@ -2402,7 +2403,7 @@ function shellPage(servers) {
 </div>
 <script>
 var SERVERS=${list} || [location.origin + '/'];
-var f=document.getElementById('f');
+var f=document.getElementById('f'); function fitFrame(){ if(window.visualViewport){ f.style.height = window.visualViewport.height + 'px'; } } if(window.visualViewport){ window.visualViewport.addEventListener('resize', fitFrame); window.addEventListener('orientationchange', fitFrame); fitFrame(); } 
 var presets={ google:{t:'Google',i:'https://www.google.com/favicon.ico'}, classroom:{t:'Google Classroom',i:'https://ssl.gstatic.com/classroom/favicon.png'}, docs:{t:'Google Docs',i:'https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico'}, drive:{t:'My Drive - Google Drive',i:'https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png'} };
 function disguise(k){ try{ localStorage.setItem('six_disguise', k); }catch(e){} var p=presets[k]||presets.google; document.title=p.t; var l=document.querySelector("link[rel~='icon']")||document.createElement('link'); l.rel='icon'; l.href=p.i; document.head.appendChild(l); }
 window.addEventListener('message', function(e){ if (e && e.data && e.data.sixCloak) disguise(e.data.sixCloak); });
@@ -2764,20 +2765,20 @@ export default {
   async fetch(request, env, ctx) {
     const u = new URL(request.url);
     if (u.pathname === '/' || u.pathname === '/index.html') {
-      return new Response(shellPage(null), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+      return new Response(shellPage(null), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
     }
     if (u.pathname === '/home') {
-      return new Response(HOME, { headers: { 'content-type': 'text/html; charset=utf-8' } });
+      return new Response(HOME, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
     }
     if (u.pathname === '/stars.js') {
       return new Response(STARS_JS, { headers: { 'content-type': 'text/javascript; charset=utf-8' } });
     }
     if (u.pathname === '/shell') {
       const servers = u.searchParams.has('ext') ? ['https://s.usareme.site/', 'https://sixsearch.deionmont1.workers.dev/'] : null;
-      return new Response(shellPage(servers), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+      return new Response(shellPage(servers), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
     }
         if (u.pathname === '/tools') {
-      return new Response(toolsPage(), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+      return new Response(toolsPage(), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
     }
     if (u.pathname === '/suggest') {
       const q = (u.searchParams.get('q') || '').trim();
@@ -2807,16 +2808,16 @@ export default {
       return new Response(CLOAK_JS, { headers: { 'content-type': 'text/javascript; charset=utf-8' } });
     }
     if (u.pathname === '/chat') {
-      return new Response(chatPage(), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+      return new Response(chatPage(), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
     }
     if (u.pathname === '/ai') {
-      return new Response(aiPage(), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+      return new Response(aiPage(), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
     }
     if (u.pathname === '/ai/health') {
       return new Response(JSON.stringify(await sixHealth(env)), { headers: { 'content-type': 'application/json' } });
     }
     if (u.pathname === '/account') {
-      return new Response(accountPage(), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+      return new Response(accountPage(), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
     }
     if (u.pathname.startsWith('/auth/')) {
       if (!env.ACCOUNTS) return jsonRes({ ok: false, err: 'accounts need the full deploy ✦' });
@@ -2913,7 +2914,7 @@ async function chatIdentity(env, request, wantName) {
       return new Response(JSON.stringify({ out }), { headers: { 'content-type': 'application/json' } });
     }
     if (u.pathname === '/hw' || u.pathname === '/doc') {
-      return new Response(hwPage(), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+      return new Response(hwPage(), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
     }
     if (u.pathname === '/ai/look' && request.method === 'POST') {
       const b = await request.json().catch(() => ({}));
@@ -2966,17 +2967,17 @@ async function chatIdentity(env, request, wantName) {
       return new Response(await r.text(), { headers: { 'content-type': 'application/json' } });
     }
     if (u.pathname === '/emu') {
-      return new Response(emuPage(), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+      return new Response(emuPage(), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
     }
     if (u.pathname === '/gs') {
       const games = await loadGames();
-      return new Response(gamesPage(FEATURED_GAMES.concat(games)), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+      return new Response(gamesPage(FEATURED_GAMES.concat(games)), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
     }
     if (u.pathname === '/play') {
-      return new Response(playPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'Game'), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+      return new Response(playPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'Game'), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
     }
     if (u.pathname === '/yt') {
-      return new Response(YT_HOME, { headers: { 'content-type': 'text/html; charset=utf-8' } });
+      return new Response(YT_HOME, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
     }
     if (u.pathname === '/yt/watch') {
       const vidId = (u.searchParams.get('v') || '').trim();
@@ -2986,7 +2987,7 @@ async function chatIdentity(env, request, wantName) {
       // kills the watch page; it renders with whatever resolved
       const hit = await fetchVideoInfo(vidId);
       const phit = hit ? null : await fetchPipedStreams(vidId);
-      return new Response(ytWatchPage(vidId, hit, phit), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+      return new Response(ytWatchPage(vidId, hit, phit), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
     }
     if (u.pathname === '/yt/stream') {
       const vidId = (u.searchParams.get('v') || '').trim();
