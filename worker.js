@@ -691,6 +691,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .vmem{transition:all .15s}
 .vmem.speaking{border-color:#4ade80!important;color:#bbf7d0;box-shadow:0 0 0 2px rgba(74,222,128,.45)}
 .vtile.speaking{border-color:#4ade80!important;box-shadow:0 0 0 2px rgba(74,222,128,.45)}
+#vgrid video:fullscreen{width:100%;height:100%;object-fit:cover;background:#000}
 </style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/home">← home</a> · <a class="back" href="/ai">ask six ✦</a>
 <h1>6ix<span>Networks</span> chat</h1>
@@ -724,8 +725,8 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <button class="chip" id="vleave" type="button">leave call</button>
 </div>
 <div id="vstage" style="display:none;position:relative;margin:8px 0">
-<div id="vgrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px"></div>
-<video id="vlocal" muted autoplay playsinline style="display:none;position:absolute;right:10px;bottom:10px;width:112px;aspect-ratio:3/4;object-fit:cover;border-radius:12px;border:2px solid rgba(196,181,253,.65);transform:scaleX(-1);background:#000;z-index:3"></video>
+<div id="vgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,176px));gap:8px;justify-content:center"></div>
+<video id="vlocal" muted autoplay playsinline style="display:none;position:absolute;right:10px;bottom:10px;width:124px;aspect-ratio:16/9;object-fit:cover;border-radius:12px;border:2px solid rgba(196,181,253,.65);transform:scaleX(-1);background:#000;z-index:3"></video>
 </div>
 <div id="msgs"></div>
 <form class="bar" id="sendbar"><input type="text" id="text" placeholder="message…  (/ai + a question summons six)" autocomplete="off" maxlength="500"><button type="submit">send</button></form>
@@ -838,11 +839,11 @@ function ensureTile(pid){
   if(t) return t;
   var nm = memberName(pid);
   t = document.createElement('div'); t.className = 'vtile'; t.setAttribute('data-tile', pid);
-  t.setAttribute('style', 'position:relative;border-radius:14px;overflow:hidden;background:rgba(0,0,0,.35);border:1px solid rgba(196,181,253,.25);aspect-ratio:4/3');
+  t.setAttribute('style', 'position:relative;border-radius:14px;overflow:hidden;background:rgba(0,0,0,.35);border:1px solid rgba(196,181,253,.25);aspect-ratio:16/9');
   var vid = document.createElement('video'); vid.autoplay = true; vid.setAttribute('playsinline', ''); vid.setAttribute('style', 'width:100%;height:100%;object-fit:cover;display:none');
   var ph = document.createElement('div'); ph.className = 'vph'; ph.setAttribute('style', 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#c4b5fd'); ph.textContent = (nm || 'a').slice(0, 1).toUpperCase();
   var lb = document.createElement('span'); lb.setAttribute('style', 'position:absolute;left:8px;bottom:6px;font-size:12px;opacity:.9;text-shadow:0 1px 4px #000'); lb.textContent = nm;
-  vid.addEventListener('click', function(){ if(vid.requestFullscreen) vid.requestFullscreen().catch(function(){}); });
+  vid.addEventListener('click', function(){ if(vid.requestFullscreen) vid.requestFullscreen().catch(function(){}); else if(vid.webkitEnterFullscreen) vid.webkitEnterFullscreen(); });
   t.appendChild(vid); t.appendChild(ph); t.appendChild(lb);
   vgridEl.appendChild(t);
   return t;
