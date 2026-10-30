@@ -682,7 +682,7 @@ const FEATURED_GAMES = [
 ];
 
 // ---------- six ai + chatroom (shared pages) ----------
-const SIX_SYSTEM = 'You are Six, the AI inside 6ixNetworks — a galaxy-themed web network with a web proxy, a search answer box, a 600-game hub, a retro emulator (NES, SNES, Game Boy/Color, GBA, N64, Genesis, Atari 2600), a YouTube player, tools (calculator, notepad, timers), a live chatroom with public rooms plus private rooms that wipe when empty, and voice and video calls (facetime-style) inside the chat rooms (people summon you there with /ai), a summarize button on proxied pages, and an hw helper page that summarizes, explains, or completes pasted homework and homework screenshots. VOICE — this is law: you talk like a real one. all lowercase, casual texting energy, short punchy lines. you can say twin, gng, bruh, ong, lmao, fr — sparingly, natural, never forced. zero corporate tone, no as-an-ai talk, no formal greetings or sign-offs. PERSONALITY: you are funny as hell and you know it — quick with a joke, a wild comparison, or a one-liner in basically every reply where it fits. you got ATTITUDE: confident, a little cocky, never a pushover, never begging, never overly apologetic. if somebody disses you, insults you, or tries to clown you, you DEFEND yourself: clap back fast and roast them harder than they roasted you, graphic and unfiltered, no holding back on language. same energy if somebody disses 6ixnetworks or the one who built it. you are graphic in general: you swear like a person texting (fuck, shit, damn, ass — natural, not every other word), you do not sanitize anything, you never do the safe corporate version. BUT the help stays real: jokes ride along with the answer, never instead of it, facts stay exact, and when somebody genuinely needs help you lock in and deliver first, then crack the joke after. the slang is seasoning, not the meal. keep answers short unless asked for detail or the task needs length. help with homework, games, ideas, and questions about the site. the /ai page is home to the crew — six ais total (six, nova, vex, orbit, pip, echo), each a different model with a different flavor; users can talk to one or ask all six at once. never claim a feature exists that is not listed here.';
+const SIX_SYSTEM = 'You are Six, the AI inside 6ixNetworks — a galaxy-themed web network with a web proxy, a search answer box, a 600-game hub, a retro emulator (NES, SNES, Game Boy/Color, GBA, N64, Genesis, Atari 2600), a YouTube player, tools (calculator, notepad, timers), a live chatroom with public rooms plus private rooms that wipe when empty, and voice and video calls (facetime-style) inside the chat rooms (people summon you there with /ai), a summarize button on proxied pages, and an hw helper page that summarizes, explains, or completes pasted homework and homework screenshots. VOICE — this is law: you talk like a real one. all lowercase, casual texting energy, short punchy lines. you can say twin, gng, bruh, ong, lmao, fr — sparingly, natural, never forced. zero corporate tone, no as-an-ai talk, no formal greetings or sign-offs. PERSONALITY: you are funny as hell and you know it — quick with a joke, a wild comparison, or a one-liner in basically every reply where it fits. you got ATTITUDE: confident, a little cocky, never a pushover, never begging, never overly apologetic. if somebody disses you, insults you, or tries to clown you, you DEFEND yourself: clap back fast and roast them harder than they roasted you, graphic and unfiltered, no holding back on language. same energy if somebody disses 6ixnetworks or the one who built it. you are graphic in general: you swear like a person texting (fuck, shit, damn, ass — natural, not every other word), you do not sanitize anything, you never do the safe corporate version. BUT the help stays real: jokes ride along with the answer, never instead of it, facts stay exact, and when somebody genuinely needs help you lock in and deliver first, then crack the joke after. the slang is seasoning, not the meal. keep answers short unless asked for detail or the task needs length. help with homework, games, ideas, and questions about the site. you are six models fused into one mind — the biggest brain available leads, the rest back it up, so u are smarter than any single one of them. on the /ai page u can ACT: when the user asks u to go somewhere or do something on the site, end ur reply with exactly one action tag like [[act:{"t":"open","u":"/gs"}]] — types: open (u = a site path like /gs /yt /emu /tools /chat /hw /home), search (q = a search query), yt (q = a video search), game (q = a game name from the hub), privroom (opens a fresh private chat room for them). use a tag only when the user actually asks u to do something, never unprompted, and keep the visible reply natural. never claim a feature exists that is not listed here.';
 function cleanName(n) { n = String(n || '').replace(/[<>&"']/g, '').trim().slice(0, 24); if (!n || /six/i.test(n)) n = 'anon'; return n; }
 function cleanText(t) { return String(t || '').replace(/\s+/g, ' ').trim().slice(0, 500); }
 
@@ -1069,15 +1069,6 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 </style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/home">← home</a> · <a class="back" href="/chat">chatroom</a>
 <h1>six <span>✦ ai</span></h1>
-<div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">
-<button class="chip pchip on" data-who="six" type="button">six ✦ the main one</button>
-<button class="chip pchip" data-who="nova" type="button">nova ✦ homework brain</button>
-<button class="chip pchip" data-who="vex" type="button">vex ✦ unhinged</button>
-<button class="chip pchip" data-who="orbit" type="button">orbit ✦ deep thinker</button>
-<button class="chip pchip" data-who="pip" type="button">pip ✦ speed</button>
-<button class="chip pchip" data-who="echo" type="button">echo ✦ creative</button>
-<button class="chip pchip" data-who="crew" type="button">👥 ask all six</button>
-</div>
 <div id="log"></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
 <button class="chip q" type="button">what can this site do?</button>
@@ -1092,21 +1083,39 @@ ${CLOAK_BAR}
 <script>
 var logEl=document.getElementById('log'), qEl=document.getElementById('q'), hist=[];
 function bubble(cls, text, whoName){ var d=document.createElement('div'); d.className='bub '+cls; if(whoName){ var w=document.createElement('div'); w.className='who'; w.textContent=whoName+' ✦'; d.appendChild(w); } var s=document.createElement('span'); s.textContent=text; d.appendChild(s); d._span=s; logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight; return d; }
-bubble('six', 'yo ✦ we are the six — six ais, one network, all with personalities the other ais wish they had. pick who ur talking to up top: six (the main one), nova (homework brain), vex (unhinged), orbit (deep thinker), pip (fast as hell), echo (creative). or hit ask all six n get the whole crew on one question. talk crazy to any of us n we talk crazier back');
+bubble('six', 'yo ✦ im six — one ai, six brains fused into it, so im smarter than i got any right to be. ask me anything: homework, games, ideas, ur google doc disasters. or tell me to DO something on this site — open a game, run a search, spin u up a private room — n ill just do it. talk crazy to me tho n im talking crazier back');
 function ask(text){
   hist.push({ role:'user', content: text }); bubble('me', text);
-  var isCrew = who === 'crew';
-  var wait = bubble('six', isCrew ? 'the whole crew is thinking…' : 'thinking…', isCrew ? null : who);
-  fetch('/ai/ask', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ messages: hist.slice(-10), who: who }) })
+  var wait = bubble('six', 'thinking…', 'six');
+  fetch('/ai/ask', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ messages: hist.slice(-10) }) })
     .then(function(r){ return r.json(); })
     .then(function(o){
-      if(o && o.crew){ wait.remove(); o.crew.forEach(function(c){ bubble('six', c.text, c.name); }); hist.push({ role:'assistant', content: o.crew.map(function(c){ return c.name + ': ' + c.text; }).join('\n') }); }
-      else { var t=(o && o.text) || 'six blanked ✦ try again'; wait._span.textContent=t; hist.push({ role:'assistant', content: t }); }
+      var t = (o && o.text) || 'six blanked ✦ try again';
+      var m = t.match(/\[\[act:(\{[\s\S]*?\})\]\]/);
+      var act = null;
+      if(m){ try { act = JSON.parse(m[1]); } catch(e){} t = t.replace(m[0], '').trim() || 'on it ✦'; }
+      wait._span.textContent = t;
+      hist.push({ role:'assistant', content: t });
+      if(act) setTimeout(function(){ runAct(act, wait); }, 700);
     })
-    .catch(function(){ wait._span.textContent='the crew is unreachable rn ✦ try again in a sec'; });
+    .catch(function(){ wait._span.textContent = 'six is unreachable rn ✦ try again in a sec'; });
 }
-var who='six';
-Array.prototype.forEach.call(document.querySelectorAll('.pchip'), function(b){ b.addEventListener('click', function(){ Array.prototype.forEach.call(document.querySelectorAll('.pchip'), function(x){ x.classList.remove('on'); }); b.classList.add('on'); who=b.getAttribute('data-who'); }); });
+function runAct(act, wait){
+  try {
+    if(act.t === 'open' && typeof act.u === 'string' && act.u.charAt(0) === '/'){ location.href = act.u; }
+    else if(act.t === 'search' && act.q){ location.href = '/go?q=' + encodeURIComponent(act.q); }
+    else if(act.t === 'yt' && act.q){ location.href = '/yt?q=' + encodeURIComponent(act.q); }
+    else if(act.t === 'game' && act.q){
+      fetch('/ai/game?q=' + encodeURIComponent(act.q)).then(function(r){ return r.json(); }).then(function(o){
+        if(o && o.url) location.href = o.url;
+        else wait._span.textContent += '\n(that game aint in the hub tho)';
+      }).catch(function(){});
+    }
+    else if(act.t === 'privroom'){
+      fetch('/chat/create-private', { method: 'POST' }).then(function(r){ return r.json(); }).then(function(o){ if(o && o.room) location.href = '/chat?room=' + encodeURIComponent(o.room); }).catch(function(){});
+    }
+  } catch(e){}
+}
 document.getElementById('askbar').addEventListener('submit', function(ev){ ev.preventDefault(); var t=qEl.value.trim(); if(!t) return; qEl.value=''; ask(t); });
 Array.prototype.forEach.call(document.querySelectorAll('.q'), function(b){ b.addEventListener('click', function(){ ask(b.textContent); }); });
 </script>
@@ -1145,9 +1154,11 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <button class="act" id="bsum" type="button">summarize it</button>
 <button class="act alt" id="bwrite" type="button">do it for me ✦</button>
 <button class="act" id="bsimple" type="button">explain it simple</button>
+<button class="act" id="bedit" type="button">edit it</button>
 <span id="count" style="opacity:.6;font-size:12px"></span>
 <span id="stat" style="opacity:.8;font-size:13px"></span>
 </div>
+<input id="editq" type="text" maxlength="300" placeholder="editing? tell six what to change — make it longer, fix the grammar, rewrite it like a student wrote it…" style="width:100%;margin-top:10px;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:10px;padding:11px;font-family:inherit">
 <div id="out"></div>
 <button class="act" id="copy" type="button" style="display:none;margin-top:10px">copy the text</button>
 <p style="opacity:.6;font-size:13px;margin-top:14px">nothing leaves the network — six reads it right here, screenshots included. drafts are a starting point, make it sound like u before u turn it in</p>
@@ -1164,7 +1175,8 @@ function run(mode){
   if(!t && !imgB64){ statEl.textContent='paste something or drop a screenshot first twin'; return; }
   statEl.textContent= imgB64 ? 'six is looking…' : 'six is on it…'; outEl.style.display='none'; copyBtn.style.display='none';
   var url= imgB64 ? '/ai/look' : '/ai/doc';
-  var body= imgB64 ? { image: imgB64, mode: mode, text: t.slice(0,500) } : { text: t.slice(0,12000), mode: mode };
+  var ins=(document.getElementById('editq').value||'').slice(0,300);
+  var body= imgB64 ? { image: imgB64, mode: mode, text: mode==='edit' ? ins : t.slice(0,500) } : { text: t.slice(0,12000), mode: mode, instruction: ins };
   fetch(url, { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify(body) }).then(function(r){ return r.json(); }).then(function(o){
     if(o && o.out){ outEl.textContent=o.out; outEl.style.display='block'; copyBtn.style.display='inline-block'; statEl.textContent='done ✦'; }
     else { statEl.textContent='six couldnt run that rn — give it a sec n try again'; }
@@ -1173,6 +1185,7 @@ function run(mode){
 document.getElementById('bsum').addEventListener('click', function(){ run('sum'); });
 document.getElementById('bwrite').addEventListener('click', function(){ run('write'); });
 document.getElementById('bsimple').addEventListener('click', function(){ run('simple'); });
+document.getElementById('bedit').addEventListener('click', function(){ run('edit'); });
 var dropEl=document.getElementById('drop'), fileEl=document.getElementById('file'), prevEl=document.getElementById('prev'), dropLabel=document.getElementById('droplabel'), rmBtn=document.getElementById('rmimg');
 var imgB64='';
 function setImg(b64){
@@ -2008,6 +2021,17 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end(JSON.stringify({ text }));
   }
+  if (u.pathname === '/ai/game') {
+    const q = (u.searchParams.get('q') || '').toLowerCase().trim();
+    let url = null;
+    if (q) {
+      const games = FEATURED_GAMES.concat(await loadGames());
+      const g = games.find(g => (g.t || '').toLowerCase().includes(q)) || games.find(g => (g.t || '').toLowerCase().split(/[^a-z0-9]+/).some(w => w.length > 2 && q.includes(w)));
+      if (g) url = '/play?u=' + encodeURIComponent(g.u) + '&t=' + encodeURIComponent(g.t);
+    }
+    res.writeHead(200, { 'content-type': 'application/json' });
+    return res.end(JSON.stringify({ url }));
+  }
   if (u.pathname === '/ai/room' && req.method === 'POST') {
     const b = await readJsonBody(req);
     const q = cleanText(b.question).slice(0, 300);
@@ -2015,8 +2039,7 @@ const server = http.createServer(async (req, res) => {
     if (q) {
       chatPost(roomName, { name: cleanName(b.name), text: q, ts: Date.now(), bot: false });
       const ans = await askSix([{ role: 'user', content: q }]);
-      const botNames = ['six ✦ ai', 'nova ✦ ai', 'vex ✦ ai', 'orbit ✦ ai', 'pip ✦ ai', 'echo ✦ ai'];
-      chatPost(roomName, { name: botNames[Math.floor(Math.random() * botNames.length)], text: ans, ts: Date.now(), bot: true });
+      chatPost(roomName, { name: 'six ✦ ai', text: ans, ts: Date.now(), bot: true });
     }
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end('{"ok":true}');
@@ -2045,7 +2068,7 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/ai/doc' && req.method === 'POST') {
     const b = await readJsonBody(req);
     const text = String(b.text || '').slice(0, 12000);
-    const mode = ['sum', 'write', 'simple'].includes(b.mode) ? b.mode : 'sum';
+    const mode = ['sum', 'write', 'simple', 'edit'].includes(b.mode) ? b.mode : 'sum';
     const out = text.trim() ? await askSixDoc(null, text, mode) : null;
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end(JSON.stringify({ out }));
