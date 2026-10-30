@@ -663,6 +663,110 @@ paintFavs();
 </body>
 </html>`;
 }
+
+// ---------- invisible engine: pages stay identical to the cloudflare build; only the fetching changes ----------
+function uvEncodeUrl(str) { let out = ''; for (let i = 0; i < str.length; i++) out += i % 2 ? String.fromCharCode(str.charCodeAt(i) ^ 2) : str[i]; return encodeURIComponent(out); }
+function uvDecodeUrl(str) { let s = str || ''; try { s = decodeURIComponent(s); } catch (e) {} let out = ''; for (let i = 0; i < s.length; i++) out += i % 2 ? String.fromCharCode(s.charCodeAt(i) ^ 2) : s[i]; return out; }
+const UV_BOOT = '<script src="/uv-assets/baremux/index.js"></' + 'script><script>(function(){ if (window.__gxUv) return; window.__gxUv = 1; (async function(){ try { var conn = new BareMux.BareMuxConnection(\'/uv-assets/baremux/worker.js\'); if ((await conn.getTransport()) !== \'/uv-assets/epoxy/index.mjs\') await conn.setTransport(\'/uv-assets/epoxy/index.mjs\', [{ wisp: (location.protocol === \'https:\' ? \'wss:\' : \'ws:\') + \'//\' + location.host + \'/wisp/\' }]); } catch (e) {} })(); })();</' + 'script>';
+function uvWarmPage(target) {
+  let classic = '/home';
+  try { if (/^https:\/\//i.test(target || '')) classic = proxied(target); } catch (e) {}
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body><div class="wrap" style="text-align:center;padding-top:16vh">
+<div class="brand6">6ix<span>networks</span></div>
+<p class="sub">loading…</p>
+<p id="slow" class="sub" style="display:none">taking long — <a href="${escHtml(classic)}">open it the classic way</a></p>
+</div>
+<script src="/uv-assets/baremux/index.js"></script>
+<script>
+(async function(){
+  var slow = document.getElementById('slow');
+  setTimeout(function(){ slow.style.display = 'block'; }, 8000);
+  try {
+    await navigator.serviceWorker.register('/sw.js');
+    await navigator.serviceWorker.ready;
+    if (!navigator.serviceWorker.controller) await new Promise(function(res){ var to=setTimeout(res, 7000); navigator.serviceWorker.addEventListener('controllerchange', function(){ clearTimeout(to); res(); }); });
+    var conn = new BareMux.BareMuxConnection('/uv-assets/baremux/worker.js');
+    if ((await conn.getTransport()) !== '/uv-assets/epoxy/index.mjs') await conn.setTransport('/uv-assets/epoxy/index.mjs', [{ wisp: (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/' }]);
+    if (sessionStorage.getItem('gxWarm') === '1') { slow.style.display = 'block'; return; }
+    sessionStorage.setItem('gxWarm', '1');
+    location.replace(location.href);
+  } catch (e) { slow.style.display = 'block'; }
+})();
+</script>
+</body>
+</html>`;
+}
+
+function playPageUv(u, t) {
+  if (!/^https:\/\//i.test(u || '')) {
+    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#9db9ff" href="/gs">back to games</a></body>';
+  }
+  const prox = '/uv/service/' + uvEncodeUrl(u);
+  const alt = proxied(u);
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CANVAS}
+<div class="top"><a href="/gs">← games</a><span class="title">${escHtml(t || 'Game')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
+<button class="on" onclick="useNet()">network</button>
+<button onclick="retry()">retry</button>
+<button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
+<button onclick="cloakTab('google')">cloak: google</button>
+<button onclick="cloakTab('drive')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()">cloaked tab</button></div>
+<iframe class="gameframe" id="gf" src="about:blank" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
+<div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
+<script src="/cloak.js"></script>
+<script src="/stars.js"></script>
+<script src="/uv-assets/baremux/index.js"></script>
+<script>
+var BOOTING=true;
+var PROX=${JSON.stringify(prox)}, ALT=${JSON.stringify(alt)}, stage=0;
+var gf=document.getElementById('gf'), stEl=document.getElementById('st');
+var MKEY='gx_mode_'+location.search;
+function saveMode(){ try{ localStorage.setItem(MKEY, stage===0 ? 'prox' : 'alt'); }catch(e){} }
+var startAlt=false; try{ startAlt = localStorage.getItem(MKEY)==='alt'; }catch(e){}
+try{ var gu=new URLSearchParams(location.search).get('u'); if(gu){ var R=[]; try{ R=JSON.parse(localStorage.getItem('gx_recent'))||[]; }catch(e){} R=[gu].concat(R.filter(function(x){ return x!==gu; })).slice(0,12); localStorage.setItem('gx_recent', JSON.stringify(R)); } }catch(e){}
+function dead(){
+  try{
+    var d=gf.contentDocument;
+    if(!d || !d.body) return false;
+    var t=d.body.innerText||'';
+    if(/proxy could not reach|that host is blocked|bad proxy path|error processing your request/i.test(t)) return true;
+    if(d.querySelector('canvas,iframe,video,embed,object')) return false;
+    return d.body.innerHTML.length < 5000;
+  }catch(e){ return false; }
+}
+function check(){
+  if(BOOTING) return;
+  if(!dead()){ saveMode(); if(stEl) stEl.textContent=''; return; }
+  if(stage===0){ stage=1; if(stEl) stEl.textContent='switching route…'; gf.src=ALT; arm(); }
+  else if(stage===1){ stage=2; if(stEl) stEl.textContent=''; document.getElementById('dead').style.display='block'; }
+}
+function arm(){ [5000, 11000, 18000, 30000].forEach(function(ms){ setTimeout(check, ms); }); }
+function useNet(){ stage=0; document.getElementById('dead').style.display='none'; if(stEl) stEl.textContent=''; gf.src=PROX; arm(); }
+function retry(){ useNet(); }
+gf.addEventListener('load', function(){ setTimeout(check, 3000); });
+(async function(){
+  try {
+    if ('serviceWorker' in navigator) {
+      await navigator.serviceWorker.register('/sw.js');
+      await navigator.serviceWorker.ready;
+      if (!navigator.serviceWorker.controller) await new Promise(function(res){ var to=setTimeout(res, 7000); navigator.serviceWorker.addEventListener('controllerchange', function(){ clearTimeout(to); res(); }); });
+    }
+    var conn = new BareMux.BareMuxConnection('/uv-assets/baremux/worker.js');
+    if ((await conn.getTransport()) !== '/uv-assets/epoxy/index.mjs') await conn.setTransport('/uv-assets/epoxy/index.mjs', [{ wisp: (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/' }]);
+  } catch (e) {}
+  BOOTING=false;
+  if (startAlt) { stage=1; gf.src=ALT; } else { gf.src=PROX; }
+  arm();
+})();
+</script>
+</body>
+</html>`;
+}
 function playPage(u, t) {
   if (!/^https:\/\//i.test(u || '')) {
     return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#9db9ff" href="/gs">back to games</a></body>';
@@ -3346,6 +3450,15 @@ if (UV_START) goUv(UV_START);
 
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://localhost');
+  const _end0 = res.end.bind(res);
+  res.end = (body, ...rest) => {
+    try {
+      if (UV_OK() && typeof body === 'string' && body.includes('</body>') && (body.includes('action="/go"') || body.includes('href="/play?u=') || body.includes('id="askbar"'))) {
+        body = body.replace('</body>', UV_BOOT + '</body>');
+      }
+    } catch (e) {}
+    return _end0(body, ...rest);
+  };
   if (u.pathname === '/' || u.pathname === '/index.html') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(shellPage(null));
@@ -3555,8 +3668,7 @@ const server = http.createServer(async (req, res) => {
     return res.end(gamesPage(FEATURED_GAMES.concat(games)));
   }
   if (u.pathname === '/play') {
-    if (UV_OK() && u.searchParams.get('u')) { res.writeHead(302, { location: '/uv?url=' + encodeURIComponent(u.searchParams.get('u')) + '&t=' + encodeURIComponent(u.searchParams.get('t') || '') }); return res.end(); }
-    if (SJ_OK() && u.searchParams.get('u')) { res.writeHead(302, { location: '/sj?url=' + encodeURIComponent(u.searchParams.get('u')) + '&t=' + encodeURIComponent(u.searchParams.get('t') || '') }); return res.end(); }
+    if (UV_OK() && u.searchParams.get('u')) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageUv(u.searchParams.get('u') || '', u.searchParams.get('t') || 'Game')); }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(playPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'Game'));
   }
@@ -3625,8 +3737,7 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/go') {
     const dest = normalizeInput(u.searchParams.get('q') || '');
     if (!dest) { res.writeHead(302, { location: '/home' }); return res.end(); }
-    if (UV_OK()) { res.writeHead(302, { location: '/uv?url=' + encodeURIComponent(dest) }); return res.end(); }
-    if (SJ_OK()) { res.writeHead(302, { location: '/sj?url=' + encodeURIComponent(dest) }); return res.end(); }
+    if (UV_OK()) { res.writeHead(302, { location: '/uv/service/' + uvEncodeUrl(dest) }); return res.end(); }
     res.writeHead(302, { location: proxied(dest) });
     return res.end();
   }
@@ -3683,14 +3794,16 @@ const server = http.createServer(async (req, res) => {
     '})();' +
     '</' + 'script>');
   }
-  if (u.pathname === '/uv') {
+  if (u.pathname.startsWith('/uv/service/')) {
+    const target = uvDecodeUrl(u.pathname.slice('/uv/service/'.length));
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
-    return res.end(ultravioletPage(u.searchParams.get('url') || '', u.searchParams.get('t') || ''));
+    return res.end(uvWarmPage(target));
   }
-  if (u.pathname === '/sj') {
-    if (UV_OK()) { res.writeHead(302, { location: '/uv?url=' + encodeURIComponent(u.searchParams.get('url') || '') }); return res.end(); }
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp' });
-    return res.end(scramjetPage(u.searchParams.get('url') || '', u.searchParams.get('t') || ''));
+  if (u.pathname === '/uv' || u.pathname === '/sj') {
+    const dest = normalizeInput(u.searchParams.get('url') || '');
+    if (UV_OK() && dest) { res.writeHead(302, { location: '/uv/service/' + uvEncodeUrl(dest) }); return res.end(); }
+    res.writeHead(302, { location: '/home' });
+    return res.end();
   }
   if (u.pathname.startsWith('/sj-assets/') || u.pathname.startsWith('/uv-assets/')) {
     const isUv = u.pathname.startsWith('/uv-assets/');
