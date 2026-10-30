@@ -2938,6 +2938,12 @@ const SEARCH = `<!DOCTYPE html>
 <title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style>
 <style>
+#sbtoggle{flex:none;width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;align-self:center}
+#sbtoggle.on{background:rgba(94,142,255,.25);border-color:rgba(94,142,255,.6)}
+body.sb-off:has(aside#sb),body.has-sb.sb-off{padding-left:16px}
+body.sb-off #sb{display:none}
+body.sb-off #stage{max-width:none}
+body.sb-off #stage iframe{height:78dvh}
 .tabgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:10px;width:100%;max-width:860px;margin:10px auto}
 .tabtile{position:relative;display:flex;gap:10px;align-items:center;background:#101012;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px;cursor:pointer;text-align:left}
 .tabtile:hover{border-color:rgba(255,255,255,.32)}
@@ -2963,6 +2969,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style>
 <div id="tabstrip"></div>
   <h1>6ix<span>Networks</span> — search</h1>
   <form id="omni" action="/go" method="get">
+    <button id="sbtoggle" type="button" title="toggle the sidebar — full view"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18"/></svg></button>
     <input name="q" type="text" placeholder="search or type a site \u2726" autocomplete="off" autofocus list="sg">
     <button type="submit">go</button>
   </form><datalist id="sg"></datalist>
@@ -2974,6 +2981,10 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style>
 <p class="sub" style="max-width:860px">tap a shortcut to open it in a tab · tabs n shortcuts save on this device only</p></div>
   ${SIDEBAR_HTML}<script src="/cloak.js"></script>
 <script>
+var sbt=document.getElementById('sbtoggle');
+function sbApply(){ var off=false; try{ off=localStorage.getItem('gx_sb_off')==='1'; }catch(e){} document.body.classList.toggle('sb-off', off); if(sbt) sbt.classList.toggle('on', off); }
+if(sbt) sbt.addEventListener('click', function(){ var off=!document.body.classList.contains('sb-off'); try{ localStorage.setItem('gx_sb_off', off?'1':'0'); }catch(e){} sbApply(); });
+sbApply();
 var qi=document.querySelector('input[name=q]'), sg=document.getElementById('sg'), sgt=null;
 if(qi && sg){ qi.addEventListener('input', function(){ clearTimeout(sgt); var v=qi.value.trim(); if(v.length<2){ sg.innerHTML=''; return; } sgt=setTimeout(function(){ fetch('/suggest?q='+encodeURIComponent(v)).then(function(r){ return r.json(); }).then(function(list){ sg.innerHTML=''; (list||[]).forEach(function(s){ var o=document.createElement('option'); o.value=s; sg.appendChild(o); }); }).catch(function(){}); }, 160); }); }
 </script>
