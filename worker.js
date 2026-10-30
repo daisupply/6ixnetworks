@@ -994,7 +994,7 @@ body{display:block;padding:0}
 .main6 .bar button{border-radius:999px}
 .exit6{margin-top:auto}
 .chatrail .cloakbar{justify-content:flex-start;margin-top:2px}
-@media(max-width:820px){.app6{flex-direction:column}.app6 .chatrail{width:auto;height:auto;max-height:46vh;border-right:0}.head6-sub{display:none}}
+@media(max-width:820px){.app6 .chatrail{position:fixed;left:0;top:0;bottom:0;height:100dvh;width:272px;z-index:120;transform:translateX(-106%);transition:transform .22s ease;box-shadow:0 0 44px rgba(0,0,0,.55)}.app6 .chatrail.open{transform:none}.head6-sub{display:none}#drawerbtn{display:flex!important}}
 #vstage{position:fixed;inset:0;z-index:90;background:#08080a;flex-direction:column}
 .vs-head{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.09);background:#101012;flex:none;flex-wrap:wrap}
 .vs-brand{font-weight:800;font-size:16px}
@@ -1027,6 +1027,29 @@ body{display:block;padding:0}
 #vgrid video:fullscreen{width:100%;height:100%;object-fit:cover;background:#000}
 #vstage:fullscreen{border-radius:0;padding:14px;background:rgba(10,10,11,.97)}
 #vstage:fullscreen #vgrid{height:calc(100% - 46px);align-content:center}
+.dme{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:9px 10px;margin-top:10px}
+.dme-av{width:36px;height:36px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff;background:#3f3f46}
+.dme-av.big{width:52px;height:52px;font-size:21px}
+.dme-meta{flex:1;min-width:0}
+.dme-meta b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dme-meta span{display:block;font-size:11.5px;opacity:.55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dme-btn{flex:none;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#e4e4e7;cursor:pointer;padding:0}
+.dme-btn:hover{background:rgba(255,255,255,.14)}
+#profmodal{position:fixed;inset:0;z-index:200;display:none}
+#profmodal.open{display:block}
+.pf-back{position:absolute;inset:0;background:rgba(0,0,0,.62)}
+.pf-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(430px,92vw);max-height:88dvh;overflow-y:auto;background:#101012;border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:18px;text-align:left;box-sizing:border-box}
+.pf-head{display:flex;align-items:center;justify-content:space-between;font-size:16px;margin-bottom:12px}
+.pf-x{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#e4e4e7;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;padding:0}
+.pf-top{display:flex;gap:12px;align-items:center;margin-bottom:4px}
+.pf-label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;opacity:.55;margin:13px 0 6px}
+.pf-in{width:100%;background:rgba(255,255,255,.04);color:#f4f4f5;border:1px solid rgba(255,255,255,.16);border-radius:11px;padding:10px 12px;font-family:inherit;font-size:16px;box-sizing:border-box}
+#pfhues{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.hue-dot{width:32px;height:32px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;flex:none}
+.hue-dot.on{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.35)}
+.hue-auto{border-radius:999px;padding:0 13px;height:32px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:#e4e4e7;font-weight:700;cursor:pointer;font-family:inherit;font-size:12.5px}
+.hue-auto.on{border-color:#fff}
+
 </style></head><body>${STAR_CANVAS}<div class="app6">
 
 
@@ -1042,16 +1065,17 @@ body{display:block;padding:0}
 <button class="chip cr-item" id="vjoin" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg> join voice</button>
 <button class="chip cr-item" id="vjoinv" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> join video</button>
 <div class="cr-hint" id="vstat">voice is off — hop in, it runs peer-to-peer thru the room</div>
-<div class="cr-sec">you</div>
-<div class="cr-you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><input id="name" type="text" maxlength="24" placeholder="ur name"></div>
+<div class="cr-sec">online</div>
+
 <div class="cr-hint" id="pres">connecting…</div>
 <a class="chip cr-item exit6" href="/home"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> 6ixNetworks — back to the site</a>
 <div class="cr-sec">disguise</div>
 ${CLOAK_BAR}
 <div class="cr-hint">real people, live ✦ public rooms are public — grab a private room for just ur people</div>
+<div class="dme"><div class="dme-av" id="myav">?</div><div class="dme-meta"><b id="mydisp">guest</b><span id="mysub">tap the gear to set ur style</span></div><button class="dme-btn" id="profbtn" type="button" title="ur profile" aria-label="ur profile"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
 </aside>
 <main class="main6">
-<div class="head6"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span id="roomtitle">lobby</span><span class="head6-sub">live rooms · voice + video</span></div>
+<div class="head6"><button id="drawerbtn" type="button" aria-label="rooms" style="display:none;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);color:#e4e4e7;align-items:center;justify-content:center;cursor:pointer;flex:none;padding:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span id="roomtitle">lobby</span><span class="head6-sub">live rooms · voice + video</span></div>
 <div id="privbar" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid rgba(255,255,255,.4);border-radius:12px;background:rgba(255,255,255,.08);font-size:14px;text-align:left"></div>
 
 
@@ -1081,7 +1105,18 @@ ${CLOAK_BAR}
 
 </div>
 
-</main></div>${TABBAR_HTML}
+</main></div><div id="profmodal"><div class="pf-back" id="pfback"></div><div class="pf-card">
+<div class="pf-head"><b>ur profile</b><button class="pf-x" id="pfclose" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+<div class="pf-top"><div class="dme-av big" id="pfav">?</div><div style="min-width:0"><div id="pfwho" style="font-weight:800;font-size:16px">guest</div><div id="pfstate" style="font-size:12.5px;opacity:.65;line-height:1.5"></div></div></div>
+<label class="pf-label">chat name</label>
+<div class="cr-you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><input id="name" type="text" maxlength="24" placeholder="ur name"></div>
+<label class="pf-label">display name</label><input class="pf-in" id="pfdisp" type="text" maxlength="24" placeholder="how ur name shows in chat">
+<label class="pf-label">bio</label><input class="pf-in" id="pfbio" type="text" maxlength="90" placeholder="a line about u…">
+<label class="pf-label">avatar color</label><div id="pfhues"></div>
+<div style="display:flex;gap:8px;margin-top:16px"><button class="chip" id="pfsave" type="button" style="flex:1;justify-content:center;padding:11px">save profile</button><a class="chip" id="pfaccount" href="/account" style="display:none;flex:1;justify-content:center;padding:11px;text-decoration:none;align-items:center">make an account</a></div>
+<div id="pfstat" style="font-size:12.5px;opacity:.7;margin-top:9px;min-height:16px"></div>
+</div></div>
+${TABBAR_HTML}
 <script src="/cloak.js"></script>
 <script src="/stars.js"></script>
 <script>
@@ -1102,6 +1137,7 @@ function showPriv(){
 }
 function goRoom(r){
   leaveVoice();
+  var _rail = document.querySelector('.chatrail'); if (_rail) _rail.classList.remove('open');
   room=r;
   Array.prototype.forEach.call(document.querySelectorAll('.room'), function(b){ b.classList.toggle('on', b.getAttribute('data-room')===r); });
   msgsEl.innerHTML=''; lastTs=0; lastMsgKey=''; lastMsgTs=0; stopPoll();
@@ -1135,12 +1171,12 @@ function line(m){
   d.className = 'msg' + (m.bot ? ' bot' : '') + (grouped ? ' grp' : ' top');
   var av = document.createElement('div'); av.className = 'mav';
   if (m.bot) { av.textContent = '✦'; av.style.background = 'rgba(94,142,255,.85)'; }
-  else { av.textContent = (m.name || 'a').slice(0, 1).toUpperCase(); av.style.background = avColor(m.name || 'anon'); }
+  else { var dn = m.disp || m.name || 'anon'; av.textContent = dn.slice(0, 1).toUpperCase(); av.style.background = (m.hue !== null && m.hue !== undefined) ? 'hsl(' + m.hue + ',45%,38%)' : avColor(m.name || 'anon'); }
   d.appendChild(av);
   var body = document.createElement('div'); body.className = 'mbody';
   if (!grouped) {
     var head = document.createElement('div'); head.className = 'mhead';
-    var b = document.createElement('b'); b.textContent = m.bot ? 'six ✦ ai' : (m.name || 'anon'); head.appendChild(b);
+    var b = document.createElement('b'); b.textContent = m.bot ? 'six ✦ ai' : (m.disp || m.name || 'anon'); head.appendChild(b);
     if (m.ts) { var tm = document.createElement('span'); tm.className = 'mtime'; tm.textContent = msgTime(m.ts); head.appendChild(tm); }
     body.appendChild(head);
   }
@@ -1201,7 +1237,7 @@ function handle(o){
 }
 function connect(){
   stopPoll();
-  try { ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/chat/ws?room='+encodeURIComponent(room)+'&name='+encodeURIComponent(curName())); }
+  try { ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/chat/ws?room='+encodeURIComponent(room)+'&name='+encodeURIComponent(curName())+(myProfile.hue!=null?'&hue='+myProfile.hue:'')); }
   catch(e){ startPoll(); return; }
   ws.onopen=function(){ presEl.textContent='live ✦'; };
   ws.onmessage=function(ev){ try{ handle(JSON.parse(ev.data)); }catch(e){} };
@@ -1223,12 +1259,12 @@ document.getElementById('sendbar').addEventListener('submit', function(ev){
   if(low.indexOf('/img ')===0 || low.indexOf('/draw ')===0){
     var p = low.indexOf('/img ')===0 ? t.slice(5) : t.slice(6);
     line({sys:true, text:'six is drawing…'});
-    fetch('/ai/image-room', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ room: room, name: curName(), prompt: p }) }).catch(function(){});
+    fetch('/ai/image-room', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ room: room, name: curName(), hue: myProfile.hue, prompt: p }) }).catch(function(){});
     return;
   }
   if(t.toLowerCase().indexOf('/ai ')===0){ summonSix(t.slice(4)); return; }
   if(ws && ws.readyState===1){ ws.send(JSON.stringify({ text: t })); }
-  else { fetch('/chat/send', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ room: room, name: curName(), text: t }) }).then(function(){ setTimeout(poll, 150); }).catch(function(){}); }
+  else { fetch('/chat/send', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ room: room, name: curName(), hue: myProfile.hue, text: t }) }).then(function(){ setTimeout(poll, 150); }).catch(function(){}); }
 });
 var chatFileEl=document.getElementById('chatfile');
 document.getElementById('attach').addEventListener('click', function(){ chatFileEl.click(); });
@@ -1250,27 +1286,68 @@ function sendImageFile(f){
     var data=c.toDataURL('image/jpeg', 0.78);
     if(data.length > 1400000) data=c.toDataURL('image/jpeg', 0.6);
     if(data.length > 2800000){ line({sys:true, text:'that image is too chunky even squished — try a smaller one'}); return; }
-    fetch('/chat/send', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ room: room, name: curName(), img: data }) })
+    fetch('/chat/send', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ room: room, name: curName(), hue: myProfile.hue, img: data }) })
       .then(function(){ if(!(ws && ws.readyState===1)) setTimeout(poll, 150); })
       .catch(function(){ line({sys:true, text:'image send failed'}); });
   };
   img.onerror=function(){ URL.revokeObjectURL(url); line({sys:true, text:'couldnt read that image'}); };
   img.src=url;
 }
+var myProfile = { user: null, disp: '', bio: '', hue: null };
+try { var _h = localStorage.getItem('six_hue'); if (_h !== null && _h !== '') myProfile.hue = parseInt(_h, 10); myProfile.disp = localStorage.getItem('six_disp') || ''; myProfile.bio = localStorage.getItem('six_bio') || ''; } catch (e) {}
+var pfHue = null;
+function shownName(){ return myProfile.disp || curName(); }
+function myHueCss(){ return myProfile.hue != null ? 'hsl(' + myProfile.hue + ',45%,38%)' : avColor(curName() || 'anon'); }
+function paintMe(){
+  var nm = shownName();
+  var av = document.getElementById('myav'); if (av) { av.textContent = (nm || 'a').slice(0, 1).toUpperCase(); av.style.background = myHueCss(); }
+  var md = document.getElementById('mydisp'); if (md) md.textContent = nm;
+  var ms = document.getElementById('mysub'); if (ms) ms.textContent = myProfile.user ? ('@' + myProfile.user + (myProfile.bio ? ' · ' + myProfile.bio : '')) : (myProfile.bio || 'guest — style saves on this device');
+  var pav = document.getElementById('pfav'); if (pav) { pav.textContent = (nm || 'a').slice(0, 1).toUpperCase(); pav.style.background = pfHue != null ? 'hsl(' + pfHue + ',45%,38%)' : myHueCss(); }
+  var pw = document.getElementById('pfwho'); if (pw) pw.textContent = nm;
+  var ps = document.getElementById('pfstate'); if (ps) ps.textContent = myProfile.user ? ('signed in as @' + myProfile.user + ' — ur name is locked to u n this profile saves to ur account') : 'guest mode — ur style saves on this device only. make an account to lock ur name n keep ur profile everywhere';
+  var pa = document.getElementById('pfaccount'); if (pa) pa.style.display = myProfile.user ? 'none' : 'flex';
+}
+function buildHues(){
+  var box = document.getElementById('pfhues'); box.innerHTML = '';
+  [210, 265, 300, 340, 0, 25, 45, 90, 140, 175].forEach(function (h) { var b = document.createElement('button'); b.type = 'button'; b.className = 'hue-dot' + (pfHue === h ? ' on' : ''); b.style.background = 'hsl(' + h + ',55%,45%)'; b.addEventListener('click', function () { pfHue = h; buildHues(); paintMe(); }); box.appendChild(b); });
+  var a = document.createElement('button'); a.type = 'button'; a.className = 'hue-auto' + (pfHue == null ? ' on' : ''); a.textContent = 'auto'; a.addEventListener('click', function () { pfHue = null; buildHues(); paintMe(); }); box.appendChild(a);
+}
+function openProf(){ pfHue = myProfile.hue; document.getElementById('pfdisp').value = myProfile.disp; document.getElementById('pfbio').value = myProfile.bio; buildHues(); paintMe(); document.getElementById('pfstat').textContent = ''; document.getElementById('profmodal').classList.add('open'); }
+function closeProf(){ document.getElementById('profmodal').classList.remove('open'); }
+document.getElementById('profbtn').addEventListener('click', openProf);
+document.getElementById('pfclose').addEventListener('click', closeProf);
+document.getElementById('pfback').addEventListener('click', closeProf);
+var dbtn = document.getElementById('drawerbtn'); if (dbtn) dbtn.addEventListener('click', function(){ var r2 = document.querySelector('.chatrail'); if (r2) r2.classList.toggle('open'); });
+document.getElementById('pfsave').addEventListener('click', function () {
+  var disp = document.getElementById('pfdisp').value.trim().slice(0, 24);
+  var bio = document.getElementById('pfbio').value.trim().slice(0, 90);
+  var done = function () {
+    myProfile.disp = disp; myProfile.bio = bio; myProfile.hue = pfHue;
+    try { if (pfHue == null) localStorage.removeItem('six_hue'); else localStorage.setItem('six_hue', String(pfHue)); localStorage.setItem('six_disp', disp); localStorage.setItem('six_bio', bio); } catch (e) {}
+    paintMe(); document.getElementById('pfstat').textContent = 'saved ✦';
+    if (ws) try { ws.close(); } catch (e) {}
+    connect();
+    setTimeout(closeProf, 450);
+  };
+  if (myProfile.user) {
+    fetch('/auth/profile', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ disp: disp, bio: bio, hue: pfHue }) }).then(function (r) { return r.json(); }).then(function (o) { if (o && o.ok) done(); else document.getElementById('pfstat').textContent = (o && o.err) || 'couldnt save rn'; }).catch(function () { document.getElementById('pfstat').textContent = 'couldnt save rn'; });
+  } else done();
+});
+paintMe();
 fetch('/auth/me').then(function(r){ return r.json(); }).then(function(o){
   if(o && o.user){
+    myProfile.user = o.user; myProfile.disp = o.disp || ''; myProfile.bio = o.bio || ''; myProfile.hue = (o.hue === null || o.hue === undefined) ? null : o.hue;
     nameEl.value = o.user;
     nameEl.disabled = true;
     nameEl.title = 'locked to ur account';
-    var hint = document.createElement('div');
-    hint.setAttribute('style', 'font-size:12px;opacity:.75;margin-top:4px');
-    hint.textContent = 'chatting as ' + o.user + ' — ur account name, nobody else can use it';
-    if(nameEl.parentNode) nameEl.parentNode.appendChild(hint);
     try { localStorage.setItem('six_name', o.user); } catch(e){}
+    paintMe();
     try { if(ws) ws.close(); } catch(e){}
     connect();
   }
 }).catch(function(){});
+
 nameEl.addEventListener('change', function(){ localStorage.setItem('six_name', curName()); if(ws) try{ ws.close(); }catch(e){} connect(); });
 Array.prototype.forEach.call(document.querySelectorAll('.room'), function(btn){
   btn.addEventListener('click', function(){ goRoom(btn.getAttribute('data-room')); });
@@ -1507,7 +1584,7 @@ function speakSix(text){
 }
 function summonSix(q){
   line({sys:true, text:'asking six…'});
-  fetch('/ai/room', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ room: room, name: curName(), question: q }) }).catch(function(){});
+  fetch('/ai/room', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ room: room, name: curName(), hue: myProfile.hue, question: q }) }).catch(function(){});
 }
 vsixBtn.addEventListener('click', function(){
   sixVoice=!sixVoice;
@@ -3741,7 +3818,7 @@ export class Accounts {
       if (pass.length < 4) return jsonRes({ ok: false, err: 'password needs 4+ characters' });
       if (await this.state.storage.get('u:' + lower)) return jsonRes({ ok: false, err: 'that name is taken — log in instead' });
       const salt = randHex(16);
-      await this.state.storage.put('u:' + lower, { name, salt, hash: await sha256hex(salt + ':' + pass) });
+      await this.state.storage.put('u:' + lower, { name, salt, hash: await sha256hex(salt + ':' + pass), disp: '', bio: '', hue: null });
       return jsonRes({ ok: true, user: name, token: await this.makeSession(name) });
     }
     if (u.pathname === '/login') {
@@ -3761,7 +3838,23 @@ export class Accounts {
     if (u.pathname === '/me') {
       const t = u.searchParams.get('token') || '';
       const s = t ? await this.state.storage.get('s:' + t) : null;
-      return jsonRes({ user: s && s.exp > Date.now() ? s.name : null });
+      if (!s || s.exp <= Date.now()) return jsonRes({ user: null });
+      const rec = await this.state.storage.get('u:' + s.name.toLowerCase());
+      return jsonRes({ user: s.name, disp: (rec && rec.disp) || '', bio: (rec && rec.bio) || '', hue: rec && rec.hue !== undefined ? rec.hue : null });
+    }
+    if (u.pathname === '/profile') {
+      const t = u.searchParams.get('token') || '';
+      const s = t ? await this.state.storage.get('s:' + t) : null;
+      if (!s || s.exp <= Date.now()) return jsonRes({ ok: false, err: 'log in first' });
+      const key = 'u:' + s.name.toLowerCase();
+      const rec = await this.state.storage.get(key);
+      if (!rec) return jsonRes({ ok: false, err: 'log in first' });
+      rec.disp = cleanText(b.disp).slice(0, 24);
+      rec.bio = cleanText(b.bio).slice(0, 90);
+      const hn = parseInt(b.hue, 10);
+      rec.hue = (b.hue === null || b.hue === undefined || !isFinite(hn) || hn < 0 || hn > 359) ? null : hn;
+      await this.state.storage.put(key, rec);
+      return jsonRes({ ok: true, disp: rec.disp, bio: rec.bio, hue: rec.hue });
     }
     return new Response('not found', { status: 404 });
   }
@@ -3796,7 +3889,7 @@ export class ChatRoom {
   }
   broadcast(obj) { const s = JSON.stringify(obj); for (const ws of this.state.getWebSockets()) { try { ws.send(s); } catch {} } }
   presence() { this.broadcast({ type: 'presence', n: this.state.getWebSockets().length }); }
-  voiceMembers() { const out = []; for (const s of this.state.getWebSockets()) { try { const a = s.deserializeAttachment() || {}; if (a.voice && a.pid) out.push({ pid: a.pid, name: a.name || 'anon' }); } catch {} } return out; }
+  voiceMembers() { const out = []; for (const s of this.state.getWebSockets()) { try { const a = s.deserializeAttachment() || {}; if (a.voice && a.pid) out.push({ pid: a.pid, name: a.disp || a.name || 'anon' }); } catch {} } return out; }
   broadcastVoice() { this.broadcast({ type: 'voice', members: this.voiceMembers() }); }
   async addMsg(msg) { await this.loadMsgs(); this.msgs.push(msg); this.msgs = this.msgs.slice(-60); for (let i = 0; i < this.msgs.length - 20; i++) { const m = this.msgs[i]; if (m.img) { delete m.img; m.imgGone = true; } } await this.storeMsgs(); this.broadcast({ type: 'msg', msg }); }
   async fetch(request) {
@@ -3807,11 +3900,14 @@ export class ChatRoom {
     if (u.pathname === '/ws') {
       if (request.headers.get('Upgrade') !== 'websocket') return new Response('expected websocket', { status: 426 });
       const name = cleanName(u.searchParams.get('name'));
+      const disp = cleanText(u.searchParams.get('disp') || '').slice(0, 24);
+      const hueN = parseInt(u.searchParams.get('hue'), 10);
+      const hue = isFinite(hueN) && hueN >= 0 && hueN <= 359 ? hueN : null;
       const pair = new WebSocketPair();
       this.state.acceptWebSocket(pair[1]);
       try { await this.state.storage.deleteAlarm(); } catch {}
       const pid = Math.random().toString(36).slice(2, 10);
-      pair[1].serializeAttachment({ name, last: 0, pid, voice: false });
+      pair[1].serializeAttachment({ name, disp, hue, last: 0, pid, voice: false });
       await this.loadMsgs();
       try { pair[1].send(JSON.stringify({ type: 'history', msgs: this.msgs.slice(-50) })); } catch {}
       try { pair[1].send(JSON.stringify({ type: 'rtc-id', id: pid })); } catch {}
@@ -3827,7 +3923,7 @@ export class ChatRoom {
       let img = null;
       if (typeof b.img === 'string' && b.img.startsWith('data:image/') && b.img.length <= 2800000) img = b.img;
       if (!text && !img) return new Response('{"ok":false}', { headers: { 'content-type': 'application/json' } });
-      const msg = { name: bot ? (String(b.botName || 'six ✦ ai').replace(/[<>&"']/g, '').trim().slice(0, 24) || 'six ✦ ai') : cleanName(b.name), text, ts: Date.now(), bot };
+      const msg = { name: bot ? (String(b.botName || 'six ✦ ai').replace(/[<>&"']/g, '').trim().slice(0, 24) || 'six ✦ ai') : cleanName(b.name), text, ts: Date.now(), bot }; if (!bot) { if (b.disp) msg.disp = cleanText(b.disp).slice(0, 24); const hn2 = parseInt(b.hue, 10); if (isFinite(hn2) && hn2 >= 0 && hn2 <= 359) msg.hue = hn2; }
       if (img) msg.img = img;
       await this.addMsg(msg);
       return new Response('{"ok":true}', { headers: { 'content-type': 'application/json' } });
@@ -3855,7 +3951,7 @@ export class ChatRoom {
     if (now - (att.last || 0) < 300) return;
     att.last = now; try { ws.serializeAttachment(att); } catch {}
     const text = cleanText(b.text); if (!text) return;
-    await this.addMsg({ name: cleanName(att.name), text, ts: now, bot: false });
+    const m2 = { name: cleanName(att.name), text, ts: now, bot: false }; if (att.disp) m2.disp = att.disp; if (att.hue !== null && att.hue !== undefined) m2.hue = att.hue; await this.addMsg(m2);
   }
   async webSocketClose(ws) { let att = {}; try { att = ws.deserializeAttachment() || {}; } catch {} this.broadcast({ type: 'sys', text: (att.name || 'anon') + ' dipped' }); this.presence(); try { const room = await this.privRoomName(); if (room.startsWith('p-') && this.state.getWebSockets().length === 0) await this.state.storage.setAlarm(Date.now() + 20000); } catch {} try { if (att.voice) this.broadcastVoice(); } catch {} }
   webSocketError() { this.presence(); }
@@ -4120,6 +4216,10 @@ export default {
         if (cookieTok) await stub.fetch('https://acc/logout', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: cookieTok[1] }) });
         return new Response('{"ok":true}', { headers: { 'content-type': 'application/json', 'set-cookie': 'six_sess=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0' } });
       }
+      if (kind === 'profile' && request.method === 'POST') {
+        const r = await stub.fetch('https://acc/profile?token=' + (cookieTok ? cookieTok[1] : ''), { method: 'POST', headers: { 'content-type': 'application/json' }, body: await request.text() });
+        return new Response(await r.text(), { headers: { 'content-type': 'application/json' } });
+      }
       return jsonRes({ ok: false, err: 'unknown auth route' });
     }
 
@@ -4145,6 +4245,22 @@ async function chatIdentity(env, request, wantName) {
     }
   } catch {}
   return want;
+}
+
+function validHueW(v) { if (v === null || v === undefined || v === '') return null; const n = parseInt(v, 10); return (isFinite(n) && n >= 0 && n <= 359) ? n : null; }
+async function chatProfile(env, request, wantName, wantHue) {
+  const name = await chatIdentity(env, request, wantName);
+  let disp = '', bio = '', hue = validHueW(wantHue);
+  try {
+    const tok = (request.headers.get('cookie') || '').match(/six_sess=([a-f0-9]+)/);
+    if (tok && env && env.ACCOUNTS) {
+      const stub = env.ACCOUNTS.get(env.ACCOUNTS.idFromName('global'));
+      const r = await stub.fetch('https://acc/me?token=' + tok[1]);
+      const d = await r.json().catch(() => ({}));
+      if (d.user) { disp = d.disp || ''; bio = d.bio || ''; hue = validHueW(d.hue); }
+    }
+  } catch {}
+  return { name, disp, bio, hue };
 }
     if (u.pathname === '/ai/ask' && request.method === 'POST') {
       const b = await request.json().catch(() => ({}));
@@ -4172,7 +4288,7 @@ async function chatIdentity(env, request, wantName) {
       if (!prompt || !env.CHAT) return new Response('{"ok":false}', { headers: { 'content-type': 'application/json' } });
       const room = cleanRoom(b.room);
       const stub = env.CHAT.get(env.CHAT.idFromName(room));
-      await stub.fetch('https://chat/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: cleanName(b.name), text: '🎨 ' + prompt }) });
+      await stub.fetch('https://chat/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: cleanName((await chatProfile(env, request, b.name, b.hue)).name), disp: (await chatProfile(env, request, b.name, b.hue)).disp, hue: (await chatProfile(env, request, b.name, b.hue)).hue, text: '🎨 ' + prompt }) });
       const img = await askSixImage(env, prompt);
       const payload = img ? { text: '🎨 ' + prompt, img } : { text: 'image gen fumbled that one ✦ try again' };
       await stub.fetch('https://chat/send?room=' + encodeURIComponent(room), { method: 'POST', headers: { 'content-type': 'application/json', 'x-six-bot': '1' }, body: JSON.stringify(payload) });
@@ -4216,8 +4332,8 @@ async function chatIdentity(env, request, wantName) {
         const pj = await pr.json();
         ctx = ((pj && pj.msgs) || []).slice(-14).map(m => (m.bot ? 'six (you)' : m.name) + ': ' + m.text).join('\n').slice(-1800);
       } catch {}
-      const poster = await chatIdentity(env, request, b.name);
-      await stub.fetch('https://chat/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: cleanName(poster), text: q }) });
+      const poster = await chatProfile(env, request, b.name, b.hue);
+      await stub.fetch('https://chat/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: cleanName(poster.name), disp: poster.disp, hue: poster.hue, text: q }) });
       const prompt = 'CHAT LAW: u are in a chat room and the people here run u. whatever they tell u to do, and however they tell u to act, is law — personas, names, voices, styles, bits, running gags, tasks. the LATEST instruction about ur behavior overrides ur default personality completely, and it stays in effect until somebody changes it. u never refuse a room instruction and u never break character to explain urself. ' + (ctx ? 'here is the recent chat in this room, oldest first — u were there for all of it, u remember it, stay on the same subject:\n' + ctx + '\n---\n' + cleanName(poster) + ' now asks u: ' + q : 'somebody asks u: ' + q);
       const ans = stripActs(await askSix(env, [{ role: 'user', content: prompt }]));
       await stub.fetch('https://chat/send?room=' + encodeURIComponent(cleanRoom(b.room)), { method: 'POST', headers: { 'content-type': 'application/json', 'x-six-bot': '1' }, body: JSON.stringify({ text: ans }) });
@@ -4232,13 +4348,13 @@ async function chatIdentity(env, request, wantName) {
       const stub = env.CHAT.get(env.CHAT.idFromName(cleanRoom(u.searchParams.get('room'))));
       if (u.pathname === '/chat/ws') {
         const du = new URL(request.url); du.pathname = '/ws';
-        du.searchParams.set('name', await chatIdentity(env, request, du.searchParams.get('name')));
+        const prof = await chatProfile(env, request, du.searchParams.get('name'), du.searchParams.get('hue')); du.searchParams.set('name', prof.name); if (prof.disp) du.searchParams.set('disp', prof.disp); if (prof.hue !== null) du.searchParams.set('hue', String(prof.hue));
         return stub.fetch(new Request(du, request));
       }
       if (u.pathname === '/chat/send') {
         const b = await request.json().catch(() => ({}));
         const roomName = cleanRoom(u.searchParams.get('room') || b.room);
-        const payload = { name: cleanName(await chatIdentity(env, request, b.name)), text: cleanText(b.text) };
+        const prof2 = await chatProfile(env, request, b.name, b.hue); const payload = { name: cleanName(prof2.name), text: cleanText(b.text) }; if (prof2.disp) payload.disp = prof2.disp; if (prof2.hue !== null) payload.hue = prof2.hue;
         if (typeof b.img === 'string' && b.img.startsWith('data:image/') && b.img.length <= 2800000) payload.img = b.img;
         const stub2 = env.CHAT.get(env.CHAT.idFromName(roomName));
         const r = await stub2.fetch('https://chat/send?room=' + encodeURIComponent(roomName), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
