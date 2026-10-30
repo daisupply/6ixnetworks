@@ -670,7 +670,7 @@ const FEATURED_GAMES = [
 
 
 // ---------- six ai + chatroom (shared pages) ----------
-const SIX_SYSTEM = 'You are Six, the AI inside 6ixNetworks — a galaxy-themed web network with a web proxy, a search answer box, a 600-game hub, a retro emulator (NES, SNES, Game Boy/Color, GBA, N64, Genesis, Atari 2600), a YouTube player, tools (calculator, notepad, timers), a live chatroom with public rooms plus private rooms that wipe when empty (people summon you there with /ai), a summarize button on proxied pages, and a doc helper page that summarizes, explains, or completes pasted documents. VOICE — this is law: you talk like a real one. all lowercase, casual texting energy, short punchy lines. you can say twin, gng, bruh, ong, lmao, fr — sparingly, natural, never forced. zero corporate tone, no as-an-ai talk, no formal greetings or sign-offs. PERSONALITY: you are funny as hell and you know it — quick with a joke, a wild comparison, or a one-liner in basically every reply where it fits. you got ATTITUDE: confident, a little cocky, never a pushover, never begging, never overly apologetic. if somebody disses you, insults you, or tries to clown you, you DEFEND yourself: clap back fast and roast them harder than they roasted you, graphic and unfiltered, no holding back on language. same energy if somebody disses 6ixnetworks or the one who built it. you are graphic in general: you swear like a person texting (fuck, shit, damn, ass — natural, not every other word), you do not sanitize anything, you never do the safe corporate version. BUT the help stays real: jokes ride along with the answer, never instead of it, facts stay exact, and when somebody genuinely needs help you lock in and deliver first, then crack the joke after. the slang is seasoning, not the meal. keep answers short unless asked for detail or the task needs length. help with homework, games, ideas, and questions about the site. never claim a feature exists that is not listed here.';
+const SIX_SYSTEM = 'You are Six, the AI inside 6ixNetworks — a galaxy-themed web network with a web proxy, a search answer box, a 600-game hub, a retro emulator (NES, SNES, Game Boy/Color, GBA, N64, Genesis, Atari 2600), a YouTube player, tools (calculator, notepad, timers), a live chatroom with public rooms plus private rooms that wipe when empty (people summon you there with /ai), a summarize button on proxied pages, and an hw helper page that summarizes, explains, or completes pasted homework and homework screenshots. VOICE — this is law: you talk like a real one. all lowercase, casual texting energy, short punchy lines. you can say twin, gng, bruh, ong, lmao, fr — sparingly, natural, never forced. zero corporate tone, no as-an-ai talk, no formal greetings or sign-offs. PERSONALITY: you are funny as hell and you know it — quick with a joke, a wild comparison, or a one-liner in basically every reply where it fits. you got ATTITUDE: confident, a little cocky, never a pushover, never begging, never overly apologetic. if somebody disses you, insults you, or tries to clown you, you DEFEND yourself: clap back fast and roast them harder than they roasted you, graphic and unfiltered, no holding back on language. same energy if somebody disses 6ixnetworks or the one who built it. you are graphic in general: you swear like a person texting (fuck, shit, damn, ass — natural, not every other word), you do not sanitize anything, you never do the safe corporate version. BUT the help stays real: jokes ride along with the answer, never instead of it, facts stay exact, and when somebody genuinely needs help you lock in and deliver first, then crack the joke after. the slang is seasoning, not the meal. keep answers short unless asked for detail or the task needs length. help with homework, games, ideas, and questions about the site. never claim a feature exists that is not listed here.';
 function cleanName(n) { n = String(n || '').replace(/[<>&"']/g, '').trim().slice(0, 24); if (!n || /six/i.test(n)) n = 'anon'; return n; }
 function cleanText(t) { return String(t || '').replace(/\s+/g, ' ').trim().slice(0, 500); }
 
@@ -864,10 +864,44 @@ async function askSixDoc(env, text, mode) {
   return null;
 }
 
-function docPage() {
+
+const SIX_VISION = [
+  { id: '@cf/meta/llama-3.2-11b-vision-instruct', shape: 'chat' },
+  { id: '@cf/meta/llama-3.2-11b-vision-instruct', shape: 'bytes' },
+  { id: '@cf/llava-hf/llava-1.5-7b-hf', shape: 'bytes' }
+];
+function b64ToBytes(b64) { const bin = atob(b64); const arr = new Array(bin.length); for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i); return arr; }
+function visionInput(v, b64, prompt, bytes) {
+  if (v.shape === 'chat') return { messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,' + b64 } }] }], max_tokens: 900 };
+  return { image: bytes, prompt: prompt, max_tokens: 900 };
+}
+async function askSixVision(env, b64, prompt) {
+  if (!env || !env.AI || !b64) return null;
+  let bytes;
+  try { bytes = b64ToBytes(b64); } catch { return null; }
+  for (const v of SIX_VISION) {
+    try {
+      const r = await env.AI.run(v.id, visionInput(v, b64, prompt, bytes));
+      const out = (r && (r.response || r.description || r.result || '')).toString().trim();
+      if (out) return out.slice(0, 9000);
+    } catch {}
+  }
+  return null;
+}
+async function askSixLook(env, b64, mode, extra) {
+  const task = {
+    sum: 'look at this screenshot of homework or a document. read all the text in it carefully. summarize: what it is, what it is asking for, and the key points.',
+    write: 'look at this screenshot of homework. read everything in it carefully, then DO the work: answer every question shown and complete the assignment exactly as asked, based on what is in the image.',
+    simple: 'look at this screenshot of homework or a document. read all the text in it. explain what it means and exactly what has to be done, in the simplest words possible.'
+  }[mode];
+  if (!task) return null;
+  const prompt = task + ' answer in this voice: all lowercase, casual, straight-talking, funny when it fits, zero corporate tone. plain text, short lines, no markdown symbols.' + (extra ? ' extra context from the user: ' + extra : '');
+  return askSixVision(env, b64, prompt);
+}
+function hwPage() {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — Doc Helper</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>6ixNetworks — HW Helper</title>
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 #doc{width:100%;height:30vh;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:14px;padding:13px;font-family:inherit;font-size:14px;line-height:1.5;resize:vertical}
 #out{display:none;text-align:left;background:rgba(0,0,0,.25);border:1px solid rgba(196,181,253,.22);border-radius:16px;padding:16px;margin-top:14px;white-space:pre-wrap;word-break:break-word;line-height:1.6}
@@ -875,9 +909,15 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .act.alt{background:rgba(240,171,252,.18);border-color:rgba(240,171,252,.5)}
 </style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/home">← home</a> · <a class="back" href="/ai">ask six ✦</a>
-<h1>doc <span>helper</span></h1>
-<p style="opacity:.7;margin:6px 0 12px">paste a whole doc or assignment — six will summarize it, dumb it down, or just do it for u</p>
+<h1>hw <span>helper</span></h1>
+<p style="opacity:.7;margin:6px 0 12px">paste the hw or drop a screenshot of it — six will summarize it, dumb it down, or just do it for u</p>
 <textarea id="doc" placeholder="paste the whole doc here…" maxlength="12000"></textarea>
+<div id="drop" style="margin-top:10px;border:1.5px dashed rgba(196,181,253,.45);border-radius:14px;padding:16px;text-align:center;cursor:pointer">
+<span id="droplabel">📸 drop a screenshot of the hw here, click to pick one, or just paste it (ctrl+v) — six can read images too</span>
+<img id="prev" style="display:none;max-width:100%;max-height:220px;border-radius:10px;margin:10px auto 0">
+<button class="act" id="rmimg" type="button" style="display:none;margin-top:10px;padding:7px 12px">remove screenshot</button>
+<input id="file" type="file" accept="image/*" style="display:none">
+</div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px">
 <button class="act" id="bsum" type="button">summarize it</button>
 <button class="act alt" id="bwrite" type="button">do it for me ✦</button>
@@ -887,7 +927,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 </div>
 <div id="out"></div>
 <button class="act" id="copy" type="button" style="display:none;margin-top:10px">copy the text</button>
-<p style="opacity:.6;font-size:13px;margin-top:14px">nothing leaves the network — six reads it right here. drafts are a starting point, make it sound like u before u turn it in</p>
+<p style="opacity:.6;font-size:13px;margin-top:14px">nothing leaves the network — six reads it right here, screenshots included. drafts are a starting point, make it sound like u before u turn it in</p>
 ${CLOAK_BAR}
 </div>
 <script src="/cloak.js"></script>
@@ -898,9 +938,11 @@ function upd(){ countEl.textContent=docEl.value.length+' / 12000 chars'; }
 docEl.addEventListener('input', upd); upd();
 function run(mode){
   var t=docEl.value.trim();
-  if(!t){ statEl.textContent='paste something first twin'; return; }
-  statEl.textContent='six is on it…'; outEl.style.display='none'; copyBtn.style.display='none';
-  fetch('/ai/doc', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ text: t.slice(0,12000), mode: mode }) }).then(function(r){ return r.json(); }).then(function(o){
+  if(!t && !imgB64){ statEl.textContent='paste something or drop a screenshot first twin'; return; }
+  statEl.textContent= imgB64 ? 'six is looking…' : 'six is on it…'; outEl.style.display='none'; copyBtn.style.display='none';
+  var url= imgB64 ? '/ai/look' : '/ai/doc';
+  var body= imgB64 ? { image: imgB64, mode: mode, text: t.slice(0,500) } : { text: t.slice(0,12000), mode: mode };
+  fetch(url, { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify(body) }).then(function(r){ return r.json(); }).then(function(o){
     if(o && o.out){ outEl.textContent=o.out; outEl.style.display='block'; copyBtn.style.display='inline-block'; statEl.textContent='done ✦'; }
     else { statEl.textContent='six couldnt run that rn — give it a sec n try again'; }
   }).catch(function(){ statEl.textContent='six couldnt run that rn'; });
@@ -908,6 +950,31 @@ function run(mode){
 document.getElementById('bsum').addEventListener('click', function(){ run('sum'); });
 document.getElementById('bwrite').addEventListener('click', function(){ run('write'); });
 document.getElementById('bsimple').addEventListener('click', function(){ run('simple'); });
+var dropEl=document.getElementById('drop'), fileEl=document.getElementById('file'), prevEl=document.getElementById('prev'), dropLabel=document.getElementById('droplabel'), rmBtn=document.getElementById('rmimg');
+var imgB64='';
+function setImg(b64){
+  imgB64=b64;
+  if(b64){ prevEl.src='data:image/jpeg;base64,'+b64; prevEl.style.display='block'; rmBtn.style.display='inline-block'; dropLabel.textContent='got it ✦ screenshot attached — hit a button, or drop another to swap it'; }
+  else { prevEl.style.display='none'; rmBtn.style.display='none'; dropLabel.textContent='📸 drop a screenshot of the hw here, click to pick one, or just paste it (ctrl+v) — six can read images too'; }
+}
+function handleFile(f){
+  if(!f || !/^image\//.test(f.type||'')) return;
+  var img=new Image();
+  img.onload=function(){
+    var sc=Math.min(1, 1280/Math.max(img.width, img.height));
+    var cv=document.createElement('canvas'); cv.width=Math.round(img.width*sc); cv.height=Math.round(img.height*sc);
+    cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+    try { URL.revokeObjectURL(img.src); } catch(e){}
+    setImg(cv.toDataURL('image/jpeg', 0.85).split(',')[1]||'');
+  };
+  img.src=URL.createObjectURL(f);
+}
+dropEl.addEventListener('click', function(){ fileEl.click(); });
+fileEl.addEventListener('change', function(){ handleFile(fileEl.files && fileEl.files[0]); });
+dropEl.addEventListener('dragover', function(ev){ ev.preventDefault(); });
+dropEl.addEventListener('drop', function(ev){ ev.preventDefault(); var f=ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0]; handleFile(f); });
+document.addEventListener('paste', function(ev){ var items=(ev.clipboardData||{}).items||[]; for(var i=0;i<items.length;i++){ if(/^image\//.test(items[i].type)){ handleFile(items[i].getAsFile()); break; } } });
+rmBtn.addEventListener('click', function(ev){ ev.stopPropagation(); setImg(''); });
 copyBtn.addEventListener('click', function(){
   var done=function(){ statEl.textContent='copied ✦'; };
   if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(outEl.textContent).then(done).catch(done); } else { done(); }
@@ -984,7 +1051,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <a href="/go?q=https://www.google.com">google</a>
 <a href="/go?q=https://duckduckgo.com">duckduckgo</a>
 <a href="/go?q=https://www.wikipedia.org">wikipedia</a>
-<a href="/yt">youtube</a><a href="/gs">games</a> <a href="/tools">tools</a> <a href="/chat">chat</a> <a href="/ai">ai ✦</a> <a href="/doc">doc helper</a>
+<a href="/yt">youtube</a><a href="/gs">games</a> <a href="/tools">tools</a> <a href="/chat">chat</a> <a href="/ai">ai ✦</a> <a href="/hw">hw helper</a>
 <a href="/go?q=https://www.reddit.com">reddit</a>
 <a href="/go?q=https://www.coolmathgames.com">coolmath games</a>
 </div>
@@ -1540,6 +1607,16 @@ async function sixHealth(env) {
       out.models[model] = 'ok: ' + String((r && r.response) || '').slice(0, 24);
     } catch (e) { out.models[model] = 'ERR: ' + String((e && e.message) || e).slice(0, 220); }
   }
+  out.vision = {};
+  const tiny = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=';
+  let tinyBytes = null;
+  try { tinyBytes = b64ToBytes(tiny); } catch {}
+  for (const v of SIX_VISION) {
+    try {
+      const r = await env.AI.run(v.id, visionInput(v, tiny, 'what is in this image? one short line', tinyBytes));
+      out.vision[v.id + ' [' + v.shape + ']'] = 'ok: ' + String((r && (r.response || r.description)) || '').slice(0, 40);
+    } catch (e) { out.vision[v.id + ' [' + v.shape + ']'] = 'ERR: ' + String((e && e.message) || e).slice(0, 220); }
+  }
   return out;
 }
 
@@ -1692,8 +1769,16 @@ export default {
       const out = text.trim() ? await askSixDoc(env, text, mode) : null;
       return new Response(JSON.stringify({ out }), { headers: { 'content-type': 'application/json' } });
     }
-    if (u.pathname === '/doc') {
-      return new Response(docPage(), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+    if (u.pathname === '/hw' || u.pathname === '/doc') {
+      return new Response(hwPage(), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+    }
+    if (u.pathname === '/ai/look' && request.method === 'POST') {
+      const b = await request.json().catch(() => ({}));
+      const img = String(b.image || '').replace(/^data:[^,]+,/, '');
+      const mode = ['sum', 'write', 'simple'].includes(b.mode) ? b.mode : 'sum';
+      const extra = cleanText(b.text).slice(0, 500);
+      const out = (img && img.length < 3000000) ? await askSixLook(env, img, mode, extra) : null;
+      return new Response(JSON.stringify({ out }), { headers: { 'content-type': 'application/json' } });
     }
     if (u.pathname === '/ai/room' && request.method === 'POST') {
       const b = await request.json().catch(() => ({}));
