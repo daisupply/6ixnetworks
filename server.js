@@ -75,8 +75,57 @@ function sixAnswerSnippet(tgt) {
   const js = "(function(){var Q=" + JSON.stringify(q) + ";function init(){if(document.getElementById('sixbox'))return;var st=document.createElement('style');st.textContent='#sixbox{max-width:648px;margin:14px 0 6px;padding:14px 18px;border:1px solid rgba(167,139,250,.55);border-radius:16px;background:linear-gradient(135deg,rgba(38,22,84,.92),rgba(14,10,34,.94));color:#ece9ff;font-family:system-ui,-apple-system,sans-serif;box-shadow:0 6px 30px rgba(88,28,175,.35)}#sixbox .h{font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#c4b5fd;margin-bottom:6px}#sixbox .b{font-size:16px;line-height:1.5;white-space:pre-wrap}#sixbox .f{margin-top:8px;font-size:11px;opacity:.55}';document.head.appendChild(st);var box=document.createElement('div');box.id='sixbox';box.innerHTML='<div class=h>\u2726 six</div><div class=b>thinking\u2026</div>';var host=document.querySelector('#b_content')||document.body;host.insertBefore(box,host.firstChild);fetch(location.origin+'/ai/answer?q='+encodeURIComponent(Q)).then(function(r){return r.json()}).then(function(j){if(j&&j.answer){box.querySelector('.b').textContent=j.answer;var f=document.createElement('div');f.className='f';f.textContent='ai answer \u2014 the real results are right below';box.appendChild(f);}else{box.remove();}}).catch(function(){box.remove();});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();})();";
   return '<script>' + js + '</' + 'script>';
 }
+
+function summarizeSnippet(tgt) {
+  const ub = JSON.stringify(b64urlEncode(tgt));
+  const js = "(function(){if(location.pathname.indexOf('/browse/')!==0)return;function init(){if(document.getElementById('sixsum')||!document.body)return;var b=document.createElement('button');b.id='sixsum';b.textContent='\u2726 summarize';b.setAttribute('style','position:fixed;left:14px;bottom:14px;z-index:2147483640;background:rgba(30,20,60,.92);color:#e9d5ff;border:1px solid rgba(196,181,253,.65);border-radius:999px;padding:9px 15px;font:600 13px system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.45)');var p=document.createElement('div');p.setAttribute('style','position:fixed;left:14px;bottom:60px;z-index:2147483640;max-width:min(440px,86vw);max-height:48vh;overflow-y:auto;background:rgba(18,12,38,.97);color:#f3efff;border:1px solid rgba(196,181,253,.5);border-radius:14px;padding:14px 16px;font:14px/1.55 system-ui,sans-serif;display:none;box-shadow:0 10px 34px rgba(0,0,0,.5)');var h=document.createElement('div');h.textContent='\u2726 six summary';h.setAttribute('style','font-weight:800;color:#c4b5fd;margin-bottom:6px');var t=document.createElement('div');t.style.whiteSpace='pre-wrap';p.appendChild(h);p.appendChild(t);var done=false;b.addEventListener('click',function(){if(p.style.display==='block'){p.style.display='none';return;}p.style.display='block';if(done)return;t.textContent='reading the page\u2026';fetch(location.origin+'/ai/summarize?u='+" + ub + ").then(function(r){return r.json()}).then(function(o){done=true;t.textContent=(o&&o.summary)?o.summary:'six couldnt summarize this one \u2014 some pages hide their text from readers.';}).catch(function(){t.textContent='six couldnt summarize this one.';});});document.body.appendChild(b);document.body.appendChild(p);}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();})();";
+  return '<script>' + js + '</' + 'script>';
+}
+function privCode() {
+  const A = 'abcdefghjkmnpqrstuvwxyz23456789';
+  const b = new Uint8Array(8);
+  crypto.getRandomValues(b);
+  let s = '';
+  for (const x of b) s += A[x % A.length];
+  return s;
+}
+const SUM_CACHE = new Map();
+async function summarizeUrl(env, ub) {
+  let target = '';
+  try { target = b64urlDecode(ub); } catch { return null; }
+  if (!target) return null;
+  let t;
+  try { t = new URL(target); } catch { return null; }
+  if (!/^https?:$/.test(t.protocol) || isPrivateHost(t.hostname)) return null;
+  const hit = SUM_CACHE.get(target);
+  if (hit && Date.now() - hit.ts < 600000) return hit.s;
+  let s = null;
+  try {
+    const r = await fetchT(target, { headers: { 'user-agent': BROWSER_UA, 'accept': 'text/html,application/xhtml+xml' } }, 10000);
+    const ct = r.headers.get('content-type') || '';
+    if (r.ok && ct.includes('html')) {
+      const raw = await r.text();
+      const tm = raw.match(/<title[^>]*>([\s\S]{0,300}?)<\/title>/i);
+      const title = tm ? tm[1].replace(/\s+/g, ' ').trim() : '';
+      let text = raw.replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<!--[\s\S]*?-->/g, ' ').replace(/<[^>]+>/g, ' ');
+      text = text.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim().slice(0, 6000);
+      if (text.length > 120) s = await askSixSummary(env, t.href, title, text);
+    }
+  } catch { s = null; }
+  SUM_CACHE.set(target, { s, ts: Date.now() });
+  if (SUM_CACHE.size > 100) SUM_CACHE.clear();
+  return s;
+}
+async function askSixSummary(env, url, title, text) {
+  const out = await askSix(null, [
+    { role: 'system', content: 'You are Six, the AI inside the 6ixNetworks proxy. Summarize the web page below for a student: the gist in 3-5 short sentences, plain text, no markdown symbols. If the page has clear key facts, add them after as short lines starting with "• ". If the text is mostly navigation junk or you cannot tell what the page is about, say so honestly in one line.' },
+    { role: 'user', content: 'URL: ' + url + '\nTITLE: ' + title + '\n\n' + text }
+  ]);
+  if (!out || out.indexOf('six is') === 0 || out.indexOf('six only') === 0) return null;
+  return out;
+}
 function injectProxyShim(html, tgt, pre) {
-  const shim = '<script>' + PROXY_SHIM.replace('%%TGT%%', JSON.stringify(tgt)).replace('%%PRE%%', JSON.stringify(pre)) + '</' + 'script>' + sixAnswerSnippet(tgt);
+  const shim = '<script>' + PROXY_SHIM.replace('%%TGT%%', JSON.stringify(tgt)).replace('%%PRE%%', JSON.stringify(pre)) + '</' + 'script>' + sixAnswerSnippet(tgt) + summarizeSnippet(tgt);
   if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, m => m + shim);
   if (/<html[^>]*>/i.test(html)) return html.replace(/<html[^>]*>/i, m => m + shim);
   return shim + html;
@@ -661,9 +710,16 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <span id="pres" style="opacity:.7;font-size:13px">connecting…</span>
 <input id="name" type="text" maxlength="24" placeholder="ur name" style="margin-left:auto;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:10px;padding:8px 10px;font-family:inherit;width:130px">
 </div>
+<div id="privbar" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid rgba(240,171,252,.4);border-radius:12px;background:rgba(240,171,252,.08);font-size:14px;text-align:left"></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">
+<button class="chip" id="mkpriv" type="button">🔒 new private room</button>
+<input id="joincode" type="text" maxlength="12" placeholder="room code" style="background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(196,181,253,.3);border-radius:10px;padding:8px 10px;font-family:inherit;width:120px">
+<button class="chip" id="joinpriv" type="button">join private</button>
+<span style="opacity:.6;font-size:12px">private rooms wipe themselves right after everyone leaves</span>
+</div>
 <div id="msgs"></div>
 <form class="bar" id="sendbar"><input type="text" id="text" placeholder="message…  (/ai + a question summons six)" autocomplete="off" maxlength="500"><button type="submit">send</button></form>
-<p style="opacity:.65;font-size:13px">real people, live ✦ be cool — names n messages are public to the room</p>
+<p style="opacity:.65;font-size:13px">real people, live ✦ public rooms are public — grab a private room for just ur people</p>
 ${CLOAK_BAR}
 </div>
 <script src="/cloak.js"></script>
@@ -674,6 +730,24 @@ var myName=localStorage.getItem('six_name')||'';
 if(!myName){ myName='anon-'+Math.floor(1000+Math.random()*9000); localStorage.setItem('six_name', myName); }
 nameEl.value=myName;
 var room='lobby', lastTs=0, ws=null, polling=false, pollTimer=null;
+var privbar=document.getElementById('privbar');
+function showPriv(){
+  if(room.indexOf('p-')===0){
+    privbar.style.display='block'; privbar.innerHTML='';
+    var s=document.createElement('span'); s.textContent='🔒 private room · code: ';
+    var c=document.createElement('b'); c.textContent=room.slice(2); c.style.fontSize='17px'; c.style.letterSpacing='2px';
+    var t=document.createElement('span'); t.textContent=' — share it to invite ur people. history wipes itself right after everyone leaves ✦';
+    privbar.appendChild(s); privbar.appendChild(c); privbar.appendChild(t);
+  } else { privbar.style.display='none'; }
+}
+function goRoom(r){
+  room=r;
+  Array.prototype.forEach.call(document.querySelectorAll('.room'), function(b){ b.classList.toggle('on', b.getAttribute('data-room')===r); });
+  msgsEl.innerHTML=''; lastTs=0; stopPoll();
+  if(ws) try{ ws.close(); }catch(e){}
+  try{ history.replaceState(null,'','/chat?room='+encodeURIComponent(r)); }catch(e){}
+  showPriv(); connect();
+}
 function curName(){ return (nameEl.value||'').trim()||myName; }
 function line(m){
   var d=document.createElement('div');
@@ -718,12 +792,19 @@ document.getElementById('sendbar').addEventListener('submit', function(ev){
 });
 nameEl.addEventListener('change', function(){ localStorage.setItem('six_name', curName()); if(ws) try{ ws.close(); }catch(e){} connect(); });
 Array.prototype.forEach.call(document.querySelectorAll('.room'), function(btn){
-  btn.addEventListener('click', function(){
-    Array.prototype.forEach.call(document.querySelectorAll('.room'), function(b){ b.classList.remove('on'); });
-    btn.classList.add('on'); room=btn.getAttribute('data-room');
-    msgsEl.innerHTML=''; lastTs=0; if(ws) try{ ws.close(); }catch(e){} connect();
-  });
+  btn.addEventListener('click', function(){ goRoom(btn.getAttribute('data-room')); });
 });
+document.getElementById('mkpriv').addEventListener('click', function(){
+  fetch('/chat/create-private', { method:'POST' }).then(function(r){ return r.json(); }).then(function(o){ if(o && o.room) goRoom(o.room); }).catch(function(){});
+});
+document.getElementById('joinpriv').addEventListener('click', function(){
+  var c=(document.getElementById('joincode').value||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(c.length>=4) goRoom('p-'+c.slice(0,12));
+});
+var startRoom='lobby';
+try { startRoom=(new URLSearchParams(location.search).get('room')||'lobby').toLowerCase().replace(/[^a-z0-9-]/g,'').slice(0,24)||'lobby'; } catch(e){}
+if(startRoom!=='lobby'){ room=startRoom; Array.prototype.forEach.call(document.querySelectorAll('.room'), function(b){ b.classList.toggle('on', b.getAttribute('data-room')===startRoom); }); }
+showPriv();
 connect();
 </script>
 </body>
@@ -1437,7 +1518,7 @@ async function askSixAnswer(q) {
 }
 const crypto = require('crypto');
 const CHAT_ROOMS = new Map();
-function chatRoomOf(name) { if (!CHAT_ROOMS.has(name)) CHAT_ROOMS.set(name, { msgs: [], socks: new Set() }); return CHAT_ROOMS.get(name); }
+function chatRoomOf(name) { if (!CHAT_ROOMS.has(name)) CHAT_ROOMS.set(name, { msgs: [], socks: new Set(), pollAct: 0, wipeTimer: null }); return CHAT_ROOMS.get(name); }
 function wsEncode(str) {
   const p = Buffer.from(str, 'utf8'); const len = p.length; let h;
   if (len < 126) { h = Buffer.from([0x81, len]); }
@@ -1467,11 +1548,14 @@ function chatUpgrade(req, socket) {
   const name = cleanName(u.searchParams.get('name'));
   const room = chatRoomOf(roomName);
   room.socks.add(socket);
+  if (room.wipeTimer) { clearTimeout(room.wipeTimer); room.wipeTimer = null; }
   try { socket.write(wsEncode(JSON.stringify({ type: 'history', msgs: room.msgs.slice(-50) }))); } catch {}
   chatBroadcast(room, { type: 'sys', text: name + ' slid in ✦' });
   chatPresence(roomName);
   let buf = Buffer.alloc(0); let last = 0; let dead = false;
-  const cleanup = () => { if (dead) return; dead = true; room.socks.delete(socket); chatBroadcast(room, { type: 'sys', text: name + ' dipped' }); chatPresence(roomName); };
+  const cleanup = () => { if (dead) return; dead = true; room.socks.delete(socket); chatBroadcast(room, { type: 'sys', text: name + ' dipped' }); chatPresence(roomName);
+    if (roomName.startsWith('p-') && room.socks.size === 0) { if (room.wipeTimer) clearTimeout(room.wipeTimer); room.wipeTimer = setTimeout(() => { if (room.socks.size === 0 && (!room.pollAct || Date.now() - room.pollAct > 12000)) { room.msgs = []; CHAT_ROOMS.delete(roomName); } }, 20000); }
+  };
   socket.on('data', (chunk) => {
     buf = Buffer.concat([buf, chunk]);
     while (buf.length >= 2) {
@@ -1495,6 +1579,7 @@ function chatUpgrade(req, socket) {
   });
   socket.on('close', cleanup);
   socket.on('error', cleanup);
+  socket.on('end', () => { cleanup(); try { socket.end(); } catch {} });
 }
 
 const server = http.createServer(async (req, res) => {
@@ -1554,6 +1639,11 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'public, max-age=300' });
     return res.end(JSON.stringify({ answer }));
   }
+  if (u.pathname === '/ai/summarize') {
+    const s = await summarizeUrl(null, u.searchParams.get('u') || '');
+    res.writeHead(200, { 'content-type': 'application/json' });
+    return res.end(JSON.stringify({ summary: s }));
+  }
   if (u.pathname === '/ai/ask' && req.method === 'POST') {
     const b = await readJsonBody(req);
     const text = await askSix(sixMessages(b.messages));
@@ -1572,15 +1662,22 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end('{"ok":true}');
   }
+  if (u.pathname === '/chat/create-private' && req.method === 'POST') {
+    const code = privCode();
+    res.writeHead(200, { 'content-type': 'application/json' });
+    return res.end(JSON.stringify({ room: 'p-' + code, code }));
+  }
   if (u.pathname === '/chat/send' && req.method === 'POST') {
     const b = await readJsonBody(req);
     const text = cleanText(b.text);
-    if (text) chatPost(cleanRoom(b.room), { name: cleanName(b.name), text, ts: Date.now(), bot: false });
+    if (text) { const rn = cleanRoom(b.room); chatPost(rn, { name: cleanName(b.name), text, ts: Date.now(), bot: false }); chatRoomOf(rn).pollAct = Date.now(); }
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end('{"ok":true}');
   }
   if (u.pathname === '/chat/poll') {
     const room = chatRoomOf(cleanRoom(u.searchParams.get('room')));
+    if (cleanRoom(u.searchParams.get('room')).startsWith('p-') && room.socks.size === 0 && room.msgs.length && room.pollAct && Date.now() - room.pollAct > 90000) room.msgs = [];
+    room.pollAct = Date.now();
     const since = parseInt(u.searchParams.get('since') || '0', 10) || 0;
     const msgs = since > 0 ? room.msgs.filter(m => m.ts > since) : room.msgs.slice(-50);
     res.writeHead(200, { 'content-type': 'application/json' });
