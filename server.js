@@ -3252,6 +3252,97 @@ if (SJ_START) goSj(SJ_START);
 </body></html>`;
 }
 
+
+// ---------- ultraviolet engine (node build — replaces scramjet as the rider in v57) ----------
+let UV_DIR = null;
+try {
+  const fs3 = require('fs'); const path3 = require('path');
+  UV_DIR = path3.join(path3.dirname(require.resolve('@titaniumnetwork-dev/ultraviolet/package.json')), 'dist');
+  if (!fs3.existsSync(path3.join(UV_DIR, 'uv.bundle.js'))) throw new Error('uv dist missing');
+  console.log('ultraviolet engine ready');
+} catch (e) { console.log('ultraviolet unavailable:', e.message); }
+const UV_OK = () => !!UV_DIR;
+const UV_CONFIG = `self.__uv$config = {
+  prefix: '/uv/service/',
+  encodeUrl: Ultraviolet.codec.xor.encode,
+  decodeUrl: Ultraviolet.codec.xor.decode,
+  handler: '/uv-assets/uv.handler.js',
+  client: '/uv-assets/uv.client.js',
+  bundle: '/uv-assets/uv.bundle.js',
+  config: '/uv-assets/uv.config.js',
+  sw: '/uv-assets/uv.sw.js'
+};
+`;
+const UV_SW = `importScripts("/uv-assets/uv.bundle.js");
+importScripts("/uv-assets/uv.config.js");
+importScripts("/uv-assets/uv.sw.js");
+const __uvSw = new UVServiceWorker();
+self.addEventListener("fetch", (event) => {
+  if (event.request.url.startsWith(location.origin + self.__uv$config.prefix)) event.respondWith(__uvSw.fetch(event));
+});
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
+`;
+function ultravioletPage(startUrl, title) {
+  const classic = startUrl ? proxied(startUrl) : '/home';
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+${FONT_LINKS}
+<title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>${GALAXY_CSS}
+.sjbar{display:flex;gap:8px;margin:10px 0}.sjbar input{flex:1}
+#sjstage{position:relative;height:calc(100dvh - 235px);min-height:320px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#0d0d10}
+#sjstage iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.sjnote{opacity:.65;font-size:12.5px}
+</style></head>
+<body><div class="wrap">
+${SIDEBAR_HTML}
+<main>
+<h1>browse <span style="color:var(--blue)">✦ ultraviolet</span></h1>
+<p class="sub">the battle-tested engine — logins, streams n multiplayer-grade sites ride this one. classic proxy is the backup under it.</p>
+<form class="sjbar" id="sjform"><input type="text" id="sjaddr" placeholder="paste a link or type a site…" autocomplete="off" value="${escHtml(startUrl || '')}"><button type="submit">go</button></form>
+<div id="sjstage"></div>
+<p class="sjnote" id="sjstat">ultraviolet idle — hit go.</p>
+<p class="sjnote">site beefin with ultraviolet? <a href="${classic}">open it in the classic proxy instead</a></p>
+</main>
+</div>
+<script src="/cloak.js"></script>
+<script src="/uv-assets/uv.bundle.js"></script>
+<script src="/uv-assets/baremux/index.js"></script>
+<script>
+var UV_START = ${JSON.stringify(startUrl || '')};
+var statEl = document.getElementById('sjstat'), addrEl = document.getElementById('sjaddr');
+function stat(t){ statEl.textContent = t; }
+var uvConn = null, uvFrame = null, uvReady = null;
+function ensureUv() {
+  if (!uvReady) uvReady = (async function() {
+    await navigator.serviceWorker.register('/sw.js');
+    await navigator.serviceWorker.ready;
+    if (!navigator.serviceWorker.controller) { stat('waking the service worker…'); await new Promise(function(res) { var to = setTimeout(res, 7000); navigator.serviceWorker.addEventListener('controllerchange', function() { clearTimeout(to); res(); }); }); }
+    uvConn = new BareMux.BareMuxConnection('/uv-assets/baremux/worker.js');
+    await uvConn.setTransport('/uv-assets/epoxy/index.mjs', [{ wisp: (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/' }]);
+  })();
+  return uvReady;
+}
+async function goUv(raw) {
+  var url = (raw || '').trim(); if (!url) return;
+  if (!/^https?:\\/\\//i.test(url)) url = 'https://' + url;
+  addrEl.value = url;
+  stat('connecting ultraviolet…');
+  try {
+    await ensureUv();
+    if (!uvFrame) { uvFrame = document.createElement('iframe'); uvFrame.setAttribute('allow', 'autoplay; fullscreen; camera; microphone; display-capture'); document.getElementById('sjstage').appendChild(uvFrame); }
+    uvFrame.src = '/uv/service/' + Ultraviolet.codec.xor.encode(url);
+    stat('ridin ultraviolet — ' + url);
+  } catch (e) { stat('ultraviolet fumbled: ' + e.message + ' — classic proxy link is under the stage'); }
+}
+document.getElementById('sjform').addEventListener('submit', function(ev) { ev.preventDefault(); goUv(addrEl.value); });
+if (UV_START) goUv(UV_START);
+</script>
+</body></html>`;
+}
+
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://localhost');
   if (u.pathname === '/' || u.pathname === '/index.html') {
@@ -3292,6 +3383,7 @@ const server = http.createServer(async (req, res) => {
     return res.end(PWA_MANIFEST);
   }
   if (u.pathname === '/sw.js') {
+    if (UV_OK()) { res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(UV_SW); }
     if (SJ_OK()) { res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(SJ_SW); }
     res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(SW_JS);
@@ -3462,6 +3554,7 @@ const server = http.createServer(async (req, res) => {
     return res.end(gamesPage(FEATURED_GAMES.concat(games)));
   }
   if (u.pathname === '/play') {
+    if (UV_OK() && u.searchParams.get('u')) { res.writeHead(302, { location: '/uv?url=' + encodeURIComponent(u.searchParams.get('u')) + '&t=' + encodeURIComponent(u.searchParams.get('t') || '') }); return res.end(); }
     if (SJ_OK() && u.searchParams.get('u')) { res.writeHead(302, { location: '/sj?url=' + encodeURIComponent(u.searchParams.get('u')) + '&t=' + encodeURIComponent(u.searchParams.get('t') || '') }); return res.end(); }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(playPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'Game'));
@@ -3531,6 +3624,7 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/go') {
     const dest = normalizeInput(u.searchParams.get('q') || '');
     if (!dest) { res.writeHead(302, { location: '/home' }); return res.end(); }
+    if (UV_OK()) { res.writeHead(302, { location: '/uv?url=' + encodeURIComponent(dest) }); return res.end(); }
     if (SJ_OK()) { res.writeHead(302, { location: '/sj?url=' + encodeURIComponent(dest) }); return res.end(); }
     res.writeHead(302, { location: proxied(dest) });
     return res.end();
@@ -3567,14 +3661,25 @@ const server = http.createServer(async (req, res) => {
     if (u.search) targetStr += (targetStr.includes('?') ? '&' : '?') + u.search.slice(1);
     return handleProxy(req, res, targetStr);
   }
+  if (u.pathname === '/uv') {
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp' });
+    return res.end(ultravioletPage(u.searchParams.get('url') || '', u.searchParams.get('t') || ''));
+  }
   if (u.pathname === '/sj') {
+    if (UV_OK()) { res.writeHead(302, { location: '/uv?url=' + encodeURIComponent(u.searchParams.get('url') || '') }); return res.end(); }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp' });
     return res.end(scramjetPage(u.searchParams.get('url') || '', u.searchParams.get('t') || ''));
   }
-  if (u.pathname.startsWith('/sj-assets/')) {
-    const rel = u.pathname.slice('/sj-assets/'.length);
-    const parts = rel.split('/'); const kind = parts[0]; const file = parts.slice(1).join('/');
-    const base = kind === 'scramjet' ? SJ_DIR : kind === 'baremux' ? SJ_BAREMUX_DIR : kind === 'epoxy' ? SJ_EPOXY_DIR : null;
+  if (u.pathname.startsWith('/sj-assets/') || u.pathname.startsWith('/uv-assets/')) {
+    const isUv = u.pathname.startsWith('/uv-assets/');
+    const rel = u.pathname.slice(isUv ? '/uv-assets/'.length : '/sj-assets/'.length);
+    const seg = rel.split('/')[0];
+    let kind, file;
+    if (seg === 'baremux' || seg === 'epoxy' || seg === 'scramjet') { kind = seg; file = rel.slice(seg.length + 1); }
+    else if (isUv) { kind = 'uv'; file = rel; }
+    else { kind = 'scramjet'; file = rel; }
+    if (kind === 'uv' && file === 'uv.config.js' && UV_OK()) { res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(UV_CONFIG); }
+    const base = kind === 'scramjet' ? SJ_DIR : kind === 'baremux' ? SJ_BAREMUX_DIR : kind === 'epoxy' ? SJ_EPOXY_DIR : kind === 'uv' ? UV_DIR : null;
     if (!base || !file || file.includes('..')) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('not found'); }
     const fsx = require('fs'); const pathx = require('path');
     const fp = pathx.join(base, file);
