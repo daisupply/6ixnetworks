@@ -1116,7 +1116,7 @@ ${CLOAK_BAR}
 <div style="display:flex;gap:8px;margin-top:16px"><button class="chip" id="pfsave" type="button" style="flex:1;justify-content:center;padding:11px">save profile</button><a class="chip" id="pfaccount" href="/account" style="display:none;flex:1;justify-content:center;padding:11px;text-decoration:none;align-items:center">make an account</a></div>
 <div id="pfstat" style="font-size:12.5px;opacity:.7;margin-top:9px;min-height:16px"></div>
 </div></div>
-${TABBAR_HTML}
+
 <script src="/cloak.js"></script>
 <script src="/stars.js"></script>
 <script>
