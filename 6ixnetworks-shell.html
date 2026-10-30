@@ -8,7 +8,7 @@
 #menu{position:fixed;right:14px;bottom:52px;z-index:9;display:none;flex-direction:column;gap:6px;background:rgba(12,8,30,.94);border:1px solid rgba(196,181,253,.3);border-radius:14px;padding:10px}
 #menu button{background:rgba(139,92,246,.14);color:#e6e0ff;border:1px solid rgba(196,181,253,.3);border-radius:999px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;text-align:left;font-family:system-ui}
 </style></head><body>
-<iframe id="f" allow="autoplay; fullscreen; gamepad; keyboard-lock" allowfullscreen></iframe>
+<iframe id="f" allow="autoplay; fullscreen; gamepad; keyboard-lock; microphone" allowfullscreen></iframe>
 <button id="dot">✦</button>
 <div id="menu">
 <button onclick="disguise('google')">google</button>
@@ -30,7 +30,7 @@ function blank(){
   var w=window.open('about:blank','_blank');
   if(!w) return;
   var src=f.src;
-  w.document.write('<!DOCTYPE html><html><head><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico"></head><body style="margin:0"><iframe src="'+src+'" style="border:0;width:100vw;height:100vh" allowfullscreen></iframe></body></html>');
+  w.document.write('<!DOCTYPE html><html><head><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico"></head><body style="margin:0"><iframe src="'+src+'" style="border:0;width:100vw;height:100vh" allow="microphone; autoplay; fullscreen" allowfullscreen></iframe></body></html>');
   w.document.close();
   location.replace('https://www.google.com/');
 }
