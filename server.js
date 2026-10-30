@@ -783,7 +783,6 @@ body{display:block;padding:0}
 .head6 svg{color:#9db9ff;flex:none}
 .head6-sub{margin-left:auto;font-size:12px;font-weight:600;opacity:.45}
 .main6 #msgs{flex:1;min-height:0;border:0;border-radius:0;background:transparent;padding:16px 18px}
-.main6 #vstage{margin:12px 16px 0}
 .main6 #vmembers,.main6 #vcontrols{margin:10px 16px 0}
 .main6 #privbar{margin:12px 16px 0}
 .main6 .bar{margin:0;padding:12px 16px;border-top:1px solid rgba(255,255,255,.09);background:#101012;flex:none}
@@ -792,6 +791,18 @@ body{display:block;padding:0}
 .exit6{margin-top:auto}
 .chatrail .cloakbar{justify-content:flex-start;margin-top:2px}
 @media(max-width:820px){.app6{flex-direction:column}.app6 .chatrail{width:auto;height:auto;max-height:46vh;border-right:0}.head6-sub{display:none}}
+#vstage{position:fixed;inset:0;z-index:90;background:#08080a;flex-direction:column}
+.vs-head{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.09);background:#101012;flex:none;flex-wrap:wrap}
+.vs-brand{font-weight:800;font-size:16px}
+.vs-brand span{color:#9db9ff}
+.vs-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9db9ff;border:1px solid rgba(94,142,255,.4);border-radius:999px;padding:3px 9px}
+.vs-timer{font-size:13px;opacity:.6;font-variant-numeric:tabular-nums}
+#vgrid{flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;padding:18px;align-content:center;max-width:1400px;width:100%;margin:0 auto;box-sizing:border-box}
+.vtile{aspect-ratio:16/9!important;border-radius:16px!important;border:1px solid rgba(255,255,255,.12)!important;background:#17171a!important}
+#vstage #vmembers{justify-content:center;margin:0;padding:0 18px 10px;background:transparent;border:0;box-shadow:none}
+#vstage #vcontrols{justify-content:center;align-items:center;gap:9px;margin:0 auto 20px;background:rgba(16,16,18,.88);border:1px solid rgba(255,255,255,.11);border-radius:999px;padding:10px 14px;width:fit-content;max-width:94vw;flex-wrap:wrap;box-shadow:none}
+#vstage #vcontrols .chip{border-radius:999px}
+#vleave{background:rgba(220,38,38,.9)!important;color:#fff!important;border-color:transparent!important}
 #msgs{height:52vh;overflow-y:auto;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:14px;text-align:left}
 .msg{margin:7px 0;word-break:break-word}
 .msg b{color:#9db9ff}
@@ -833,8 +844,17 @@ ${CLOAK_BAR}
 <main class="main6">
 <div class="head6"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span id="roomtitle">lobby</span><span class="head6-sub">live rooms · voice + video</span></div>
 <div id="privbar" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid rgba(255,255,255,.4);border-radius:12px;background:rgba(255,255,255,.08);font-size:14px;text-align:left"></div>
-<div id="vmembers" class="callbar" style="display:none;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0"></div>
-<div id="vcontrols" class="callbar" style="display:none;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">
+
+
+<div id="vstage" style="display:none">
+<div class="vs-head"><span class="vs-brand">6ix<span>Chat</span></span>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="vertical-align:-2px"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> <span id="vstitle" style="font-weight:800;font-size:14px">call</span>
+<span id="vcount" style="opacity:.65;font-size:12px"></span><span id="privbadge" class="vs-badge" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> private</span><span id="vtimer" class="vs-timer">00:00</span>
+<button class="chip" id="vfs" type="button" style="margin-left:auto;padding:6px 12px">fullscreen</button>
+</div>
+<div id="vgrid"></div>
+<div id="vmembers" class="callbar" style="display:none;gap:8px;flex-wrap:wrap;align-items:center;margin:0"></div>
+<div id="vcontrols" class="callbar" style="display:none;gap:8px;flex-wrap:wrap;align-items:center;margin:0">
 <button class="chip" id="vmute" type="button">mute</button>
 <button class="chip" id="vdeaf" type="button">deafen</button>
 <button class="chip" id="vptt" type="button">push-to-talk: off</button>
@@ -845,13 +865,6 @@ ${CLOAK_BAR}
 <button class="chip" id="vtalk" type="button" style="display:none">hold to talk to six</button>
 <button class="chip" id="vleave" type="button">leave call</button>
 </div>
-<div id="vstage" style="display:none;margin:8px 0;padding:10px;border-radius:18px;background:rgba(10,10,11,.72);border:1px solid rgba(255,255,255,.3)">
-<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="vertical-align:-2px"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> <span id="vstitle" style="font-weight:800;font-size:14px">call</span>
-<span id="vcount" style="opacity:.65;font-size:12px"></span>
-<button class="chip" id="vfs" type="button" style="margin-left:auto;padding:6px 12px">fullscreen</button>
-</div>
-<div id="vgrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px"></div>
 </div>
 <div id="msgs"></div>
 <form class="bar" id="sendbar"><button type="button" id="attach" title="send an image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="vertical-align:-2px"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button><input type="text" id="text" placeholder="message…  (/ai asks six · /img draws · paste an image)" autocomplete="off" maxlength="500"><button type="submit">send</button></form>
@@ -1160,7 +1173,7 @@ function voiceList(members){
   });
   localTile();
   sixTileShow();
-  vstageEl.style.display = 'block';
+  vstageEl.style.display = 'flex';
   vstatEl.textContent = others === 0 ? 'in the call — just u rn, get ur people in this room' : 'in the call ✦ ' + (others + 1) + ' here';
 }
 function videoCons(){ return { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { max: 24 }, facingMode: facing }; }
@@ -1170,7 +1183,7 @@ function joinCall(wantVideo){
   var cons = { audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: wantVideo ? videoCons() : false };
   navigator.mediaDevices.getUserMedia(cons).then(function(stream){
     localStream = stream; inVoice = true; camOn = stream.getVideoTracks().length > 0;
-    vjoinBtn.style.display = 'none'; vjoinvBtn.style.display = 'none'; vcontrolsEl.style.display = 'flex'; vmembersEl.style.display = 'flex'; vstageEl.style.display = 'block';
+    vjoinBtn.style.display = 'none'; vjoinvBtn.style.display = 'none'; vcontrolsEl.style.display = 'flex'; vmembersEl.style.display = 'flex'; vstageEl.style.display = 'flex';
     vstitleEl.textContent = 'call — ' + room;
     vcamBtn.textContent = camOn ? 'cam: on' : 'cam: off'; vflipBtn.style.display = camOn ? 'inline-block' : 'none';
     vstatEl.textContent = 'in the call — connecting…';
@@ -1296,7 +1309,7 @@ document.addEventListener('keyup', function(ev){ if(ev.code === 'Space' && pttDo
 showPriv();
 connect();
 </script>
-<script>(function(){ var t = document.getElementById("roomtitle"); if (!t) return; document.querySelectorAll(".room").forEach(function(b){ b.addEventListener("click", function(){ t.textContent = b.getAttribute("data-room"); }); }); var mk = document.getElementById("mkpriv"); if (mk) mk.addEventListener("click", function(){ t.textContent = "private room"; }); var jp = document.getElementById("joinpriv"); if (jp) jp.addEventListener("click", function(){ t.textContent = "private room"; }); })();</script>
+<script>(function(){ var t = document.getElementById("roomtitle"); var badge = document.getElementById("privbadge"); function setT(x){ if (t) t.textContent = x; if (badge) badge.style.display = (x === "private room") ? "inline-flex" : "none"; } document.querySelectorAll(".room").forEach(function(b){ b.addEventListener("click", function(){ setT(b.getAttribute("data-room")); }); }); var mk = document.getElementById("mkpriv"); if (mk) mk.addEventListener("click", function(){ setT("private room"); }); var jp = document.getElementById("joinpriv"); if (jp) jp.addEventListener("click", function(){ setT("private room"); }); var stage = document.getElementById("vstage"), timer = document.getElementById("vtimer"), iv = null; function fmt(ms){ var s = Math.floor(ms / 1000); var m = Math.floor(s / 60); var r = s % 60; return (m < 10 ? "0" : "") + m + ":" + (r < 10 ? "0" : "") + r; } if (stage && timer) { new MutationObserver(function(){ if (stage.style.display === "flex") { if (!iv) { var t0 = Date.now(); timer.textContent = "00:00"; iv = setInterval(function(){ timer.textContent = fmt(Date.now() - t0); }, 1000); } } else { if (iv) { clearInterval(iv); iv = null; } timer.textContent = "00:00"; } }).observe(stage, { attributes: true, attributeFilter: ["style"] }); } })();</script>
 </body>
 </html>`;
 }
