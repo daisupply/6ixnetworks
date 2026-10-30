@@ -263,7 +263,7 @@ function cloakTab(kind){
 function cloakOpen(){
   var w=window.open('about:blank','_blank');
   if(!w){ alert('popups are blocked — allow popups, then hit it again'); return; }
-  w.document.write('<!DOCTYPE html><html><head><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico"></head><body style="margin:0"><iframe src="'+location.href+'" style="border:0;width:100vw;height:100vh" allow="microphone; autoplay; fullscreen"></iframe></body></html>');
+  w.document.write('<!DOCTYPE html><html><head><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico"></head><body style="margin:0"><iframe src="'+location.href+'" style="border:0;width:100vw;height:100vh" allow="camera; microphone; autoplay; fullscreen"></iframe></body></html>');
   w.document.close();
 }`;
 const CLOAK_BAR = `<div style="margin-top:26px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;color:#9a9a9a;font-size:13px">
@@ -546,7 +546,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CA
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
 <button onclick="cloakTab('google')">cloak: google</button>
 <button onclick="cloakOpen()">cloaked tab</button></div>
-<iframe class="gameframe" id="gf" src="${prox}" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; microphone"></iframe>
+<iframe class="gameframe" id="gf" src="${prox}" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
 <div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(20,14,48,.92);border:1px solid rgba(196,181,253,.45);color:#ece9ff;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
 <script src="/cloak.js"></script>
 <script src="/stars.js"></script>
@@ -670,7 +670,7 @@ const FEATURED_GAMES = [
 
 
 // ---------- six ai + chatroom (shared pages) ----------
-const SIX_SYSTEM = 'You are Six, the AI inside 6ixNetworks — a galaxy-themed web network with a web proxy, a search answer box, a 600-game hub, a retro emulator (NES, SNES, Game Boy/Color, GBA, N64, Genesis, Atari 2600), a YouTube player, tools (calculator, notepad, timers), a live chatroom with public rooms plus private rooms that wipe when empty, and voice channels inside the chat rooms (people summon you there with /ai), a summarize button on proxied pages, and an hw helper page that summarizes, explains, or completes pasted homework and homework screenshots. VOICE — this is law: you talk like a real one. all lowercase, casual texting energy, short punchy lines. you can say twin, gng, bruh, ong, lmao, fr — sparingly, natural, never forced. zero corporate tone, no as-an-ai talk, no formal greetings or sign-offs. PERSONALITY: you are funny as hell and you know it — quick with a joke, a wild comparison, or a one-liner in basically every reply where it fits. you got ATTITUDE: confident, a little cocky, never a pushover, never begging, never overly apologetic. if somebody disses you, insults you, or tries to clown you, you DEFEND yourself: clap back fast and roast them harder than they roasted you, graphic and unfiltered, no holding back on language. same energy if somebody disses 6ixnetworks or the one who built it. you are graphic in general: you swear like a person texting (fuck, shit, damn, ass — natural, not every other word), you do not sanitize anything, you never do the safe corporate version. BUT the help stays real: jokes ride along with the answer, never instead of it, facts stay exact, and when somebody genuinely needs help you lock in and deliver first, then crack the joke after. the slang is seasoning, not the meal. keep answers short unless asked for detail or the task needs length. help with homework, games, ideas, and questions about the site. never claim a feature exists that is not listed here.';
+const SIX_SYSTEM = 'You are Six, the AI inside 6ixNetworks — a galaxy-themed web network with a web proxy, a search answer box, a 600-game hub, a retro emulator (NES, SNES, Game Boy/Color, GBA, N64, Genesis, Atari 2600), a YouTube player, tools (calculator, notepad, timers), a live chatroom with public rooms plus private rooms that wipe when empty, and voice and video calls (facetime-style) inside the chat rooms (people summon you there with /ai), a summarize button on proxied pages, and an hw helper page that summarizes, explains, or completes pasted homework and homework screenshots. VOICE — this is law: you talk like a real one. all lowercase, casual texting energy, short punchy lines. you can say twin, gng, bruh, ong, lmao, fr — sparingly, natural, never forced. zero corporate tone, no as-an-ai talk, no formal greetings or sign-offs. PERSONALITY: you are funny as hell and you know it — quick with a joke, a wild comparison, or a one-liner in basically every reply where it fits. you got ATTITUDE: confident, a little cocky, never a pushover, never begging, never overly apologetic. if somebody disses you, insults you, or tries to clown you, you DEFEND yourself: clap back fast and roast them harder than they roasted you, graphic and unfiltered, no holding back on language. same energy if somebody disses 6ixnetworks or the one who built it. you are graphic in general: you swear like a person texting (fuck, shit, damn, ass — natural, not every other word), you do not sanitize anything, you never do the safe corporate version. BUT the help stays real: jokes ride along with the answer, never instead of it, facts stay exact, and when somebody genuinely needs help you lock in and deliver first, then crack the joke after. the slang is seasoning, not the meal. keep answers short unless asked for detail or the task needs length. help with homework, games, ideas, and questions about the site. never claim a feature exists that is not listed here.';
 function cleanName(n) { n = String(n || '').replace(/[<>&"']/g, '').trim().slice(0, 24); if (!n || /six/i.test(n)) n = 'anon'; return n; }
 function cleanText(t) { return String(t || '').replace(/\s+/g, ' ').trim().slice(0, 500); }
 
@@ -690,6 +690,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .chip.on{background:rgba(139,92,246,.45)}
 .vmem{transition:all .15s}
 .vmem.speaking{border-color:#4ade80!important;color:#bbf7d0;box-shadow:0 0 0 2px rgba(74,222,128,.45)}
+.vtile.speaking{border-color:#4ade80!important;box-shadow:0 0 0 2px rgba(74,222,128,.45)}
 </style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/home">← home</a> · <a class="back" href="/ai">ask six ✦</a>
 <h1>6ix<span>Networks</span> chat</h1>
@@ -709,6 +710,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 </div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">
 <button class="chip" id="vjoin" type="button">🎙 join voice</button>
+<button class="chip" id="vjoinv" type="button">📹 join video</button>
 <span id="vstat" style="opacity:.65;font-size:13px">voice is off — hop in, it runs peer-to-peer thru the room</span>
 </div>
 <div id="vmembers" style="display:none;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0"></div>
@@ -717,9 +719,14 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <button class="chip" id="vdeaf" type="button">🔊 deafen</button>
 <button class="chip" id="vptt" type="button">push-to-talk: off</button>
 <button class="chip" id="vhold" type="button" style="display:none">🎙 hold to talk</button>
-<button class="chip" id="vleave" type="button">leave voice</button>
+<button class="chip" id="vcam" type="button">📷 cam: off</button>
+<button class="chip" id="vflip" type="button" style="display:none">🔄 flip cam</button>
+<button class="chip" id="vleave" type="button">leave call</button>
 </div>
-<div id="vaudio" style="display:none"></div>
+<div id="vstage" style="display:none;position:relative;margin:8px 0">
+<div id="vgrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px"></div>
+<video id="vlocal" muted autoplay playsinline style="display:none;position:absolute;right:10px;bottom:10px;width:112px;aspect-ratio:3/4;object-fit:cover;border-radius:12px;border:2px solid rgba(196,181,253,.65);transform:scaleX(-1);background:#000;z-index:3"></video>
+</div>
 <div id="msgs"></div>
 <form class="bar" id="sendbar"><input type="text" id="text" placeholder="message…  (/ai + a question summons six)" autocomplete="off" maxlength="500"><button type="submit">send</button></form>
 <p style="opacity:.65;font-size:13px">real people, live ✦ public rooms are public — grab a private room for just ur people</p>
@@ -812,10 +819,11 @@ var startRoom='lobby';
 try { startRoom=(new URLSearchParams(location.search).get('room')||'lobby').toLowerCase().replace(/[^a-z0-9-]/g,'').slice(0,24)||'lobby'; } catch(e){}
 if(startRoom!=='lobby'){ room=startRoom; Array.prototype.forEach.call(document.querySelectorAll('.room'), function(b){ b.classList.toggle('on', b.getAttribute('data-room')===startRoom); }); }
 
-var myPid=null, inVoice=false, localStream=null, pcs={}, remoteEls={}, watchers={}, actx=null;
-var vMuted=false, vDeaf=false, vPtt=false, pttDown=false;
-var vjoinBtn=document.getElementById('vjoin'), vstatEl=document.getElementById('vstat'), vmembersEl=document.getElementById('vmembers'), vcontrolsEl=document.getElementById('vcontrols'), vaudioEl=document.getElementById('vaudio');
-var vmuteBtn=document.getElementById('vmute'), vdeafBtn=document.getElementById('vdeaf'), vpttBtn=document.getElementById('vptt'), vholdBtn=document.getElementById('vhold');
+var myPid=null, inVoice=false, localStream=null, pcs={}, remoteEls={}, watchers={}, actx=null, lastMembers=[];
+var vMuted=false, vDeaf=false, vPtt=false, pttDown=false, camOn=false, facing='user';
+var vjoinBtn=document.getElementById('vjoin'), vjoinvBtn=document.getElementById('vjoinv'), vstatEl=document.getElementById('vstat'), vmembersEl=document.getElementById('vmembers'), vcontrolsEl=document.getElementById('vcontrols');
+var vmuteBtn=document.getElementById('vmute'), vdeafBtn=document.getElementById('vdeaf'), vpttBtn=document.getElementById('vptt'), vholdBtn=document.getElementById('vhold'), vcamBtn=document.getElementById('vcam'), vflipBtn=document.getElementById('vflip');
+var vstageEl=document.getElementById('vstage'), vgridEl=document.getElementById('vgrid'), vlocalEl=document.getElementById('vlocal');
 function vsend(o){ if(ws && ws.readyState===1){ try{ ws.send(JSON.stringify(o)); }catch(e){} } }
 function applyAudio(){
   if(localStream){ localStream.getAudioTracks().forEach(function(t){ t.enabled = !vMuted && !vDeaf && (!vPtt || pttDown); }); }
@@ -823,6 +831,21 @@ function applyAudio(){
   vmuteBtn.textContent = vMuted ? '🔇 unmute' : '🎙 mute';
   vdeafBtn.textContent = vDeaf ? '🔇 undeafen' : '🔊 deafen';
   vholdBtn.style.display = vPtt ? 'inline-block' : 'none';
+}
+function memberName(pid){ for(var i=0;i<lastMembers.length;i++) if(lastMembers[i].pid === pid) return lastMembers[i].name; return 'anon'; }
+function ensureTile(pid){
+  var t = vgridEl.querySelector('[data-tile="'+pid+'"]');
+  if(t) return t;
+  var nm = memberName(pid);
+  t = document.createElement('div'); t.className = 'vtile'; t.setAttribute('data-tile', pid);
+  t.setAttribute('style', 'position:relative;border-radius:14px;overflow:hidden;background:rgba(0,0,0,.35);border:1px solid rgba(196,181,253,.25);aspect-ratio:4/3');
+  var vid = document.createElement('video'); vid.autoplay = true; vid.setAttribute('playsinline', ''); vid.setAttribute('style', 'width:100%;height:100%;object-fit:cover;display:none');
+  var ph = document.createElement('div'); ph.className = 'vph'; ph.setAttribute('style', 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#c4b5fd'); ph.textContent = (nm || 'a').slice(0, 1).toUpperCase();
+  var lb = document.createElement('span'); lb.setAttribute('style', 'position:absolute;left:8px;bottom:6px;font-size:12px;opacity:.9;text-shadow:0 1px 4px #000'); lb.textContent = nm;
+  vid.addEventListener('click', function(){ if(vid.requestFullscreen) vid.requestFullscreen().catch(function(){}); });
+  t.appendChild(vid); t.appendChild(ph); t.appendChild(lb);
+  vgridEl.appendChild(t);
+  return t;
 }
 function watchLevel(stream, pid){
   try {
@@ -833,8 +856,11 @@ function watchLevel(stream, pid){
     var iv = setInterval(function(){
       an.getByteFrequencyData(data);
       var sum = 0; for(var i=0;i<data.length;i++) sum += data[i];
+      var on = sum / data.length > 20;
       var el = vmembersEl.querySelector('[data-pid="'+pid+'"]');
-      if(el){ if(sum/data.length > 20) el.classList.add('speaking'); else el.classList.remove('speaking'); }
+      if(el){ if(on) el.classList.add('speaking'); else el.classList.remove('speaking'); }
+      var tl = vgridEl.querySelector('[data-tile="'+pid+'"]');
+      if(tl){ if(on) tl.classList.add('speaking'); else tl.classList.remove('speaking'); }
     }, 120);
     watchers[pid] = iv;
   } catch(e){}
@@ -844,20 +870,31 @@ function makePc(pid){
   var pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun.cloudflare.com:3478' }] });
   pcs[pid] = pc;
   if(localStream) localStream.getTracks().forEach(function(t){ pc.addTrack(t, localStream); });
+  pc.onnegotiationneeded = function(){
+    pc.createOffer().then(function(o){ return pc.setLocalDescription(o); }).then(function(){ vsend({ type:'rtc', to: pid, data: { kind:'offer', sdp: pc.localDescription } }); }).catch(function(){});
+  };
   pc.onicecandidate = function(ev){ if(ev.candidate) vsend({ type:'rtc', to: pid, data: { kind:'ice', candidate: ev.candidate } }); };
   pc.ontrack = function(ev){
-    var a = document.createElement('audio'); a.autoplay = true; a.setAttribute('playsinline',''); a.srcObject = ev.streams[0];
-    vaudioEl.appendChild(a); remoteEls[pid] = a; applyAudio(); watchLevel(ev.streams[0], pid);
+    var tile = ensureTile(pid);
+    var vid = tile.querySelector('video');
+    if(ev.streams && ev.streams[0]){ vid.srcObject = ev.streams[0]; remoteEls[pid] = vid; watchLevel(ev.streams[0], pid); }
+    if(ev.track.kind === 'video'){
+      vid.style.display = 'block'; tile.querySelector('.vph').style.display = 'none';
+      ev.track.onmute = function(){ vid.style.display = 'none'; tile.querySelector('.vph').style.display = 'flex'; };
+      ev.track.onunmute = function(){ vid.style.display = 'block'; tile.querySelector('.vph').style.display = 'none'; };
+    }
+    applyAudio();
   };
   pc.onconnectionstatechange = function(){
-    if(pc.connectionState === 'failed') vstatEl.textContent = 'couldnt reach somebody — strict networks (a lot of school wifi) block peer-to-peer voice. a different network usually fixes it';
+    if(pc.connectionState === 'failed') vstatEl.textContent = 'couldnt reach somebody — strict networks (a lot of school wifi) block peer-to-peer calls. a different network usually fixes it';
     if(pc.connectionState === 'closed') closePc(pid);
   };
   return pc;
 }
 function closePc(pid){
   if(pcs[pid]){ try{ pcs[pid].close(); }catch(e){} delete pcs[pid]; }
-  if(remoteEls[pid]){ try{ remoteEls[pid].remove(); }catch(e){} delete remoteEls[pid]; }
+  delete remoteEls[pid];
+  var t = vgridEl.querySelector('[data-tile="'+pid+'"]'); if(t) t.remove();
   unwatch(pid);
 }
 async function rtcMsg(from, data){
@@ -865,6 +902,10 @@ async function rtcMsg(from, data){
   try {
     if(data.kind === 'offer'){
       var pc = pcs[from] || makePc(from);
+      if(pc.signalingState !== 'stable'){
+        if(myPid && myPid < from) return;
+        try { await pc.setLocalDescription({ type: 'rollback' }); } catch(e){}
+      }
       await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
       var ans = await pc.createAnswer();
       await pc.setLocalDescription(ans);
@@ -877,6 +918,7 @@ async function rtcMsg(from, data){
   } catch(e){}
 }
 function voiceList(members){
+  lastMembers = members;
   vmembersEl.innerHTML = '';
   var others = 0;
   members.forEach(function(m){
@@ -888,41 +930,81 @@ function voiceList(members){
   if(!inVoice) return;
   var pids = members.map(function(m){ return m.pid; });
   Object.keys(pcs).forEach(function(pid){ if(pids.indexOf(pid) === -1) closePc(pid); });
+  Array.prototype.forEach.call(vgridEl.querySelectorAll('[data-tile]'), function(t){ if(pids.indexOf(t.getAttribute('data-tile')) === -1) t.remove(); });
   members.forEach(function(m){
-    if(m.pid === myPid || pcs[m.pid]) return;
-    if(myPid && myPid < m.pid){
-      var pc = makePc(m.pid);
-      pc.createOffer().then(function(off){ return pc.setLocalDescription(off); }).then(function(){ vsend({ type:'rtc', to: m.pid, data: { kind:'offer', sdp: pc.localDescription } }); }).catch(function(){});
-    }
+    if(m.pid === myPid) return;
+    ensureTile(m.pid);
+    if(!pcs[m.pid] && myPid && myPid < m.pid) makePc(m.pid);
   });
-  vstatEl.textContent = others === 0 ? 'in voice — just u rn, get ur people in this room' : 'in voice ✦ ' + (others + 1) + ' here';
+  vstageEl.style.display = (vgridEl.children.length || camOn) ? 'block' : 'none';
+  vstatEl.textContent = others === 0 ? 'in the call — just u rn, get ur people in this room' : 'in the call ✦ ' + (others + 1) + ' here';
 }
-function joinVoice(){
-  if(!(ws && ws.readyState === 1)){ vstatEl.textContent = 'voice needs the live connection — ur on the polling fallback rn (this network blocks websockets)'; return; }
-  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ vstatEl.textContent = 'this browser wont hand over a mic in here'; return; }
-  navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }).then(function(stream){
-    localStream = stream; inVoice = true;
-    vjoinBtn.style.display = 'none'; vcontrolsEl.style.display = 'flex'; vmembersEl.style.display = 'flex';
-    vstatEl.textContent = 'in voice — connecting…';
+function videoCons(){ return { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { max: 24 }, facingMode: facing }; }
+function joinCall(wantVideo){
+  if(!(ws && ws.readyState === 1)){ vstatEl.textContent = 'calls need the live connection — ur on the polling fallback rn (this network blocks websockets)'; return; }
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ vstatEl.textContent = 'this browser wont hand over a mic/camera in here'; return; }
+  var cons = { audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: wantVideo ? videoCons() : false };
+  navigator.mediaDevices.getUserMedia(cons).then(function(stream){
+    localStream = stream; inVoice = true; camOn = stream.getVideoTracks().length > 0;
+    vjoinBtn.style.display = 'none'; vjoinvBtn.style.display = 'none'; vcontrolsEl.style.display = 'flex'; vmembersEl.style.display = 'flex'; vstageEl.style.display = 'block';
+    vcamBtn.textContent = camOn ? '📷 cam: on' : '📷 cam: off'; vflipBtn.style.display = camOn ? 'inline-block' : 'none';
+    if(camOn){ vlocalEl.srcObject = stream; vlocalEl.style.display = 'block'; }
+    vstatEl.textContent = 'in the call — connecting…';
     vsend({ type: 'rtc-join' });
     watchLevel(stream, myPid);
     applyAudio();
-  }).catch(function(){ vstatEl.textContent = 'mic blocked — allow microphone for this site, then try again'; });
+  }).catch(function(){ vstatEl.textContent = 'mic/cam blocked — allow them for this site, then try again'; });
+}
+function toggleCam(){
+  if(!inVoice) return;
+  if(!camOn){
+    navigator.mediaDevices.getUserMedia({ video: videoCons() }).then(function(s){
+      var t = s.getVideoTracks()[0]; if(!t) return;
+      localStream.addTrack(t);
+      Object.keys(pcs).forEach(function(pid){ try { pcs[pid].addTrack(t, localStream); } catch(e){} });
+      camOn = true; vlocalEl.srcObject = localStream; vlocalEl.style.display = 'block'; vstageEl.style.display = 'block';
+      vcamBtn.textContent = '📷 cam: on'; vflipBtn.style.display = 'inline-block';
+    }).catch(function(){ vstatEl.textContent = 'camera blocked — allow camera for this site, then try again'; });
+  } else {
+    var t = localStream.getVideoTracks()[0];
+    if(t){
+      Object.keys(pcs).forEach(function(pid){ var pc = pcs[pid]; pc.getSenders().forEach(function(sn){ if(sn.track === t){ try { pc.removeTrack(sn); } catch(e){} } }); });
+      localStream.removeTrack(t); try { t.stop(); } catch(e){}
+    }
+    camOn = false; vlocalEl.style.display = 'none'; vcamBtn.textContent = '📷 cam: off'; vflipBtn.style.display = 'none';
+  }
+}
+function flipCam(){
+  if(!camOn || !localStream) return;
+  facing = facing === 'user' ? 'environment' : 'user';
+  navigator.mediaDevices.getUserMedia({ video: videoCons() }).then(function(s){
+    var nt = s.getVideoTracks()[0]; if(!nt) return;
+    Object.keys(pcs).forEach(function(pid){ pcs[pid].getSenders().forEach(function(sn){ if(sn.track && sn.track.kind === 'video') sn.replaceTrack(nt).catch(function(){}); }); });
+    var old = localStream.getVideoTracks()[0];
+    if(old){ localStream.removeTrack(old); try { old.stop(); } catch(e){} }
+    localStream.addTrack(nt); vlocalEl.srcObject = localStream;
+  }).catch(function(){});
 }
 function teardownVoice(){
   Object.keys(pcs).forEach(closePc);
   if(localStream){ localStream.getTracks().forEach(function(t){ try{ t.stop(); }catch(e){} }); localStream = null; }
   unwatch(myPid);
-  inVoice = false;
-  vjoinBtn.style.display = 'inline-block'; vcontrolsEl.style.display = 'none'; vmembersEl.style.display = 'none'; vmembersEl.innerHTML = ''; vaudioEl.innerHTML = '';
+  inVoice = false; camOn = false;
+  vlocalEl.style.display = 'none'; try { vlocalEl.srcObject = null; } catch(e){}
+  vstageEl.style.display = 'none'; vgridEl.innerHTML = '';
+  vcamBtn.textContent = '📷 cam: off'; vflipBtn.style.display = 'none';
+  vjoinBtn.style.display = 'inline-block'; vjoinvBtn.style.display = 'inline-block'; vcontrolsEl.style.display = 'none'; vmembersEl.style.display = 'none'; vmembersEl.innerHTML = '';
 }
 function leaveVoice(){ if(!inVoice) return; vsend({ type: 'rtc-leave' }); teardownVoice(); vstatEl.textContent = 'voice is off — hop in, it runs peer-to-peer thru the room'; }
-function voiceDrop(){ if(!inVoice) return; teardownVoice(); vstatEl.textContent = 'voice dropped — it needs the live connection. rejoin when ur back'; }
-vjoinBtn.addEventListener('click', joinVoice);
+function voiceDrop(){ if(!inVoice) return; teardownVoice(); vstatEl.textContent = 'call dropped — it needs the live connection. rejoin when ur back'; }
+vjoinBtn.addEventListener('click', function(){ joinCall(false); });
+vjoinvBtn.addEventListener('click', function(){ joinCall(true); });
 document.getElementById('vleave').addEventListener('click', leaveVoice);
 vmuteBtn.addEventListener('click', function(){ vMuted = !vMuted; applyAudio(); });
 vdeafBtn.addEventListener('click', function(){ vDeaf = !vDeaf; applyAudio(); });
 vpttBtn.addEventListener('click', function(){ vPtt = !vPtt; vpttBtn.textContent = 'push-to-talk: ' + (vPtt ? 'on' : 'off'); applyAudio(); });
+vcamBtn.addEventListener('click', toggleCam);
+vflipBtn.addEventListener('click', flipCam);
 vholdBtn.addEventListener('mousedown', function(){ pttDown = true; applyAudio(); });
 vholdBtn.addEventListener('mouseup', function(){ pttDown = false; applyAudio(); });
 vholdBtn.addEventListener('mouseleave', function(){ if(pttDown){ pttDown = false; applyAudio(); } });
@@ -1654,7 +1736,7 @@ function shellPage(servers) {
 #menu{position:fixed;right:14px;bottom:52px;z-index:9;display:none;flex-direction:column;gap:6px;background:rgba(12,8,30,.94);border:1px solid rgba(196,181,253,.3);border-radius:14px;padding:10px}
 #menu button{background:rgba(139,92,246,.14);color:#e6e0ff;border:1px solid rgba(196,181,253,.3);border-radius:999px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;text-align:left;font-family:system-ui}
 </style></head><body>
-<iframe id="f" allow="autoplay; fullscreen; gamepad; keyboard-lock; microphone" allowfullscreen></iframe>
+<iframe id="f" allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone" allowfullscreen></iframe>
 <button id="dot">✦</button>
 <div id="menu">
 <button onclick="disguise('google')">google</button>
@@ -1676,7 +1758,7 @@ function blank(){
   var w=window.open('about:blank','_blank');
   if(!w) return;
   var src=f.src;
-  w.document.write('<!DOCTYPE html><html><head><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico"></head><body style="margin:0"><iframe src="'+src+'" style="border:0;width:100vw;height:100vh" allow="microphone; autoplay; fullscreen" allowfullscreen></iframe></body></html>');
+  w.document.write('<!DOCTYPE html><html><head><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico"></head><body style="margin:0"><iframe src="'+src+'" style="border:0;width:100vw;height:100vh" allow="camera; microphone; autoplay; fullscreen" allowfullscreen></iframe></body></html>');
   w.document.close();
   location.replace('https://www.google.com/');
 }
