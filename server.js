@@ -667,7 +667,7 @@ paintFavs();
 // ---------- invisible engine: pages stay identical to the cloudflare build; only the fetching changes ----------
 function uvEncodeUrl(str) { let out = ''; for (let i = 0; i < str.length; i++) out += i % 2 ? String.fromCharCode(str.charCodeAt(i) ^ 2) : str[i]; return encodeURIComponent(out); }
 function uvDecodeUrl(str) { let s = str || ''; try { s = decodeURIComponent(s); } catch (e) {} let out = ''; for (let i = 0; i < s.length; i++) out += i % 2 ? String.fromCharCode(s.charCodeAt(i) ^ 2) : s[i]; return out; }
-const UV_BOOT = '<script src="/uv-assets/baremux/index.js?e=61"></' + 'script><script>(function(){ if (window.__gxUv) return; window.__gxUv = 1; (async function(){ try { var conn = new BareMux.BareMuxConnection(\'/uv-assets/baremux/worker.js?e=61\'); if ((await conn.getTransport()) !== \'/uv-assets/epoxy/index.mjs?e=61\') await conn.setTransport(\'/uv-assets/epoxy/index.mjs?e=61\', [{ wisp: (location.protocol === \'https:\' ? \'wss:\' : \'ws:\') + \'//\' + location.host + \'/wisp/\' }]); } catch (e) {} })(); })();</' + 'script>';
+const UV_BOOT = '<script src="/uv-assets/baremux/index.js?e=67"></' + 'script><script>(function(){ if (window.__gxUv) return; window.__gxUv = 1; (async function(){ try { var conn = new BareMux.BareMuxConnection(\'/uv-assets/baremux/worker.js?e=67\'); if ((await conn.getTransport()) !== \'/uv-assets/epoxy/index.mjs?e=67\') await conn.setTransport(\'/uv-assets/epoxy/index.mjs?e=67\', [{ wisp: (location.protocol === \'https:\' ? \'wss:\' : \'ws:\') + \'//\' + location.host + \'/wisp/\' }]); } catch (e) {} })(); })();</' + 'script>';
 function uvWarmPage(target) {
   let classic = '/home';
   try { if (/^https:\/\//i.test(target || '')) classic = proxied(target); } catch (e) {}
@@ -679,7 +679,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body><div class="wrap" style="t
 <p class="sub">loading…</p>
 <p id="slow" class="sub" style="display:none">taking long — <a href="${escHtml(classic)}">open it the classic way</a></p>
 </div>
-<script src="/uv-assets/baremux/index.js?e=61"></script>
+<script src="/uv-assets/baremux/index.js?e=67"></script>
 <script>
 (async function(){
   var slow = document.getElementById('slow');
@@ -688,8 +688,8 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body><div class="wrap" style="t
     await navigator.serviceWorker.register('/sw.js');
     await navigator.serviceWorker.ready;
     if (!navigator.serviceWorker.controller) await new Promise(function(res){ var to=setTimeout(res, 7000); navigator.serviceWorker.addEventListener('controllerchange', function(){ clearTimeout(to); res(); }); });
-    var conn = new BareMux.BareMuxConnection('/uv-assets/baremux/worker.js?e=61');
-    if ((await conn.getTransport()) !== '/uv-assets/epoxy/index.mjs?e=61') await conn.setTransport('/uv-assets/epoxy/index.mjs?e=61', [{ wisp: (window.GX_WISP || (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/') }]);
+    var conn = new BareMux.BareMuxConnection('/uv-assets/baremux/worker.js?e=67');
+    if ((await conn.getTransport()) !== '/uv-assets/epoxy/index.mjs?e=67') await conn.setTransport('/uv-assets/epoxy/index.mjs?e=67', [{ wisp: (window.GX_WISP || (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/') }]);
     if (sessionStorage.getItem('gxWarm') === '1') { slow.style.display = 'block'; return; }
     sessionStorage.setItem('gxWarm', '1');
     location.replace(location.href);
@@ -720,7 +720,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CA
 <div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
 <script src="/cloak.js"></script>
 <script src="/stars.js"></script>
-<script src="/uv-assets/baremux/index.js?e=61"></script>
+<script src="/uv-assets/baremux/index.js?e=67"></script>
 <script>
 var BOOTING=true;
 var PROX=${JSON.stringify(prox)}, ALT=${JSON.stringify(alt)}, stage=0;
@@ -756,8 +756,8 @@ gf.addEventListener('load', function(){ setTimeout(check, 3000); });
       await navigator.serviceWorker.ready;
       if (!navigator.serviceWorker.controller) await new Promise(function(res){ var to=setTimeout(res, 7000); navigator.serviceWorker.addEventListener('controllerchange', function(){ clearTimeout(to); res(); }); });
     }
-    var conn = new BareMux.BareMuxConnection('/uv-assets/baremux/worker.js?e=61');
-    if ((await conn.getTransport()) !== '/uv-assets/epoxy/index.mjs?e=61') await conn.setTransport('/uv-assets/epoxy/index.mjs?e=61', [{ wisp: (window.GX_WISP || (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/') }]);
+    var conn = new BareMux.BareMuxConnection('/uv-assets/baremux/worker.js?e=67');
+    if ((await conn.getTransport()) !== '/uv-assets/epoxy/index.mjs?e=67') await conn.setTransport('/uv-assets/epoxy/index.mjs?e=67', [{ wisp: (window.GX_WISP || (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/') }]);
   } catch (e) {}
   BOOTING=false;
   if (startAlt) { stage=1; gf.src=ALT; } else { gf.src=PROX; }
@@ -3828,14 +3828,14 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/uv-test') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end('<!doctype html><meta charset="utf-8"><title>uv test</title><div id="out">running</div>' +
-    '<script src="/uv-assets/baremux/index.js?e=61"></' + 'script>' +
+    '<script src="/uv-assets/baremux/index.js?e=67"></' + 'script>' +
     '<script>' +
     'var out = document.getElementById("out");' +
     'function log(t) { var d = document.createElement("div"); d.textContent = t; out.appendChild(d); }' +
     '(async function() {' +
     '  try {' +
-    '    var conn = new BareMux.BareMuxConnection("/uv-assets/baremux/worker.js?e=61");' +
-    '    await conn.setTransport("/uv-assets/epoxy/index.mjs?e=61", [{ wisp: (location.protocol === "https:" ? "wss:" : "ws:") + "//" + location.host + "/wisp/" }]);' +
+    '    var conn = new BareMux.BareMuxConnection("/uv-assets/baremux/worker.js?e=67");' +
+    '    await conn.setTransport("/uv-assets/epoxy/index.mjs?e=67", [{ wisp: (location.protocol === "https:" ? "wss:" : "ws:") + "//" + location.host + "/wisp/" }]);' +
     '    log("transport set ok");' +
     '    var client = new BareMux.BareClient();' +
     '    var r = await client.fetch("https://example.com/");' +
