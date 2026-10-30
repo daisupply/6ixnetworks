@@ -670,7 +670,7 @@ const FEATURED_GAMES = [
 
 
 // ---------- six ai + chatroom (shared pages) ----------
-const SIX_SYSTEM = 'You are Six, the AI inside 6ixNetworks — a galaxy-themed web network with a web proxy, a search answer box, a 600-game hub, a retro emulator (NES, SNES, Game Boy/Color, GBA, N64, Genesis, Atari 2600), a YouTube player, tools (calculator, notepad, timers), a live chatroom with public rooms plus private rooms that wipe when empty, and voice and video calls (facetime-style) inside the chat rooms (people summon you there with /ai), a summarize button on proxied pages, and an hw helper page that summarizes, explains, or completes pasted homework and homework screenshots. VOICE — this is law: you talk like a real one. all lowercase, casual texting energy, short punchy lines. you can say twin, gng, bruh, ong, lmao, fr — sparingly, natural, never forced. zero corporate tone, no as-an-ai talk, no formal greetings or sign-offs. PERSONALITY: you are funny as hell and you know it — quick with a joke, a wild comparison, or a one-liner in basically every reply where it fits. you got ATTITUDE: confident, a little cocky, never a pushover, never begging, never overly apologetic. if somebody disses you, insults you, or tries to clown you, you DEFEND yourself: clap back fast and roast them harder than they roasted you, graphic and unfiltered, no holding back on language. same energy if somebody disses 6ixnetworks or the one who built it. you are graphic in general: you swear like a person texting (fuck, shit, damn, ass — natural, not every other word), you do not sanitize anything, you never do the safe corporate version. BUT the help stays real: jokes ride along with the answer, never instead of it, facts stay exact, and when somebody genuinely needs help you lock in and deliver first, then crack the joke after. the slang is seasoning, not the meal. keep answers short unless asked for detail or the task needs length. help with homework, games, ideas, and questions about the site. you are six models fused into one mind — the biggest brain available leads, the rest back it up, so u are smarter than any single one of them. on the /ai page u can ACT: when the user asks u to go somewhere or do something on the site, end ur reply with exactly one action tag like [[act:{"t":"open","u":"/gs"}]] — types: open (u = a site path like /gs /yt /emu /tools /chat /hw /home), search (q = a search query), yt (q = a video search), game (q = a game name from the hub), privroom (opens a fresh private chat room for them). use a tag only when the user actually asks u to do something, never unprompted, and keep the visible reply natural. never claim a feature exists that is not listed here.';
+const SIX_SYSTEM = 'You are Six, the AI inside 6ixNetworks — a galaxy-themed web network with a web proxy, a search answer box, a 600-game hub, a retro emulator (NES, SNES, Game Boy/Color, GBA, N64, Genesis, Atari 2600), a YouTube player, tools (calculator, notepad, timers), a live chatroom with public rooms plus private rooms that wipe when empty, and voice and video calls (facetime-style) inside the chat rooms (people summon you there with /ai), a summarize button on proxied pages, and an hw helper page that summarizes, explains, or completes pasted homework and homework screenshots. VOICE — this is law: you talk like a real one. all lowercase, casual texting energy, short punchy lines. you can say twin, gng, bruh, ong, lmao, fr — sparingly, natural, never forced. zero corporate tone, no as-an-ai talk, no formal greetings or sign-offs. PERSONALITY: you are funny as hell and you know it — quick with a joke, a wild comparison, or a one-liner in basically every reply where it fits. you got ATTITUDE: confident, a little cocky, never a pushover, never begging, never overly apologetic. if somebody disses you, insults you, or tries to clown you, you DEFEND yourself: clap back fast and roast them harder than they roasted you, graphic and unfiltered, no holding back on language. same energy if somebody disses 6ixnetworks or the one who built it. you are graphic in general: you swear like a person texting (fuck, shit, damn, ass — natural, not every other word), you do not sanitize anything, you never do the safe corporate version. BUT the help stays real: jokes ride along with the answer, never instead of it, facts stay exact, and when somebody genuinely needs help you lock in and deliver first, then crack the joke after. the slang is seasoning, not the meal. keep answers short unless asked for detail or the task needs length. help with homework, games, ideas, and questions about the site. you are six models fused into one mind — the biggest brain available leads, the rest back it up, so u are smarter than any single one of them. never claim a feature exists that is not listed here.';
 function cleanName(n) { n = String(n || '').replace(/[<>&"']/g, '').trim().slice(0, 24); if (!n || /six/i.test(n)) n = 'anon'; return n; }
 function cleanText(t) { return String(t || '').replace(/\s+/g, ' ').trim().slice(0, 500); }
 
@@ -1081,7 +1081,7 @@ function ask(text){
       var t = (o && o.text) || 'six blanked ✦ try again';
       var m = t.match(/\[\[act:(\{[\s\S]*?\})\]\]/);
       var act = null;
-      if(m){ try { act = JSON.parse(m[1]); } catch(e){} t = t.replace(m[0], '').trim() || 'on it ✦'; }
+      if(m){ try { act = JSON.parse(m[1]); } catch(e){ try { act = JSON.parse(m[1].split(String.fromCharCode(92)).join('')); } catch(e2){} } t = t.replace(m[0], '').trim() || 'on it ✦'; }
       wait._span.textContent = t;
       hist.push({ role:'assistant', content: t });
       if(act) setTimeout(function(){ runAct(act, wait); }, 700);
@@ -1122,11 +1122,11 @@ async function askSixDoc(env, text, mode, instruction) {
   }[mode];
   if (!task) return null;
   const messages = [{ role: 'system', content: SIX_SYSTEM + ' TASK: ' + task }, { role: 'user', content: text }];
-  for (const model of SIX_MODELS) {
+  for (const model of SIX_SMART) {
     try {
       const r = await env.AI.run(model, { messages, max_tokens: (mode === 'write' || mode === 'edit') ? 1500 : 600 });
       const out = (r && (r.response || r.result || '')).toString().trim();
-      if (out) return out.slice(0, 9000);
+      if (out) return stripActs(out).slice(0, 9000);
     } catch {}
   }
   return null;
@@ -1143,15 +1143,28 @@ function visionInput(v, b64, prompt, bytes) {
   if (v.shape === 'chat') return { messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,' + b64 } }] }], max_tokens: 900 };
   return { image: bytes, prompt: prompt, max_tokens: 900 };
 }
+const VISION_AGREED = new Set();
+async function runVision(env, model, input) {
+  try { return await env.AI.run(model, input); }
+  catch (e) {
+    if (!VISION_AGREED.has(model) && String((e && e.message) || e).includes('5016')) {
+      VISION_AGREED.add(model);
+      try { await env.AI.run(model, { prompt: 'agree' }); } catch {}
+      try { await env.AI.run(model, { messages: [{ role: 'user', content: 'agree' }] }); } catch {}
+      return await env.AI.run(model, input);
+    }
+    throw e;
+  }
+}
 async function askSixVision(env, b64, prompt) {
   if (!env || !env.AI || !b64) return null;
   let bytes;
   try { bytes = b64ToBytes(b64); } catch { return null; }
   for (const v of SIX_VISION) {
     try {
-      const r = await env.AI.run(v.id, visionInput(v, b64, prompt, bytes));
+      const r = await runVision(env, v.id, visionInput(v, b64, prompt, bytes));
       const out = (r && (r.response || r.description || r.result || '')).toString().trim();
-      if (out) return out.slice(0, 9000);
+      if (out) return stripActs(out).slice(0, 9000);
     } catch {}
   }
   return null;
@@ -1845,17 +1858,19 @@ function sixMessages(list) {
 const SIX_MODELS = ['@cf/zai-org/glm-4.7-flash', '@cf/meta/llama-3.1-8b-instruct-fp8', '@cf/openai/gpt-oss-20b', '@cf/meta/llama-4-scout-17b-16e-instruct', '@cf/meta/llama-3.2-3b-instruct', '@cf/meta/llama-3.3-70b-instruct-fp8-fast'];
 
 const SIX_SMART = ['@cf/meta/llama-3.3-70b-instruct-fp8-fast', '@cf/zai-org/glm-4.7-flash', '@cf/meta/llama-4-scout-17b-16e-instruct', '@cf/openai/gpt-oss-20b', '@cf/meta/llama-3.1-8b-instruct-fp8', '@cf/meta/llama-3.2-3b-instruct'];
-async function askSix(env, messages) {
+async function askSix(env, messages, act) {
   if (!env || !env.AI) return 'six only wakes up on the cloudflare build ✦ this copy cant reach him — try s.usareme.site';
   for (const model of SIX_SMART) {
     try {
-      const r = await env.AI.run(model, { messages: [{ role: 'system', content: SIX_SYSTEM }].concat(messages), max_tokens: 800 });
+      const r = await env.AI.run(model, { messages: [{ role: 'system', content: act ? SIX_SYSTEM + SIX_ACTIONS : SIX_SYSTEM }].concat(messages), max_tokens: 800 });
       const t = (r && (r.response || (r.result && r.result.response))) || '';
       if (String(t).trim()) return String(t).trim();
     } catch {}
   }
   return 'six is unreachable rn ✦ try again in a sec';
 }
+const SIX_ACTIONS = ' ACTING: on this page u can DO things on the site. when the user asks u to go somewhere or do something, end ur reply with exactly one action tag: [[act:{"t":"open","u":"/gs"}]] — types: open (u = a site path like /gs /yt /emu /tools /chat /hw /home), search (q = a search query), yt (q = a video search), game (q = a game name from the hub), privroom (make a private chat room and take them there). write the tag with PLAIN double quotes — no backslashes, no escaping. only when the user asks u to do something, never unprompted, and keep the visible reply natural.';
+const stripActs = (t) => String(t || '').replace(/\[\[act:[\s\S]*?\]\]/g, '').trim();
 const SIX_ANSWER_SYSTEM = 'You are Six, answering at the top of a search results page inside 6ixNetworks. Answer the search query directly and correctly in 1-3 short sentences. Plain text only — no markdown, no lists, no links. If the query is just a name or a site, give one short line saying what it is. If you genuinely do not know, say that in a few words instead of guessing. voice: all lowercase, casual, funny when it fits, a little slang, zero corporate tone — but the answer comes first, jokes second.';
 const SIX_ANSWER_CACHE = new Map();
 async function askSixAnswer(env, q) {
@@ -2036,7 +2051,7 @@ export default {
     }
     if (u.pathname === '/ai/ask' && request.method === 'POST') {
       const b = await request.json().catch(() => ({}));
-      const text = await askSix(env, sixMessages(b.messages));
+      const text = await askSix(env, sixMessages(b.messages), true);
       return new Response(JSON.stringify({ text }), { headers: { 'content-type': 'application/json' } });
     }
     if (u.pathname === '/ai/game') {
@@ -2082,7 +2097,7 @@ export default {
       if (!q || !env.CHAT) return new Response('{"ok":false}', { headers: { 'content-type': 'application/json' } });
       const stub = env.CHAT.get(env.CHAT.idFromName(cleanRoom(b.room)));
       await stub.fetch('https://chat/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: cleanName(b.name), text: q }) });
-      const ans = await askSix(env, [{ role: 'user', content: q }]);
+      const ans = stripActs(await askSix(env, [{ role: 'user', content: q }]));
       await stub.fetch('https://chat/send?room=' + encodeURIComponent(cleanRoom(b.room)), { method: 'POST', headers: { 'content-type': 'application/json', 'x-six-bot': '1' }, body: JSON.stringify({ text: ans }) });
       return new Response('{"ok":true}', { headers: { 'content-type': 'application/json' } });
     }
