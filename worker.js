@@ -287,7 +287,7 @@ const SIDEBAR_HTML = `<button id="sbBtn" aria-label="menu"><svg width="19" heigh
 <a href="/home"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>home</a>
 <a href="/gs"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>games</a>
 <a href="/yt"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg>youtube</a>
-<a href="/chat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>chat</a>
+<a href="/chat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>6ixchat</a>
 <a href="/ai"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>six ai</a>
 <a href="/hw"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>hw helper</a>
 <a href="/emu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="16.5" cy="11" r=".4" fill="currentColor"/><circle cx="18.5" cy="14" r=".4" fill="currentColor"/></svg>emulator</a>
@@ -747,8 +747,6 @@ function chatPage() {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
-.chatflex{display:flex;gap:14px;align-items:flex-start}
-.chatmain{flex:1;min-width:0}
 .chatrail{width:218px;flex:none;background:#101012;border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:14px 12px;display:flex;flex-direction:column;gap:4px;text-align:left;position:sticky;top:14px}
 .cr-sec{font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;opacity:.42;margin:12px 4px 5px}
 .cr-sec:first-child{margin-top:0}
@@ -763,8 +761,28 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .cr-you{display:flex;gap:8px;align-items:center}
 .cr-you svg{width:17px;height:17px;opacity:.6;flex:none}
 .cr-you input{flex:1;min-width:0;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:8px 10px;font-family:inherit}
-@media(max-width:820px){.chatflex{flex-direction:column}.chatrail{width:auto;position:static;order:-1;align-self:stretch}}
+@media(max-width:820px){.chatrail{width:auto}}
 .callbar{background:rgba(18,18,20,.45);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:10px 12px}
+html,body{height:100%}
+body{display:block;padding:0}
+.app6{display:flex;height:100dvh;background:#0a0a0b;text-align:left}
+.brand6{font-weight:800;font-size:22px;letter-spacing:-.02em;padding:0 4px 14px}
+.brand6 span{color:#9db9ff}
+.app6 .chatrail{position:static;width:266px;height:100%;border-radius:0;border-top:0;border-bottom:0;border-left:0;overflow-y:auto;flex:none}
+.main6{flex:1;min-width:0;display:flex;flex-direction:column;height:100%}
+.head6{display:flex;align-items:center;gap:9px;padding:13px 18px;border-bottom:1px solid rgba(255,255,255,.09);background:#101012;font-weight:800;font-size:16px;flex:none}
+.head6 svg{color:#9db9ff;flex:none}
+.head6-sub{margin-left:auto;font-size:12px;font-weight:600;opacity:.45}
+.main6 #msgs{flex:1;min-height:0;border:0;border-radius:0;background:transparent;padding:16px 18px}
+.main6 #vstage{margin:12px 16px 0}
+.main6 #vmembers,.main6 #vcontrols{margin:10px 16px 0}
+.main6 #privbar{margin:12px 16px 0}
+.main6 .bar{margin:0;padding:12px 16px;border-top:1px solid rgba(255,255,255,.09);background:#101012;flex:none}
+.main6 .bar input[type=text]{border-radius:999px;padding:12px 16px}
+.main6 .bar button{border-radius:999px}
+.exit6{margin-top:auto}
+.chatrail .cloakbar{justify-content:flex-start;margin-top:2px}
+@media(max-width:820px){.app6{flex-direction:column}.app6 .chatrail{width:auto;height:auto;max-height:46vh;border-right:0}.head6-sub{display:none}}
 #msgs{height:52vh;overflow-y:auto;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:14px;text-align:left}
 .msg{margin:7px 0;word-break:break-word}
 .msg b{color:#9db9ff}
@@ -780,10 +798,31 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 #vgrid video:fullscreen{width:100%;height:100%;object-fit:cover;background:#000}
 #vstage:fullscreen{border-radius:0;padding:14px;background:rgba(10,10,11,.97)}
 #vstage:fullscreen #vgrid{height:calc(100% - 46px);align-content:center}
-</style></head><body>${STAR_CANVAS}${SIDEBAR_HTML}<div class="wrap">
-<a class="back" href="/home">← home</a> · <a class="back" href="/ai">ask six ✦</a>
-<h1>6ix<span>Networks</span> chat</h1>
-<div class="chatflex"><div class="chatmain">
+</style></head><body>${STAR_CANVAS}<div class="app6">
+
+
+<aside class="chatrail"><div class="brand6">6ix<span>Chat</span></div>
+<div class="cr-sec">rooms</div>
+<button class="chip room on cr-item" data-room="lobby" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> lobby</button>
+<button class="chip room cr-item" data-room="games" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4"/><path d="M8 10v4"/><path d="M15 13h.01"/><path d="M18 11h.01"/></svg> games</button>
+<button class="chip room cr-item" data-room="random" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg> random</button>
+<button class="chip cr-item" id="mkpriv" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> new private room</button>
+<div class="cr-join"><input id="joincode" type="text" maxlength="12" placeholder="room code"><button class="chip" id="joinpriv" type="button">join</button></div>
+<div class="cr-hint">private rooms wipe themselves right after everyone leaves</div>
+<div class="cr-sec">call</div>
+<button class="chip cr-item" id="vjoin" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg> join voice</button>
+<button class="chip cr-item" id="vjoinv" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> join video</button>
+<div class="cr-hint" id="vstat">voice is off — hop in, it runs peer-to-peer thru the room</div>
+<div class="cr-sec">you</div>
+<div class="cr-you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><input id="name" type="text" maxlength="24" placeholder="ur name"></div>
+<div class="cr-hint" id="pres">connecting…</div>
+<a class="chip cr-item exit6" href="/home"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> 6ixNetworks — back to the site</a>
+<div class="cr-sec">disguise</div>
+${CLOAK_BAR}
+<div class="cr-hint">real people, live ✦ public rooms are public — grab a private room for just ur people</div>
+</aside>
+<main class="main6">
+<div class="head6"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span id="roomtitle">lobby</span><span class="head6-sub">live rooms · voice + video</span></div>
 <div id="privbar" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid rgba(255,255,255,.4);border-radius:12px;background:rgba(255,255,255,.08);font-size:14px;text-align:left"></div>
 <div id="vmembers" class="callbar" style="display:none;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0"></div>
 <div id="vcontrols" class="callbar" style="display:none;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">
@@ -808,28 +847,10 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <div id="msgs"></div>
 <form class="bar" id="sendbar"><button type="button" id="attach" title="send an image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="vertical-align:-2px"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button><input type="text" id="text" placeholder="message…  (/ai asks six · /img draws · paste an image)" autocomplete="off" maxlength="500"><button type="submit">send</button></form>
 <input type="file" id="chatfile" accept="image/*" style="display:none">
-<p style="opacity:.65;font-size:13px">real people, live ✦ public rooms are public — grab a private room for just ur people</p>
-</div>
-<aside class="chatrail">
-<div class="cr-sec">rooms</div>
-<button class="chip room on cr-item" data-room="lobby" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> lobby</button>
-<button class="chip room cr-item" data-room="games" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4"/><path d="M8 10v4"/><path d="M15 13h.01"/><path d="M18 11h.01"/></svg> games</button>
-<button class="chip room cr-item" data-room="random" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg> random</button>
-<button class="chip cr-item" id="mkpriv" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> new private room</button>
-<div class="cr-join"><input id="joincode" type="text" maxlength="12" placeholder="room code"><button class="chip" id="joinpriv" type="button">join</button></div>
-<div class="cr-hint">private rooms wipe themselves right after everyone leaves</div>
-<div class="cr-sec">call</div>
-<button class="chip cr-item" id="vjoin" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg> join voice</button>
-<button class="chip cr-item" id="vjoinv" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> join video</button>
-<div class="cr-hint" id="vstat">voice is off — hop in, it runs peer-to-peer thru the room</div>
-<div class="cr-sec">you</div>
-<div class="cr-you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><input id="name" type="text" maxlength="24" placeholder="ur name"></div>
-<div class="cr-hint" id="pres">connecting…</div>
-</aside>
-</div>
 
 </div>
-<script src="/cloak.js"></script>
+
+</main></div><script src="/cloak.js"></script>
 <script src="/stars.js"></script>
 <script>
 var nameEl=document.getElementById('name'), msgsEl=document.getElementById('msgs'), presEl=document.getElementById('pres'), textEl=document.getElementById('text');
@@ -1266,6 +1287,7 @@ document.addEventListener('keyup', function(ev){ if(ev.code === 'Space' && pttDo
 showPriv();
 connect();
 </script>
+<script>(function(){ var t = document.getElementById("roomtitle"); if (!t) return; document.querySelectorAll(".room").forEach(function(b){ b.addEventListener("click", function(){ t.textContent = b.getAttribute("data-room"); }); }); var mk = document.getElementById("mkpriv"); if (mk) mk.addEventListener("click", function(){ t.textContent = "private room"; }); var jp = document.getElementById("joinpriv"); if (jp) jp.addEventListener("click", function(){ t.textContent = "private room"; }); })();</script>
 </body>
 </html>`;
 }
@@ -1868,7 +1890,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <div class="launch">
 <a class="lcard" href="/gs"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg><b>games</b><span>600+ games, all through the network</span></a>
 <a class="lcard" href="/yt"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg><b>youtube</b><span>watch without ever leaving</span></a>
-<a class="lcard" href="/chat"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><b>chat</b><span>rooms, voice + video, the group chat</span></a>
+<a class="lcard" href="/chat"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><b>6ixchat</b><span>rooms, voice + video, the group chat</span></a>
 <a class="lcard" href="/ai"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><b>six ai</b><span>ask six anything — he answers in the room too</span></a>
 <a class="lcard" href="/hw"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><b>hw helper</b><span>paste the hw or a screenshot, six handles it</span></a>
 <a class="lcard" href="/emu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="16.5" cy="11" r=".4" fill="currentColor"/><circle cx="18.5" cy="14" r=".4" fill="currentColor"/></svg><b>emulator</b><span>retro consoles in the browser</span></a>
