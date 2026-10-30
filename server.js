@@ -297,6 +297,35 @@ const CLOAK_BAR = `<div style="margin-top:26px;display:flex;gap:8px;flex-wrap:wr
 <button onclick="cloakTab('classroom')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">classroom</button>
 <button onclick="cloakTab('docs')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">docs</button>
 <button onclick="cloakTab('drive')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">open in cloaked tab</button></div>`;
+const SIDEBAR_HTML = `<button id="sbBtn" aria-label="menu"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><div id="sbScrim"></div>
+<aside id="sb">
+<a class="sb-logo" href="/home">6ix<span>networks</span></a>
+<nav>
+<a href="/home"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>home</a>
+<a href="/gs"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>games</a>
+<a href="/yt"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg>youtube</a>
+<a href="/chat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>chat</a>
+<a href="/ai"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>six ai</a>
+<a href="/hw"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>hw helper</a>
+<a href="/emu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="16.5" cy="11" r=".4" fill="currentColor"/><circle cx="18.5" cy="14" r=".4" fill="currentColor"/></svg>emulator</a>
+<a href="/tools"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>tools</a>
+<a href="/account"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>account</a>
+</nav>
+<div class="sb-sec">disguise</div>
+<div class="sb-cloak">
+<button onclick="cloakTab('google')">google</button>
+<button onclick="cloakTab('classroom')">classroom</button>
+<button onclick="cloakTab('docs')">docs</button>
+<button onclick="cloakTab('drive')">drive</button>
+<button onclick="cloakOpen()">open cloaked tab</button>
+</div>
+<div class="sb-foot">everything stays inside the network — nothing loads from its home site</div>
+</aside>
+<script>
+(function(){ var p = location.pathname; document.querySelectorAll('#sb nav a').forEach(function(a){ if (a.getAttribute('href') === p) a.classList.add('on'); });
+var b = document.getElementById('sbBtn'); if (b) b.addEventListener('click', function(){ document.body.classList.toggle('sb-open'); });
+var s = document.getElementById('sbScrim'); if (s) s.addEventListener('click', function(){ document.body.classList.remove('sb-open'); }); })();
+</script>`;
 // ---------- galaxy theme ----------
 // relaxing deep-space look shared by every page: layered nebula gradients,
 // a slow twinkling starfield canvas (served from /stars.js), glass panels,
@@ -339,6 +368,34 @@ body.playbody{padding:0;height:100vh}
 .top a,.top button{background:#17171a;color:#e4e4e7;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:8px 13px;cursor:pointer;text-decoration:none;font-size:13px;font-weight:600;font-family:inherit}
 .top button.on{border-color:#5e8eff;color:#fff;background:rgba(94,142,255,.16)}
 iframe.gameframe{flex:1;width:100%;border:0;background:#000}
+
+#sbBtn{position:fixed;top:14px;left:14px;z-index:60;width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:#131315;border:1px solid rgba(255,255,255,.12);border-radius:10px;color:#f4f4f5;cursor:pointer;padding:0}
+#sbScrim{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:55;opacity:0;pointer-events:none;transition:opacity .2s}
+#sb{position:fixed;top:0;left:0;bottom:0;width:236px;z-index:56;background:#0e0e10;border-right:1px solid rgba(255,255,255,.08);padding:20px 14px;display:flex;flex-direction:column;gap:2px;transform:translateX(-105%);transition:transform .22s ease;overflow-y:auto;text-align:left}
+body.sb-open #sb{transform:none}
+body.sb-open #sbScrim{opacity:1;pointer-events:auto}
+.sb-logo{font-weight:700;font-size:17px;color:#fafafa;text-decoration:none;letter-spacing:-.02em;padding:4px 10px 16px}
+.sb-logo span{color:#63636b;font-weight:600}
+#sb nav{display:flex;flex-direction:column;gap:2px}
+#sb nav a{display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:8px;color:#c9c9ce;text-decoration:none;font-size:14px;font-weight:500}
+#sb nav a:hover{background:#17171a;color:#fff}
+#sb nav a.on{background:rgba(94,142,255,.14);color:#fff}
+#sb nav a svg{flex:none;opacity:.8}
+.sb-sec{margin:20px 10px 7px;font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:#63636b}
+.sb-cloak{display:flex;flex-wrap:wrap;gap:6px;padding:0 2px}
+.sb-cloak button{background:#17171a;color:#d4d4d8;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 11px;font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit}
+.sb-cloak button:hover{border-color:rgba(255,255,255,.3);color:#fff}
+.sb-foot{margin-top:auto;padding:16px 10px 2px;color:#4b4b52;font-size:12px;line-height:1.55}
+@media(min-width:900px){ #sb{transform:none} #sbBtn{display:none} body:has(>aside#sb){padding-left:252px} }
+.launch{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;width:100%;max-width:640px;margin-top:36px;text-align:left}
+.lcard{background:#101012;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;text-decoration:none;color:#f4f4f5;display:block;transition:border-color .15s}
+.lcard:hover{border-color:rgba(255,255,255,.24)}
+.lcard svg{color:#9db9ff;margin-bottom:11px}
+.lcard b{display:block;font-size:15px;font-weight:600;margin-bottom:3px}
+.lcard span{font-size:12.5px;color:#8b8b93;line-height:1.45;display:block}
+.quick{margin-top:24px;color:#63636b;font-size:13px}
+.quick a{color:#a1a1aa;text-decoration:none}
+.quick a:hover{color:#fff}
 `;
 const STARS_JS = `
 (function(){
@@ -441,7 +498,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 
 <a href="/home">← back to 6ixnetworks</a>
 </div>
-${CLOAK_BAR}<script src="/cloak.js"></script>
+${SIDEBAR_HTML}<script src="/cloak.js"></script>
 
 </body></html>`;
 function isStaticAsset(target, ct) {
@@ -509,7 +566,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{pos
 <div class="bar"><input id="gq" type="text" placeholder="search games..." autocomplete="off">
 <select id="gc"><option value="">all categories</option>${cats.map(c => `<option>${escHtml(c)}</option>`).join('')}</select><button class="chip" id="gfav" type="button">★ favorites</button><button class="chip" id="grec" type="button">recent</button><button class="chip" id="grand" type="button">🎲 random</button><a class="chip" href="/emu" style="text-decoration:none">🕹 emulator</a><a class="chip" href="/chat" style="text-decoration:none">💬 chat</a><a class="chip" href="/ai" style="text-decoration:none">✦ ai</a></div>
 <div class="grid" id="grid">${cards}</div>
-${CLOAK_BAR}
+${SIDEBAR_HTML}
 
 </div>
 <script src="/cloak.js"></script>
@@ -636,7 +693,7 @@ button.play{background:rgba(94,142,255,.3);color:#fff;border:1px solid rgba(255,
 <p style="opacity:.75;font-size:13px;margin:6px 2px 0">drop in a rom u own — it runs right in ur browser, nothing uploads ✦ zip files work too</p>
 </div>
 <div class="panel"><div id="game"></div></div>
-${CLOAK_BAR}
+${SIDEBAR_HTML}
 </div>
 <script src="/cloak.js"></script>
 <script src="/stars.js"></script>
@@ -1227,7 +1284,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 </div>
 <div style="display:flex;gap:8px;margin:10px 0"><button class="chip pchip" id="imgmode" type="button">🎨 image mode: off</button></div>
 <form class="bar" id="askbar"><input type="text" id="q" placeholder="ask six anything…" autocomplete="off" maxlength="1000"><button type="submit">ask</button></form>
-${CLOAK_BAR}
+${SIDEBAR_HTML}
 </div>
 <script src="/cloak.js"></script>
 <script src="/stars.js"></script>
@@ -1338,7 +1395,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <div id="out"></div>
 <button class="act" id="copy" type="button" style="display:none;margin-top:10px">copy the text</button>
 <p style="opacity:.6;font-size:13px;margin-top:14px">nothing leaves the network — six reads it right here, screenshots included. drafts are a starting point, make it sound like u before u turn it in</p>
-${CLOAK_BAR}
+${SIDEBAR_HTML}
 </div>
 <script src="/cloak.js"></script>
 <script src="/stars.js"></script>
@@ -1424,7 +1481,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 </div>
 <div id="out"></div>
 </div>
-${CLOAK_BAR}
+${SIDEBAR_HTML}
 </div>
 <script src="/cloak.js"></script>
 <script src="/stars.js"></script>
@@ -1486,7 +1543,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <div class="trow"><button class="tbtn" id="swgo">start</button><button class="tbtn" id="swreset">reset</button></div>
 <div class="trow" style="margin-top:14px"><input id="tmin" type="number" min="0" placeholder="min"><button class="tbtn" id="tgo">timer</button><span id="tstat" style="opacity:.8"></span></div></div>
 </div>
-${CLOAK_BAR}
+${SIDEBAR_HTML}
 </div>
 <script src="/cloak.js"></script>
 <script src="/stars.js"></script>
@@ -1533,16 +1590,16 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style>
     <input name="q" type="text" placeholder="search ✦" autocomplete="off" autofocus list="sg">
     <button type="submit">go</button>
   </form><datalist id="sg"></datalist>
-  <div class="links">
-    <a href="/go?q=https://www.google.com">google</a>
-    <a href="/go?q=https://duckduckgo.com">duckduckgo</a>
-    <a href="/go?q=https://www.wikipedia.org">wikipedia</a>
-    <a href="/yt">youtube</a>
-    <a href="/gs">games</a> <a href="/tools">tools</a> <a href="/chat">chat</a> <a href="/ai">ai ✦</a> <a href="/hw">hw helper</a> <a href="/account">account</a>
-    <a href="/go?q=https://www.reddit.com">reddit</a>
-    <a href="/go?q=https://www.coolmathgames.com">coolmath games</a>
-  </div>
-  ${CLOAK_BAR}<script src="/cloak.js"></script>
+  <div class="launch">
+<a class="lcard" href="/gs"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg><b>games</b><span>600+ games, all through the network</span></a>
+<a class="lcard" href="/yt"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg><b>youtube</b><span>watch without ever leaving</span></a>
+<a class="lcard" href="/chat"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><b>chat</b><span>rooms, voice + video, the group chat</span></a>
+<a class="lcard" href="/ai"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><b>six ai</b><span>ask six anything — he answers in the room too</span></a>
+<a class="lcard" href="/hw"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><b>hw helper</b><span>paste the hw or a screenshot, six handles it</span></a>
+<a class="lcard" href="/emu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="16.5" cy="11" r=".4" fill="currentColor"/><circle cx="18.5" cy="14" r=".4" fill="currentColor"/></svg><b>emulator</b><span>retro consoles in the browser</span></a>
+</div>
+<div class="quick">quick — <a href="/go?q=https://www.google.com">google</a> · <a href="/go?q=https://duckduckgo.com">duckduckgo</a> · <a href="/go?q=https://www.wikipedia.org">wikipedia</a> · <a href="/go?q=https://www.reddit.com">reddit</a> · <a href="/go?q=https://www.coolmathgames.com">coolmath</a></div>
+  ${SIDEBAR_HTML}<script src="/cloak.js"></script>
 
 <script>
   // turn bare domains into https:// before submitting is handled server-side too
@@ -1796,7 +1853,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}<div class="
 <h1>6ix<span>Networks</span></h1>
 <form action="/yt/search" method="get"><input name="q" type="text" value="${escHtml(query)}" placeholder="search youtube ✦" autocomplete="off"><button type="submit">go</button></form>
 <div class="grid" style="margin-top:18px">${cards}</div>
-${CLOAK_BAR}
+${SIDEBAR_HTML}
 </div>
 <script src="/cloak.js"></script>
 <script src="/stars.js"></script>
