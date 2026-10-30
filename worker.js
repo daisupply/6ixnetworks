@@ -1336,6 +1336,10 @@ async function runVision(env, model, input) {
   }
 }
 async function askSixVision(env, b64, prompt) {
+  if (b64) {
+    const g = await askGemini(env, [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,' + b64 } }] }], 1500);
+    if (g) return stripActs(g).slice(0, 9000);
+  }
   if (!env || !env.AI || !b64) return null;
   let bytes;
   try { bytes = b64ToBytes(b64); } catch { return null; }
@@ -2133,6 +2137,36 @@ async function askGemini(env, messages, maxTokens) {
   return null;
 }
 
+
+// gemini image generation (native generateContent API — the openai-compat
+// endpoint does text only). google retires image model names just as fast
+// as text ones, so this is a chain too: first model that returns image
+// bytes wins and gets remembered. workers ai (flux) stays as the fallback
+// inside askSixImage for when gemini cant draw.
+const GEMINI_IMAGE_MODELS = ['gemini-3.5-flash-image', 'gemini-3-flash-image', 'gemini-2.5-flash-image', 'gemini-3.8-flash-image', 'gemini-flash-image-latest'];
+let geminiImageWinner = null;
+async function askGeminiImage(env, prompt) {
+  const key = env && env.GEMINI_API_KEY;
+  if (!key || !prompt) return null;
+  const order = geminiImageWinner ? [geminiImageWinner].concat(GEMINI_IMAGE_MODELS.filter(mo => mo !== geminiImageWinner)) : GEMINI_IMAGE_MODELS;
+  for (const model of order) {
+    try {
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+        body: JSON.stringify({ contents: [{ parts: [{ text: String(prompt).slice(0, 500) }] }], generationConfig: { responseModalities: ['TEXT', 'IMAGE'] } })
+      });
+      if (!r.ok) { if (model === geminiImageWinner) geminiImageWinner = null; continue; }
+      const j = await r.json().catch(() => null);
+      const parts = j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts;
+      const img = Array.isArray(parts) ? parts.find(p => p && p.inlineData && p.inlineData.data) : null;
+      if (img) { geminiImageWinner = model; return 'data:' + (img.inlineData.mimeType || 'image/png') + ';base64,' + img.inlineData.data; }
+      if (model === geminiImageWinner) geminiImageWinner = null;
+    } catch { if (model === geminiImageWinner) geminiImageWinner = null; }
+  }
+  return null;
+}
+
 async function askSix(env, messages, act) {
   const full = [{ role: 'system', content: act ? SIX_SYSTEM + SIX_ACTIONS : SIX_SYSTEM }].concat(messages);
   const g = await askGemini(env, full, 800);
@@ -2150,6 +2184,8 @@ async function askSix(env, messages, act) {
 const SIX_IMAGE_MODELS = ['@cf/black-forest-labs/flux-1-schnell', '@cf/bytedance/stable-diffusion-xl-lightning', '@cf/stabilityai/stable-diffusion-xl-base-1.0'];
 function bytesToB64(bytes) { let s = ''; const CH = 0x8000; for (let i = 0; i < bytes.length; i += CH) s += String.fromCharCode.apply(null, bytes.subarray(i, i + CH)); return btoa(s); }
 async function askSixImage(env, prompt) {
+  const g = await askGeminiImage(env, prompt);
+  if (g) return g;
   if (!env || !env.AI || !prompt) return null;
   for (const model of SIX_IMAGE_MODELS) {
     try {
@@ -2199,6 +2235,7 @@ async function sixHealth(env) {
       } catch (e) { out.gemini = 'ERR (' + model + '): ' + String((e && e.message) || e).slice(0, 120); }
     }
   }
+  out.geminiImage = geminiImageWinner ? 'ok (' + geminiImageWinner + ')' : 'chain ready — first draw tests it';
   if (!env || !env.AI) return out;
   for (const model of SIX_MODELS) {
     try {

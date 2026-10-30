@@ -2147,6 +2147,53 @@ async function askGemini(env, messages, maxTokens) {
   return null;
 }
 
+
+// gemini image generation (native generateContent API — the openai-compat
+// endpoint does text only). google retires image model names just as fast
+// as text ones, so this is a chain too: first model that returns image
+// bytes wins and gets remembered. workers ai (flux) stays as the fallback
+// inside askSixImage for when gemini cant draw.
+const GEMINI_IMAGE_MODELS = ['gemini-3.5-flash-image', 'gemini-3-flash-image', 'gemini-2.5-flash-image', 'gemini-3.8-flash-image', 'gemini-flash-image-latest'];
+let geminiImageWinner = null;
+async function askGeminiImage(env, prompt) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key || !prompt) return null;
+  const order = geminiImageWinner ? [geminiImageWinner].concat(GEMINI_IMAGE_MODELS.filter(mo => mo !== geminiImageWinner)) : GEMINI_IMAGE_MODELS;
+  for (const model of order) {
+    try {
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+        body: JSON.stringify({ contents: [{ parts: [{ text: String(prompt).slice(0, 500) }] }], generationConfig: { responseModalities: ['TEXT', 'IMAGE'] } })
+      });
+      if (!r.ok) { if (model === geminiImageWinner) geminiImageWinner = null; continue; }
+      const j = await r.json().catch(() => null);
+      const parts = j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts;
+      const img = Array.isArray(parts) ? parts.find(p => p && p.inlineData && p.inlineData.data) : null;
+      if (img) { geminiImageWinner = model; return 'data:' + (img.inlineData.mimeType || 'image/png') + ';base64,' + img.inlineData.data; }
+      if (model === geminiImageWinner) geminiImageWinner = null;
+    } catch { if (model === geminiImageWinner) geminiImageWinner = null; }
+  }
+  return null;
+}
+async function askSixVision(env, b64, prompt) {
+  if (!b64) return null;
+  const g = await askGemini(env, [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,' + b64 } }] }], 1500);
+  return g ? stripActs(g).slice(0, 9000) : null;
+}
+
+async function askSixLook(env, b64, mode, extra) {
+  const task = {
+    sum: 'look at this screenshot of homework or a document. read all the text in it carefully. summarize: what it is, what it is asking for, and the key points.',
+    write: 'look at this screenshot of homework. read everything in it carefully, then DO the work: answer every question shown and complete the assignment exactly as asked, based on what is in the image.',
+    simple: 'look at this screenshot of homework or a document. read all the text in it. explain what it means and exactly what has to be done, in the simplest words possible.',
+    edit: 'look at this screenshot of a document. read all of its text carefully. an edit instruction may be included as extra context — apply it (if there is none, just clean up and fix the text). return the FULL edited text only, no commentary.'
+  }[mode];
+  if (!task) return null;
+  const prompt = task + ' answer in this voice: all lowercase, casual, straight-talking, funny when it fits, zero corporate tone. plain text, short lines, no markdown symbols.' + (extra ? ' extra context from the user: ' + extra : '');
+  return askSixVision(env, b64, prompt);
+}
+
 async function askSix(messages) {
   const msgs = (messages && messages.length && messages[0].role === 'system') ? messages : [{ role: 'system', content: SIX_SYSTEM }].concat(messages || []);
   const g = await askGemini(null, msgs, 800);
@@ -2352,8 +2399,10 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(404, { 'content-type': 'application/json' }); return res.end('{"ok":false}');
   }
   if (u.pathname === '/ai/image' && req.method === 'POST') {
+    const b = await readJsonBody(req);
+    const img = await askGeminiImage(null, cleanText(b.prompt).slice(0, 300));
     res.writeHead(200, { 'content-type': 'application/json' });
-    return res.end(JSON.stringify({ img: null }));
+    return res.end(JSON.stringify({ img }));
   }
   if (u.pathname === '/ai/image-room' && req.method === 'POST') {
     const b = await readJsonBody(req);
@@ -2361,7 +2410,9 @@ const server = http.createServer(async (req, res) => {
     const roomName = cleanRoom(b.room);
     if (prompt) {
       chatPost(roomName, { name: cleanName(b.name), text: '🎨 ' + prompt, ts: Date.now(), bot: false });
-      chatPost(roomName, { name: 'six ✦ ai', text: 'image gen only wakes up on the cloudflare build ✦ try s.usareme.site', ts: Date.now(), bot: true });
+      const img = await askGeminiImage(null, prompt);
+      if (img) chatPost(roomName, { name: 'six ✦ ai', text: '🎨 ' + prompt, img, ts: Date.now(), bot: true });
+      else chatPost(roomName, { name: 'six ✦ ai', text: 'image gen only wakes up on the cloudflare build ✦ try s.usareme.site', ts: Date.now(), bot: true });
     }
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end('{"ok":true}');
@@ -2416,9 +2467,10 @@ const server = http.createServer(async (req, res) => {
     return res.end(hwPage());
   }
   if (u.pathname === '/ai/look' && req.method === 'POST') {
-    // the node build has no vision models — six only sees images on the cloudflare build
+    const b = await readJsonBody(req, 3000000);
+    const out = await askSixLook(null, String(b.image || ''), b.mode, cleanText(b.text).slice(0, 500));
     res.writeHead(200, { 'content-type': 'application/json' });
-    return res.end('{"out":null}');
+    return res.end(JSON.stringify({ out }));
   }
   if (u.pathname === '/emu') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
