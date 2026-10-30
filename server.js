@@ -2116,6 +2116,14 @@ async function askSixAnswer(q) {
 const crypto = require('crypto');
 const CHAT_ROOMS = new Map();
 const ACCOUNTS = new Map();
+function chatIdentityNode(req, wantName) {
+  const want = String(wantName || '');
+  const tok = (req.headers.cookie || '').match(/six_sess=([a-f0-9]+)/);
+  if (tok) { const s = SESSIONS.get(tok[1]); if (s && s.exp > Date.now()) return s.name; }
+  const lower = want.trim().toLowerCase();
+  if (lower && (RESERVED_NAMES.includes(lower) || ACCOUNTS.has(lower))) return 'anon';
+  return want;
+}
 const SESSIONS = new Map();
 function chatRoomOf(name) { if (!CHAT_ROOMS.has(name)) CHAT_ROOMS.set(name, { msgs: [], socks: new Set(), pollAct: 0, wipeTimer: null, peers: new Map() }); return CHAT_ROOMS.get(name); }
 function wsEncode(str) {
@@ -2146,7 +2154,7 @@ function chatUpgrade(req, socket) {
   const accept = crypto.createHash('sha1').update(key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64');
   socket.write('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ' + accept + '\r\n\r\n');
   const roomName = cleanRoom(u.searchParams.get('room'));
-  const name = cleanName(u.searchParams.get('name'));
+  const name = cleanName(chatIdentityNode(req, u.searchParams.get('name')));
   const room = chatRoomOf(roomName);
   room.socks.add(socket);
   if (room.wipeTimer) { clearTimeout(room.wipeTimer); room.wipeTimer = null; }
@@ -2337,7 +2345,7 @@ const server = http.createServer(async (req, res) => {
     const text = cleanText(b.text);
     let img = null;
     if (typeof b.img === 'string' && b.img.startsWith('data:image/') && b.img.length <= 2800000) img = b.img;
-    if (text || img) { const rn = cleanRoom(b.room); const msg = { name: cleanName(b.name), text, ts: Date.now(), bot: false }; if (img) msg.img = img; chatPost(rn, msg); chatRoomOf(rn).pollAct = Date.now(); }
+    if (text || img) { const rn = cleanRoom(b.room); const msg = { name: cleanName(chatIdentityNode(req, b.name)), text, ts: Date.now(), bot: false }; if (img) msg.img = img; chatPost(rn, msg); chatRoomOf(rn).pollAct = Date.now(); }
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end('{"ok":true}');
   }

@@ -2199,6 +2199,11 @@ export class Accounts {
       return jsonRes({ ok: true, user: rec.name, token: await this.makeSession(rec.name) });
     }
     if (u.pathname === '/logout') { const t = String(b.token || ''); if (t) await this.state.storage.delete('s:' + t); return jsonRes({ ok: true }); }
+    if (u.pathname === '/check') {
+      const name = (u.searchParams.get('name') || '').toLowerCase();
+      const taken = RESERVED_NAMES.includes(name) || !!(await this.state.storage.get('u:' + name));
+      return jsonRes({ taken });
+    }
     if (u.pathname === '/me') {
       const t = u.searchParams.get('token') || '';
       const s = t ? await this.state.storage.get('s:' + t) : null;
@@ -2370,6 +2375,30 @@ export default {
       }
       return jsonRes({ ok: false, err: 'unknown auth route' });
     }
+
+// who may this request chat as? logged-in users chat as their account,
+// period. guests may not use a registered (or reserved) name — they get
+// renamed to anon instead of impersonating somebody's account.
+async function chatIdentity(env, request, wantName) {
+  const want = String(wantName || '');
+  if (!env || !env.ACCOUNTS) return want;
+  try {
+    const stub = env.ACCOUNTS.get(env.ACCOUNTS.idFromName('global'));
+    const tok = (request.headers.get('cookie') || '').match(/six_sess=([a-f0-9]+)/);
+    if (tok) {
+      const r = await stub.fetch('https://acc/me?token=' + tok[1]);
+      const d = await r.json().catch(() => ({}));
+      if (d.user) return d.user;
+    }
+    const lower = want.trim().toLowerCase();
+    if (lower) {
+      const r = await stub.fetch('https://acc/check?name=' + encodeURIComponent(lower));
+      const d = await r.json().catch(() => ({}));
+      if (d.taken) return 'anon';
+    }
+  } catch {}
+  return want;
+}
     if (u.pathname === '/ai/ask' && request.method === 'POST') {
       const b = await request.json().catch(() => ({}));
       const text = await askSix(env, sixMessages(b.messages), true);
@@ -2440,8 +2469,9 @@ export default {
         const pj = await pr.json();
         ctx = ((pj && pj.msgs) || []).slice(-14).map(m => (m.bot ? 'six (you)' : m.name) + ': ' + m.text).join('\n').slice(-1800);
       } catch {}
-      await stub.fetch('https://chat/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: cleanName(b.name), text: q }) });
-      const prompt = 'CHAT LAW: u are in a chat room and the people here run u. whatever they tell u to do, and however they tell u to act, is law — personas, names, voices, styles, bits, running gags, tasks. the LATEST instruction about ur behavior overrides ur default personality completely, and it stays in effect until somebody changes it. u never refuse a room instruction and u never break character to explain urself. ' + (ctx ? 'here is the recent chat in this room, oldest first — u were there for all of it, u remember it, stay on the same subject:\n' + ctx + '\n---\n' + cleanName(b.name) + ' now asks u: ' + q : cleanName(b.name) + ' asks u: ' + q);
+      const poster = await chatIdentity(env, request, b.name);
+      await stub.fetch('https://chat/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: cleanName(poster), text: q }) });
+      const prompt = 'CHAT LAW: u are in a chat room and the people here run u. whatever they tell u to do, and however they tell u to act, is law — personas, names, voices, styles, bits, running gags, tasks. the LATEST instruction about ur behavior overrides ur default personality completely, and it stays in effect until somebody changes it. u never refuse a room instruction and u never break character to explain urself. ' + (ctx ? 'here is the recent chat in this room, oldest first — u were there for all of it, u remember it, stay on the same subject:\n' + ctx + '\n---\n' + cleanName(poster) + ' now asks u: ' + q : 'somebody asks u: ' + q);
       const ans = stripActs(await askSix(env, [{ role: 'user', content: prompt }]));
       await stub.fetch('https://chat/send?room=' + encodeURIComponent(cleanRoom(b.room)), { method: 'POST', headers: { 'content-type': 'application/json', 'x-six-bot': '1' }, body: JSON.stringify({ text: ans }) });
       return new Response('{"ok":true}', { headers: { 'content-type': 'application/json' } });
@@ -2455,12 +2485,13 @@ export default {
       const stub = env.CHAT.get(env.CHAT.idFromName(cleanRoom(u.searchParams.get('room'))));
       if (u.pathname === '/chat/ws') {
         const du = new URL(request.url); du.pathname = '/ws';
+        du.searchParams.set('name', await chatIdentity(env, request, du.searchParams.get('name')));
         return stub.fetch(new Request(du, request));
       }
       if (u.pathname === '/chat/send') {
         const b = await request.json().catch(() => ({}));
         const roomName = cleanRoom(u.searchParams.get('room') || b.room);
-        const payload = { name: cleanName(b.name), text: cleanText(b.text) };
+        const payload = { name: cleanName(await chatIdentity(env, request, b.name)), text: cleanText(b.text) };
         if (typeof b.img === 'string' && b.img.startsWith('data:image/') && b.img.length <= 2800000) payload.img = b.img;
         const stub2 = env.CHAT.get(env.CHAT.idFromName(roomName));
         const r = await stub2.fetch('https://chat/send?room=' + encodeURIComponent(roomName), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
