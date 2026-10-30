@@ -24,7 +24,7 @@ function gproxied(absUrl) {
 const PROXY_SHIM = `(function(){
 var TGT=%%TGT%%, PRE=%%PRE%%;
 function b64(s){ return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
-function rw(u){ try{ if(typeof u!=='string') return u; if(!u || u.indexOf(PRE)===0 || /^(data|blob|about|javascript|mailto|tel):/i.test(u)) return u; var a=new URL(u, TGT); if(!/^https?:$/.test(a.protocol)) return u; return PRE + b64(a.href); }catch(e){ return u; } }
+function rw(u){ try{ if(typeof u!=='string') return u; if(!u || u.indexOf(PRE)===0 || /^(data|blob|about|javascript|mailto|tel):/i.test(u)) return u; var a=new URL(u, TGT); if(!/^https?:$/.test(a.protocol)) return u; try{ if(a.host===location.host) return u; }catch(e){} return PRE + b64(a.href); }catch(e){ return u; } }
 var of=window.fetch;
 if(of) window.fetch=function(input, init){ try{ if(typeof input==='string') input=rw(input); else if(input && input.url) input=new Request(rw(input.url), input); }catch(e){} return of.call(this, input, init); };
 var oo=XMLHttpRequest.prototype.open;
@@ -42,8 +42,16 @@ try{ var _lr=window.location.replace.bind(window.location); window.location.repl
 try{ var _la=window.location.assign.bind(window.location); window.location.assign=function(u){ _la(rw(u)); }; }catch(e){}
 window.open=function(u){ if(u){ window.location.href=rw(u); } return null; };
 })();`;
+function sixAnswerSnippet(tgt) {
+  let t; try { t = new URL(tgt); } catch { return ''; }
+  if (!/(^|\.)bing\.com$/i.test(t.hostname) || !t.pathname.startsWith('/search')) return '';
+  const q = (t.searchParams.get('q') || '').trim();
+  if (!q) return '';
+  const js = "(function(){var Q=" + JSON.stringify(q) + ";function init(){if(document.getElementById('sixbox'))return;var st=document.createElement('style');st.textContent='#sixbox{max-width:648px;margin:14px 0 6px;padding:14px 18px;border:1px solid rgba(167,139,250,.55);border-radius:16px;background:linear-gradient(135deg,rgba(38,22,84,.92),rgba(14,10,34,.94));color:#ece9ff;font-family:system-ui,-apple-system,sans-serif;box-shadow:0 6px 30px rgba(88,28,175,.35)}#sixbox .h{font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#c4b5fd;margin-bottom:6px}#sixbox .b{font-size:16px;line-height:1.5;white-space:pre-wrap}#sixbox .f{margin-top:8px;font-size:11px;opacity:.55}';document.head.appendChild(st);var box=document.createElement('div');box.id='sixbox';box.innerHTML='<div class=h>\u2726 six</div><div class=b>thinking\u2026</div>';var host=document.querySelector('#b_content')||document.body;host.insertBefore(box,host.firstChild);fetch(location.origin+'/ai/answer?q='+encodeURIComponent(Q)).then(function(r){return r.json()}).then(function(j){if(j&&j.answer){box.querySelector('.b').textContent=j.answer;var f=document.createElement('div');f.className='f';f.textContent='ai answer \u2014 the real results are right below';box.appendChild(f);}else{box.remove();}}).catch(function(){box.remove();});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();})();";
+  return '<script>' + js + '</' + 'script>';
+}
 function injectProxyShim(html, tgt, pre) {
-  const shim = '<script>' + PROXY_SHIM.replace('%%TGT%%', JSON.stringify(tgt)).replace('%%PRE%%', JSON.stringify(pre)) + '</' + 'script>';
+  const shim = '<script>' + PROXY_SHIM.replace('%%TGT%%', JSON.stringify(tgt)).replace('%%PRE%%', JSON.stringify(pre)) + '</' + 'script>' + sixAnswerSnippet(tgt);
   if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, m => m + shim);
   if (/<html[^>]*>/i.test(html)) return html.replace(/<html[^>]*>/i, m => m + shim);
   return shim + html;
@@ -1346,6 +1354,23 @@ async function askSix(env, messages) {
   }
   return 'six is unreachable rn ✦ try again in a sec';
 }
+const SIX_ANSWER_SYSTEM = 'You are Six, answering at the top of a search results page inside 6ixNetworks. Answer the search query directly and correctly in 1-3 short sentences. Plain text only — no markdown, no lists, no links. If the query is just a name or a site, give one short line saying what it is. If you genuinely do not know, say that in a few words instead of guessing.';
+const SIX_ANSWER_CACHE = new Map();
+async function askSixAnswer(env, q) {
+  if (!env || !env.AI) return null;
+  const key = q.toLowerCase();
+  const c = SIX_ANSWER_CACHE.get(key);
+  if (c && Date.now() - c.at < 600e3) return c.ans;
+  for (const model of SIX_MODELS) {
+    try {
+      const r = await env.AI.run(model, { messages: [{ role: 'system', content: SIX_ANSWER_SYSTEM }, { role: 'user', content: q }], max_tokens: 160 });
+      const t = (r && (r.response || (r.result && r.result.response))) || '';
+      const ans = String(t).trim().slice(0, 500);
+      if (ans) { SIX_ANSWER_CACHE.set(key, { at: Date.now(), ans }); if (SIX_ANSWER_CACHE.size > 100) SIX_ANSWER_CACHE.delete(SIX_ANSWER_CACHE.keys().next().value); return ans; }
+    } catch {}
+  }
+  return null;
+}
 async function sixHealth(env) {
   const out = { binding: !!(env && env.AI), models: {} };
   if (!env || !env.AI) return out;
@@ -1460,6 +1485,11 @@ export default {
       const b = await request.json().catch(() => ({}));
       const text = await askSix(env, sixMessages(b.messages));
       return new Response(JSON.stringify({ text }), { headers: { 'content-type': 'application/json' } });
+    }
+    if (u.pathname === '/ai/answer') {
+      const q = (u.searchParams.get('q') || '').trim().slice(0, 200);
+      const answer = q ? await askSixAnswer(env, q) : null;
+      return new Response(JSON.stringify({ answer }), { headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=300' } });
     }
     if (u.pathname === '/ai/room' && request.method === 'POST') {
       const b = await request.json().catch(() => ({}));

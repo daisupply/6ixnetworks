@@ -49,7 +49,7 @@ function gproxied(absUrl) {
 const PROXY_SHIM = `(function(){
 var TGT=%%TGT%%, PRE=%%PRE%%;
 function b64(s){ return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
-function rw(u){ try{ if(typeof u!=='string') return u; if(!u || u.indexOf(PRE)===0 || /^(data|blob|about|javascript|mailto|tel):/i.test(u)) return u; var a=new URL(u, TGT); if(!/^https?:$/.test(a.protocol)) return u; return PRE + b64(a.href); }catch(e){ return u; } }
+function rw(u){ try{ if(typeof u!=='string') return u; if(!u || u.indexOf(PRE)===0 || /^(data|blob|about|javascript|mailto|tel):/i.test(u)) return u; var a=new URL(u, TGT); if(!/^https?:$/.test(a.protocol)) return u; try{ if(a.host===location.host) return u; }catch(e){} return PRE + b64(a.href); }catch(e){ return u; } }
 var of=window.fetch;
 if(of) window.fetch=function(input, init){ try{ if(typeof input==='string') input=rw(input); else if(input && input.url) input=new Request(rw(input.url), input); }catch(e){} return of.call(this, input, init); };
 var oo=XMLHttpRequest.prototype.open;
@@ -67,8 +67,16 @@ try{ var _lr=window.location.replace.bind(window.location); window.location.repl
 try{ var _la=window.location.assign.bind(window.location); window.location.assign=function(u){ _la(rw(u)); }; }catch(e){}
 window.open=function(u){ if(u){ window.location.href=rw(u); } return null; };
 })();`;
+function sixAnswerSnippet(tgt) {
+  let t; try { t = new URL(tgt); } catch { return ''; }
+  if (!/(^|\.)bing\.com$/i.test(t.hostname) || !t.pathname.startsWith('/search')) return '';
+  const q = (t.searchParams.get('q') || '').trim();
+  if (!q) return '';
+  const js = "(function(){var Q=" + JSON.stringify(q) + ";function init(){if(document.getElementById('sixbox'))return;var st=document.createElement('style');st.textContent='#sixbox{max-width:648px;margin:14px 0 6px;padding:14px 18px;border:1px solid rgba(167,139,250,.55);border-radius:16px;background:linear-gradient(135deg,rgba(38,22,84,.92),rgba(14,10,34,.94));color:#ece9ff;font-family:system-ui,-apple-system,sans-serif;box-shadow:0 6px 30px rgba(88,28,175,.35)}#sixbox .h{font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#c4b5fd;margin-bottom:6px}#sixbox .b{font-size:16px;line-height:1.5;white-space:pre-wrap}#sixbox .f{margin-top:8px;font-size:11px;opacity:.55}';document.head.appendChild(st);var box=document.createElement('div');box.id='sixbox';box.innerHTML='<div class=h>\u2726 six</div><div class=b>thinking\u2026</div>';var host=document.querySelector('#b_content')||document.body;host.insertBefore(box,host.firstChild);fetch(location.origin+'/ai/answer?q='+encodeURIComponent(Q)).then(function(r){return r.json()}).then(function(j){if(j&&j.answer){box.querySelector('.b').textContent=j.answer;var f=document.createElement('div');f.className='f';f.textContent='ai answer \u2014 the real results are right below';box.appendChild(f);}else{box.remove();}}).catch(function(){box.remove();});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();})();";
+  return '<script>' + js + '</' + 'script>';
+}
 function injectProxyShim(html, tgt, pre) {
-  const shim = '<script>' + PROXY_SHIM.replace('%%TGT%%', JSON.stringify(tgt)).replace('%%PRE%%', JSON.stringify(pre)) + '</' + 'script>';
+  const shim = '<script>' + PROXY_SHIM.replace('%%TGT%%', JSON.stringify(tgt)).replace('%%PRE%%', JSON.stringify(pre)) + '</' + 'script>' + sixAnswerSnippet(tgt);
   if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, m => m + shim);
   if (/<html[^>]*>/i.test(html)) return html.replace(/<html[^>]*>/i, m => m + shim);
   return shim + html;
@@ -1422,6 +1430,11 @@ function sixMessages(list) {
 async function askSix(messages) {
   return 'six only wakes up on the cloudflare build ✦ this copy cant reach him — try s.usareme.site';
 }
+async function askSixAnswer(q) {
+  const t = await askSix([{ role: 'user', content: q }]);
+  if (!t || t.includes('only wakes up') || t.includes('unreachable')) return null;
+  return String(t).trim().slice(0, 500) || null;
+}
 const crypto = require('crypto');
 const CHAT_ROOMS = new Map();
 function chatRoomOf(name) { if (!CHAT_ROOMS.has(name)) CHAT_ROOMS.set(name, { msgs: [], socks: new Set() }); return CHAT_ROOMS.get(name); }
@@ -1534,6 +1547,12 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/ai/health') {
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end(JSON.stringify({ binding: false, note: 'node build — six lives on the cloudflare build' }));
+  }
+  if (u.pathname === '/ai/answer') {
+    const q = (u.searchParams.get('q') || '').trim().slice(0, 200);
+    const answer = q ? await askSixAnswer(q) : null;
+    res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'public, max-age=300' });
+    return res.end(JSON.stringify({ answer }));
   }
   if (u.pathname === '/ai/ask' && req.method === 'POST') {
     const b = await readJsonBody(req);
