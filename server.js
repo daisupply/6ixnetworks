@@ -958,7 +958,8 @@ body{display:block;padding:0}
 .main6 .mhead b{color:#fafafa;font-size:14.5px}
 .main6 .msg.bot .mhead b{color:#9db9ff}
 .main6 .mtime{font-size:11px;opacity:.45}
-.main6 .mtext{white-space:pre-wrap;line-height:1.45}
+.main6 .mtext ul.mdlist{margin:4px 0;padding-left:18px}.mtext ul.mdlist li{margin:2px 0}.mtext code{background:rgba(255,255,255,.13);padding:1px 5px;border-radius:5px;font-size:.92em}
+.mtext{white-space:pre-wrap;line-height:1.45}
 .main6 .sys{text-align:center;opacity:.5;font-size:12px;margin:10px 0}
 #msgs:empty{display:flex;align-items:center;justify-content:center}
 #msgs:empty::after{content:'this room is quiet — say the first thing';opacity:.45;font-size:14px}
@@ -1092,6 +1093,18 @@ function curName(){ return (nameEl.value||'').trim()||myName; }
 var lastMsgKey = '', lastMsgTs = 0;
 function msgTime(ts){ var d = new Date(ts); var h = d.getHours(); var ap = h >= 12 ? 'PM' : 'AM'; h = h % 12; if (h === 0) h = 12; var mm = d.getMinutes(); return h + ':' + (mm < 10 ? '0' : '') + mm + ' ' + ap; }
 function avColor(name){ var h = 0; for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360; return 'hsl(' + h + ',42%,36%)'; }
+function fmtMd(text){
+  var t = String(text == null ? '' : text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  function inl(x){ return x.replace(/\\*\\*([^*]+)\\*\\*/g, '<strong>$1</strong>').replace(/\\x60([^\\x60]+)\\x60/g, '<code>$1</code>').replace(/(^|[^\\*])\\*([^*]+)\\*/g, '$1<em>$2</em>'); }
+  var lines = t.split('\\n'), out = '', inList = false;
+  lines.forEach(function(ln){
+    var m = ln.match(/^\\s*(?:•|-|\\*)\\s+(.*)$/);
+    if (m) { if (!inList) { out += '<ul class="mdlist">'; inList = true; } out += '<li>' + inl(m[1]) + '</li>'; }
+    else { if (inList) { out += '</ul>'; inList = false; } if (ln.trim()) out += '<div>' + inl(ln) + '</div>'; }
+  });
+  if (inList) out += '</ul>';
+  return out || '<div></div>';
+}
 function line(m){
   if(m.sys){ lastMsgKey = ''; var sd = document.createElement('div'); sd.className = 'sys'; sd.textContent = m.text; msgsEl.appendChild(sd); return; }
   var nearBottom = msgsEl.scrollHeight - msgsEl.scrollTop - msgsEl.clientHeight < 160;
@@ -1114,7 +1127,7 @@ function line(m){
   var mediaUrl = (!m.img && m.text && /^https?:\\/\\/\\S+$/.test(m.text.trim())) ? m.text.trim() : null;
   var isVid = !!mediaUrl && /\\.(mp4|webm|mov)(\\?\\S*)?$/i.test(mediaUrl);
   var isImg = !!mediaUrl && /\\.(gif|png|jpe?g|webp)(\\?\\S*)?$/i.test(mediaUrl);
-  if (m.text && !(isVid || isImg)) { var tx = document.createElement('div'); tx.className = 'mtext'; tx.textContent = m.text; body.appendChild(tx); }
+  if (m.text && !(isVid || isImg)) { var tx = document.createElement('div'); tx.className = 'mtext'; if (m.bot) { tx.innerHTML = fmtMd(m.text); } else { tx.textContent = m.text; } body.appendChild(tx); }
   if (m.img) {
     var im = document.createElement('img'); im.src = m.img; im.alt = 'image';
     im.setAttribute('style', 'display:block;max-width:280px;width:100%;border-radius:12px;margin-top:6px;cursor:pointer');
@@ -1979,6 +1992,7 @@ html,body{height:100%}body{display:block;padding:0;margin:0}
 .sugbtn{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.16);color:#d4d4d8;border-radius:999px;padding:7px 13px;font-size:13.5px;cursor:pointer;font-family:inherit}
 .imgbtn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:50%;width:44px;height:44px;flex:none;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;padding:0}
 .imgbtn.on{background:rgba(94,142,255,.5);border-color:rgba(94,142,255,.85)}
+.bub ul.mdlist{margin:4px 0;padding-left:18px}.bub ul.mdlist li{margin:2px 0}.bub code{background:rgba(255,255,255,.13);padding:1px 5px;border-radius:5px;font-size:.92em}
 .aimini{background:#f4f4f5;color:#0a0a0b;border:0;border-radius:9px;padding:7px 12px;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit}
 
 </style></head><body>${STAR_CANVAS}
@@ -2014,7 +2028,7 @@ var IDEA_VAULT = ["roast me like u actually mean it", "roast my fit: black hoodi
 function showIdeas(list){ var row = document.getElementById('ideaRow'); row.innerHTML = ''; list.forEach(function(p){ var b = document.createElement('button'); b.type = 'button'; b.className = 'sugrow'; b.textContent = p; b.addEventListener('click', function(){ var q = document.getElementById('q'); q.value = p; document.getElementById('askbar').requestSubmit(); }); row.appendChild(b); }); }
 function rollIdeas(){ var pool = IDEA_VAULT.slice(), out = []; while (out.length < 6 && pool.length) { out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]); } showIdeas(out); }
 document.getElementById('ideashuffle').addEventListener('click', rollIdeas);
-document.getElementById('ideai').addEventListener('click', function(){ var btn = this; btn.disabled = true; btn.textContent = 'cookin...'; fetch('/ai/ask', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'user', content: 'list exactly 6 short wild funny questions or challenges i could ask u next. one per line, start each line with a dash. no intro, no outro, just the 6 lines. make them different from the usual stuff.' }] }) }).then(function(r){ return r.json(); }).then(function(o){ var lines = ((o && o.text) || '').split('\\n').map(function(l){ return l.replace(/^[-*0-9. )]+/, '').trim(); }).filter(function(l){ return l.length > 8; }).slice(0, 6); if (lines.length >= 3) showIdeas(lines); else rollIdeas(); }).catch(function(){ rollIdeas(); }).finally(function(){ btn.disabled = false; btn.innerHTML = '&#10024; ai ideas'; }); });
+document.getElementById('ideai').addEventListener('click', function(){ var btn = this; btn.disabled = true; btn.textContent = 'cookin...'; fetch('/ai/ask', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'user', content: 'list exactly 6 short wild funny questions or challenges i could ask u next. one per line, start each line with a dash. no intro, no outro, just the 6 lines. make them different from the usual stuff.' }] }) }).then(function(r){ return r.json(); }).then(function(o){ var lines = ((o && o.text) || '').split('\\n').map(function(l){ return l.replace(/^[-*0-9. )]+/, '').trim(); }).filter(function(l){ return l.length > 8; }).slice(0, 6); if (lines.length >= 3) showIdeas(lines); else rollIdeas(); }).catch(function(){ rollIdeas(); }).finally(function(){ btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z"/></svg>ai ideas'; }); });
 rollIdeas();
 </script>
 <script>
@@ -2030,7 +2044,19 @@ if(!THREADS.length) THREADS = [{ id: 't' + Date.now(), name: 'new chat', hist: [
 var _sid = null; try { _sid = localStorage.getItem('gx_ai_cur'); } catch(e){}
 var _nb = document.getElementById('newchat'); if(_nb) _nb.addEventListener('click', newThread);
 var _nb2 = document.getElementById('newchat2'); if(_nb2) _nb2.addEventListener('click', newThread);
-function bubble(cls, text, whoName){ var d=document.createElement('div'); d.className='bub '+cls; if(whoName){ var w=document.createElement('div'); w.className='who'; w.textContent=whoName+' ✦'; d.appendChild(w); } var s=document.createElement('span'); s.textContent=text; d.appendChild(s); d._span=s; logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight; return d; }
+function fmtMd(text){
+  var t = String(text == null ? '' : text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  function inl(x){ return x.replace(/\\*\\*([^*]+)\\*\\*/g, '<strong>$1</strong>').replace(/\\x60([^\\x60]+)\\x60/g, '<code>$1</code>').replace(/(^|[^\\*])\\*([^*]+)\\*/g, '$1<em>$2</em>'); }
+  var lines = t.split('\\n'), out = '', inList = false;
+  lines.forEach(function(ln){
+    var m = ln.match(/^\\s*(?:•|-|\\*)\\s+(.*)$/);
+    if (m) { if (!inList) { out += '<ul class="mdlist">'; inList = true; } out += '<li>' + inl(m[1]) + '</li>'; }
+    else { if (inList) { out += '</ul>'; inList = false; } if (ln.trim()) out += '<div>' + inl(ln) + '</div>'; }
+  });
+  if (inList) out += '</ul>';
+  return out || '<div></div>';
+}
+function bubble(cls, text, whoName){ var d=document.createElement('div'); d.className='bub '+cls; if(whoName){ var w=document.createElement('div'); w.className='who'; w.textContent=whoName+' ✦'; d.appendChild(w); } var s=document.createElement('span'); if(cls==='six'){ s.innerHTML=fmtMd(text); } else { s.textContent=text; } d.appendChild(s); d._span=s; logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight; return d; }
 
 function ask(text){
   hist.push({ role:'user', content: text }); saveThread(); bubble('me', text);
@@ -2059,7 +2085,7 @@ var wait = bubble('six', 'thinking…', 'six');
       var m = t.match(/\\[\\[act:(\\{[\\s\\S]*?\\})\\]\\]/);
       var act = null;
       if(m){ try { act = JSON.parse(m[1]); } catch(e){ try { act = JSON.parse(m[1].split(String.fromCharCode(92)).join('')); } catch(e2){} } t = t.replace(m[0], '').trim() || 'on it ✦'; }
-      wait._span.textContent = t;
+      wait._span.innerHTML = fmtMd(t);
       hist.push({ role:'assistant', content: t }); saveThread();
       if(act) setTimeout(function(){ runAct(act, wait); }, 700);
     })
