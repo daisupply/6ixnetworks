@@ -274,6 +274,8 @@ function cloakOpen(){
 // the site) applies everywhere; no choice saved yet = google by default,
 // so a fresh tab never shows the real name either.
 (function(){ var want='google'; try{ var v=localStorage.getItem('six_disguise'); if(v==='google'||v==='classroom'||v==='docs'||v==='drive') want=v; }catch(e){} cloakTab(want); })();
+(function(){ function rep(){ try { if (window.parent === window) return; var tb = document.getElementById('tabbar'); var on = !!tb && window.matchMedia('(max-width:820px)').matches; window.parent.postMessage({ sixChrome: on ? 'tabbar' : 'plain' }, '*'); } catch (e) {} } rep(); window.addEventListener('resize', rep); })();
+
 `;
 const CLOAK_BAR = `<div style="margin-top:26px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;color:#9a9a9a;font-size:13px">
 <button onclick="cloakTab('google')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">google</button>
@@ -304,9 +306,11 @@ const SIDEBAR_HTML = `<button id="sbBtn" aria-label="menu"><svg width="19" heigh
 </div>
 <div class="sb-foot">everything stays inside the network — nothing loads from its home site</div>
 </aside>
+<nav id="tabbar"><a href="/home"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg><span>home</span></a><a href="/gs"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg><span>games</span></a><a href="/chat"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span>6ixchat</span></a><a href="/ai"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>six ai</span></a><button id="tabMore" type="button"><svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg><span>more</span></button></nav>
 <script>
-(function(){ document.body.classList.add('has-sb'); var p = location.pathname; document.querySelectorAll('#sb nav a').forEach(function(a){ if (a.getAttribute('href') === p) a.classList.add('on'); });
+(function(){ document.body.classList.add('has-sb'); var p = location.pathname; document.querySelectorAll('#sb nav a, #tabbar a').forEach(function(a){ if (a.getAttribute('href') === p) a.classList.add('on'); });
 var b = document.getElementById('sbBtn'); if (b) b.addEventListener('click', function(){ document.body.classList.toggle('sb-open'); });
+var tm = document.getElementById('tabMore'); if (tm && b) tm.addEventListener('click', function(){ b.click(); });
 var s = document.getElementById('sbScrim'); if (s) s.addEventListener('click', function(){ document.body.classList.remove('sb-open'); }); })();
 </script>`;
 // ---------- galaxy theme ----------
@@ -401,6 +405,16 @@ input:focus,textarea:focus,select:focus{border-color:rgba(94,142,255,.65)}
 .card{transition:border-color .15s ease,background .15s ease}
 .card:hover{border-color:rgba(255,255,255,.28);background:#141416}
 a{transition:color .15s ease}
+#tabbar{display:none}
+@media (max-width:820px){
+#tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:50;background:rgba(13,13,15,.94);border-top:1px solid rgba(255,255,255,.1);padding:6px 6px calc(6px + env(safe-area-inset-bottom));justify-content:space-around;align-items:stretch}
+#tabbar a,#tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:0;color:#a1a1aa;font-size:10px;font-weight:600;letter-spacing:.02em;text-decoration:none;padding:5px 0 3px;border-radius:10px;cursor:pointer;font-family:inherit}
+#tabbar a.on{color:#fff}
+#tabbar a.on svg{color:#9db9ff}
+#sbBtn{display:none}
+body.has-sb{padding-bottom:104px}
+}
+
 
 `;
 const PWA_MANIFEST = JSON.stringify({ name: '6ixNetworks', short_name: '6ix', description: '6ixNetworks — search, games, 6ixChat, six ai', start_url: '/', scope: '/', display: 'standalone', background_color: '#0a0a0b', theme_color: '#0a0a0b', icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }] });
@@ -2858,6 +2872,7 @@ function shellPage(servers) {
 <style>html,body{margin:0;height:100%;height:100dvh;background:#0a0a0b;overflow:hidden}iframe{position:fixed;inset:0;width:100%;height:100%;height:100dvh;border:0}
 #dot{position:fixed;right:14px;bottom:14px;z-index:9;width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(14,14,16,.55);color:#9db9ff;opacity:.35;cursor:pointer;font-size:14px;line-height:1}
 #dot:hover{opacity:1}
+body.tabup #dot{bottom:96px}body.tabup #menu{bottom:134px}
 #menu{position:fixed;right:14px;bottom:52px;z-index:9;display:none;flex-direction:column;gap:6px;background:rgba(11,11,13,.94);border:1px solid rgba(255,255,255,.3);border-radius:14px;padding:10px}
 #menu button{background:rgba(94,142,255,.14);color:#f4f4f5;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;text-align:left;font-family:system-ui}
 </style></head><body>
@@ -2876,7 +2891,7 @@ var SERVERS=${list} || [location.origin + '/'];
 var f=document.getElementById('f'); function fitFrame(){ if(window.visualViewport){ f.style.height = window.visualViewport.height + 'px'; } } if(window.visualViewport){ window.visualViewport.addEventListener('resize', fitFrame); window.addEventListener('orientationchange', fitFrame); fitFrame(); } 
 var presets={ google:{t:'Google',i:'https://www.google.com/favicon.ico'}, classroom:{t:'Google Classroom',i:'https://ssl.gstatic.com/classroom/favicon.png'}, docs:{t:'Google Docs',i:'https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico'}, drive:{t:'My Drive - Google Drive',i:'https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png'} };
 function disguise(k){ try{ localStorage.setItem('six_disguise', k); }catch(e){} var p=presets[k]||presets.google; document.title=p.t; var l=document.querySelector("link[rel~='icon']")||document.createElement('link'); l.rel='icon'; l.href=p.i; document.head.appendChild(l); }
-window.addEventListener('message', function(e){ if (e && e.data && e.data.sixCloak) disguise(e.data.sixCloak); });
+window.addEventListener('message', function(e){ if (e && e.data && e.data.sixCloak) disguise(e.data.sixCloak); if (e && e.data && e.data.sixChrome) document.body.classList.toggle('tabup', e.data.sixChrome === 'tabbar'); });
 function panic(){ location.href='https://classroom.google.com/'; } // real classroom, top-level: google sends X-Frame-Options SAMEORIGIN so it can never load inside the frame
 document.addEventListener('keydown', function(e){ if(e.keyCode===192) panic(); });
 document.getElementById('dot').addEventListener('click', function(){ var m=document.getElementById('menu'); m.style.display = m.style.display==='flex' ? 'none' : 'flex'; });
