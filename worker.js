@@ -724,6 +724,8 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <button class="chip" id="vhold" type="button" style="display:none">🎙 hold to talk</button>
 <button class="chip" id="vcam" type="button">📷 cam: off</button>
 <button class="chip" id="vflip" type="button" style="display:none">🔄 flip cam</button>
+<button class="chip" id="vsix" type="button">🤖 six voice: off</button>
+<button class="chip" id="vtalk" type="button" style="display:none">🎙 hold to talk to six</button>
 <button class="chip" id="vleave" type="button">leave call</button>
 </div>
 <div id="vstage" style="display:none;margin:8px 0;padding:10px;border-radius:18px;background:rgba(8,6,24,.72);border:1px solid rgba(196,181,253,.3)">
@@ -776,7 +778,7 @@ function line(m){
 function handle(o){
   if(!o) return;
   if(o.type==='history'){ (o.msgs||[]).forEach(function(m){ line(m); if(m.ts>lastTs) lastTs=m.ts; }); }
-  else if(o.type==='msg'){ line(o.msg); if(o.msg.ts>lastTs) lastTs=o.msg.ts; }
+  else if(o.type==='msg'){ line(o.msg); if(o.msg.ts>lastTs) lastTs=o.msg.ts; if(o.msg.bot && o.msg.ts>joinedAt) speakSix(o.msg.text); }
   else if(o.type==='presence'){ presEl.textContent=o.n+' online'; }
   else if(o.type==='rtc-id'){ myPid=o.id; }
   else if(o.type==='voice'){ voiceList(o.members||[]); }
@@ -794,7 +796,7 @@ function connect(){
 }
 function poll(){
   fetch('/chat/poll?room='+encodeURIComponent(room)+'&since='+lastTs).then(function(r){ return r.json(); }).then(function(o){
-    (o.msgs||[]).forEach(function(m){ line(m); if(m.ts>lastTs) lastTs=m.ts; });
+    (o.msgs||[]).forEach(function(m){ line(m); if(m.ts>lastTs) lastTs=m.ts; if(m.bot && m.ts>joinedAt) speakSix(m.text); });
     presEl.textContent=(o.n||0)+' online · polling';
   }).catch(function(){});
 }
@@ -803,11 +805,7 @@ function stopPoll(){ polling=false; if(pollTimer) clearInterval(pollTimer); }
 document.getElementById('sendbar').addEventListener('submit', function(ev){
   ev.preventDefault();
   var t=textEl.value.trim(); if(!t) return; textEl.value='';
-  if(t.toLowerCase().indexOf('/ai ')===0){
-    line({sys:true, text:'asking six…'});
-    fetch('/ai/room', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ room: room, name: curName(), question: t.slice(4) }) }).catch(function(){});
-    return;
-  }
+  if(t.toLowerCase().indexOf('/ai ')===0){ summonSix(t.slice(4)); return; }
   if(ws && ws.readyState===1){ ws.send(JSON.stringify({ text: t })); }
   else { fetch('/chat/send', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ room: room, name: curName(), text: t }) }).then(function(){ setTimeout(poll, 150); }).catch(function(){}); }
 });
@@ -947,13 +945,14 @@ function voiceList(members){
   vcountEl.textContent = members.length + ' in';
   var pids = members.map(function(m){ return m.pid; });
   Object.keys(pcs).forEach(function(pid){ if(pids.indexOf(pid) === -1) closePc(pid); });
-  Array.prototype.forEach.call(vgridEl.querySelectorAll('[data-tile]'), function(t){ if(pids.indexOf(t.getAttribute('data-tile')) === -1) t.remove(); });
+  Array.prototype.forEach.call(vgridEl.querySelectorAll('[data-tile]'), function(t){ var tp=t.getAttribute('data-tile'); if(tp !== 'sixbot' && pids.indexOf(tp) === -1) t.remove(); });
   members.forEach(function(m){
     if(m.pid === myPid) return;
     ensureTile(m.pid);
     if(!pcs[m.pid] && myPid && myPid < m.pid) makePc(m.pid);
   });
   localTile();
+  sixTileShow();
   vstageEl.style.display = 'block';
   vstatEl.textContent = others === 0 ? 'in the call — just u rn, get ur people in this room' : 'in the call ✦ ' + (others + 1) + ' here';
 }
@@ -1017,6 +1016,60 @@ function teardownVoice(){
 }
 function leaveVoice(){ if(!inVoice) return; vsend({ type: 'rtc-leave' }); teardownVoice(); vstatEl.textContent = 'voice is off — hop in, it runs peer-to-peer thru the room'; }
 function voiceDrop(){ if(!inVoice) return; teardownVoice(); vstatEl.textContent = 'call dropped — it needs the live connection. rejoin when ur back'; }
+var sixVoice=false, sixRec=null, joinedAt=Date.now();
+var vsixBtn=document.getElementById('vsix'), vtalkBtn=document.getElementById('vtalk');
+function sixTileShow(){
+  if(!inVoice || !sixVoice) return;
+  if(vgridEl.querySelector('[data-tile="sixbot"]')) return;
+  var t=document.createElement('div'); t.className='vtile'; t.setAttribute('data-tile','sixbot');
+  t.setAttribute('style','position:relative;border-radius:14px;overflow:hidden;background:rgba(88,28,135,.35);border:1px solid rgba(240,171,252,.45);aspect-ratio:1/1');
+  var ph=document.createElement('div'); ph.setAttribute('style','position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#f0abfc'); ph.textContent='✦';
+  var lb=document.createElement('span'); lb.setAttribute('style','position:absolute;left:8px;bottom:6px;font-size:12px;opacity:.9;text-shadow:0 1px 4px #000'); lb.textContent='six ✦ ai';
+  t.appendChild(ph); t.appendChild(lb); vgridEl.appendChild(t);
+}
+function sixTileHide(){ var t=vgridEl.querySelector('[data-tile="sixbot"]'); if(t) t.remove(); }
+function sixGlow(on){ var t=vgridEl.querySelector('[data-tile="sixbot"]'); if(t){ if(on) t.classList.add('speaking'); else t.classList.remove('speaking'); } }
+function speakSix(text){
+  if(!sixVoice || !inVoice || !('speechSynthesis' in window)) return;
+  var clean=String(text||'').replace(/\\[\\[act:[\\s\\S]*?\\]\\]/g,'').slice(0,420);
+  if(!clean) return;
+  try {
+    var u=new SpeechSynthesisUtterance(clean);
+    u.rate=1.05; u.pitch=0.85;
+    try { var vs=speechSynthesis.getVoices(); for(var i=0;i<vs.length;i++){ if(/^en[-_]US$/i.test(vs[i].lang) && /google/i.test(vs[i].name)){ u.voice=vs[i]; break; } } } catch(e){}
+    u.onstart=function(){ sixGlow(true); };
+    u.onend=function(){ sixGlow(false); };
+    u.onerror=function(){ sixGlow(false); };
+    speechSynthesis.speak(u);
+  } catch(e){}
+}
+function summonSix(q){
+  line({sys:true, text:'asking six…'});
+  fetch('/ai/room', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ room: room, name: curName(), question: q }) }).catch(function(){});
+}
+vsixBtn.addEventListener('click', function(){
+  sixVoice=!sixVoice;
+  vsixBtn.textContent='🤖 six voice: '+(sixVoice?'on':'off');
+  vtalkBtn.style.display=sixVoice?'inline-block':'none';
+  if(sixVoice){ sixTileShow(); vstatEl.textContent='six is in the call ✦ his /ai answers come out loud now — hold the talk button n speak to him'; }
+  else { sixTileHide(); if('speechSynthesis' in window) try{ speechSynthesis.cancel(); }catch(e){} }
+});
+function sixListenStart(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ vstatEl.textContent='this browser cant hear u (chrome does it best) — type /ai instead'; return; }
+  try {
+    sixRec=new SR(); sixRec.lang='en-US'; sixRec.interimResults=false; sixRec.maxAlternatives=1;
+    sixRec.onresult=function(ev){ var s=''; try{ s=ev.results[0][0].transcript||''; }catch(e){} if(s.trim()){ line({sys:true, text:'u said: '+s}); summonSix(s); } };
+    sixRec.onerror=function(){ vstatEl.textContent='six didnt catch that — hold n try again'; };
+    sixRec.start(); vtalkBtn.textContent='🔴 listening… release to send';
+  } catch(e){}
+}
+function sixListenStop(){ if(sixRec){ try{ sixRec.stop(); }catch(e){} sixRec=null; } vtalkBtn.textContent='🎙 hold to talk to six'; }
+vtalkBtn.addEventListener('mousedown', sixListenStart);
+vtalkBtn.addEventListener('mouseup', sixListenStop);
+vtalkBtn.addEventListener('mouseleave', function(){ if(sixRec) sixListenStop(); });
+vtalkBtn.addEventListener('touchstart', function(ev){ ev.preventDefault(); sixListenStart(); });
+vtalkBtn.addEventListener('touchend', function(){ sixListenStop(); });
 vjoinBtn.addEventListener('click', function(){ joinCall(false); });
 vjoinvBtn.addEventListener('click', function(){ joinCall(true); });
 document.getElementById('vleave').addEventListener('click', leaveVoice);
