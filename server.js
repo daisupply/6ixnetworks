@@ -4746,6 +4746,44 @@ function chatProfileNode(req, wantName, wantHue) {
 }
 function stampMsg(msg, prof) { if (prof.disp) msg.disp = prof.disp; if (prof.hue !== null && prof.hue !== undefined) msg.hue = prof.hue; return msg; }
 const SESSIONS = new Map();
+// ===== v113 durable store: Upstash Redis REST (env-gated, write-through) =====
+const STORE_URL = process.env.UPSTASH_REDIS_REST_URL || '';
+const STORE_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || '';
+const STORE_ON = !!(STORE_URL && STORE_TOKEN);
+async function storeCmd(cmds, timeoutMs) {
+  if (!STORE_ON) return null;
+  try {
+    const r = await fetch(STORE_URL + '/pipeline', { method: 'POST', headers: { authorization: 'Bearer ' + STORE_TOKEN, 'content-type': 'application/json' }, body: JSON.stringify(cmds), signal: timeoutMs ? AbortSignal.timeout(timeoutMs) : undefined });
+    if (!r.ok) return null;
+    const j = await r.json();
+    return Array.isArray(j) ? j.map(x => x && x.result) : null;
+  } catch (e) { return null; }
+}
+function storeSet(key, val) { storeCmd([['SET', key, val]]); }
+function storeDel(key) { storeCmd([['DEL', key]]); }
+function persistAcct(lower) { const rec = ACCOUNTS.get(lower); if (rec) storeSet('acct:' + lower, JSON.stringify(rec)); }
+function persistSess(token) { const s = SESSIONS.get(token); if (s) storeSet('sess:' + token, JSON.stringify(s)); }
+function persistReq(r) { storeSet('greq:' + r.id, JSON.stringify({ id: r.id, name: r.name, link: r.link, by: r.by, norm: r.norm, voters: [...r.voters], ts: r.ts })); }
+async function hydrateStore() {
+  if (!STORE_ON) { console.log('store: in-memory only (no UPSTASH env vars)'); return; }
+  const keys = await storeCmd([['KEYS', 'acct:*'], ['KEYS', 'sess:*'], ['KEYS', 'greq:*']], 9000);
+  if (!keys) { console.log('store: hydrate failed — starting empty'); return; }
+  const all = [...(keys[0] || []), ...(keys[1] || []), ...(keys[2] || [])];
+  let na = 0, ns = 0, ng = 0;
+  if (all.length) {
+    const vals = await storeCmd(all.map(k => ['GET', k]), 9000);
+    if (vals) all.forEach((k, ix) => {
+      const v = vals[ix]; if (!v) return;
+      try {
+        const o = JSON.parse(v);
+        if (k.startsWith('acct:')) { ACCOUNTS.set(k.slice(5), o); na++; }
+        else if (k.startsWith('sess:')) { if (o && o.exp > Date.now()) { SESSIONS.set(k.slice(5), o); ns++; } }
+        else if (k.startsWith('greq:')) { GAME_REQUESTS.set(o.id, { id: o.id, name: o.name, link: o.link || '', by: o.by || 'anon', norm: o.norm, voters: new Set(o.voters || []), ts: o.ts || Date.now() }); if (o.id > greqSeq) greqSeq = o.id; ng++; }
+      } catch (e) {}
+    });
+  }
+  console.log('store: hydrated ' + na + ' accounts, ' + ns + ' sessions, ' + ng + ' game requests');
+}
 function chatRoomOf(name) { if (!CHAT_ROOMS.has(name)) CHAT_ROOMS.set(name, { msgs: [], socks: new Set(), pollAct: 0, wipeTimer: null, peers: new Map() }); return CHAT_ROOMS.get(name); }
 function wsEncode(str) {
   const p = Buffer.from(str, 'utf8'); const len = p.length; let h;
@@ -5270,11 +5308,11 @@ const server = http.createServer(async (req, res) => {
     let item = null;
     for (const r of GAME_REQUESTS.values()) { if (r.norm === norm) { item = r; break; } }
     let dup = false;
-    if (item) { dup = true; item.voters.add(vk.key); }
+    if (item) { dup = true; item.voters.add(vk.key); persistReq(item); }
     else {
       if (GAME_REQUESTS.size >= 300) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ok: false, err: 'requests are full rn' })); }
       item = { id: ++greqSeq, name, link, by: voterName(req), norm, voters: new Set([vk.key]), ts: Date.now() };
-      GAME_REQUESTS.set(item.id, item);
+      GAME_REQUESTS.set(item.id, item); persistReq(item);
     }
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end(JSON.stringify({ ok: true, dup, id: item.id }));
@@ -5284,7 +5322,7 @@ const server = http.createServer(async (req, res) => {
     const r = GAME_REQUESTS.get(+b.id);
     if (!r) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ok: false })); }
     const vk = voterKeyFor(req); if (vk.setCookie) res.setHeader('set-cookie', vk.setCookie);
-    if (r.voters.has(vk.key)) r.voters.delete(vk.key); else r.voters.add(vk.key);
+    if (r.voters.has(vk.key)) r.voters.delete(vk.key); else r.voters.add(vk.key); persistReq(r);
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end(JSON.stringify({ ok: true, id: r.id, votes: r.voters.size, mine: r.voters.has(vk.key) }));
   }
@@ -5302,12 +5340,12 @@ const server = http.createServer(async (req, res) => {
         else if (RESERVED_NAMES.includes(lower)) out = { ok: false, err: 'that name is taken' };
         else if (pass.length < 4) out = { ok: false, err: 'password needs 4+ characters' };
         else if (ACCOUNTS.has(lower)) out = { ok: false, err: 'that name is taken — log in instead' };
-        else { const salt = randHex(16); ACCOUNTS.set(lower, { name, salt, hash: await sha256hex(salt + ':' + pass), disp: '', bio: '', hue: null }); const token = randHex(24); SESSIONS.set(token, { name, exp: Date.now() + 30 * 24 * 3600e3 }); out = { ok: true, user: name, token }; }
+        else { const salt = randHex(16); ACCOUNTS.set(lower, { name, salt, hash: await sha256hex(salt + ':' + pass), disp: '', bio: '', hue: null }); persistAcct(lower); const token = randHex(24); SESSIONS.set(token, { name, exp: Date.now() + 30 * 24 * 3600e3 }); persistSess(token); out = { ok: true, user: name, token }; }
       } else {
         const rec = ACCOUNTS.get(lower);
         if (!rec) out = { ok: false, err: 'no account with that name — sign up first' };
         else if (rec.hash !== await sha256hex(rec.salt + ':' + pass)) out = { ok: false, err: 'wrong password' };
-        else { const token = randHex(24); SESSIONS.set(token, { name: rec.name, exp: Date.now() + 30 * 24 * 3600e3 }); out = { ok: true, user: rec.name, token }; }
+        else { const token = randHex(24); SESSIONS.set(token, { name: rec.name, exp: Date.now() + 30 * 24 * 3600e3 }); persistSess(token); out = { ok: true, user: rec.name, token }; }
       }
       const headers = { 'content-type': 'application/json' };
       if (out.ok && out.token) headers['set-cookie'] = 'six_sess=' + out.token + '; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000';
@@ -5321,11 +5359,11 @@ const server = http.createServer(async (req, res) => {
       const b = await readJsonBody(req);
       rec.disp = cleanText(b.disp).slice(0, 24);
       rec.bio = cleanText(b.bio).slice(0, 90);
-      rec.hue = validHue(b.hue);
+      rec.hue = validHue(b.hue); persistAcct(s.name.toLowerCase());
       res.writeHead(200, { 'content-type': 'application/json' });
       return res.end(JSON.stringify({ ok: true, disp: rec.disp, bio: rec.bio, hue: rec.hue }));
     }
-    if (kind === 'logout' && req.method === 'POST') { if (cookieTok) SESSIONS.delete(cookieTok[1]); res.writeHead(200, { 'content-type': 'application/json', 'set-cookie': 'six_sess=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0' }); return res.end('{"ok":true}'); }
+    if (kind === 'logout' && req.method === 'POST') { if (cookieTok) { SESSIONS.delete(cookieTok[1]); storeDel('sess:' + cookieTok[1]); } res.writeHead(200, { 'content-type': 'application/json', 'set-cookie': 'six_sess=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0' }); return res.end('{"ok":true}'); }
     res.writeHead(404, { 'content-type': 'application/json' }); return res.end('{"ok":false}');
   }
   if (u.pathname === '/ai/image' && req.method === 'POST') {
@@ -5615,4 +5653,4 @@ server.on('upgrade', (req, socket, head) => {
   try { const p = new URL(req.url, 'http://x').pathname; if (SJ_WISP && p.startsWith('/wisp')) return SJ_WISP.routeRequest(req, socket, head); } catch (e) {}
   return chatUpgrade(req, socket, head);
 });
-server.listen(PORT, () => console.log('web proxy listening on ' + PORT));
+hydrateStore().catch(() => {}).finally(() => server.listen(PORT, () => console.log('web proxy listening on ' + PORT)));
