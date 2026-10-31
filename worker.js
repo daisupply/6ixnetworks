@@ -1027,6 +1027,8 @@ body{display:block;padding:0}
 #vgrid video:fullscreen{width:100%;height:100%;object-fit:cover;background:#000}
 #vstage:fullscreen{border-radius:0;padding:14px;background:rgba(10,10,11,.97)}
 #vstage:fullscreen #vgrid{height:calc(100% - 46px);align-content:center}
+.head6 .mainbtn,.aihead .mainbtn{background:#f4f4f5;color:#0a0a0b;border-radius:999px;padding:7px 13px;font-size:13px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:6px;flex:none}
+
 .dme{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:9px 10px;margin-top:10px}
 .dme-av{width:36px;height:36px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff;background:#3f3f46}
 .dme-av.big{width:52px;height:52px;font-size:21px}
@@ -1075,7 +1077,7 @@ ${CLOAK_BAR}
 <div class="dme"><div class="dme-av" id="myav">?</div><div class="dme-meta"><b id="mydisp">guest</b><span id="mysub">tap the gear to set ur style</span></div><button class="dme-btn" id="profbtn" type="button" title="ur profile" aria-label="ur profile"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
 </aside>
 <main class="main6">
-<div class="head6"><button id="drawerbtn" type="button" aria-label="rooms" style="display:none;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);color:#e4e4e7;align-items:center;justify-content:center;cursor:pointer;flex:none;padding:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span id="roomtitle">lobby</span><span class="head6-sub">live rooms · voice + video</span></div>
+<div class="head6"><button id="drawerbtn" type="button" aria-label="rooms" style="display:none;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);color:#e4e4e7;align-items:center;justify-content:center;cursor:pointer;flex:none;padding:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span id="roomtitle">lobby</span><span class="head6-sub">live rooms · voice + video</span><a class="mainbtn" href="/home"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>main page</a></div>
 <div id="privbar" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid rgba(255,255,255,.4);border-radius:12px;background:rgba(255,255,255,.08);font-size:14px;text-align:left"></div>
 
 
@@ -2066,6 +2068,7 @@ html,body{height:100%}body{display:block;padding:0;margin:0}
 .aifoot{margin-top:auto;display:flex;flex-direction:column;gap:10px}
 .aiback{color:#9db9ff;text-decoration:none;font-size:13.5px;font-weight:600}
 .aimain{flex:1;display:flex;flex-direction:column;min-width:0}
+.head6 .mainbtn,.aihead .mainbtn{background:#f4f4f5;color:#0a0a0b;border-radius:999px;padding:7px 13px;font-size:13px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:6px;flex:none}
 .aihead{display:none;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.09);background:#101012;font-weight:800}
 #log{flex:1;overflow-y:auto;padding:18px 16px;min-height:0}
 #ideabox{padding:2px 16px 8px}
@@ -2101,7 +2104,7 @@ html,body{height:100%}body{display:block;padding:0;margin:0}
 <div class="aifoot">${CLOAK_BAR}<a class="aiback" href="/home">&larr; 6ixnetworks</a></div>
 </aside>
 <main class="aimain">
-<div class="aihead"><span>six &#10022; ai</span><span style="flex:1"></span><button class="aimini" id="newchat2" type="button">+ new</button></div>
+<div class="aihead"><span>six &#10022; ai</span><span style="flex:1"></span><a class="mainbtn" href="/home"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>main page</a><button class="aimini" id="newchat2" type="button">+ new</button></div>
 <div id="log"></div>
 <div class="dockwrap">
 <div id="sugpanel" hidden>
