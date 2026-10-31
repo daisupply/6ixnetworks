@@ -1032,6 +1032,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body><div class="wrap" style="t
 <script src="/uv-assets/baremux/index.js?e=67"></script>
 <script>
 (async function(){
+  try { var bk = 'gx_warm_' + location.pathname; var bn = +(sessionStorage.getItem(bk) || 0); if (bn >= 3) { location.replace(document.querySelector('#slow a').href); return; } sessionStorage.setItem(bk, String(bn + 1)); } catch (e) {}
   var slow = document.getElementById('slow');
   setTimeout(function(){ slow.style.display = 'block'; }, 8000);
   try {
@@ -3544,7 +3545,7 @@ document.getElementById('addtab').addEventListener('submit', function(ev){
 renderTabs();
 </script>
 <script>
-var BTKEY='gx_btabs_v1';
+var BTKEY='gx_btabs_v2';
 var btabs=[], bactive=0, bid=0;
 function bEl(id){ return document.getElementById(id); }
 function bsave(){ try{ localStorage.setItem(BTKEY, JSON.stringify({ tabs: btabs, active: bactive })); }catch(e){} }

@@ -3383,7 +3383,7 @@ document.getElementById('addtab').addEventListener('submit', function(ev){
 renderTabs();
 </script>
 <script>
-var BTKEY='gx_btabs_v1';
+var BTKEY='gx_btabs_v2';
 var btabs=[], bactive=0, bid=0;
 function bEl(id){ return document.getElementById(id); }
 function bsave(){ try{ localStorage.setItem(BTKEY, JSON.stringify({ tabs: btabs, active: bactive })); }catch(e){} }
