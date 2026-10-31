@@ -645,8 +645,8 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <h1>6ix<span>Networks</span> — youtube mode</h1>
 
 <form action="/yt/search" method="get"><input name="q" type="text" placeholder="search youtube" autocomplete="off" autofocus><button type="submit">search</button></form>
-<a href="/go?q=https://www.youtube.com" style="display:block;text-align:center;background:#e39a2d;color:#fff;font-weight:800;border-radius:999px;padding:13px 20px;margin:16px auto 4px;max-width:430px;text-decoration:none;font-size:16px">enter youtube →</a>
-<div style="text-align:center;opacity:.65;font-size:13px">the real youtube inside the network — or search above for the fast player</div>
+<a href="/browse/aHR0cHM6Ly9pbnZpZGlvdXMudGlla29ldHRlci5jb20" style="display:block;text-align:center;background:#e39a2d;color:#fff;font-weight:800;border-radius:999px;padding:13px 20px;margin:16px auto 4px;max-width:430px;text-decoration:none;font-size:16px">enter youtube →</a>
+<div style="text-align:center;opacity:.65;font-size:13px">the full youtube inside the network — home, trending, search. or search above for the fast player</div>
 <div class="links">
 
 <a href="/home">← back to 6ixnetworks</a>
@@ -1369,6 +1369,7 @@ body{display:block;padding:0}
 .dme{background:rgba(255,255,255,.05)}
 .pf-card{background:#0e0e10}
 .app6{background:transparent}
+.head6 .mainbtn{padding:9px 16px;font-size:13.5px;box-shadow:0 6px 18px rgba(0,0,0,.35)}
 .mode{border-radius:15px}
 
 </style></head><body>${STAR_CANVAS}<canvas id="stars"></canvas><script src="/stars.js"></script><div class="app6">
@@ -1389,14 +1390,14 @@ body{display:block;padding:0}
 <div class="cr-sec">online</div>
 
 <div class="cr-hint" id="pres">connecting…</div>
-<a class="chip cr-item exit6" href="/home"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> 6ixNetworks — back to the site</a>
+
 <div class="cr-sec">disguise</div>
 ${CLOAK_BAR}
 <div class="cr-hint">real people, live ✦ public rooms are public — grab a private room for just ur people</div>
 <div class="dme"><div class="dme-av" id="myav">?</div><div class="dme-meta"><b id="mydisp">guest</b><span id="mysub">tap the gear to set ur style</span></div><button class="dme-btn" id="profbtn" type="button" title="ur profile" aria-label="ur profile"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
 </aside>
 <main class="main6">
-<div class="head6"><button id="drawerbtn" type="button" aria-label="rooms" style="display:none;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);color:#e4e4e7;align-items:center;justify-content:center;cursor:pointer;flex:none;padding:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span id="roomtitle">lobby</span><span class="head6-sub">live rooms · voice + video</span><a class="mainbtn" href="/home"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>main page</a></div>
+<div class="head6"><button id="drawerbtn" type="button" aria-label="rooms" style="display:none;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);color:#e4e4e7;align-items:center;justify-content:center;cursor:pointer;flex:none;padding:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span id="roomtitle">lobby</span><span class="head6-sub">live rooms · voice + video</span><a class="mainbtn" href="/home"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>6ixnetworks</a></div>
 <div id="privbar" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid rgba(255,255,255,.4);border-radius:12px;background:rgba(255,255,255,.08);font-size:14px;text-align:left"></div>
 
 
@@ -3429,6 +3430,9 @@ function isSearchDest(dest) {
     return false;
   } catch (e) { return false; }
 }
+function isYtHost(dest) {
+  try { const h = new URL(dest).hostname.toLowerCase(); return h === 'youtube.com' || h === 'www.youtube.com' || h === 'm.youtube.com' || h === 'music.youtube.com'; } catch (e) { return false; }
+}
 function normalizeInput(q) {
   const s = (q || '').trim();
   if (!s) return null;
@@ -3667,7 +3671,7 @@ function ytSearchPage(query, hit) {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}<div class="wrap">
-<a class="back" href="/yt">← youtube</a> <a href="/go?q=https://www.youtube.com" style="display:inline-block;float:right;background:#e39a2d;color:#fff;font-weight:700;border-radius:999px;padding:6px 14px;text-decoration:none;font-size:13.5px">enter youtube →</a>
+<a class="back" href="/yt">← youtube</a> <a href="/browse/aHR0cHM6Ly9pbnZpZGlvdXMudGlla29ldHRlci5jb20" style="display:inline-block;float:right;background:#e39a2d;color:#fff;font-weight:700;border-radius:999px;padding:6px 14px;text-decoration:none;font-size:13.5px">enter youtube →</a>
 <h1>6ix<span>Networks</span></h1>
 <form action="/yt/search" method="get"><input name="q" type="text" value="${escHtml(query)}" placeholder="search youtube ✦" autocomplete="off"><button type="submit">go</button></form>
 <div class="grid" style="margin-top:18px">${cards}</div>
@@ -3951,7 +3955,7 @@ function ytWatchPage2(id, hit, phit, uvUrl) {
 ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <div class="wrap">
 <a class="back" href="/yt">← youtube</a>
-<a href="/go?q=https://www.youtube.com" style="display:inline-block;float:right;background:#e39a2d;color:#fff;font-weight:700;border-radius:999px;padding:6px 14px;text-decoration:none;font-size:13.5px">enter youtube →</a>
+<a href="/browse/aHR0cHM6Ly9pbnZpZGlvdXMudGlla29ldHRlci5jb20" style="display:inline-block;float:right;background:#e39a2d;color:#fff;font-weight:700;border-radius:999px;padding:6px 14px;text-decoration:none;font-size:13.5px">enter youtube →</a>
 <iframe id="ytuv" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="width:100%;aspect-ratio:16/9;border:0;border-radius:18px;background:#000;margin-top:12px"></iframe>
 <video id="vid" controls playsinline preload="auto" ${poster ? `poster="${poster}"` : ''} style="width:100%;border-radius:18px;background:#000;aspect-ratio:16/9;margin-top:12px;display:none"></video>
 <iframe id="ytembed" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="width:100%;aspect-ratio:16/9;border:0;border-radius:18px;background:#000;margin-top:12px;display:none"></iframe>
@@ -4010,7 +4014,7 @@ function toEmbed(){
     var v=doc.querySelector('video');
     if(v && (v.readyState>=2 || v.currentTime>0)){ setStat('playing ✦'); clearInterval(embedWatch); embedWatch=null; return; }
     var t=(doc.body.innerText || '').toLowerCase();
-    if(t.indexOf('video is unavailable')>=0 || t.indexOf('video unavailable')>=0 || t.indexOf('sign in')>=0 || t.indexOf('configuration error')>=0 || (t.indexOf('error')>=0 && t.indexOf('occurred')>=0)){
+    if(t.indexOf('video is unavailable')>=0 || t.indexOf('video unavailable')>=0 || t.indexOf('error processing your request')>=0 || t.indexOf('sign in')>=0 || t.indexOf('configuration error')>=0 || (t.indexOf('error')>=0 && t.indexOf('occurred')>=0)){
       clearInterval(embedWatch); embedWatch=null;
       setStat('the embed got refused — tap stream mode, that is the one that works');
     }
@@ -4051,7 +4055,7 @@ function startWatch(){
     var v=doc.querySelector('video');
     if(v && (v.readyState>=2 || v.currentTime>0)){ setStat('playing on youtube \u2726'); stopWatch(); return; }
     var t=(doc.body.innerText || '').toLowerCase();
-    if(t.indexOf('sign in to confirm')>=0 || t.indexOf('video is unavailable')>=0 || t.indexOf('video unavailable')>=0 || t.indexOf('error processing your request')>=0){
+    if(t.indexOf('sign in to confirm')>=0 || t.indexOf('video is unavailable')>=0 || t.indexOf('video unavailable')>=0 || t.indexOf('error processing your request')>=0 || t.indexOf('error processing your request')>=0){
       stopWatch(); setStat('youtube walled that one through the engine \u2014 stream mode instead'); toStream();
     }
   }, 2500);
