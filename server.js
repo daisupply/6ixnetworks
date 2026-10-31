@@ -4413,6 +4413,7 @@ if (UV_START) goUv(UV_START);
 
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://localhost');
+  if (u.pathname.length > 1 && u.pathname.endsWith('/') && !/^\/(uv|sj|px|browse|gproxy|wisp)/.test(u.pathname)) u.pathname = u.pathname.slice(0, -1);
   const _end0 = res.end.bind(res);
   res.end = (body, ...rest) => {
     try {

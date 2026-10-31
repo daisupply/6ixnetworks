@@ -4304,6 +4304,7 @@ gf.addEventListener('load', function(){ setTimeout(check, 3000); });
 export default {
   async fetch(request, env, ctx) {
     const u = new URL(request.url);
+    if (u.pathname.length > 1 && u.pathname.endsWith('/') && !/^\/(uv|sj|px|browse|gproxy|wisp)/.test(u.pathname)) u.pathname = u.pathname.slice(0, -1);
     if (u.pathname === '/' || u.pathname === '/index.html') {
       return new Response(cfBoot(shellPage(null)), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
     }
