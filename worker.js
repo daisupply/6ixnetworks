@@ -3319,9 +3319,13 @@ body.sb-off #stage iframe{height:78dvh}
 @media(max-width:820px){ #stage{padding-bottom:82px} }
 @media(max-width:640px){ .navbtns button{width:34px;height:34px} #engseg button{padding:8px 13px;font-size:12.5px} #toolbar{gap:7px;padding:8px} }
 
-#stage{max-width:none;width:100%;padding:0 2px}
-#stage iframe{flex:1;min-height:0;border-radius:12px}
+html,body{height:100%}
+body{height:100dvh;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box}
+#stage{flex:1;min-height:0;width:100%;max-width:none;padding:0}
+#stage iframe{flex:1;width:100%;height:100%;min-height:0;border:0;border-radius:0;display:block}
+#ntp{flex:1;overflow-y:auto;width:100%}
 #toolbar{max-width:none}
+@media(max-width:820px){ #stage{padding-bottom:74px} }
 </style></head>
 <body>${STAR_CANVAS}
 <div id="tabstrip"></div>
@@ -3456,7 +3460,7 @@ function renderBtabs(){
     if(!btabs.some(function(tb){ return tb.id===id && tb.url; })) f.remove();
   });
   bEl('ntp').style.display = (act && act.url) ? 'none' : 'block';
-  stage.style.display = (act && act.url) ? 'block' : 'none';
+  stage.style.display = (act && act.url) ? 'flex' : 'none';
   var qi=document.querySelector('#omni input[name=q]');
   if(qi && act && document.activeElement!==qi) qi.value = act.raw || '';
 }
