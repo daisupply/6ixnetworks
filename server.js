@@ -497,6 +497,14 @@ body.menu-open #dropmenu{opacity:1;transform:none;pointer-events:auto}
 body.has-tb{padding-top:84px}
 #sbBtn,#sb,#sbScrim{display:none!important}
 @media(max-width:900px){ .tb-links{display:none} }
+
+/* ===== v88 calm menu tiles — glass over the sky, no lift, soft glow ===== */
+.launch{gap:14px;margin-top:40px}
+.lcard{background:rgba(18,14,10,.5);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,236,200,.09);border-radius:20px;padding:20px;box-shadow:none;transition:border-color .35s ease,background .35s ease,box-shadow .35s ease}
+.lcard:hover{transform:none;background:rgba(26,20,13,.62);border-color:rgba(246,207,141,.3);box-shadow:0 0 28px rgba(227,154,45,.09)}
+.lcard svg{color:#e3c48c;opacity:.85}
+.lcard b{font-weight:650;color:#efe9dc}
+.lcard span{color:#99917f}
 `;
 const PWA_MANIFEST = JSON.stringify({ name: '6ixNetworks', short_name: '6ix', description: '6ixNetworks — search, games, 6ixChat, six ai', start_url: '/', scope: '/', display: 'standalone', background_color: '#0a0a0b', theme_color: '#0a0a0b', icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }] });
 const SW_JS = `self.addEventListener('install', function(e){ self.skipWaiting(); });
