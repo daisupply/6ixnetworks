@@ -2197,13 +2197,30 @@ html,body{height:100%}body{display:block;padding:0;margin:0}
 .aihead{background:#0c0c0e}
 .aiapp{background:transparent}
 
+
+/* ===== v90 six ai — the full assistant view ===== */
+.airail{background:rgba(10,8,6,.6);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+.aihead{background:rgba(6,5,3,.5);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.06)}
+#log{padding:28px max(18px,calc((100% - 780px)/2)) 34px}
+.bub{max-width:82%;margin:10px 0;padding:12px 16px;border-radius:18px;font-size:15.5px;line-height:1.65}
+.me{margin-left:auto;background:linear-gradient(180deg,rgba(227,154,45,.34),rgba(227,154,45,.26));border:1px solid rgba(246,207,141,.22);border-bottom-right-radius:8px}
+.six{margin-right:auto;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);border-bottom-left-radius:8px}
+.who{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#c99a52;margin:16px 0 0}
+.dockwrap{background:transparent;border-top:0;padding:8px 16px calc(16px + env(safe-area-inset-bottom))}
+#askbar{max-width:780px;margin:0 auto;background:rgba(24,19,12,.8);-webkit-backdrop-filter:blur(20px) saturate(1.4);backdrop-filter:blur(20px) saturate(1.4);border:1px solid rgba(255,236,200,.15);border-radius:26px;padding:9px 10px;box-shadow:0 18px 44px rgba(0,0,0,.5);align-items:center}
+#askbar #q{background:transparent;border:0;box-shadow:none;font-size:16px;padding:10px 12px}
+#askbar #q:focus{border:0;box-shadow:none}
+#sugpanel{background:rgba(16,13,9,.92);-webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px);border:1px solid rgba(255,236,200,.13);border-radius:18px;box-shadow:0 18px 44px rgba(0,0,0,.5)}
+.sugrow:hover{background:rgba(227,154,45,.12)}
+.aicredit{margin-top:10px;font-size:11.5px;color:#8a7a5c;letter-spacing:.05em}
+
 </style></head><body>${STAR_CANVAS}
 <canvas id="stars"></canvas><script src="/stars.js"></script><div class="aiapp app6">
 <aside class="airail">
 <div class="aibrand">six <span>&#10022; ai</span></div>
 <button class="ainew" id="newchat" type="button">+ new chat</button>
 <div class="aithreads" id="threads"></div>
-<div class="aifoot">${CLOAK_BAR}<a class="aiback" href="/home">&larr; 6ixnetworks</a></div>
+<div class="aifoot">${CLOAK_BAR}<a class="aiback" href="/home">&larr; 6ixnetworks</a><div class="aicredit">built by bro &#10022;</div></div>
 </aside>
 <main class="aimain">
 <div class="aihead"><span>six &#10022; ai</span><span style="flex:1"></span><a class="mainbtn" href="/home"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>main page</a><button class="aimini" id="newchat2" type="button">+ new</button></div>
