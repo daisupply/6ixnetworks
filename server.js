@@ -541,6 +541,11 @@ body[data-sky="blood"] .dm-grid a.on{background:rgba(235,70,50,.14)}
 body[data-sky="blood"] .lcard svg{color:#ffb4a3}
 body[data-sky="blood"] .lcard:hover{border-color:rgba(255,154,134,.35);box-shadow:0 0 28px rgba(235,70,50,.1)}
 body[data-sky="blood"] .cr-item.on{background:rgba(235,70,50,.3)}
+
+/* ===== v94 solid tiles — tiles sit ON the sky, never see-through ===== */
+body .card, body .lcard{ background:linear-gradient(165deg,#1c1712,#131009); -webkit-backdrop-filter:none; backdrop-filter:none; border-color:rgba(255,236,200,.13) }
+body .card:hover{ background:linear-gradient(165deg,#221c15,#15120c); border-color:rgba(246,207,141,.4) }
+body .lcard:hover{ background:linear-gradient(165deg,#221c15,#15120c); border-color:rgba(246,207,141,.35); box-shadow:0 0 24px rgba(227,154,45,.08) }
 `;
 const PWA_MANIFEST = JSON.stringify({ name: '6ixNetworks', short_name: '6ix', description: '6ixNetworks — search, games, 6ixChat, six ai', start_url: '/', scope: '/', display: 'standalone', background_color: '#0a0a0b', theme_color: '#0a0a0b', icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }] });
 const SW_JS = `self.addEventListener('install', function(e){ self.skipWaiting(); });
@@ -914,6 +919,11 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{pos
 #jumpRow{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px}
 #jumpRow .card{flex:0 0 168px}
 @media(max-width:640px){ #feat img{height:170px} #feat .feat-t{font-size:18px} }
+
+
+#gq, #gc{ background:#171310; border-color:rgba(255,236,200,.16) }
+.chip{ background:#241b0f; border-color:rgba(255,236,200,.28) }
+.chip.on{ background:#3a2a12; border-color:rgba(246,207,141,.55) }
 
 </style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/home">← 6ixNetworks</a>
