@@ -1074,32 +1074,38 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CA
 <script src="/uv-assets/baremux/index.js?e=67"></script>
 <script>
 var BOOTING=true;
-var PROX=${JSON.stringify(prox)}, ALT=${JSON.stringify(alt)}, stage=0;
+var PROX=${JSON.stringify(prox)};
 var gf=document.getElementById('gf'), stEl=document.getElementById('st');
-var MKEY='gx_mode_'+location.search;
-function saveMode(){ try{ localStorage.setItem(MKEY, stage===0 ? 'prox' : 'alt'); }catch(e){} }
-var startAlt=false; try{ startAlt = localStorage.getItem(MKEY)==='alt'; }catch(e){}
 try{ var gu=new URLSearchParams(location.search).get('u'); if(gu){ var R=[]; try{ R=JSON.parse(localStorage.getItem('gx_recent'))||[]; }catch(e){} R=[gu].concat(R.filter(function(x){ return x!==gu; })).slice(0,12); localStorage.setItem('gx_recent', JSON.stringify(R)); } }catch(e){}
-function dead(){
+var tries=0, alive=false;
+function errPage(){
   try{
     var d=gf.contentDocument;
     if(!d || !d.body) return false;
     var t=d.body.innerText||'';
-    if(/proxy could not reach|that host is blocked|bad proxy path|error processing your request/i.test(t)) return true;
-    if(d.querySelector('canvas,iframe,video,embed,object')) return false;
-    return d.body.innerHTML.length < 5000;
+    return /error processing your request|failed to load|proxy could not reach|that host is blocked|bad proxy path/i.test(t);
+  }catch(e){ return false; }
+}
+function hasLife(){
+  try{
+    var d=gf.contentDocument;
+    if(!d || !d.body) return false;
+    if(d.querySelector('canvas,iframe,video,embed,object')) return true;
+    return d.body.innerHTML.length > 5000 && (d.body.innerText||'').trim().length > 40;
   }catch(e){ return false; }
 }
 function check(){
-  if(BOOTING) return;
-  if(!dead()){ saveMode(); if(stEl) stEl.textContent=''; return; }
-  if(stage===0){ stage=1; if(stEl) stEl.textContent='switching route…'; gf.src=ALT; arm(); }
-  else if(stage===1){ stage=2; if(stEl) stEl.textContent=''; document.getElementById('dead').style.display='block'; }
+  if(BOOTING || alive) return;
+  if(hasLife()){ alive=true; if(stEl) stEl.textContent=''; return; }
+  if(errPage()){
+    if(tries<2){ tries++; if(stEl) stEl.textContent='reconnecting\u2026'; gf.src=PROX; arm(); }
+    else { if(stEl) stEl.textContent=''; document.getElementById('dead').style.display='block'; }
+  }
 }
-function arm(){ [5000, 11000, 18000, 30000].forEach(function(ms){ setTimeout(check, ms); }); }
-function useNet(){ stage=0; document.getElementById('dead').style.display='none'; if(stEl) stEl.textContent=''; gf.src=PROX; arm(); }
+function arm(){ [6000, 14000, 26000, 45000].forEach(function(ms){ setTimeout(check, ms); }); }
+function useNet(){ tries=0; alive=false; document.getElementById('dead').style.display='none'; if(stEl) stEl.textContent=''; gf.src=PROX; arm(); }
 function retry(){ useNet(); }
-gf.addEventListener('load', function(){ setTimeout(check, 3000); });
+gf.addEventListener('load', function(){ setTimeout(check, 4000); });
 (async function(){
   try {
     if ('serviceWorker' in navigator) {
@@ -1111,7 +1117,7 @@ gf.addEventListener('load', function(){ setTimeout(check, 3000); });
     if ((await conn.getTransport()) !== '/uv-assets/epoxy/index.mjs?e=67') await conn.setTransport('/uv-assets/epoxy/index.mjs?e=67', [{ wisp: (window.GX_WISP || (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/') }]);
   } catch (e) {}
   BOOTING=false;
-  if (startAlt) { stage=1; gf.src=ALT; } else { gf.src=PROX; }
+  gf.src=PROX;
   arm();
 })();
 </script>
@@ -1142,32 +1148,38 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CA
 <script src="/uv-assets/baremux/index.js?e=67"></script>
 <script>
 var BOOTING=true;
-var PROX=${JSON.stringify(prox)}, ALT=${JSON.stringify(alt)}, stage=0;
+var PROX=${JSON.stringify(prox)};
 var gf=document.getElementById('gf'), stEl=document.getElementById('st');
-var MKEY='gx_mode_'+location.search;
-function saveMode(){ try{ localStorage.setItem(MKEY, stage===0 ? 'prox' : 'alt'); }catch(e){} }
-var startAlt=false; try{ startAlt = localStorage.getItem(MKEY)==='alt'; }catch(e){}
 try{ var gu=new URLSearchParams(location.search).get('u'); if(gu){ var R=[]; try{ R=JSON.parse(localStorage.getItem('gx_arecent'))||[]; }catch(e){} R=[gu].concat(R.filter(function(x){ return x!==gu; })).slice(0,12); localStorage.setItem('gx_arecent', JSON.stringify(R)); } }catch(e){}
-function dead(){
+var tries=0, alive=false;
+function errPage(){
   try{
     var d=gf.contentDocument;
     if(!d || !d.body) return false;
     var t=d.body.innerText||'';
-    if(/proxy could not reach|that host is blocked|bad proxy path|error processing your request/i.test(t)) return true;
-    if(d.querySelector('canvas,iframe,video,embed,object')) return false;
-    return d.body.innerHTML.length < 5000;
+    return /error processing your request|failed to load|proxy could not reach|that host is blocked|bad proxy path/i.test(t);
+  }catch(e){ return false; }
+}
+function hasLife(){
+  try{
+    var d=gf.contentDocument;
+    if(!d || !d.body) return false;
+    if(d.querySelector('canvas,iframe,video,embed,object')) return true;
+    return d.body.innerHTML.length > 5000 && (d.body.innerText||'').trim().length > 40;
   }catch(e){ return false; }
 }
 function check(){
-  if(BOOTING) return;
-  if(!dead()){ saveMode(); if(stEl) stEl.textContent=''; return; }
-  if(stage===0){ stage=1; if(stEl) stEl.textContent='switching route…'; gf.src=ALT; arm(); }
-  else if(stage===1){ stage=2; if(stEl) stEl.textContent=''; document.getElementById('dead').style.display='block'; }
+  if(BOOTING || alive) return;
+  if(hasLife()){ alive=true; if(stEl) stEl.textContent=''; return; }
+  if(errPage()){
+    if(tries<2){ tries++; if(stEl) stEl.textContent='reconnecting\u2026'; gf.src=PROX; arm(); }
+    else { if(stEl) stEl.textContent=''; document.getElementById('dead').style.display='block'; }
+  }
 }
-function arm(){ [5000, 11000, 18000, 30000].forEach(function(ms){ setTimeout(check, ms); }); }
-function useNet(){ stage=0; document.getElementById('dead').style.display='none'; if(stEl) stEl.textContent=''; gf.src=PROX; arm(); }
+function arm(){ [6000, 14000, 26000, 45000].forEach(function(ms){ setTimeout(check, ms); }); }
+function useNet(){ tries=0; alive=false; document.getElementById('dead').style.display='none'; if(stEl) stEl.textContent=''; gf.src=PROX; arm(); }
 function retry(){ useNet(); }
-gf.addEventListener('load', function(){ setTimeout(check, 3000); });
+gf.addEventListener('load', function(){ setTimeout(check, 4000); });
 (async function(){
   try {
     if ('serviceWorker' in navigator) {
@@ -1179,7 +1191,7 @@ gf.addEventListener('load', function(){ setTimeout(check, 3000); });
     if ((await conn.getTransport()) !== '/uv-assets/epoxy/index.mjs?e=67') await conn.setTransport('/uv-assets/epoxy/index.mjs?e=67', [{ wisp: (window.GX_WISP || (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/') }]);
   } catch (e) {}
   BOOTING=false;
-  if (startAlt) { stage=1; gf.src=ALT; } else { gf.src=PROX; }
+  gf.src=PROX;
   arm();
 })();
 </script>
