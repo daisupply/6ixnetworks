@@ -453,6 +453,44 @@ html.gx-framed .app6{padding-bottom:78px}
 }
 
 
+
+/* ===== v85 redesign — obsidian system ===== */
+body{background:radial-gradient(1200px 700px at 50% -12%,rgba(94,142,255,.08),transparent 62%),#070708}
+h1{font-weight:800;letter-spacing:-.035em;font-size:clamp(30px,5vw,42px)}
+p.sub{color:#9d9da6;font-size:15.5px}
+input{background:#101013;border-color:rgba(255,255,255,.13);border-radius:13px}
+input:focus{border-color:rgba(94,142,255,.65);box-shadow:0 0 0 3px rgba(94,142,255,.18)}
+button{border-radius:12px;font-weight:700;box-shadow:0 8px 22px rgba(0,0,0,.32)}
+button:hover{transform:translateY(-1px)}
+button:active{transform:scale(.98)}
+.links a{background:#101013;border-color:rgba(255,255,255,.11);padding:10px 16px}
+.links a:hover{background:#151517;border-color:rgba(94,142,255,.45);color:#fff}
+.bar select{border-radius:12px;background:#101013}
+.bar input{border-radius:12px}
+.grid{gap:16px}
+.card{background:linear-gradient(180deg,#121214,#0e0e10);border-color:rgba(255,255,255,.09);border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.card:hover{background:linear-gradient(180deg,#151517,#101012);border-color:rgba(255,255,255,.26);transform:translateY(-2px);box-shadow:0 16px 36px rgba(0,0,0,.5)}
+.gt{font-weight:700;padding-top:11px}
+.gc{color:#8f8f98}
+.noimg{background:#141416}
+.lcard{background:linear-gradient(180deg,#121214,#0e0e10);border-color:rgba(255,255,255,.09);border-radius:16px;padding:18px;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.lcard:hover{border-color:rgba(94,142,255,.5);transform:translateY(-2px);box-shadow:0 16px 36px rgba(0,0,0,.5)}
+.lcard b{font-weight:700}
+a.back:hover{text-decoration:underline;text-underline-offset:3px}
+.top{background:#0b0b0d;border-bottom-color:rgba(255,255,255,.08)}
+.top a,.top button{border-radius:10px;background:#151517}
+#sbBtn{background:rgba(17,17,19,.82);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:12px;border-color:rgba(255,255,255,.14)}
+#sb{background:linear-gradient(180deg,#0c0c0e,#09090b);border-right-color:rgba(255,255,255,.07)}
+.sb-logo{font-weight:800;font-size:18px;padding-bottom:18px}
+#sb nav a{border-radius:10px;padding:10px;font-weight:550}
+#sb nav a.on{background:rgba(94,142,255,.16);box-shadow:inset 0 0 0 1px rgba(94,142,255,.25)}
+#sb nav a.on svg{color:#9db9ff;opacity:1}
+.sb-cloak button{background:#141416}
+footer,.foot{color:#5d5d66}
+@media (max-width:820px){
+#tabbar{background:rgba(19,19,23,.55);border-color:rgba(255,255,255,.15);border-radius:30px;box-shadow:0 14px 40px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.14)}
+#tabSheet{background:rgba(19,19,23,.62);border-color:rgba(255,255,255,.15)}
+}
 `;
 const PWA_MANIFEST = JSON.stringify({ name: '6ixNetworks', short_name: '6ix', description: '6ixNetworks — search, games, 6ixChat, six ai', start_url: '/', scope: '/', display: 'standalone', background_color: '#0a0a0b', theme_color: '#0a0a0b', icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }] });
 const SW_JS = `self.addEventListener('install', function(e){ self.skipWaiting(); });
@@ -749,7 +787,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{pos
 <h1>6ix<span>Networks</span> games</h1>
 
 <div class="bar"><input id="gq" type="text" placeholder="search games..." autocomplete="off">
-<select id="gc"><option value="">all categories</option>${cats.map(c => `<option>${escHtml(c)}</option>`).join('')}</select><button class="chip" id="gfav" type="button">★ favorites</button><button class="chip" id="grec" type="button">recent</button><button class="chip" id="grand" type="button">🎲 random</button><a class="chip" href="/emu" style="text-decoration:none">🕹 emulator</a><a class="chip" href="/chat" style="text-decoration:none">💬 chat</a><a class="chip" href="/ai" style="text-decoration:none">✦ ai</a></div>
+<select id="gc"><option value="">all categories</option>${cats.map(c => `<option>${escHtml(c)}</option>`).join('')}</select><button class="chip" id="gfav" type="button">★ favorites</button><button class="chip" id="grec" type="button">recent</button><button class="chip" id="grand" type="button"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg> random</button><a class="chip" href="/emu" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59C2.62 9.42 2 14.46 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.62-6.584-.685-7.258A4 4 0 0 0 17.32 5z"/></svg> emulator</a><a class="chip" href="/chat" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> chat</a><a class="chip" href="/ai" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> ai</a></div>
 <div class="grid" id="grid">${cards}</div>
 ${SIDEBAR_HTML}
 
@@ -1274,6 +1312,16 @@ body{display:block;padding:0}
 .hue-dot.on{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.35)}
 .hue-auto{border-radius:999px;padding:0 13px;height:32px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:#e4e4e7;font-weight:700;cursor:pointer;font-family:inherit;font-size:12.5px}
 .hue-auto.on{border-color:#fff}
+
+
+.chatrail,.app6 .chatrail{background:linear-gradient(180deg,#0d0d0f,#0a0a0c)}
+.head6{background:#0c0c0e}
+.cr-item{border-radius:11px}
+.main6 .bar{background:#0c0c0e}
+.main6 .bar input[type=text]{background:#101013;border-color:rgba(255,255,255,.14)}
+.dme{background:rgba(255,255,255,.05)}
+.pf-card{background:#0e0e10}
+.mode{border-radius:15px}
 
 </style></head><body>${STAR_CANVAS}<div class="app6">
 
@@ -2318,6 +2366,10 @@ html,body{height:100%}body{display:block;padding:0;margin:0}
 .bub ul.mdlist{margin:4px 0;padding-left:18px}.bub ul.mdlist li{margin:2px 0}.bub code{background:rgba(255,255,255,.13);padding:1px 5px;border-radius:5px;font-size:.92em}
 .aimini{background:#f4f4f5;color:#0a0a0b;border:0;border-radius:9px;padding:7px 12px;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit}
 
+
+.airail{background:linear-gradient(180deg,#0d0d0f,#0a0a0c)}
+.aihead{background:#0c0c0e}
+
 </style></head><body>${STAR_CANVAS}
 <div class="aiapp app6">
 <aside class="airail">
@@ -2650,6 +2702,11 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 #empty{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;opacity:.55;padding:36px 12px;line-height:1.55}
 #empty svg{color:#9db9ff}
 .hwfoot{opacity:.6;font-size:13px;margin-top:14px;line-height:1.55}
+
+.hwcard{background:linear-gradient(180deg,#121214,#0e0e10);border-color:rgba(255,255,255,.11);border-radius:18px;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.mode{border-radius:15px}
+#doc,#editq{background:#101013}
+
 </style></head><body>${STAR_CANVAS}<div class="wrap hwwrap">
 <a class="back" href="/home">← home</a> · <a class="back" href="/ai">ask six ✦</a>
 <h1>hw <span>helper</span></h1>
@@ -3121,6 +3178,17 @@ body.sb-off #stage iframe{height:78dvh}
 #newtab{flex:none;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;cursor:pointer;align-self:center;display:flex;align-items:center;justify-content:center;padding:0}
 #stage{width:100%;max-width:1180px;margin:8px auto 0}
 #stage iframe{width:100%;height:70dvh;border:1px solid rgba(255,255,255,.16);border-radius:16px;background:#000}
+
+.btab{border-radius:13px;background:#101013}
+#stage iframe{border-radius:18px;border-color:rgba(255,255,255,.13)}
+.tabtile{border-radius:16px;background:linear-gradient(180deg,#121214,#0e0e10)}
+#omni input{border-radius:13px}
+.sech{letter-spacing:-.02em}
+#ntp{width:100%;max-width:860px;margin:0 auto}
+#omni{width:100%}
+#omni input{min-width:0}
+#omni button[type=submit]{flex:none}
+
 </style></head>
 <body>${STAR_CANVAS}
 <div id="tabstrip"></div>
