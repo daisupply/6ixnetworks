@@ -3522,11 +3522,19 @@ body.has-tb{padding-top:56px}
 #stage{padding:0}
 #ntp{padding:0 16px}
 @media(max-width:820px){ #stage{padding-bottom:0} }
+
+/* ===== v110 pure browser: no site topbar on search, home button in nav row ===== */
+body{padding:0}
+body.has-tb{padding-top:0}
+#topbar{display:none}
+.navbtns a{width:38px;height:38px;border-radius:50%;background:#241d15;border:1px solid rgba(255,236,200,.14);color:#d8d2c4;display:flex;align-items:center;justify-content:center;flex:none;text-decoration:none;padding:0}
+.navbtns a:hover{color:#f6cf8d;border-color:rgba(246,207,141,.4)}
+@media(max-width:640px){.navbtns a{width:34px;height:34px}}
 </style></head>
 <body>${STAR_CANVAS}
 <div id="tabstrip"></div>
   
-  <div id="toolbar"><div class="navbtns"><button type="button" id="nback" aria-label="back"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><button type="button" id="nfwd" aria-label="forward"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button><button type="button" id="nreload" aria-label="reload"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/></svg></button></div>
+  <div id="toolbar"><div class="navbtns"><button type="button" id="nback" aria-label="back"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><button type="button" id="nfwd" aria-label="forward"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button><button type="button" id="nreload" aria-label="reload"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/></svg></button><a id="nhome" href="/home" aria-label="home"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></a></div>
   <form id="omni" action="/go" method="get">
     
     <input name="q" type="text" placeholder="search or type a site \u2726" autocomplete="off" autofocus list="sg">
@@ -3540,7 +3548,7 @@ body.has-tb{padding-top:56px}
 <div id="tabs" class="tabgrid"></div>
 <form id="addtab"><input id="tabName" type="text" placeholder="name (optional)" autocomplete="off" maxlength="40"><input id="tabUrl" type="text" placeholder="paste a link — youtube.com, a game, anything" autocomplete="off" maxlength="400"><button type="submit">+ save shortcut</button></form>
 <p class="sub" style="max-width:860px">tap a shortcut to open it in a tab · tabs n shortcuts save on this device only</p></div>
-  ${SIDEBAR_HTML}<script src="/cloak.js"></script>
+  <script src="/cloak.js"></script>
 <script>
 var sbt=document.getElementById('sbtoggle');
 function sbApply(){ var off=false; try{ off=localStorage.getItem('gx_sb_off')==='1'; }catch(e){} document.body.classList.toggle('sb-off', off); if(sbt) sbt.classList.toggle('on', off); }
