@@ -287,12 +287,20 @@ const TABBAR_HTML = `<nav id="tabbar"><a href="/home"><svg width="21" height="21
 <script>
 (function(){ if (window.parent !== window) { document.documentElement.classList.add('gx-framed'); var bar0 = document.getElementById('tabbar'); if (bar0) bar0.style.bottom = '6px'; var sh0 = document.getElementById('tabSheet'); if (sh0) sh0.style.bottom = '80px'; } var p = location.pathname; document.querySelectorAll('#tabbar a, #tabSheet a').forEach(function(a){ if (a.getAttribute('href') === p) a.classList.add('on'); }); var tm = document.getElementById('tabMore'), sh = document.getElementById('tabSheet'); if (tm && sh) { tm.addEventListener('click', function(){ sh.classList.toggle('open'); }); document.addEventListener('click', function(e){ if (sh.classList.contains('open') && !sh.contains(e.target) && !tm.contains(e.target)) sh.classList.remove('open'); }); } })();
 </script>`;
-const SIDEBAR_HTML = `<canvas id=\"stars\"></canvas><script src=\"/stars.js?e=92\"></script><header id=\"topbar\"><a class=\"tb-logo\" href=\"/home\">6ix<span>networks</span></a><nav class=\"tb-links\"><a href=\"/home\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg>home</a><a href=\"/gs\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>games</a><a href=\"/apps\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2\" width=\"10\" height=\"20\" rx=\"2\"/><path d=\"M12 18h.01\"/></svg>apps</a><a href=\"/yt\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"4\"/><path d=\"m10 9 5 3-5 3z\" fill=\"currentColor\" stroke=\"none\"/></svg>youtube</a><a href=\"/chat\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg>6ixchat</a><a href=\"/ai\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>six ai</a></nav><div class=\"tb-menuwrap\"><button id=\"menuBtn\" type=\"button\" aria-label=\"menu\">menu<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\"/></svg></button><div id=\"dropmenu\"><div class=\"dm-grid\"><a href=\"/home\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg>home</a><a href=\"/search\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m21 21-4.3-4.3\"/></svg>search</a><a href=\"/gs\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>games</a><a href=\"/apps\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2\" width=\"10\" height=\"20\" rx=\"2\"/><path d=\"M12 18h.01\"/></svg>apps</a><a href=\"/yt\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"4\"/><path d=\"m10 9 5 3-5 3z\" fill=\"currentColor\" stroke=\"none\"/></svg>youtube</a><a href=\"/chat\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg>6ixchat</a><a href=\"/ai\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>six ai</a><a href=\"/space\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"3.2\" fill=\"currentColor\" stroke=\"none\"/><ellipse cx=\"12\" cy=\"12\" rx=\"10\" ry=\"4.2\" transform=\"rotate(-18 12 12)\"/></svg>space</a><a href=\"/hw\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\"/><path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"/></svg>hw helper</a><a href=\"/emu\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"7\" width=\"20\" height=\"11\" rx=\"5\"/><path d=\"M7.5 10.5v4M5.5 12.5h4\"/><circle cx=\"16.5\" cy=\"11\" r=\".4\" fill=\"currentColor\"/><circle cx=\"18.5\" cy=\"14\" r=\".4\" fill=\"currentColor\"/></svg>emulator</a><a href=\"/tools\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1\"/><circle cx=\"16\" cy=\"6\" r=\"2\"/><circle cx=\"10\" cy=\"12\" r=\"2\"/><circle cx=\"18\" cy=\"18\" r=\"2\"/></svg>tools</a><a href=\"/account\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg>account</a></div><div class=\"dm-sec\">disguise</div><div class=\"sb-cloak\"><button onclick=\"cloakTab('google')\">google</button><button onclick=\"cloakTab('classroom')\">classroom</button><button onclick=\"cloakTab('docs')\">docs</button><button onclick=\"cloakTab('drive')\">drive</button><button onclick=\"cloakOpen()\">open cloaked tab</button></div><div class=\"dm-foot\">everything stays inside the network — nothing loads from its home site</div></div></div></header>${TABBAR_HTML}<script>
+const SIDEBAR_HTML = `<canvas id=\"stars\"></canvas><script src=\"/stars.js?e=93\"></script><header id=\"topbar\"><a class=\"tb-logo\" href=\"/home\">6ix<span>networks</span></a><nav class=\"tb-links\"><a href=\"/home\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg>home</a><a href=\"/gs\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>games</a><a href=\"/apps\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2\" width=\"10\" height=\"20\" rx=\"2\"/><path d=\"M12 18h.01\"/></svg>apps</a><a href=\"/yt\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"4\"/><path d=\"m10 9 5 3-5 3z\" fill=\"currentColor\" stroke=\"none\"/></svg>youtube</a><a href=\"/chat\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg>6ixchat</a><a href=\"/ai\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>six ai</a></nav><div class=\"tb-menuwrap\"><button id=\"menuBtn\" type=\"button\" aria-label=\"menu\">menu<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\"/></svg></button><div id=\"dropmenu\"><div class=\"dm-grid\"><a href=\"/home\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg>home</a><a href=\"/search\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m21 21-4.3-4.3\"/></svg>search</a><a href=\"/gs\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>games</a><a href=\"/apps\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2\" width=\"10\" height=\"20\" rx=\"2\"/><path d=\"M12 18h.01\"/></svg>apps</a><a href=\"/yt\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"4\"/><path d=\"m10 9 5 3-5 3z\" fill=\"currentColor\" stroke=\"none\"/></svg>youtube</a><a href=\"/chat\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg>6ixchat</a><a href=\"/ai\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>six ai</a><a href=\"/space\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"3.2\" fill=\"currentColor\" stroke=\"none\"/><ellipse cx=\"12\" cy=\"12\" rx=\"10\" ry=\"4.2\" transform=\"rotate(-18 12 12)\"/></svg>space</a><a href=\"/hw\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\"/><path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"/></svg>hw helper</a><a href=\"/emu\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"7\" width=\"20\" height=\"11\" rx=\"5\"/><path d=\"M7.5 10.5v4M5.5 12.5h4\"/><circle cx=\"16.5\" cy=\"11\" r=\".4\" fill=\"currentColor\"/><circle cx=\"18.5\" cy=\"14\" r=\".4\" fill=\"currentColor\"/></svg>emulator</a><a href=\"/tools\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1\"/><circle cx=\"16\" cy=\"6\" r=\"2\"/><circle cx=\"10\" cy=\"12\" r=\"2\"/><circle cx=\"18\" cy=\"18\" r=\"2\"/></svg>tools</a><a href=\"/account\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg>account</a></div><div class=\"dm-sec\">ask six</div><form id=\"dmAsk\"><input id=\"dmQ\" type=\"text\" placeholder=\"ask six anything...\" autocomplete=\"off\"><button type=\"submit\">ask</button></form><div id=\"dmAns\" hidden></div><div class=\"dm-sec\">disguise</div><div class=\"sb-cloak\"><button onclick=\"cloakTab('google')\">google</button><button onclick=\"cloakTab('classroom')\">classroom</button><button onclick=\"cloakTab('docs')\">docs</button><button onclick=\"cloakTab('drive')\">drive</button><button onclick=\"cloakOpen()\">open cloaked tab</button></div><div class=\"dm-sec\">sky</div><div class=\"sb-cloak dm-sky\"><button type=\"button\" data-sky=\"amber\" onclick=\"gxSetSky('amber')\">amber</button><button type=\"button\" data-sky=\"violet\" onclick=\"gxSetSky('violet')\">violet</button><button type=\"button\" data-sky=\"ice\" onclick=\"gxSetSky('ice')\">ice</button><button type=\"button\" data-sky=\"blood\" onclick=\"gxSetSky('blood')\">blood moon</button></div><div class=\"dm-foot\">everything stays inside the network — nothing loads from its home site</div></div></div></header>${TABBAR_HTML}<script>
 (function(){ document.body.classList.add('has-tb'); var p = location.pathname; document.querySelectorAll('.tb-links a,.dm-grid a').forEach(function(a){ if (a.getAttribute('href') === p) a.classList.add('on'); });
 var mb = document.getElementById('menuBtn');
 if (mb) mb.addEventListener('click', function(e){ e.stopPropagation(); document.body.classList.toggle('menu-open'); });
 document.addEventListener('click', function(e){ if (document.body.classList.contains('menu-open') && !e.target.closest('#dropmenu')) document.body.classList.remove('menu-open'); });
 document.addEventListener('keydown', function(e){ if (e.key === 'Escape') document.body.classList.remove('menu-open'); }); })();
+</script><script>
+window.gxSetSky = function(m){ try{ localStorage.setItem('gx_sky', m); }catch(e){} document.body.setAttribute('data-sky', m); window.dispatchEvent(new CustomEvent('gxsky', { detail: m })); document.querySelectorAll('.dm-sky button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-sky') === m); }); };
+(function(){ var cur = 'amber'; try{ cur = localStorage.getItem('gx_sky') || 'amber'; }catch(e){} document.body.setAttribute('data-sky', cur); document.querySelectorAll('.dm-sky button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-sky') === cur); });
+var logo = document.querySelector('.tb-logo'); var holdT = null, held = false;
+if (logo) { logo.addEventListener('pointerdown', function(){ held = false; holdT = setTimeout(function(){ held = true; if (window.panic) panic(); else location.href = 'https://classroom.google.com/'; }, 620); }); ['pointerup','pointerleave','pointercancel'].forEach(function(ev){ logo.addEventListener(ev, function(){ if (holdT) clearTimeout(holdT); }); }); logo.addEventListener('click', function(e){ if (held) { e.preventDefault(); held = false; } }); }
+var f = document.getElementById('dmAsk');
+if (f) { f.addEventListener('submit', function(ev){ ev.preventDefault(); var q = document.getElementById('dmQ').value.trim(); if (!q) return; var ans = document.getElementById('dmAns'); ans.hidden = false; ans.textContent = 'six is thinkin...'; fetch('/ai/ask', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'user', content: q }] }) }).then(function(r){ return r.json(); }).then(function(o){ ans.textContent = (o && o.text) || 'six had nothin for that one'; }).catch(function(){ ans.textContent = 'six is unreachable rn — open the six ai page'; }); }); }
+})();
 </script>`;
 // ---------- galaxy theme ----------
 // relaxing deep-space look shared by every page: layered nebula gradients,
@@ -487,6 +495,34 @@ body.has-tb{padding-top:84px}
 .lcard svg{color:#e3c48c;opacity:.85}
 .lcard b{font-weight:650;color:#efe9dc}
 .lcard span{color:#99917f}
+
+/* ===== v93 sky moods + menu ask-six ===== */
+#dmAsk{display:flex;gap:8px;padding:0 2px}
+#dmAsk input{flex:1;min-width:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);border-radius:11px;color:#fff;padding:10px 12px;font-size:14px;font-family:inherit;outline:none}
+#dmAsk button{background:#f4f4f5;color:#0a0a0b;border:0;border-radius:11px;padding:10px 16px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:none}
+#dmAns{margin:10px 2px 0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:11px 13px;font-size:14px;line-height:1.55;color:#ece7dd;white-space:pre-wrap;max-height:220px;overflow-y:auto}
+.dm-sky button.on{border-color:rgba(246,207,141,.65);color:#fff;background:rgba(227,154,45,.18)}
+body[data-sky="violet"] .tb-logo span{color:#c4a5ff}
+body[data-sky="violet"] .tb-links a.on{background:rgba(150,110,255,.18);box-shadow:inset 0 0 0 1px rgba(150,110,255,.35)}
+body[data-sky="violet"] .tb-links a.on svg,body[data-sky="violet"] .dm-grid a svg{color:#cdb2ff}
+body[data-sky="violet"] .dm-grid a.on{background:rgba(150,110,255,.16)}
+body[data-sky="violet"] .lcard svg{color:#cdb2ff}
+body[data-sky="violet"] .lcard:hover{border-color:rgba(196,165,255,.35);box-shadow:0 0 28px rgba(150,110,255,.1)}
+body[data-sky="violet"] .cr-item.on{background:rgba(150,110,255,.32)}
+body[data-sky="ice"] .tb-logo span{color:#a8d4ff}
+body[data-sky="ice"] .tb-links a.on{background:rgba(110,180,255,.16);box-shadow:inset 0 0 0 1px rgba(110,180,255,.35)}
+body[data-sky="ice"] .tb-links a.on svg,body[data-sky="ice"] .dm-grid a svg{color:#bfe0ff}
+body[data-sky="ice"] .dm-grid a.on{background:rgba(110,180,255,.14)}
+body[data-sky="ice"] .lcard svg{color:#bfe0ff}
+body[data-sky="ice"] .lcard:hover{border-color:rgba(168,212,255,.35);box-shadow:0 0 28px rgba(110,180,255,.1)}
+body[data-sky="ice"] .cr-item.on{background:rgba(110,180,255,.3)}
+body[data-sky="blood"] .tb-logo span{color:#ff9a86}
+body[data-sky="blood"] .tb-links a.on{background:rgba(235,70,50,.16);box-shadow:inset 0 0 0 1px rgba(235,70,50,.35)}
+body[data-sky="blood"] .tb-links a.on svg,body[data-sky="blood"] .dm-grid a svg{color:#ffb4a3}
+body[data-sky="blood"] .dm-grid a.on{background:rgba(235,70,50,.14)}
+body[data-sky="blood"] .lcard svg{color:#ffb4a3}
+body[data-sky="blood"] .lcard:hover{border-color:rgba(255,154,134,.35);box-shadow:0 0 28px rgba(235,70,50,.1)}
+body[data-sky="blood"] .cr-item.on{background:rgba(235,70,50,.3)}
 `;
 const PWA_MANIFEST = JSON.stringify({ name: '6ixNetworks', short_name: '6ix', description: '6ixNetworks — search, games, 6ixChat, six ai', start_url: '/', scope: '/', display: 'standalone', background_color: '#0a0a0b', theme_color: '#0a0a0b', icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }] });
 const SW_JS = `self.addEventListener('install', function(e){ self.skipWaiting(); });
@@ -503,24 +539,40 @@ const STARS_JS = `
   var ctx=c.getContext('2d'); var W=0,H=0,stars=[],meteor=null,t0=Date.now();
   var DPR=Math.min(window.devicePixelRatio||1,1.5);
   var reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var MOODS={
+    amber:{clouds:['232,160,60','246,207,141','217,130,40','235,230,255'],star:'246,207,141',line:'246,220,180'},
+    violet:{clouds:['150,110,255','196,165,255','116,80,220','235,230,255'],star:'196,165,255',line:'205,185,255'},
+    ice:{clouds:['110,180,255','175,222,255','70,130,230','240,248,255'],star:'175,222,255',line:'200,230,255'},
+    blood:{clouds:['235,70,50','255,122,84','188,38,32','255,222,210'],star:'255,150,120',line:'255,180,160'}
+  };
+  var mood='amber';
+  try{ var sv=localStorage.getItem('gx_sky'); if(sv && MOODS[sv]) mood=sv; }catch(e){}
+  function applyMood(){ try{ document.body.setAttribute('data-sky', mood); }catch(e){} }
+  applyMood();
+  window.addEventListener('gxsky', function(e){ if(e.detail && MOODS[e.detail]){ mood=e.detail; applyMood(); } });
+  var tx=0, ty=0, px=0, py=0;
+  window.addEventListener('mousemove', function(e){ tx=(e.clientX/window.innerWidth-0.5)*2; ty=(e.clientY/window.innerHeight-0.5)*2; });
+  if(window.DeviceOrientationEvent){ window.addEventListener('deviceorientation', function(e){ if(e.gamma===null||e.gamma===undefined) return; tx=Math.max(-1,Math.min(1,e.gamma/22)); ty=Math.max(-1,Math.min(1,(e.beta-38)/22)); }); }
+  function clockFx(){ var h=new Date().getHours(); if(h>=23||h<4) return {star:1.25, cloud:0.92}; if(h>=19) return {star:1.08, cloud:1.05}; if(h>=17) return {star:0.95, cloud:1.18}; if(h>=7&&h<17) return {star:0.8, cloud:1}; return {star:1, cloud:1}; }
   var clouds=[];
-  var CDEFS=[{a:0.07,hue:'232,160,60'},{a:0.052,hue:'246,207,141'},{a:0.064,hue:'217,130,40'},{a:0.04,hue:'235,230,255'},{a:0.058,hue:'232,160,60'}];
+  var CDEFS=[{a:0.07},{a:0.052},{a:0.064},{a:0.04},{a:0.058}];
   function seedClouds(){ clouds=[];
     for(var i=0;i<CDEFS.length;i++){ var d=CDEFS[i];
-      clouds.push({x:0.12+Math.random()*0.76,y:0.1+Math.random()*0.7,vx:0,vy:0,tx:0.12+Math.random()*0.76,ty:0.1+Math.random()*0.7,r:0.34+Math.random()*0.3,vr:0,a:d.a*(0.75+Math.random()*0.5),va:0,hue:d.hue,pick:600+Math.floor(Math.random()*1500),wob:Math.random()*6.28});
+      clouds.push({x:0.12+Math.random()*0.76,y:0.1+Math.random()*0.7,vx:0,vy:0,tx:0.12+Math.random()*0.76,ty:0.1+Math.random()*0.7,r:0.34+Math.random()*0.3,vr:0,a:d.a*(0.75+Math.random()*0.5),va:0,hi:i%4,par:0.4+Math.random()*0.6,pick:600+Math.floor(Math.random()*1500),wob:Math.random()*6.28});
     }
   }
   function size(){ W=window.innerWidth; H=window.innerHeight; c.width=W*DPR; c.height=H*DPR; c.style.width=W+'px'; c.style.height=H+'px'; ctx.setTransform(DPR,0,0,DPR,0,0);
     var n=Math.min(190, Math.floor(W*H/10000)); stars=[];
-    if(!clouds.length) seedClouds();
     for(var i=0;i<n;i++) stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+0.3,p:Math.random()*6.283,s:0.4+Math.random()*1.1,d:Math.random()*0.008+0.002,dx:0.002+Math.random()*0.009,am:Math.random()<0.16});
+    if(!clouds.length) seedClouds();
   }
   function draw(){
-    var t=(Date.now()-t0)/1000;
+    var t=(Date.now()-t0)/1000, fx=clockFx(), M=MOODS[mood];
+    px += (tx-px)*0.03; py += (ty-py)*0.03;
     ctx.clearRect(0,0,W,H);
     ctx.globalCompositeOperation='lighter';
     var SUB = W < 700 ? 2 : 3;
-    for(var ci=0;ci<clouds.length;ci++){ var cl=clouds[ci];
+    for(var ci=0;ci<clouds.length;ci++){ var cl=clouds[ci], hue=M.clouds[cl.hi];
       cl.pick--;
       if(cl.pick<=0){ cl.tx=0.08+Math.random()*0.84; cl.ty=0.06+Math.random()*0.8; cl.pick=800+Math.floor(Math.random()*1800); }
       cl.vx += (cl.tx-cl.x)*0.0000035 + (Math.random()-0.5)*0.000004;
@@ -532,24 +584,40 @@ const STARS_JS = `
       cl.vr += (Math.random()-0.5)*0.00012; cl.vr*=0.99; cl.r+=cl.vr; if(cl.r<0.24){ cl.r=0.24; cl.vr=0; } if(cl.r>0.72){ cl.r=0.72; cl.vr=0; }
       cl.va += (Math.random()-0.5)*0.00006; cl.va*=0.99; cl.a+=cl.va; if(cl.a<0.024){ cl.a=0.024; cl.va=0; } if(cl.a>0.105){ cl.a=0.105; cl.va=0; }
       cl.wob += 0.0035;
-      var ccx=cl.x*W, ccy=cl.y*H, ccr=cl.r*Math.max(W,H);
+      var ccx=cl.x*W+px*12*cl.par, ccy=cl.y*H+py*8*cl.par, ccr=cl.r*Math.max(W,H), ca=cl.a*fx.cloud;
       for(var sb=0;sb<SUB;sb++){
         var off=sb===0?0:ccr*0.16, ang=cl.wob*(sb%2?1:-1)+sb*2.1;
         var gx2=ccx+Math.cos(ang)*off, gy2=ccy+Math.sin(ang)*off*0.7, gr2=ccr*(sb===0?1:0.72);
         var gg=ctx.createRadialGradient(gx2,gy2,0,gx2,gy2,gr2);
-        gg.addColorStop(0,'rgba('+cl.hue+','+(cl.a*(sb===0?1:0.7)).toFixed(4)+')'); gg.addColorStop(1,'rgba('+cl.hue+',0)');
+        gg.addColorStop(0,'rgba('+hue+','+(ca*(sb===0?1:0.7)).toFixed(4)+')'); gg.addColorStop(1,'rgba('+hue+',0)');
         ctx.fillStyle=gg; ctx.fillRect(gx2-gr2,gy2-gr2,gr2*2,gr2*2);
       }
     }
-    ctx.globalCompositeOperation='source-over';    for(var i=0;i<stars.length;i++){ var st=stars[i]; if(!reduced){ st.p+=st.s*0.016; st.y-=st.d; st.x-=st.dx; } if(st.y<-2){ st.y=H+2; st.x=Math.random()*W; } if(st.x<-2){ st.x=W+2; }
-      var a=0.35+0.65*Math.abs(Math.sin(st.p));
-      ctx.beginPath(); ctx.arc(st.x,st.y,st.r,0,6.2832); ctx.fillStyle=st.am?('rgba(246,207,141,'+(a*0.95)+')'):('rgba(235,230,255,'+(a*0.9)+')'); ctx.fill();
-      if(st.r>1.15){ ctx.beginPath(); ctx.arc(st.x,st.y,st.r*3.2,0,6.2832); ctx.fillStyle='rgba(227,154,45,'+(a*0.10)+')'; ctx.fill(); }
+    ctx.globalCompositeOperation='source-over';
+    var pts=[];
+    for(var i=0;i<stars.length;i++){ var st=stars[i]; if(!reduced){ st.p+=st.s*0.016; st.y-=st.d; st.x-=st.dx; } if(st.y<-2){ st.y=H+2; st.x=Math.random()*W; } if(st.x<-2){ st.x=W+2; }
+      var a=(0.35+0.65*Math.abs(Math.sin(st.p)))*fx.star; if(a>1) a=1;
+      var sx=st.x+px*st.r*5, sy=st.y+py*st.r*3.5;
+      ctx.beginPath(); ctx.arc(sx,sy,st.r,0,6.2832); ctx.fillStyle=st.am?('rgba('+M.star+','+(a*0.95).toFixed(3)+')'):('rgba(235,230,255,'+(a*0.9).toFixed(3)+')'); ctx.fill();
+      if(st.r>1.15){ ctx.beginPath(); ctx.arc(sx,sy,st.r*3.2,0,6.2832); ctx.fillStyle='rgba('+M.clouds[0]+','+(a*0.10).toFixed(3)+')'; ctx.fill(); }
+      if(st.r>0.8) pts.push({x:sx,y:sy,a:a});
     }
+    var lines=0;
+    ctx.lineWidth=0.7;
+    for(var a1=0;a1<pts.length && lines<42;a1++){ for(var a2=a1+1;a2<pts.length && lines<42;a2++){
+      var dx=pts[a1].x-pts[a2].x; if(dx>110||dx<-110) continue;
+      var dy=pts[a1].y-pts[a2].y; if(dy>110||dy<-110) continue;
+      var dist=Math.sqrt(dx*dx+dy*dy); if(dist>110) continue;
+      var la=(1-dist/110)*0.13*Math.min(pts[a1].a,pts[a2].a);
+      if(la<0.012) continue;
+      ctx.strokeStyle='rgba('+M.line+','+la.toFixed(3)+')';
+      ctx.beginPath(); ctx.moveTo(pts[a1].x,pts[a1].y); ctx.lineTo(pts[a2].x,pts[a2].y); ctx.stroke();
+      lines++;
+    } }
     if(!meteor && !reduced && Math.random()<0.0038){ meteor={x:Math.random()*W*0.7+W*0.2,y:Math.random()*H*0.25,vx:-7-Math.random()*3,vy:4+Math.random()*2,l:1}; }
     if(meteor){ meteor.x+=meteor.vx; meteor.y+=meteor.vy; meteor.l-=0.016;
       var mg=ctx.createLinearGradient(meteor.x,meteor.y,meteor.x-meteor.vx*9,meteor.y-meteor.vy*9);
-      mg.addColorStop(0,'rgba(255,240,214,'+(0.9*Math.max(meteor.l,0))+')'); mg.addColorStop(1,'rgba(255,190,90,0)');
+      mg.addColorStop(0,'rgba(255,240,214,'+(0.9*Math.max(meteor.l,0)).toFixed(3)+')'); mg.addColorStop(1,'rgba(255,190,90,0)');
       ctx.strokeStyle=mg; ctx.lineWidth=1.7; ctx.beginPath(); ctx.moveTo(meteor.x,meteor.y); ctx.lineTo(meteor.x-meteor.vx*9,meteor.y-meteor.vy*9); ctx.stroke();
       if(meteor.l<=0||meteor.x<-80||meteor.y>H+80) meteor=null;
     }
@@ -833,12 +901,32 @@ function gamesPage(games) {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{position:absolute;top:6px;right:8px;z-index:2;font-size:19px;line-height:1;color:rgba(255,255,255,.85);text-shadow:0 1px 6px rgba(0,0,0,.85);cursor:pointer;padding:3px 5px}.fav.on{color:#fbbf24}.chip{background:rgba(227,154,45,.14);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:700;font-family:inherit}.chip.on{background:rgba(227,154,45,.45)}</style></head><body>${STAR_CANVAS}<div class="wrap">
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{position:absolute;top:6px;right:8px;z-index:2;font-size:19px;line-height:1;color:rgba(255,255,255,.85);text-shadow:0 1px 6px rgba(0,0,0,.85);cursor:pointer;padding:3px 5px}.fav.on{color:#fbbf24}.chip{background:rgba(227,154,45,.14);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:700;font-family:inherit}.chip.on{background:rgba(227,154,45,.45)}
+#feat{position:relative;display:block;border-radius:20px;overflow:hidden;margin:4px 0 18px;border:1px solid rgba(255,236,200,.14);text-decoration:none;color:#fff;background:#0d0b08;width:100%;max-width:1120px}
+#feat img{width:100%;height:230px;object-fit:cover;display:block;opacity:.85}
+#feat .feat-cap{position:absolute;left:0;right:0;bottom:0;padding:38px 18px 14px;background:linear-gradient(180deg,transparent,rgba(0,0,0,.82));display:flex;align-items:flex-end;gap:10px}
+#feat .feat-tag{font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#0a0a0b;background:#f6cf8d;border-radius:999px;padding:4px 9px;flex:none;margin-bottom:3px}
+#feat .feat-t{font-size:21px;font-weight:800;letter-spacing:-.01em}
+#feat .feat-c{font-size:12.5px;color:#c9c2b4}
+#feat .feat-dots{position:absolute;top:12px;right:14px;display:flex;gap:6px}
+#feat .feat-dots i{width:7px;height:7px;border-radius:99px;background:rgba(255,255,255,.35);display:block}
+#feat .feat-dots i.on{background:#f6cf8d}
+#feat.fade{animation:featfade .5s ease}
+@keyframes featfade{from{opacity:.35}to{opacity:1}}
+#jumpWrap{width:100%;max-width:1120px;margin:2px 0 16px}
+.jump-h{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8a7a5c;margin:0 2px 9px}
+#jumpRow{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px}
+#jumpRow .card{flex:0 0 168px}
+@media(max-width:640px){ #feat img{height:170px} #feat .feat-t{font-size:18px} }
+
+</style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/home">← 6ixNetworks</a>
 <h1>6ix<span>Networks</span> games</h1>
 
 <div class="bar"><input id="gq" type="text" placeholder="search games..." autocomplete="off">
 <select id="gc"><option value="">all categories</option>${cats.map(c => `<option>${escHtml(c)}</option>`).join('')}</select><button class="chip" id="gfav" type="button">★ favorites</button><button class="chip" id="grec" type="button">recent</button><button class="chip" id="grand" type="button"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg> random</button><a class="chip" href="/emu" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59C2.62 9.42 2 14.46 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.62-6.584-.685-7.258A4 4 0 0 0 17.32 5z"/></svg> emulator</a><a class="chip" href="/chat" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> chat</a><a class="chip" href="/ai" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> ai</a></div>
+<a id="feat" hidden></a>
+<div id="jumpWrap" hidden><div class="jump-h">jump back in</div><div id="jumpRow"></div></div>
 <div class="grid" id="grid">${cards}</div>
 ${SIDEBAR_HTML}
 
@@ -871,6 +959,50 @@ grid.addEventListener('click', function(e){
   if(card && card.dataset.u){ var r=recents().filter(function(x){ return x!==card.dataset.u; }); r.unshift(card.dataset.u); try{ localStorage.setItem('gx_recent', JSON.stringify(r.slice(0,12))); }catch(err){} }
 });
 paintFavs();
+
+;(function(){
+  var cards = [].slice.call(document.querySelectorAll('#grid .card'));
+  var feat = document.getElementById('feat');
+  var pool = cards.filter(function(cc){ return cc.querySelector('img'); }).slice(0, 6);
+  if (feat && pool.length > 1) {
+    var fi = 0, ftimer = null;
+    feat.hidden = false;
+    function showFeat(n) {
+      var cc = pool[n];
+      var img = cc.querySelector('img');
+      feat.href = cc.getAttribute('href');
+      feat.innerHTML = '';
+      var im = document.createElement('img'); im.src = img.src; im.alt = '';
+      var cap = document.createElement('div'); cap.className = 'feat-cap';
+      var tag = document.createElement('span'); tag.className = 'feat-tag'; tag.textContent = 'featured';
+      var tw = document.createElement('div');
+      var tt = document.createElement('div'); tt.className = 'feat-t'; tt.textContent = cc.querySelector('.gt') ? cc.querySelector('.gt').textContent : 'game';
+      var tc = document.createElement('div'); tc.className = 'feat-c'; tc.textContent = cc.querySelector('.gc') ? cc.querySelector('.gc').textContent : '';
+      tw.appendChild(tt); tw.appendChild(tc); cap.appendChild(tag); cap.appendChild(tw);
+      var dots = document.createElement('div'); dots.className = 'feat-dots';
+      pool.forEach(function(_, di){ var d = document.createElement('i'); if (di === n) d.className = 'on'; dots.appendChild(d); });
+      feat.appendChild(im); feat.appendChild(cap); feat.appendChild(dots);
+      feat.classList.remove('fade'); void feat.offsetWidth; feat.classList.add('fade');
+    }
+    function cycle(){ fi = (fi + 1) % pool.length; showFeat(fi); }
+    showFeat(0);
+    ftimer = setInterval(cycle, 6000);
+    feat.addEventListener('mouseenter', function(){ clearInterval(ftimer); });
+    feat.addEventListener('mouseleave', function(){ ftimer = setInterval(cycle, 6000); });
+  }
+  try {
+    var rec = JSON.parse(localStorage.getItem('gx_recent') || '[]');
+    var jw = document.getElementById('jumpWrap'), jr = document.getElementById('jumpRow');
+    if (rec.length && jw && jr) {
+      var byU = {};
+      cards.forEach(function(cc){ if (cc.dataset.u) byU[cc.dataset.u] = cc; });
+      var added = 0;
+      rec.forEach(function(u){ var src = byU[u]; if (src && added < 10) { jr.appendChild(src.cloneNode(true)); added++; } });
+      if (added) jw.hidden = false;
+    }
+  } catch (e) {}
+})();
+
 </script>
 </body>
 </html>`;
@@ -894,7 +1026,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CA
 <iframe class="gameframe" id="gf" src="${prox}" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
 <div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
 <script src="/cloak.js"></script>
-<script src="/stars.js?e=92"></script>
+<script src="/stars.js?e=93"></script>
 <script>
 var PROX=${JSON.stringify(prox)}, ALT=${JSON.stringify(alt)}, stage=0;
 var gf=document.getElementById('gf'), stEl=document.getElementById('st');
@@ -969,7 +1101,7 @@ button.play{background:rgba(227,154,45,.3);color:#fff;border:1px solid rgba(255,
 ${SIDEBAR_HTML}
 </div>
 <script src="/cloak.js"></script>
-<script src="/stars.js?e=92"></script>
+<script src="/stars.js?e=93"></script>
 <script>
 var DATA=${JSON.stringify(data)};
 var extmap={nes:'nes',smc:'snes',sfc:'snes',gb:'gb',gbc:'gb',gba:'gba',z64:'n64',n64:'n64',v64:'n64',md:'segaMD',gen:'segaMD',a26:'atari2600'};
@@ -1153,7 +1285,18 @@ body{display:block;padding:0}
 .head6 .mainbtn{padding:9px 16px;font-size:13.5px;box-shadow:0 6px 18px rgba(0,0,0,.35)}
 .mode{border-radius:15px}
 
-</style></head><body>${STAR_CANVAS}<canvas id="stars"></canvas><script src="/stars.js?e=92"></script><div class="app6">
+
+.reacts{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+.reacts:empty{margin-top:0}
+.rpill{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:3px 8px 3px 6px;color:#d8d2c4;cursor:pointer}
+.rpill svg{display:block}
+.rpill b{font-size:11.5px;font-weight:700}
+.rpill.mine{border-color:rgba(246,207,141,.55);background:rgba(227,154,45,.16);color:#f6e3bb}
+.rbar{display:flex;gap:2px;background:#171310;border:1px solid rgba(255,236,200,.18);border-radius:999px;padding:5px 7px;margin-top:7px;width:max-content;box-shadow:0 10px 26px rgba(0,0,0,.5)}
+.rbar button{background:transparent;border:0;color:#cfc8b8;padding:5px;border-radius:99px;cursor:pointer;display:flex;box-shadow:none}
+.rbar button:hover{color:#f6cf8d;background:rgba(227,154,45,.15)}
+
+</style></head><body>${STAR_CANVAS}<canvas id="stars"></canvas><script src="/stars.js?e=93"></script><div class="app6">
 
 
 <aside class="chatrail"><div class="brand6">6ix<span>Chat</span></div>
@@ -1221,7 +1364,7 @@ ${CLOAK_BAR}
 </div></div>
 
 <script src="/cloak.js"></script>
-<script src="/stars.js?e=92"></script>
+<script src="/stars.js?e=93"></script>
 <script>
 var nameEl=document.getElementById('name'), msgsEl=document.getElementById('msgs'), presEl=document.getElementById('pres'), textEl=document.getElementById('text');
 var myName=localStorage.getItem('six_name')||'';
@@ -1272,6 +1415,7 @@ function line(m){
   lastMsgKey = key; if (m.ts) lastMsgTs = m.ts;
   var d = document.createElement('div');
   d.className = 'msg' + (m.bot ? ' bot' : '') + (grouped ? ' grp' : ' top');
+  if (m.id) d.dataset.mid = m.id;
   var av = document.createElement('div'); av.className = 'mav';
   if (m.bot) { av.textContent = '✦'; av.style.background = 'rgba(227,154,45,.85)'; }
   else { var dn = m.disp || m.name || 'anon'; av.textContent = dn.slice(0, 1).toUpperCase(); av.style.background = (m.hue !== null && m.hue !== undefined) ? 'hsl(' + m.hue + ',45%,38%)' : avColor(m.name || 'anon'); }
@@ -1307,6 +1451,7 @@ function line(m){
     body.appendChild(im2);
   }
   d.appendChild(body);
+  var rx = document.createElement('div'); rx.className = 'reacts'; body.appendChild(rx); if (m.reacts) paintReacts(rx, m.reacts);
   msgsEl.appendChild(d);
   if (nearBottom) msgsEl.scrollTop = msgsEl.scrollHeight;
 }
@@ -1331,13 +1476,39 @@ function lightbox(src2){
 function handle(o){
   if(!o) return;
   if(o.type==='history'){ (o.msgs||[]).forEach(function(m){ line(m); if(m.ts>lastTs) lastTs=m.ts; }); }
-  else if(o.type==='msg'){ line(o.msg); if(o.msg.ts>lastTs) lastTs=o.msg.ts; if(o.msg.bot && o.msg.ts>joinedAt) speakSix(o.msg.text); }
+  else if(o.type==='msg'){ line(o.msg); if(o.msg.ts>lastTs) lastTs=o.msg.ts; if(o.msg.bot) sixTypingDone(); if(o.msg.bot && o.msg.ts>joinedAt) speakSix(o.msg.text); }
   else if(o.type==='presence'){ presEl.textContent=o.n+' online'; }
   else if(o.type==='rtc-id'){ myPid=o.id; }
   else if(o.type==='voice'){ voiceList(o.members||[]); }
   else if(o.type==='rtc'){ rtcMsg(o.from, o.data); }
   else if(o.type==='sys'){ line({sys:true, text:o.text}); }
+  else if(o.type==='react'){ applyReacts(o.id, o.reacts); }
+  else if(o.type==='sixtyping'){ sixTyping(); }
 }
+
+var RSET = ['heart', 'fire', 'laugh', 'up', 'skull'];
+var RICONS = { heart: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>', fire: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c4.4 0 7-2.8 7-6.5 0-3.2-2.1-5.4-3.5-7C14 6.8 13 5 13 2c-3 2-5.5 4.8-5.6 8C6.6 9.2 5 8 5 5.5 3.6 7.6 5 9.5 5 12.5 5 18.5 7.6 22 12 22z"/></svg>', laugh: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 9.6h.01"/><path d="M15 9.6h.01"/><path d="M8 14s1.2 2.2 4 2.2 4-2.2 4-2.2"/></svg>', up: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.3a2 2 0 0 0 2-1.7l1.2-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>', skull: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a8 8 0 0 0-8 8c0 2.9 1.5 5 3.7 6.2.2.1.3.3.3.6V20a1.6 1.6 0 0 0 1.6 1.6h4.8A1.6 1.6 0 0 0 16 20v-2.2c0-.3.1-.5.3-.6C18.5 16 20 13.9 20 11a8 8 0 0 0-8-8z"/><path d="M9 13.5h.01"/><path d="M15 13.5h.01"/><path d="M10.5 21.6v-2.4"/><path d="M13.5 21.6v-2.4"/></svg>' };
+var rbarTarget = null;
+var rbar = document.createElement('div'); rbar.className = 'rbar'; rbar.hidden = true;
+RSET.forEach(function(r){ var b = document.createElement('button'); b.type = 'button'; b.innerHTML = RICONS[r]; b.setAttribute('data-r', r); b.addEventListener('click', function(ev){ ev.stopPropagation(); if (rbarTarget) sendReact(rbarTarget, r); hideRbar(); }); rbar.appendChild(b); });
+function hideRbar(){ rbar.hidden = true; rbarTarget = null; if (rbar.parentNode) rbar.parentNode.removeChild(rbar); }
+function sendReact(id, r){ if (ws && ws.readyState === 1) { try { ws.send(JSON.stringify({ type: 'react', id: id, r: r })); return; } catch (e) {} } fetch('/chat/react', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ room: room, id: id, r: r, name: curName() }) }).catch(function(){}); }
+function paintReacts(el, reacts){ el.innerHTML = ''; if (!reacts) return; RSET.forEach(function(r){ var names = reacts[r]; if (names && names.length) { var p = document.createElement('span'); p.className = 'rpill' + (names.indexOf(curName()) >= 0 ? ' mine' : ''); p.setAttribute('data-r', r); p.innerHTML = RICONS[r] + '<b>' + names.length + '</b>'; el.appendChild(p); } }); }
+function applyReacts(id, reacts){ if (!id) return; var el = msgsEl.querySelector('[data-mid="' + id + '"]'); if (!el) return; var slot = el.querySelector('.reacts'); if (slot) paintReacts(slot, reacts); }
+msgsEl.addEventListener('click', function(e){
+  var pill = e.target.closest ? e.target.closest('.rpill') : null;
+  if (pill) { var host = pill.closest('.msg'); if (host && host.dataset.mid) sendReact(host.dataset.mid, pill.getAttribute('data-r')); return; }
+  if (e.target.closest && e.target.closest('a, img, .rbar')) return;
+  var mEl = e.target.closest ? e.target.closest('.msg') : null;
+  if (!mEl || !mEl.dataset.mid) { hideRbar(); return; }
+  if (rbarTarget === mEl.dataset.mid && !rbar.hidden) { hideRbar(); return; }
+  rbarTarget = mEl.dataset.mid;
+  var bd = mEl.querySelector('.mbody'); if (bd) { bd.appendChild(rbar); rbar.hidden = false; }
+});
+var typingTimer = null, presCache = '';
+function sixTyping(){ if (!typingTimer) presCache = presEl.textContent; presEl.textContent = 'six is typing…'; clearTimeout(typingTimer); typingTimer = setTimeout(sixTypingDone, 9000); }
+function sixTypingDone(){ if (typingTimer) { clearTimeout(typingTimer); typingTimer = null; if (presEl.textContent === 'six is typing…') presEl.textContent = presCache || 'live ✦'; } }
+
 function connect(){
   stopPoll();
   try { ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/chat/ws?room='+encodeURIComponent(room)+'&name='+encodeURIComponent(curName())+(myProfile.hue!=null?'&hue='+myProfile.hue:'')); }
@@ -2219,7 +2390,7 @@ html,body{height:100%}body{display:block;padding:0;margin:0}
 .aicredit{margin-top:10px;font-size:11.5px;color:#8a7a5c;letter-spacing:.05em}
 
 </style></head><body>${STAR_CANVAS}
-<canvas id="stars"></canvas><script src="/stars.js?e=92"></script><div class="aiapp app6">
+<canvas id="stars"></canvas><script src="/stars.js?e=93"></script><div class="aiapp app6">
 <aside class="airail">
 <div class="aibrand">six <span>&#10022; ai</span></div>
 <button class="ainew" id="newchat" type="button">+ new chat</button>
@@ -2245,7 +2416,7 @@ html,body{height:100%}body{display:block;padding:0;margin:0}
 </div>
 ${TABBAR_HTML}
 <script src="/cloak.js"></script>
-<script src="/stars.js?e=92"></script>
+<script src="/stars.js?e=93"></script>
 <script>
 var IDEA_VAULT = ["roast me like u actually mean it", "roast my fit: black hoodie, gray sweats, beat forces", "give me a comeback for 'u fell off'", "write a diss track verse about my opp", "clown somebody who talks big but never pulls up", "what do i text back to 'k.'", "she left me on delivered 3 hours, whats the move", "write my apology text to my girl but make it sound real", "give me a flirty first text that aint corny", "how do i slide in her dms without bein weird", "what business could i start with $100 in waseca", "give me a side hustle that actually works in a small town", "how do i flip $50 into $200 this week", "is tiktok shop reselling worth it, be real", "write me a 7 day money plan for a broke student", "give me a tiktok idea that could actually blow up", "write me a stretchtok overlay thats mean as hell", "invent a volt city episode in 10 lines", "give me a caption for a siege clip where i go crazy", "what sound should i use for a gaming clip rn", "best siege operator for solo queue and why", "give me a warmup routine to stop bein bronze", "whats the most annoying operator in r6 rn", "make a tier list of siege maps worst to best", "how do i aim train without gettin bored", "would u rather lose ur phone or ur girl for a week", "rank these: money, love, clout, peace", "is a hotdog a sandwich, argue ur case", "whats ur most controversial food take", "if u had 24 hours invisible what u doin", "zombies or aliens, which invasion u survivin", "fight one horse sized duck or 100 duck sized horses", "whats the worst superpower to have", "time travel to the past or future and why", "if animals could talk which one is the biggest hater", "write a horror story in 5 lines set in waseca", "make up a conspiracy theory about my school", "write a fake news headline about me that sounds real", "give me a villain origin story for a waseca kid", "write a rap bar about bein broke but dangerous", "explain taxes like im not tryna hear a lecture", "how do i stop bein lazy fr", "give me a morning routine that aint corny", "what do i say in a job interview when they ask my weakness", "write my resume summary but make me sound hireable", "best gas station snack combo under $5", "rank fast food fries worst to best", "whats the perfect 2am meal", "is cereal better dry or with milk, defend it", "make a tier list of little debbie snacks", "act like my evil twin for the next answer", "talk like a waseca local the whole answer", "answer me like ur my conscience at 3am", "be my hype man for 30 seconds", "tell me a secret about the internet nobody talks about", "what should i post on my story today", "give me a bio for tiktok thats cold", "write a fake comment section arguing about my clip", "whats a username idea for a backup account", "give me 3 hooks for the first 2 seconds of a video", "how do i get out of a speeding ticket convo with a cop (hypothetically)", "whats the dumbest law u know", "if i ran waseca for a day whats my first law", "give me a fake excuse generator for bein late", "how do i act normal when im high at the function (joke answer only)", "best drake song for a late night drive", "make me a playlist vibe: sad but dangerous", "what song should be my alarm", "write a 4 bar hook about my life rn", "rank lucki, drake, d4vd for a night drive", "whats my red flag be honest", "give me an ego check in one line", "tell me why im the main character", "what would my villain arc look like", "rate my life choices so far out of 10 and explain", "teach me a card trick i can do with no setup", "give me a pickup line thats so bad its good", "write a roast battle between me and a raccoon", "what does my dream life look like in 5 years, paint it", "end this with the realest sentence u got", "give me a would u rather thats actually hard", "unpopular opinion generator, go", "whats a hill u would die on", "two truths and a lie about the moon, i gotta guess", "make a fake group chat argument about whos broke", "how do i make $20 today no cap", "write an ad for my shop dai supply that sounds expensive", "give me a product description for sunglasses that sells itself", "what should dai supply sell next", "write a monday deal post for my shop ig story", "say something thatll make me lock in", "give me a quote to put on my wall", "what do i do when everybody sleepin on me", "talk me out of texting my ex", "last one: surprise me with somethin i aint expect", "give me a fake fortune cookie message thats oddly specific", "whats the best excuse to leave a function early", "invent a holiday that should exist", "describe my aura in 3 words and explain", "write a diss to monday mornings"];
 function showIdeas(list){ var row = document.getElementById('ideaRow'); row.innerHTML = ''; list.forEach(function(p){ var b = document.createElement('button'); b.type = 'button'; b.className = 'sugrow'; b.textContent = p; b.addEventListener('click', function(){ var q = document.getElementById('q'); q.value = p; document.getElementById('askbar').requestSubmit(); }); row.appendChild(b); }); }
@@ -2651,7 +2822,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 ${SIDEBAR_HTML}
 </div>
 <script src="/cloak.js"></script>
-<script src="/stars.js?e=92"></script>
+<script src="/stars.js?e=93"></script>
 <script>
 var docEl=document.getElementById('doc'), outEl=document.getElementById('out'), statEl=document.getElementById('stat'), countEl=document.getElementById('count'), copyBtn=document.getElementById('copy'), emptyEl=document.getElementById('empty');
 function fmtMd(text){
@@ -2753,7 +2924,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 ${SIDEBAR_HTML}
 </div>
 <script src="/cloak.js"></script>
-<script src="/stars.js?e=92"></script>
+<script src="/stars.js?e=93"></script>
 <script>
 var outEl=document.getElementById('out'), stateEl=document.getElementById('state'), formsEl=document.getElementById('forms');
 function showState(user){
@@ -3265,7 +3436,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}<div class="
 ${CLOAK_BAR}
 </div>
 <script src="/cloak.js"></script>
-<script src="/stars.js?e=92"></script>
+<script src="/stars.js?e=93"></script>
 </body></html>`;
 }
 function looksBlocked(text) {
@@ -3445,7 +3616,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}<div class="
 ${SIDEBAR_HTML}
 </div>
 <script src="/cloak.js"></script>
-<script src="/stars.js?e=92"></script>
+<script src="/stars.js?e=93"></script>
 </body></html>`;
 }
 async function fetchYtSearchApi(query) {
@@ -4198,12 +4369,13 @@ export class ChatRoom {
   presence() { this.broadcast({ type: 'presence', n: this.state.getWebSockets().length }); }
   voiceMembers() { const out = []; for (const s of this.state.getWebSockets()) { try { const a = s.deserializeAttachment() || {}; if (a.voice && a.pid) out.push({ pid: a.pid, name: a.disp || a.name || 'anon' }); } catch {} } return out; }
   broadcastVoice() { this.broadcast({ type: 'voice', members: this.voiceMembers() }); }
-  async addMsg(msg) { await this.loadMsgs(); this.msgs.push(msg); this.msgs = this.msgs.slice(-60); for (let i = 0; i < this.msgs.length - 20; i++) { const m = this.msgs[i]; if (m.img) { delete m.img; m.imgGone = true; } } await this.storeMsgs(); this.broadcast({ type: 'msg', msg }); }
+  async addMsg(msg) { await this.loadMsgs(); if (!msg.id) msg.id = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); this.msgs.push(msg); this.msgs = this.msgs.slice(-60); for (let i = 0; i < this.msgs.length - 20; i++) { const m = this.msgs[i]; if (m.img) { delete m.img; m.imgGone = true; } } await this.storeMsgs(); this.broadcast({ type: 'msg', msg }); }
   async fetch(request) {
     const u = new URL(request.url);
     const rm = u.searchParams.get('room');
     if (rm) { try { await this.state.storage.put('room', rm); } catch {} }
     await this.lazyWipe();
+    if (u.pathname === '/typing') { this.broadcast({ type: 'sixtyping' }); return new Response('{}', { headers: { 'content-type': 'application/json' } }); }
     if (u.pathname === '/ws') {
       if (request.headers.get('Upgrade') !== 'websocket') return new Response('expected websocket', { status: 426 });
       const name = cleanName(u.searchParams.get('name'));
@@ -4247,6 +4419,7 @@ export class ChatRoom {
   async webSocketMessage(ws, data) {
     let att = {}; try { att = ws.deserializeAttachment() || {}; } catch {}
     let b = {}; try { b = JSON.parse(String(data)); } catch { return; }
+    if (b && b.type === 'react') { const RSET2 = ['heart', 'fire', 'laugh', 'up', 'skull']; if (RSET2.includes(b.r)) { await this.loadMsgs(); const arr2 = this.msgs || []; const msg = arr2.find(m => m.id === String(b.id || '').slice(0, 24)); if (msg) { msg.reacts = msg.reacts || {}; const nm = att.name || 'anon'; const lst = msg.reacts[b.r] = msg.reacts[b.r] || []; const ix = lst.indexOf(nm); if (ix >= 0) lst.splice(ix, 1); else lst.push(nm); if (!lst.length) delete msg.reacts[b.r]; this.storeMsgs(); this.broadcast({ type: 'react', id: msg.id, reacts: msg.reacts }); } } return; }
     if (b && b.type === 'rtc-join') { att.voice = true; try { ws.serializeAttachment(att); } catch {} this.broadcastVoice(); return; }
     if (b && b.type === 'rtc-leave') { att.voice = false; try { ws.serializeAttachment(att); } catch {} this.broadcastVoice(); return; }
     if (b && b.type === 'rtc' && b.to) {
@@ -4322,7 +4495,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CA
 <iframe class="gameframe" id="gf" src="about:blank" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
 <div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
 <script src="/cloak.js"></script>
-<script src="/stars.js?e=92"></script>
+<script src="/stars.js?e=93"></script>
 <script>window.GX_WISP = "wss://sixixnetworks.onrender.com/wisp/";</script>
 <script src="/uv-assets/baremux/index.js?e=67"></script>
 <script>
@@ -4390,7 +4563,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CA
 <iframe class="gameframe" id="gf" src="about:blank" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
 <div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
 <script src="/cloak.js"></script>
-<script src="/stars.js?e=92"></script>
+<script src="/stars.js?e=93"></script>
 <script>window.GX_WISP = "wss://sixixnetworks.onrender.com/wisp/";</script>
 <script src="/uv-assets/baremux/index.js?e=67"></script>
 <script>
@@ -4634,6 +4807,7 @@ async function chatProfile(env, request, wantName, wantHue) {
       const q = cleanText(b.question).slice(0, 300);
       if (!q || !env.CHAT) return new Response('{"ok":false}', { headers: { 'content-type': 'application/json' } });
       const stub = env.CHAT.get(env.CHAT.idFromName(cleanRoom(b.room)));
+      try { await stub.fetch('https://do/typing'); } catch {}
       let ctx = '';
       try {
         const pr = await stub.fetch('https://chat/poll?room=' + encodeURIComponent(cleanRoom(b.room)));
