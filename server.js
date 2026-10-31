@@ -3481,6 +3481,9 @@ body.sb-off #stage iframe{height:78dvh}
 @media(max-width:820px){ #stage{padding-bottom:82px} }
 @media(max-width:640px){ .navbtns button{width:34px;height:34px} #engseg button{padding:8px 13px;font-size:12.5px} #toolbar{gap:7px;padding:8px} }
 
+#stage{max-width:none;width:100%;padding:0 2px}
+#stage iframe{flex:1;min-height:0;border-radius:12px}
+#toolbar{max-width:none}
 </style></head>
 <body>${STAR_CANVAS}
 <div id="tabstrip"></div>
@@ -3491,7 +3494,7 @@ body.sb-off #stage iframe{height:78dvh}
     <input name="q" type="text" placeholder="search or type a site \u2726" autocomplete="off" autofocus list="sg">
     <button type="submit">go</button>
   </form></div>
-<div id="engbar"><div id="engseg"><button type="button" data-eng="ddg" class="on">duckduckgo</button><button type="button" data-eng="google">google</button><button type="button" data-eng="bing">bing</button></div></div><datalist id="sg"></datalist>
+<datalist id="sg"></datalist>
 <div id="stage"></div>
 <div id="ntp">
 <div class="hero"><h1>6ix<span>networks</span></h1><p>search the whole web thru the network — everything runs on the engine now</p></div>
@@ -3627,10 +3630,7 @@ function closeBtab(ix){
   else if(ix<=bactive) bactive=Math.max(0, bactive-1);
   bsave(); renderBtabs();
 }
-var ENGINES={ google:'https://www.google.com/search?q=', bing:'https://www.bing.com/search?q=', ddg:'https://duckduckgo.com/?q=' };
-function engUrl(q){ var e='ddg'; try{ e=localStorage.getItem('gx_eng')||'ddg'; }catch(x){} if(!ENGINES[e]) e='ddg'; return ENGINES[e]+encodeURIComponent(q); }
-function setEng(e){ if(!ENGINES[e]) e='ddg'; try{ localStorage.setItem('gx_eng', e); }catch(x){} document.querySelectorAll('#engseg button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-eng')===e); }); }
-(function(){ var cur='ddg'; try{ cur=localStorage.getItem('gx_eng')||'ddg'; }catch(x){} document.querySelectorAll('#engseg button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-eng')===cur); b.addEventListener('click', function(){ setEng(b.getAttribute('data-eng')); }); }); })();
+function engUrl(q){ return 'https://duckduckgo.com/?q='+encodeURIComponent(q); }
 function actFrame(){ var act=btabs[bactive]; if(!act) return null; return document.querySelector('#stage iframe[data-bid="'+act.id+'"]'); }
 var nb=document.getElementById('nback'), nf=document.getElementById('nfwd'), nr=document.getElementById('nreload');
 if(nb) nb.addEventListener('click', function(){ var f=actFrame(); if(f){ try{ f.contentWindow.history.back(); }catch(e){} } });
