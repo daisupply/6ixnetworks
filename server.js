@@ -3580,6 +3580,7 @@ function renderBtabs(){
       f.src=tb.url;
       f.addEventListener('load', function(){ var vv=stage.querySelector('[data-veil="'+tb.id+'"]'); if(vv) vv.remove(); try{ var t=f.contentWindow.document.title; if(t && t!=='Google'){ tb.title=t.slice(0,60); bsave(); renderBtabs(); } }catch(e){} });
       var vl=document.createElement('div'); vl.className='veil'; vl.setAttribute('data-veil', tb.id); vl.innerHTML='<div class="vx">✦</div><div>tunneling thru the network…</div>'; stage.appendChild(vl);
+      setTimeout(function(){ var vv3=stage.querySelector('[data-veil="'+tb.id+'"]'); if(vv3) vv3.remove(); }, 6000);
       stage.appendChild(f);
       (function(tb2, fr){
         if(!tb2.raw) return;
@@ -3598,6 +3599,7 @@ function renderBtabs(){
           try { doc = fr.contentWindow.document; } catch(e) {}
           if(doc && doc.body) {
             var txt = (doc.body.textContent || '').slice(0, 1500);
+            if(txt.trim().length > 40) { var vv4=stage.querySelector('[data-veil="' + tb2.id + '"]'); if(vv4) vv4.remove(); }
             if(/error processing your request|failed to load/i.test(txt)) { swap(); }
             else if(txt.trim().length > 60) { clearInterval(iv); }
             else if(tries >= 25) { swap(); }
