@@ -3580,6 +3580,26 @@ function renderBtabs(){
       f.addEventListener('load', function(){ var vv=stage.querySelector('[data-veil="'+tb.id+'"]'); if(vv) vv.remove(); try{ var t=f.contentWindow.document.title; if(t && t!=='Google'){ tb.title=t.slice(0,60); bsave(); renderBtabs(); } }catch(e){} });
       var vl=document.createElement('div'); vl.className='veil'; vl.setAttribute('data-veil', tb.id); vl.innerHTML='<div class="vx">✦</div><div>tunneling thru the network…</div>'; stage.appendChild(vl);
       stage.appendChild(f);
+      (function(tb2, fr){
+        if(!tb2.raw) return;
+        var tries = 0;
+        var iv = setInterval(function(){
+          tries++;
+          if(tries > 25 || tb2.rescued) { clearInterval(iv); return; }
+          var doc = null;
+          try { doc = fr.contentWindow.document; } catch(e) {}
+          if(doc && doc.body) {
+            var txt = (doc.body.textContent || '').slice(0, 1500);
+            if(/error processing your request|failed to load/i.test(txt)) {
+              tb2.rescued = true; clearInterval(iv);
+              var isU = tb2.raw.indexOf('://') > 0 || (tb2.raw.indexOf(' ') < 0 && tb2.raw.indexOf('.') > 0);
+              var dest = isU ? tb2.raw : ('https://www.bing.com/search?q=' + encodeURIComponent(tb2.raw));
+              fr.src = '/go?q=' + encodeURIComponent(dest) + '&classic=1';
+              var vv2 = stage.querySelector('[data-veil="' + tb2.id + '"]'); if(vv2) vv2.remove();
+            } else if(txt.trim().length > 60) { clearInterval(iv); }
+          }
+        }, 1200);
+      })(tb, f);
     }
     f.style.display = (tb===act) ? 'block' : 'none';
     var vx=stage.querySelector('[data-veil="'+tb.id+'"]'); if(vx) vx.style.display = (tb===act) ? 'flex' : 'none';
@@ -5245,7 +5265,7 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/go') {
     const dest = normalizeInput(u.searchParams.get('q') || '');
     if (!dest) { res.writeHead(302, { location: '/home' }); return res.end(); }
-    if (isSearchDest(dest)) { res.writeHead(302, { location: proxied(dest) }); return res.end(); }
+    if (u.searchParams.get('classic') === '1') { res.writeHead(302, { location: proxied(dest) }); return res.end(); }
     if (UV_OK()) { res.writeHead(302, { location: '/uv/service/' + uvEncodeUrl(dest) }); return res.end(); }
     res.writeHead(302, { location: proxied(dest) });
     return res.end();
@@ -5310,7 +5330,6 @@ const server = http.createServer(async (req, res) => {
   }
   if (u.pathname === '/uv' || u.pathname === '/sj') {
     const dest = normalizeInput(u.searchParams.get('url') || '');
-    if (dest && isSearchDest(dest)) { res.writeHead(302, { location: proxied(dest) }); return res.end(); }
     if (UV_OK() && dest) { res.writeHead(302, { location: '/uv/service/' + uvEncodeUrl(dest) }); return res.end(); }
     res.writeHead(302, { location: '/home' });
     return res.end();
