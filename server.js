@@ -1189,7 +1189,7 @@ function playPage(u, t) {
   if (!/^https:\/\//i.test(u || '')) {
     return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#f6cf8d" href="/gs">back to games</a></body>';
   }
-  const prox = gproxied(u);
+  const prox = SJ_OK() ? '/engine?u=' + b64urlEncode(u) : gproxied(u);
   const alt = proxied(u);
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
@@ -4702,6 +4702,122 @@ if (SJ_START) goSj(SJ_START);
 }
 
 
+function enginePage(dest, nf) {
+  const classic = proxied(dest);
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+<style>${GALAXY_CSS}
+html,body{height:100%}
+body{display:block;padding:0;margin:0;background:#030304;overflow:hidden}
+#boot{position:fixed;inset:0;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;color:#f6e3bb;font-size:15px;z-index:2;text-align:center;padding:20px}
+#boot .vx{font-size:32px;color:#e39a2d;animation:vpulse 1.1s ease-in-out infinite}
+@keyframes vpulse{0%,100%{transform:scale(1);opacity:.65}50%{transform:scale(1.22);opacity:1}}
+#boot .bsub{color:#8a7a5c;font-size:12.5px}
+#engframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#000}
+#classicLink{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:5;background:rgba(18,15,11,.94);border:1px solid rgba(246,207,141,.5);color:#f6e3bb;border-radius:999px;padding:11px 20px;font-weight:700;text-decoration:none;display:none;font-size:14px}
+</style></head>
+<body>
+<div id="boot"><div class="vx">✦</div><div id="bstat">tunneling thru the network…</div><div class="bsub">first ride on a cold engine can take a few sec</div></div>
+<a id="classicLink" href="${escHtml(classic)}">takin long? open the classic way</a>
+<script src="/sj-assets/scramjet/scramjet.all.js"></script>
+<script src="/sj-assets/baremux/index.js"></script>
+<script>
+var DEST = ${JSON.stringify(dest)}, CLASSIC = ${JSON.stringify(classic)}, NF = ${nf ? 'true' : 'false'};
+var statEl = document.getElementById('bstat'), clink = document.getElementById('classicLink');
+function stat(t){ if (statEl) statEl.textContent = t; }
+setTimeout(function(){ clink.style.display = 'block'; }, 9000);
+var failed = false;
+function fail(){
+  if (failed) return; failed = true;
+  if (NF) { document.body.innerHTML = '<div style="color:#f6e3bb;font-family:system-ui;padding:40px 22px">error processing your request — fallin back…</div>'; return; }
+  location.replace(CLASSIC);
+}
+function sjPrecreate() {
+  return new Promise(function(res) {
+    var done = false; function fin() { if (!done) { done = true; res(); } }
+    var rq; try { rq = indexedDB.open('$scramjet', 1); } catch (e) { return fin(); }
+    rq.onupgradeneeded = function() {
+      var db = rq.result;
+      ['config', 'cookies', 'redirectTrackers', 'referrerPolicies', 'publicSuffixList'].forEach(function(st) { if (!db.objectStoreNames.contains(st)) db.createObjectStore(st); });
+    };
+    rq.onsuccess = function() { try { rq.result.close(); } catch (e) {} fin(); };
+    rq.onerror = function() { fin(); };
+    rq.onblocked = function() { fin(); };
+    setTimeout(fin, 3000);
+  });
+}
+var sjCtl = null;
+async function sjBoot() {
+  await sjPrecreate();
+  var Ctor = $scramjetLoadController().ScramjetController;
+  sjCtl = new Ctor({ prefix: '/scramjet/', files: { wasm: '/sj-assets/scramjet/scramjet.wasm.wasm', all: '/sj-assets/scramjet/scramjet.all.js', sync: '/sj-assets/scramjet/scramjet.sync.js' }, flags: { rewriterLogs: false } });
+  var conn = new BareMux.BareMuxConnection('/sj-assets/baremux/worker.js');
+  await navigator.serviceWorker.register('/sw.js');
+  await navigator.serviceWorker.ready;
+  if (!navigator.serviceWorker.controller) { stat('waking the engine…'); await new Promise(function(res) { var to = setTimeout(res, 7000); navigator.serviceWorker.addEventListener('controllerchange', function() { clearTimeout(to); res(); }); }); }
+  stat('connectin the tunnel…');
+  await conn.setTransport('/sj-assets/epoxy/index.mjs', [{ wisp: (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/' }]);
+  stat('startin the engine…');
+  await sjCtl.init();
+}
+async function sjHeal() {
+  stat('fixing engine storage…');
+  try { var reg = await navigator.serviceWorker.getRegistration('/'); if (reg) await reg.unregister(); } catch (e) {}
+  await new Promise(function(r) { setTimeout(r, 450); });
+  await new Promise(function(res) {
+    var rq; try { rq = indexedDB.deleteDatabase('$scramjet'); } catch (e) { return res(); }
+    var to = setTimeout(res, 3500);
+    rq.onsuccess = function() { clearTimeout(to); res(); };
+    rq.onerror = function() { clearTimeout(to); res(); };
+    rq.onblocked = function() {};
+  });
+  await sjPrecreate();
+  try { sessionStorage.setItem('gx_sj_healed', '1'); } catch (e) {}
+  location.reload();
+}
+async function ensureSj() {
+  try { await sjBoot(); try { sessionStorage.removeItem('gx_sj_healed'); } catch (e) {} }
+  catch (e) {
+    window.__sjerr = String((e && e.message) || e);
+    if (!/object store|notfounderror|idbdatabase/i.test(window.__sjerr)) throw e;
+    var healed = false; try { healed = !!sessionStorage.getItem('gx_sj_healed'); } catch (e2) {}
+    if (healed) throw e;
+    await sjHeal();
+    throw e;
+  }
+}
+(async function(){
+  try {
+    await ensureSj();
+    stat('connected — openin ur site…');
+    var fr = sjCtl.createFrame();
+    fr.frame.id = 'engframe';
+    document.body.appendChild(fr.frame);
+    fr.go(DEST);
+    var bootEl = document.getElementById('boot');
+    var checks = 0;
+    var iv = setInterval(function(){
+      checks++;
+      var doc = null;
+      try { doc = fr.frame.contentWindow.document; } catch (e) {}
+      if (doc && doc.body) {
+        var txt = (doc.body.textContent || '').slice(0, 2000);
+        if (/scramjet/i.test(txt) && /error|failed/i.test(txt)) { clearInterval(iv); fail(); return; }
+        if (txt.trim().length > 40 && doc.readyState === 'complete') { if (bootEl) bootEl.remove(); clearInterval(iv); return; }
+      }
+      if (checks >= 26) { if (bootEl) bootEl.remove(); clearInterval(iv); }
+    }, 1200);
+    setTimeout(function(){ if (!failed && !NF) { var d2 = null; try { d2 = fr.frame.contentWindow.document; } catch (e) {} if (!d2 || !d2.body || (d2.body.textContent || '').trim().length < 10) fail(); } }, 40000);
+  } catch (e) { window.__sjerr2 = String((e && e.message) || e); stat('engine error: ' + window.__sjerr2); setTimeout(fail, 1200); }
+})();
+setTimeout(function(){ if (!failed && !document.getElementById('engframe')) { stat('engine stalled — fallin back…'); setTimeout(fail, 800); } }, 25000);
+</script>
+</body></html>`;
+}
+
+
 // ---------- ultraviolet engine (node build — replaces scramjet as the rider in v57) ----------
 let UV_DIR = null;
 try {
@@ -4846,8 +4962,8 @@ const server = http.createServer(async (req, res) => {
     return res.end(PWA_MANIFEST);
   }
   if (u.pathname === '/sw.js') {
-    if (UV_OK()) { res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(UV_SW); }
     if (SJ_OK()) { res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(SJ_SW); }
+    if (UV_OK()) { res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(UV_SW); }
     res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(SW_JS);
   }
@@ -5065,7 +5181,7 @@ const server = http.createServer(async (req, res) => {
     const hit = await fetchVideoInfo(vidId);
     const phit = hit ? null : await fetchPipedStreams(vidId);
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
-    const uvUrl = UV_OK() ? '/uv/service/' + uvEncodeUrl('https://www.youtube.com/watch?v=' + vidId) : null;
+    const uvUrl = SJ_OK() ? '/engine?u=' + b64urlEncode('https://www.youtube.com/watch?v=' + vidId) + '&nf=1' : (UV_OK() ? '/uv/service/' + uvEncodeUrl('https://www.youtube.com/watch?v=' + vidId) : null);
     return res.end(uvUrl ? ytWatchPage2(vidId, hit, phit, uvUrl) : ytWatchPage(vidId, hit, phit));
   }
   if (u.pathname === '/yt/stream') {
@@ -5115,10 +5231,19 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/yt/search') {
     return handleYtSearch(req, res, u.searchParams.get('q') || '');
   }
+  if (u.pathname === '/engine') {
+    let dest = ''; try { dest = b64urlDecode(u.searchParams.get('u') || ''); } catch {}
+    if (!/^https?:\/\//i.test(dest)) { res.writeHead(302, { location: '/home' }); return res.end(); }
+    if (isSearchDest(dest)) { res.writeHead(302, { location: proxied(dest) }); return res.end(); }
+    if (!SJ_OK()) { res.writeHead(302, { location: proxied(dest) }); return res.end(); }
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
+    return res.end(enginePage(dest, u.searchParams.get('nf') === '1'));
+  }
   if (u.pathname === '/go') {
     const dest = normalizeInput(u.searchParams.get('q') || '');
     if (!dest) { res.writeHead(302, { location: '/home' }); return res.end(); }
     if (isSearchDest(dest)) { res.writeHead(302, { location: proxied(dest) }); return res.end(); }
+    if (SJ_OK()) { res.writeHead(302, { location: '/engine?u=' + b64urlEncode(dest) }); return res.end(); }
     if (UV_OK()) { res.writeHead(302, { location: '/uv/service/' + uvEncodeUrl(dest) }); return res.end(); }
     res.writeHead(302, { location: proxied(dest) });
     return res.end();
@@ -5184,6 +5309,7 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/uv' || u.pathname === '/sj') {
     const dest = normalizeInput(u.searchParams.get('url') || '');
     if (dest && isSearchDest(dest)) { res.writeHead(302, { location: proxied(dest) }); return res.end(); }
+    if (SJ_OK() && dest) { res.writeHead(302, { location: '/engine?u=' + b64urlEncode(dest) }); return res.end(); }
     if (UV_OK() && dest) { res.writeHead(302, { location: '/uv/service/' + uvEncodeUrl(dest) }); return res.end(); }
     res.writeHead(302, { location: '/home' });
     return res.end();
