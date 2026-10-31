@@ -72,13 +72,13 @@ function sixAnswerSnippet(tgt) {
   if (!/(^|\.)bing\.com$/i.test(t.hostname) || !t.pathname.startsWith('/search')) return '';
   const q = (t.searchParams.get('q') || '').trim();
   if (!q) return '';
-  const js = "(function(){var Q=" + JSON.stringify(q) + ";function init(){if(document.getElementById('sixbox'))return;var st=document.createElement('style');st.textContent='#sixbox{max-width:648px;margin:14px 0 6px;padding:14px 18px;border:1px solid rgba(94,142,255,.55);border-radius:16px;background:linear-gradient(135deg,rgba(18,18,20,.92),rgba(12,12,14,.94));color:#f4f4f5;font-family:system-ui,-apple-system,sans-serif;box-shadow:0 6px 30px rgba(0,0,0,.35)}#sixbox .h{font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#9db9ff;margin-bottom:6px}#sixbox .b{font-size:16px;line-height:1.5;white-space:pre-wrap}#sixbox .f{margin-top:8px;font-size:11px;opacity:.55}';document.head.appendChild(st);var box=document.createElement('div');box.id='sixbox';box.innerHTML='<div class=h>\u2726 six</div><div class=b>thinking\u2026</div>';var host=document.querySelector('#b_content')||document.body;host.insertBefore(box,host.firstChild);fetch(location.origin+'/ai/answer?q='+encodeURIComponent(Q)).then(function(r){return r.json()}).then(function(j){if(j&&j.answer){box.querySelector('.b').textContent=j.answer;var f=document.createElement('div');f.className='f';f.textContent='ai answer \u2014 the real results are right below';box.appendChild(f);}else{box.remove();}}).catch(function(){box.remove();});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();})();";
+  const js = "(function(){var Q=" + JSON.stringify(q) + ";function init(){if(document.getElementById('sixbox'))return;var st=document.createElement('style');st.textContent='#sixbox{max-width:648px;margin:14px 0 6px;padding:14px 18px;border:1px solid rgba(227,154,45,.55);border-radius:16px;background:linear-gradient(135deg,rgba(18,18,20,.92),rgba(12,12,14,.94));color:#f4f4f5;font-family:system-ui,-apple-system,sans-serif;box-shadow:0 6px 30px rgba(0,0,0,.35)}#sixbox .h{font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#f6cf8d;margin-bottom:6px}#sixbox .b{font-size:16px;line-height:1.5;white-space:pre-wrap}#sixbox .f{margin-top:8px;font-size:11px;opacity:.55}';document.head.appendChild(st);var box=document.createElement('div');box.id='sixbox';box.innerHTML='<div class=h>\u2726 six</div><div class=b>thinking\u2026</div>';var host=document.querySelector('#b_content')||document.body;host.insertBefore(box,host.firstChild);fetch(location.origin+'/ai/answer?q='+encodeURIComponent(Q)).then(function(r){return r.json()}).then(function(j){if(j&&j.answer){box.querySelector('.b').textContent=j.answer;var f=document.createElement('div');f.className='f';f.textContent='ai answer \u2014 the real results are right below';box.appendChild(f);}else{box.remove();}}).catch(function(){box.remove();});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();})();";
   return '<script>' + js + '</' + 'script>';
 }
 
 function summarizeSnippet(tgt) {
   const ub = JSON.stringify(b64urlEncode(tgt));
-  const js = "(function(){if(location.pathname.indexOf('/browse/')!==0)return;function init(){if(document.getElementById('sixsum')||!document.body)return;var b=document.createElement('button');b.id='sixsum';b.textContent='\u2726 summarize';b.setAttribute('style','position:fixed;left:14px;bottom:14px;z-index:2147483640;background:rgba(16,16,18,.92);color:#e4e4e7;border:1px solid rgba(255,255,255,.65);border-radius:999px;padding:9px 15px;font:600 13px system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.45)');var p=document.createElement('div');p.setAttribute('style','position:fixed;left:14px;bottom:60px;z-index:2147483640;max-width:min(440px,86vw);max-height:48vh;overflow-y:auto;background:rgba(12,12,14,.97);color:#f4f4f5;border:1px solid rgba(255,255,255,.5);border-radius:14px;padding:14px 16px;font:14px/1.55 system-ui,sans-serif;display:none;box-shadow:0 10px 34px rgba(0,0,0,.5)');var h=document.createElement('div');h.textContent='\u2726 six summary';h.setAttribute('style','font-weight:800;color:#9db9ff;margin-bottom:6px');var t=document.createElement('div');t.style.whiteSpace='pre-wrap';p.appendChild(h);p.appendChild(t);var done=false;b.addEventListener('click',function(){if(p.style.display==='block'){p.style.display='none';return;}p.style.display='block';if(done)return;t.textContent='reading the page\u2026';fetch(location.origin+'/ai/summarize?u='+" + ub + ").then(function(r){return r.json()}).then(function(o){done=true;t.textContent=(o&&o.summary)?o.summary:'six couldnt summarize this one \u2014 some pages hide their text from readers.';}).catch(function(){t.textContent='six couldnt summarize this one.';});});document.body.appendChild(b);document.body.appendChild(p);}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();})();";
+  const js = "(function(){if(location.pathname.indexOf('/browse/')!==0)return;function init(){if(document.getElementById('sixsum')||!document.body)return;var b=document.createElement('button');b.id='sixsum';b.textContent='\u2726 summarize';b.setAttribute('style','position:fixed;left:14px;bottom:14px;z-index:2147483640;background:rgba(16,16,18,.92);color:#e4e4e7;border:1px solid rgba(255,255,255,.65);border-radius:999px;padding:9px 15px;font:600 13px system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.45)');var p=document.createElement('div');p.setAttribute('style','position:fixed;left:14px;bottom:60px;z-index:2147483640;max-width:min(440px,86vw);max-height:48vh;overflow-y:auto;background:rgba(12,12,14,.97);color:#f4f4f5;border:1px solid rgba(255,255,255,.5);border-radius:14px;padding:14px 16px;font:14px/1.55 system-ui,sans-serif;display:none;box-shadow:0 10px 34px rgba(0,0,0,.5)');var h=document.createElement('div');h.textContent='\u2726 six summary';h.setAttribute('style','font-weight:800;color:#f6cf8d;margin-bottom:6px');var t=document.createElement('div');t.style.whiteSpace='pre-wrap';p.appendChild(h);p.appendChild(t);var done=false;b.addEventListener('click',function(){if(p.style.display==='block'){p.style.display='none';return;}p.style.display='block';if(done)return;t.textContent='reading the page\u2026';fetch(location.origin+'/ai/summarize?u='+" + ub + ").then(function(r){return r.json()}).then(function(o){done=true;t.textContent=(o&&o.summary)?o.summary:'six couldnt summarize this one \u2014 some pages hide their text from readers.';}).catch(function(){t.textContent='six couldnt summarize this one.';});});document.body.appendChild(b);document.body.appendChild(p);}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();})();";
   return '<script>' + js + '</' + 'script>';
 }
 function privCode() {
@@ -296,10 +296,10 @@ function cloakOpen(){
 
 `;
 const CLOAK_BAR = `<div style="margin-top:26px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;color:#9a9a9a;font-size:13px">
-<button onclick="cloakTab('google')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">google</button>
-<button onclick="cloakTab('classroom')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">classroom</button>
-<button onclick="cloakTab('docs')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">docs</button>
-<button onclick="cloakTab('drive')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">open in cloaked tab</button></div>`;
+<button onclick="cloakTab('google')" style="background:rgba(227,154,45,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">google</button>
+<button onclick="cloakTab('classroom')" style="background:rgba(227,154,45,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">classroom</button>
+<button onclick="cloakTab('docs')" style="background:rgba(227,154,45,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">docs</button>
+<button onclick="cloakTab('drive')" style="background:rgba(227,154,45,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()" style="background:rgba(227,154,45,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">open in cloaked tab</button></div>`;
 const TABBAR_HTML = `<nav id="tabbar"><a href="/home"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg><span>home</span></a><a href="/gs"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg><span>games</span></a><a href="/chat"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span>6ixchat</span></a><a href="/ai"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>six ai</span></a><button id="tabMore" type="button"><svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg><span>more</span></button></nav>
 <div id="tabSheet"><a href="/search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span>search</span></a><a href="/apps"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M12 18h.01"/></svg><span>apps</span></a><a href="/yt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg><span>youtube</span></a><a href="/hw"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>hw helper</span></a><a href="/emu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="16.5" cy="11" r=".4" fill="currentColor"/><circle cx="18.5" cy="14" r=".4" fill="currentColor"/></svg><span>emulator</span></a><a href="/tools"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>tools</span></a><a href="/account"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>account</span></a><div class="tsh-sec">disguise</div><div class="tsh-cloak"><button onclick="cloakTab('google')">google</button><button onclick="cloakTab('classroom')">classroom</button><button onclick="cloakTab('docs')">docs</button><button onclick="cloakTab('drive')">drive</button><button onclick="cloakOpen()">open cloaked tab</button></div></div>
 <script>
@@ -346,8 +346,8 @@ const FONT_LINKS = '<link rel="preconnect" href="https://fonts.googleapis.com"><
 const STAR_CANVAS = ''; // minimal theme: no starfield
 const GALAXY_CSS = `
 *{box-sizing:border-box;margin:0}
-html{background:#0a0a0b}
-body{background:#0a0a0b;color:#f4f4f5;font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:56px 16px 48px;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+html{background:#030304}
+body{background:#030304;color:#f4f4f5;font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:56px 16px 48px;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 h1{font-size:clamp(28px,5vw,38px);font-weight:600;letter-spacing:-.02em;text-transform:lowercase;color:#fafafa;margin-bottom:10px;text-align:center}
 p.sub{color:#a1a1aa;margin-bottom:30px;font-size:15px;text-align:center;max-width:600px;line-height:1.55;font-weight:400}
 form{display:flex;width:100%;max-width:640px;gap:10px}
@@ -360,10 +360,10 @@ button:hover{background:#e4e4e7;border-color:#e4e4e7}
 .links a{color:#d4d4d8;text-decoration:none;background:#131315;border:1px solid rgba(255,255,255,.1);padding:9px 15px;border-radius:999px;font-size:14px;font-weight:500;transition:border-color .15s, background .15s}
 .links a:hover{border-color:rgba(255,255,255,.28);background:#1a1a1d}
 footer,.foot{margin-top:auto;padding-top:44px;color:#63636b;font-size:12.5px;text-align:center;max-width:640px;line-height:1.6}
-::selection{background:rgba(94,142,255,.4)}
+::selection{background:rgba(227,154,45,.4)}
 ::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:#2c2c30;border-radius:8px}::-webkit-scrollbar-track{background:transparent}
 .wrap{width:100%;max-width:1120px;margin:0 auto}
-a.back{color:#9db9ff;text-decoration:none;font-size:14px;font-weight:600}
+a.back{color:#f6cf8d;text-decoration:none;font-size:14px;font-weight:600}
 .bar{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 20px;width:100%;max-width:1120px}
 .bar input{flex:1;min-width:200px;padding:12px 15px;font-size:15px}
 .bar select{background:#131315;border:1px solid rgba(255,255,255,.12);border-radius:10px;color:#f4f4f5;padding:12px;font-size:15px;font-family:inherit;outline:none}
@@ -379,7 +379,7 @@ body.playbody{padding:0;height:100vh}
 .top{display:flex;gap:8px;align-items:center;padding:9px 12px;background:#0e0e10;border-bottom:1px solid rgba(255,255,255,.09);flex-wrap:wrap;width:100%}
 .top .title{font-weight:600;margin-right:auto;font-size:15px;letter-spacing:-.01em}
 .top a,.top button{background:#17171a;color:#e4e4e7;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:8px 13px;cursor:pointer;text-decoration:none;font-size:13px;font-weight:600;font-family:inherit}
-.top button.on{border-color:#5e8eff;color:#fff;background:rgba(94,142,255,.16)}
+.top button.on{border-color:#e39a2d;color:#fff;background:rgba(227,154,45,.16)}
 iframe.gameframe{flex:1;width:100%;border:0;background:#000}
 
 #sbBtn{position:fixed;top:14px;left:14px;z-index:60;width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:#131315;border:1px solid rgba(255,255,255,.12);border-radius:10px;color:#f4f4f5;cursor:pointer;padding:0}
@@ -392,7 +392,7 @@ body.sb-open #sbScrim{opacity:1;pointer-events:auto}
 #sb nav{display:flex;flex-direction:column;gap:2px}
 #sb nav a{display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:8px;color:#c9c9ce;text-decoration:none;font-size:14px;font-weight:500}
 #sb nav a:hover{background:#17171a;color:#fff}
-#sb nav a.on{background:rgba(94,142,255,.14);color:#fff}
+#sb nav a.on{background:rgba(227,154,45,.14);color:#fff}
 #sb nav a svg{flex:none;opacity:.8}
 .sb-sec{margin:20px 10px 7px;font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:#63636b}
 .sb-cloak{display:flex;flex-wrap:wrap;gap:6px;padding:0 2px}
@@ -403,7 +403,7 @@ body.sb-open #sbScrim{opacity:1;pointer-events:auto}
 .launch{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;width:100%;max-width:640px;margin-top:36px;text-align:left}
 .lcard{background:#101012;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;text-decoration:none;color:#f4f4f5;display:block;transition:border-color .15s}
 .lcard:hover{border-color:rgba(255,255,255,.24)}
-.lcard svg{color:#9db9ff;margin-bottom:11px}
+.lcard svg{color:#f6cf8d;margin-bottom:11px}
 .lcard b{display:block;font-size:15px;font-weight:600;margin-bottom:3px}
 .lcard span{font-size:12.5px;color:#8b8b93;line-height:1.45;display:block}
 .quick{margin-top:24px;color:#63636b;font-size:13px}
@@ -415,7 +415,7 @@ button,a{touch-action:manipulation}
 #sb{padding-bottom:env(safe-area-inset-bottom)}
 #sbBtn{top:calc(14px + env(safe-area-inset-top))}
 @media(max-width:820px){ input[type=text],input[type=number],input[type=search],input[type=password],textarea,select{font-size:16px} }
-::selection{background:rgba(94,142,255,.35)}
+::selection{background:rgba(227,154,45,.35)}
 html{scrollbar-color:rgba(255,255,255,.22) transparent}
 ::-webkit-scrollbar{width:10px;height:10px}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:8px;border:2px solid #0a0a0b}
@@ -424,12 +424,12 @@ button,.btn,.chip{cursor:pointer;transition:background .15s ease,border-color .1
 button:hover,.btn:hover,.chip:hover{border-color:rgba(255,255,255,.32)}
 button:active,.btn:active,.chip:active{transform:scale(.98)}
 :focus{outline:none}
-:focus-visible{outline:2px solid rgba(94,142,255,.75);outline-offset:2px}
+:focus-visible{outline:2px solid rgba(227,154,45,.75);outline-offset:2px}
 button:disabled,.btn:disabled,.chip:disabled{opacity:.45;cursor:not-allowed;transform:none}
 input,textarea,select{transition:border-color .15s ease,background .15s ease}
-input:focus,textarea:focus,select:focus{border-color:rgba(94,142,255,.65)}
+input:focus,textarea:focus,select:focus{border-color:rgba(227,154,45,.65)}
 .card{transition:border-color .15s ease,background .15s ease}
-.card:hover{border-color:rgba(255,255,255,.28);background:#141416}
+.card:hover{border-color:rgba(255,255,255,.28);background:#12100a}
 a{transition:color .15s ease}
 #tabbar{display:none}
 #tabSheet{display:none}
@@ -437,11 +437,11 @@ a{transition:color .15s ease}
 #tabbar{display:flex;position:fixed;left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:50;background:rgba(22,22,27,.52);-webkit-backdrop-filter:blur(22px) saturate(1.7);backdrop-filter:blur(22px) saturate(1.7);border:1px solid rgba(255,255,255,.16);border-radius:28px;box-shadow:0 10px 34px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.15),inset 0 -1px 0 rgba(255,255,255,.05);padding:7px 6px;justify-content:space-around;align-items:stretch}
 #tabbar a,#tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:0;color:#c9c9d1;font-size:10px;font-weight:600;letter-spacing:.02em;text-decoration:none;padding:6px 0 4px;border-radius:19px;cursor:pointer;font-family:inherit}
 #tabbar a.on{color:#fff;background:rgba(255,255,255,.13);box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
-#tabbar a.on svg{color:#9db9ff}
+#tabbar a.on svg{color:#f6cf8d}
 #tabSheet.open{display:block;position:fixed;left:10px;right:10px;bottom:calc(90px + env(safe-area-inset-bottom));z-index:51;background:rgba(22,22,27,.6);-webkit-backdrop-filter:blur(22px) saturate(1.7);backdrop-filter:blur(22px) saturate(1.7);border:1px solid rgba(255,255,255,.16);border-radius:22px;box-shadow:0 10px 34px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.15);padding:10px}
 #tabSheet a{display:flex;align-items:center;gap:12px;padding:11px 10px;border-radius:14px;color:#f4f4f5;text-decoration:none;font-weight:600;font-size:14.5px}
 #tabSheet a.on{background:rgba(255,255,255,.1)}
-#tabSheet a svg{color:#9db9ff;flex:none}
+#tabSheet a svg{color:#f6cf8d;flex:none}
 .tsh-sec{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;opacity:.5;margin:10px 4px 6px}
 .tsh-cloak{display:flex;flex-wrap:wrap;gap:6px}
 .tsh-cloak button{flex:1;padding:8px 6px;font-size:12.5px;white-space:nowrap}
@@ -454,38 +454,38 @@ html.gx-framed .app6{padding-bottom:78px}
 
 
 
-/* ===== v85 redesign — obsidian system ===== */
-body{background:radial-gradient(1200px 700px at 50% -12%,rgba(94,142,255,.08),transparent 62%),#070708}
+/* ===== v86 space system — black + amber, starfield first ===== */
+body{background:radial-gradient(1200px 700px at 50% -12%,rgba(227,154,45,.08),transparent 62%),#030304}
 h1{font-weight:800;letter-spacing:-.035em;font-size:clamp(30px,5vw,42px)}
 p.sub{color:#9d9da6;font-size:15.5px}
-input{background:#101013;border-color:rgba(255,255,255,.13);border-radius:13px}
-input:focus{border-color:rgba(94,142,255,.65);box-shadow:0 0 0 3px rgba(94,142,255,.18)}
+input{background:#0d0b08;border-color:rgba(255,255,255,.13);border-radius:13px}
+input:focus{border-color:rgba(227,154,45,.65);box-shadow:0 0 0 3px rgba(227,154,45,.18)}
 button{border-radius:12px;font-weight:700;box-shadow:0 8px 22px rgba(0,0,0,.32)}
 button:hover{transform:translateY(-1px)}
 button:active{transform:scale(.98)}
-.links a{background:#101013;border-color:rgba(255,255,255,.11);padding:10px 16px}
-.links a:hover{background:#151517;border-color:rgba(94,142,255,.45);color:#fff}
-.bar select{border-radius:12px;background:#101013}
+.links a{background:#0d0b08;border-color:rgba(255,255,255,.11);padding:10px 16px}
+.links a:hover{background:#14110b;border-color:rgba(227,154,45,.45);color:#fff}
+.bar select{border-radius:12px;background:#0d0b08}
 .bar input{border-radius:12px}
 .grid{gap:16px}
-.card{background:linear-gradient(180deg,#121214,#0e0e10);border-color:rgba(255,255,255,.09);border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.25)}
-.card:hover{background:linear-gradient(180deg,#151517,#101012);border-color:rgba(255,255,255,.26);transform:translateY(-2px);box-shadow:0 16px 36px rgba(0,0,0,.5)}
+.card{background:linear-gradient(180deg,#121009,#0c0a07);border-color:rgba(255,255,255,.09);border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.card:hover{background:linear-gradient(180deg,#161209,#100d08);border-color:rgba(255,255,255,.26);transform:translateY(-2px);box-shadow:0 16px 36px rgba(0,0,0,.5)}
 .gt{font-weight:700;padding-top:11px}
 .gc{color:#8f8f98}
-.noimg{background:#141416}
-.lcard{background:linear-gradient(180deg,#121214,#0e0e10);border-color:rgba(255,255,255,.09);border-radius:16px;padding:18px;box-shadow:0 2px 10px rgba(0,0,0,.25)}
-.lcard:hover{border-color:rgba(94,142,255,.5);transform:translateY(-2px);box-shadow:0 16px 36px rgba(0,0,0,.5)}
+.noimg{background:#12100a}
+.lcard{background:linear-gradient(180deg,#121009,#0c0a07);border-color:rgba(255,255,255,.09);border-radius:16px;padding:18px;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.lcard:hover{border-color:rgba(227,154,45,.5);transform:translateY(-2px);box-shadow:0 16px 36px rgba(0,0,0,.5)}
 .lcard b{font-weight:700}
 a.back:hover{text-decoration:underline;text-underline-offset:3px}
 .top{background:#0b0b0d;border-bottom-color:rgba(255,255,255,.08)}
-.top a,.top button{border-radius:10px;background:#151517}
+.top a,.top button{border-radius:10px;background:#14110b}
 #sbBtn{background:rgba(17,17,19,.82);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:12px;border-color:rgba(255,255,255,.14)}
 #sb{background:linear-gradient(180deg,#0c0c0e,#09090b);border-right-color:rgba(255,255,255,.07)}
 .sb-logo{font-weight:800;font-size:18px;padding-bottom:18px}
 #sb nav a{border-radius:10px;padding:10px;font-weight:550}
-#sb nav a.on{background:rgba(94,142,255,.16);box-shadow:inset 0 0 0 1px rgba(94,142,255,.25)}
-#sb nav a.on svg{color:#9db9ff;opacity:1}
-.sb-cloak button{background:#141416}
+#sb nav a.on{background:rgba(227,154,45,.16);box-shadow:inset 0 0 0 1px rgba(227,154,45,.25)}
+#sb nav a.on svg{color:#f6cf8d;opacity:1}
+.sb-cloak button{background:#12100a}
 footer,.foot{color:#5d5d66}
 @media (max-width:820px){
 #tabbar{background:rgba(19,19,23,.55);border-color:rgba(255,255,255,.15);border-radius:30px;box-shadow:0 14px 40px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.14)}
@@ -516,7 +516,7 @@ const STARS_JS = `
     for(var i=0;i<stars.length;i++){ var st=stars[i]; st.p+=st.s*0.016; st.y-=st.d; if(st.y<-2){ st.y=H+2; st.x=Math.random()*W; }
       var a=0.35+0.65*Math.abs(Math.sin(st.p));
       ctx.beginPath(); ctx.arc(st.x,st.y,st.r,0,6.2832); ctx.fillStyle='rgba(230,225,255,'+(a*0.9)+')'; ctx.fill();
-      if(st.r>1.15){ ctx.beginPath(); ctx.arc(st.x,st.y,st.r*3.2,0,6.2832); ctx.fillStyle='rgba(94,142,255,'+(a*0.10)+')'; ctx.fill(); }
+      if(st.r>1.15){ ctx.beginPath(); ctx.arc(st.x,st.y,st.r*3.2,0,6.2832); ctx.fillStyle='rgba(227,154,45,'+(a*0.10)+')'; ctx.fill(); }
     }
     if(!meteor && !reduced && Math.random()<0.0022){ meteor={x:Math.random()*W*0.7+W*0.2,y:Math.random()*H*0.25,vx:-7-Math.random()*3,vy:4+Math.random()*2,l:1}; }
     if(meteor){ meteor.x+=meteor.vx; meteor.y+=meteor.vy; meteor.l-=0.016;
@@ -598,7 +598,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <h1>6ix<span>Networks</span> — youtube mode</h1>
 
 <form action="/yt/search" method="get"><input name="q" type="text" placeholder="search youtube" autocomplete="off" autofocus><button type="submit">search</button></form>
-<a href="/go?q=https://www.youtube.com" style="display:block;text-align:center;background:#5e8eff;color:#fff;font-weight:800;border-radius:999px;padding:13px 20px;margin:16px auto 4px;max-width:430px;text-decoration:none;font-size:16px">enter youtube →</a>
+<a href="/go?q=https://www.youtube.com" style="display:block;text-align:center;background:#e39a2d;color:#fff;font-weight:800;border-radius:999px;padding:13px 20px;margin:16px auto 4px;max-width:430px;text-decoration:none;font-size:16px">enter youtube →</a>
 <div style="text-align:center;opacity:.65;font-size:13px">the real youtube inside the network — or search above for the fast player</div>
 <div class="links">
 
@@ -713,7 +713,7 @@ function appsPage() {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{position:absolute;top:6px;right:8px;z-index:2;font-size:19px;line-height:1;color:rgba(255,255,255,.85);text-shadow:0 1px 6px rgba(0,0,0,.85);cursor:pointer;padding:3px 5px}.fav.on{color:#fbbf24}.chip{background:rgba(94,142,255,.14);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:700;font-family:inherit}.chip.on{background:rgba(94,142,255,.45)}#grid{display:flex;flex-direction:column;gap:10px;max-width:880px;margin:16px auto}
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{position:absolute;top:6px;right:8px;z-index:2;font-size:19px;line-height:1;color:rgba(255,255,255,.85);text-shadow:0 1px 6px rgba(0,0,0,.85);cursor:pointer;padding:3px 5px}.fav.on{color:#fbbf24}.chip{background:rgba(227,154,45,.14);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:700;font-family:inherit}.chip.on{background:rgba(227,154,45,.45)}#grid{display:flex;flex-direction:column;gap:10px;max-width:880px;margin:16px auto}
 .card.appRow{display:flex;align-items:center;gap:14px;background:#101012;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:12px 14px;text-decoration:none;aspect-ratio:auto;height:auto;min-height:0}
 .card.appRow:hover{border-color:rgba(255,255,255,.32)}
 .appIcon{position:relative;width:52px;height:52px;flex:none;border-radius:14px;overflow:hidden;background:#f4f4f5;display:flex;align-items:center;justify-content:center}
@@ -782,7 +782,7 @@ function gamesPage(games) {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{position:absolute;top:6px;right:8px;z-index:2;font-size:19px;line-height:1;color:rgba(255,255,255,.85);text-shadow:0 1px 6px rgba(0,0,0,.85);cursor:pointer;padding:3px 5px}.fav.on{color:#fbbf24}.chip{background:rgba(94,142,255,.14);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:700;font-family:inherit}.chip.on{background:rgba(94,142,255,.45)}</style></head><body>${STAR_CANVAS}<div class="wrap">
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{position:absolute;top:6px;right:8px;z-index:2;font-size:19px;line-height:1;color:rgba(255,255,255,.85);text-shadow:0 1px 6px rgba(0,0,0,.85);cursor:pointer;padding:3px 5px}.fav.on{color:#fbbf24}.chip{background:rgba(227,154,45,.14);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:700;font-family:inherit}.chip.on{background:rgba(227,154,45,.45)}</style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/home">← 6ixNetworks</a>
 <h1>6ix<span>Networks</span> games</h1>
 
@@ -863,7 +863,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body><div class="wrap" style="t
 
 function playPageUv(u, t) {
   if (!/^https:\/\//i.test(u || '')) {
-    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#9db9ff" href="/gs">back to games</a></body>';
+    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#f6cf8d" href="/gs">back to games</a></body>';
   }
   const prox = '/uv/service/' + uvEncodeUrl(u);
   const alt = proxied(u);
@@ -876,7 +876,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CA
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
 <button onclick="cloakTab('google')">cloak: google</button>
-<button onclick="cloakTab('drive')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()">cloaked tab</button></div>
+<button onclick="cloakTab('drive')" style="background:rgba(227,154,45,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()">cloaked tab</button></div>
 <iframe class="gameframe" id="gf" src="about:blank" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
 <div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
 <script src="/cloak.js"></script>
@@ -931,7 +931,7 @@ gf.addEventListener('load', function(){ setTimeout(check, 3000); });
 
 function appPlayPageUv(u, t) {
   if (!/^https:\/\//i.test(u || '')) {
-    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad app link — <a style="color:#9db9ff" href="/apps">back to apps</a></body>';
+    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad app link — <a style="color:#f6cf8d" href="/apps">back to apps</a></body>';
   }
   const prox = '/uv/service/' + uvEncodeUrl(u);
   const alt = proxied(u);
@@ -944,7 +944,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CA
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
 <button onclick="cloakTab('google')">cloak: google</button>
-<button onclick="cloakTab('drive')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()">cloaked tab</button></div>
+<button onclick="cloakTab('drive')" style="background:rgba(227,154,45,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()">cloaked tab</button></div>
 <iframe class="gameframe" id="gf" src="about:blank" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
 <div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
 <script src="/cloak.js"></script>
@@ -998,7 +998,7 @@ gf.addEventListener('load', function(){ setTimeout(check, 3000); });
 }
 function playPage(u, t) {
   if (!/^https:\/\//i.test(u || '')) {
-    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#9db9ff" href="/gs">back to games</a></body>';
+    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#f6cf8d" href="/gs">back to games</a></body>';
   }
   const prox = gproxied(u);
   const alt = proxied(u);
@@ -1011,7 +1011,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CA
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
 <button onclick="cloakTab('google')">cloak: google</button>
-<button onclick="cloakTab('drive')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()">cloaked tab</button></div>
+<button onclick="cloakTab('drive')" style="background:rgba(227,154,45,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()">cloaked tab</button></div>
 <iframe class="gameframe" id="gf" src="${prox}" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
 <div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
 <script src="/cloak.js"></script>
@@ -1050,7 +1050,7 @@ arm();
 
 function appPlayPage(u, t) {
   if (!/^https:\/\//i.test(u || '')) {
-    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad app link — <a style="color:#9db9ff" href="/apps">back to apps</a></body>';
+    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad app link — <a style="color:#f6cf8d" href="/apps">back to apps</a></body>';
   }
   const prox = gproxied(u);
   const alt = proxied(u);
@@ -1063,7 +1063,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CA
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
 <button onclick="cloakTab('google')">cloak: google</button>
-<button onclick="cloakTab('drive')" style="background:rgba(94,142,255,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()">cloaked tab</button></div>
+<button onclick="cloakTab('drive')" style="background:rgba(227,154,45,.13);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()">cloaked tab</button></div>
 <iframe class="gameframe" id="gf" src="${prox}" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
 <div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
 <script src="/cloak.js"></script>
@@ -1119,7 +1119,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .row select,.row input[type=text]{background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:10px;font-family:inherit}
 .row input[type=text]{flex:1;min-width:200px}
 #game{width:100%;aspect-ratio:4/3;background:#000;border-radius:14px;overflow:hidden}
-button.play{background:rgba(94,142,255,.3);color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:999px;padding:11px 26px;font-weight:800;cursor:pointer;font-family:inherit;font-size:15px}
+button.play{background:rgba(227,154,45,.3);color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:999px;padding:11px 26px;font-weight:800;cursor:pointer;font-family:inherit;font-size:15px}
 </style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/gs">← games</a>
 <h1>6ix<span>Networks</span> emulator</h1>
@@ -1208,7 +1208,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .cr-item{display:flex;align-items:center;gap:9px;width:100%;justify-content:flex-start;border-radius:10px;padding:9px 11px;background:transparent;border:1px solid transparent;color:#d4d4d8;font-size:13.5px;font-weight:600}
 .cr-item:hover{background:rgba(255,255,255,.06);color:#fff}
 .cr-item svg{width:17px;height:17px;flex:none}
-.cr-item.on{background:rgba(94,142,255,.16);color:#fff;border-color:rgba(94,142,255,.3)}
+.cr-item.on{background:rgba(227,154,45,.16);color:#fff;border-color:rgba(227,154,45,.3)}
 .cr-join{display:flex;gap:6px;margin-top:2px}
 .cr-join input{flex:1;min-width:0;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:8px 9px;font-family:inherit}
 .cr-join .chip{flex:none}
@@ -1222,11 +1222,11 @@ html,body{height:100%}
 body{display:block;padding:0}
 .app6{display:flex;height:100vh;height:100dvh;background:#0a0a0b;text-align:left}
 .brand6{font-weight:800;font-size:22px;letter-spacing:-.02em;padding:0 4px 14px}
-.brand6 span{color:#9db9ff}
+.brand6 span{color:#f6cf8d}
 .app6 .chatrail{position:static;width:266px;height:100%;border-radius:0;border-top:0;border-bottom:0;border-left:0;overflow-y:auto;flex:none}
 .main6{flex:1;min-width:0;display:flex;flex-direction:column;height:100%}
 .head6{display:flex;align-items:center;gap:9px;padding:13px 18px;border-bottom:1px solid rgba(255,255,255,.09);background:#101012;font-weight:800;font-size:16px;flex:none}
-.head6 svg{color:#9db9ff;flex:none}
+.head6 svg{color:#f6cf8d;flex:none}
 .head6-sub{margin-left:auto;font-size:12px;font-weight:600;opacity:.45}
 .main6 #msgs{flex:1;min-height:0;border:0;border-radius:0;background:transparent;padding:16px 18px}
 .main6 .msg{display:flex;gap:10px;margin:2px 0;padding:4px 8px;border-radius:10px;word-break:break-word}
@@ -1237,7 +1237,7 @@ body{display:block;padding:0}
 .main6 .mbody{flex:1;min-width:0}
 .main6 .mhead{display:flex;align-items:baseline;gap:8px}
 .main6 .mhead b{color:#fafafa;font-size:14.5px}
-.main6 .msg.bot .mhead b{color:#9db9ff}
+.main6 .msg.bot .mhead b{color:#f6cf8d}
 .main6 .mtime{font-size:11px;opacity:.45}
 .main6 .mtext ul.mdlist{margin:4px 0;padding-left:18px}.mtext ul.mdlist li{margin:2px 0}.mtext code{background:rgba(255,255,255,.13);padding:1px 5px;border-radius:5px;font-size:.92em}
 .mtext{white-space:pre-wrap;line-height:1.45}
@@ -1245,8 +1245,8 @@ body{display:block;padding:0}
 #msgs:empty{display:flex;align-items:center;justify-content:center}
 #msgs:empty::after{content:'this room is quiet — say the first thing';opacity:.45;font-size:14px}
 .main6 .bar{align-items:center}
-.main6 .bar button[type=submit]{background:rgba(94,142,255,.92);border:1px solid transparent;color:#fff;border-radius:50%;width:40px;height:40px;padding:0;display:flex;align-items:center;justify-content:center;flex:none}
-.main6 .bar button[type=submit]:hover{background:#5e8eff}
+.main6 .bar button[type=submit]{background:rgba(227,154,45,.92);border:1px solid transparent;color:#fff;border-radius:50%;width:40px;height:40px;padding:0;display:flex;align-items:center;justify-content:center;flex:none}
+.main6 .bar button[type=submit]:hover{background:#e39a2d}
 
 .main6 #vmembers,.main6 #vcontrols{margin:10px 16px 0}
 .main6 #privbar{margin:12px 16px 0}
@@ -1259,8 +1259,8 @@ body{display:block;padding:0}
 #vstage{position:fixed;inset:0;z-index:90;background:#08080a;flex-direction:column}
 .vs-head{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.09);background:#101012;flex:none;flex-wrap:wrap}
 .vs-brand{font-weight:800;font-size:16px}
-.vs-brand span{color:#9db9ff}
-.vs-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9db9ff;border:1px solid rgba(94,142,255,.4);border-radius:999px;padding:3px 9px}
+.vs-brand span{color:#f6cf8d}
+.vs-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#f6cf8d;border:1px solid rgba(227,154,45,.4);border-radius:999px;padding:3px 9px}
 .vs-timer{font-size:13px;opacity:.6;font-variant-numeric:tabular-nums}
 #vgrid{flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;padding:18px;align-content:start;align-content:safe center;max-width:1400px;width:100%;margin:0 auto;box-sizing:border-box}
 .vtile{aspect-ratio:16/9!important;border-radius:16px!important;border:1px solid rgba(255,255,255,.12)!important;background:#17171a!important}
@@ -1275,13 +1275,13 @@ body{display:block;padding:0}
 .app6 .chatrail{padding-top:max(14px, env(safe-area-inset-top))}
 #msgs{height:52vh;overflow-y:auto;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:14px;text-align:left}
 .msg{margin:7px 0;word-break:break-word}
-.msg b{color:#9db9ff}
+.msg b{color:#f6cf8d}
 .msg.bot b{color:#fafafa}
 .sys{text-align:center;opacity:.55;font-size:12px;margin:8px 0}
 .bar{display:flex;gap:8px;margin-top:10px}
 .bar input[type=text]{flex:1;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:11px;font-family:inherit}
-.bar button{background:rgba(94,142,255,.3);color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:10px;padding:11px 18px;font-weight:800;cursor:pointer;font-family:inherit}
-.chip.on{background:rgba(94,142,255,.45)}
+.bar button{background:rgba(227,154,45,.3);color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:10px;padding:11px 18px;font-weight:800;cursor:pointer;font-family:inherit}
+.chip.on{background:rgba(227,154,45,.45)}
 .vmem{transition:all .15s}
 .vmem.speaking{border-color:#4ade80!important;color:#bbf7d0;box-shadow:0 0 0 2px rgba(74,222,128,.45)}
 .vtile.speaking{border-color:#4ade80!important;box-shadow:0 0 0 2px rgba(74,222,128,.45)}
@@ -1443,7 +1443,7 @@ function line(m){
   var d = document.createElement('div');
   d.className = 'msg' + (m.bot ? ' bot' : '') + (grouped ? ' grp' : ' top');
   var av = document.createElement('div'); av.className = 'mav';
-  if (m.bot) { av.textContent = '✦'; av.style.background = 'rgba(94,142,255,.85)'; }
+  if (m.bot) { av.textContent = '✦'; av.style.background = 'rgba(227,154,45,.85)'; }
   else { var dn = m.disp || m.name || 'anon'; av.textContent = dn.slice(0, 1).toUpperCase(); av.style.background = (m.hue !== null && m.hue !== undefined) ? 'hsl(' + m.hue + ',45%,38%)' : avColor(m.name || 'anon'); }
   d.appendChild(av);
   var body = document.createElement('div'); body.className = 'mbody';
@@ -1658,7 +1658,7 @@ function ensureTile(pid){
   t = document.createElement('div'); t.className = 'vtile'; t.setAttribute('data-tile', pid);
   t.setAttribute('style', 'position:relative;border-radius:14px;overflow:hidden;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.25);aspect-ratio:1/1');
   var vid = document.createElement('video'); vid.autoplay = true; vid.setAttribute('playsinline', ''); vid.setAttribute('style', 'width:100%;height:100%;object-fit:cover;display:none' + (self ? ';transform:scaleX(-1)' : ''));
-  var ph = document.createElement('div'); ph.className = 'vph'; ph.setAttribute('style', 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#9db9ff'); ph.textContent = (memberName(pid) || 'a').slice(0, 1).toUpperCase();
+  var ph = document.createElement('div'); ph.className = 'vph'; ph.setAttribute('style', 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#f6cf8d'); ph.textContent = (memberName(pid) || 'a').slice(0, 1).toUpperCase();
   var lb = document.createElement('span'); lb.setAttribute('style', 'position:absolute;left:8px;bottom:6px;font-size:12px;opacity:.9;text-shadow:0 1px 4px #000'); lb.textContent = nm;
   if(!self) vid.addEventListener('click', function(){ if(vid.requestFullscreen) vid.requestFullscreen().catch(function(){}); else if(vid.webkitEnterFullscreen) vid.webkitEnterFullscreen(); });
   t.appendChild(vid); t.appendChild(ph); t.appendChild(lb);
@@ -1917,8 +1917,8 @@ body{display:block;padding:0}
 .callapp{display:flex;flex-direction:column;height:100vh;height:100dvh;background:#08080a;text-align:left}
 .vs-head{display:flex;align-items:center;gap:10px;padding:14px 18px;padding-top:max(14px, env(safe-area-inset-top));border-bottom:1px solid rgba(255,255,255,.09);background:#101012;flex:none;flex-wrap:wrap}
 .vs-brand{font-weight:800;font-size:16px}
-.vs-brand span{color:#9db9ff}
-.vs-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9db9ff;border:1px solid rgba(94,142,255,.4);border-radius:999px;padding:3px 9px}
+.vs-brand span{color:#f6cf8d}
+.vs-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#f6cf8d;border:1px solid rgba(227,154,45,.4);border-radius:999px;padding:3px 9px}
 .vs-timer{font-size:13px;opacity:.6;font-variant-numeric:tabular-nums}
 #vgrid{flex:1;min-height:0;overflow-y:auto;display:flex;flex-wrap:wrap;gap:14px;padding:18px;align-content:center;justify-content:center;align-items:center;max-width:1400px;width:100%;margin:0 auto;box-sizing:border-box}
 #vgrid .vtile{flex:none;display:grid;place-items:center}
@@ -1931,7 +1931,7 @@ body{display:block;padding:0}
 .vtile .vph{position:static!important;grid-area:1/1;z-index:2}
 .vtile>video{grid-area:1/1;width:100%!important;height:100%!important}
 .vtile>span{position:static!important;grid-area:1/1;align-self:end;justify-self:start;margin:0 0 7px 9px;z-index:2}
-.vtile.vvoice .vph{width:96px;height:96px;border-radius:50%;background:rgba(94,142,255,.15);border:2px solid rgba(94,142,255,.45);font-size:38px!important}
+.vtile.vvoice .vph{width:96px;height:96px;border-radius:50%;background:rgba(227,154,45,.15);border:2px solid rgba(227,154,45,.45);font-size:38px!important}
 .vtile.vvoice>span{justify-self:center;margin:0 0 4px 0;font-size:13px!important}
 .vtile.vvoice.speaking .vph{border-color:#4ade80;box-shadow:0 0 0 4px rgba(74,222,128,.4)}
 
@@ -1952,7 +1952,7 @@ body{display:block;padding:0}
 .vctl:hover{background:rgba(255,255,255,.16)}
 .vctl.off{background:rgba(220,38,38,.88);border-color:transparent;color:#fff}
 .vctl.off::after{content:'';position:absolute;left:50%;top:50%;width:27px;height:2.5px;background:#fff;border-radius:2px;transform:translate(-50%,-50%) rotate(-45deg)}
-.vctl.on{background:rgba(94,142,255,.88);border-color:transparent;color:#fff}
+.vctl.on{background:rgba(227,154,45,.88);border-color:transparent;color:#fff}
 
 .callapp{position:relative}
 #joingate{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;background:rgba(8,8,10,.8)}
@@ -2069,7 +2069,7 @@ function ensureTile(pid){
   t = document.createElement('div'); t.className = 'vtile vvoice'; t.setAttribute('data-tile', pid);
   t.setAttribute('style', 'position:relative;border-radius:14px;overflow:hidden;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.25);aspect-ratio:1/1');
   var vid = document.createElement('video'); vid.autoplay = true; vid.setAttribute('playsinline', ''); vid.setAttribute('style', 'width:100%;height:100%;object-fit:cover;display:none' + (self ? ';transform:scaleX(-1)' : ''));
-  var ph = document.createElement('div'); ph.className = 'vph'; ph.setAttribute('style', 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#9db9ff'); ph.textContent = (memberName(pid) || 'a').slice(0, 1).toUpperCase();
+  var ph = document.createElement('div'); ph.className = 'vph'; ph.setAttribute('style', 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#f6cf8d'); ph.textContent = (memberName(pid) || 'a').slice(0, 1).toUpperCase();
   var lb = document.createElement('span'); lb.setAttribute('style', 'position:absolute;left:8px;bottom:6px;font-size:12px;opacity:.9;text-shadow:0 1px 4px #000'); lb.textContent = nm;
   if(!self) vid.addEventListener('click', function(){ if(vid.requestFullscreen) vid.requestFullscreen().catch(function(){}); else if(vid.webkitEnterFullscreen) vid.webkitEnterFullscreen(); });
   t.appendChild(vid); t.appendChild(ph); t.appendChild(lb);
@@ -2331,38 +2331,38 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 html,body{height:100%}body{display:block;padding:0;margin:0}
 .aiapp{display:flex;height:100dvh;overflow:hidden}
 .airail{width:264px;flex:none;background:#101012;border-right:1px solid rgba(255,255,255,.09);display:flex;flex-direction:column;padding:18px 14px;gap:12px}
-.aibrand{font-size:21px;font-weight:800;color:#fafafa}.aibrand span{color:#9db9ff}
+.aibrand{font-size:21px;font-weight:800;color:#fafafa}.aibrand span{color:#f6cf8d}
 .ainew{background:#f4f4f5;color:#0a0a0b;border:0;border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer;font-family:inherit;font-size:14px}
 .aithreads{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;min-height:0}
 .aithread{text-align:left;background:transparent;border:1px solid transparent;color:#d4d4d8;border-radius:9px;padding:8px 10px;cursor:pointer;font-family:inherit;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
-.aithread.on{background:rgba(94,142,255,.16);border-color:rgba(94,142,255,.35);color:#fff}
+.aithread.on{background:rgba(227,154,45,.16);border-color:rgba(227,154,45,.35);color:#fff}
 .aifoot{margin-top:auto;display:flex;flex-direction:column;gap:10px}
-.aiback{color:#9db9ff;text-decoration:none;font-size:13.5px;font-weight:600}
+.aiback{color:#f6cf8d;text-decoration:none;font-size:13.5px;font-weight:600}
 .aimain{flex:1;display:flex;flex-direction:column;min-width:0}
 .head6 .mainbtn,.aihead .mainbtn{background:#f4f4f5;color:#0a0a0b;border-radius:999px;padding:7px 13px;font-size:13px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:6px;flex:none}
 .aihead{display:none;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.09);background:#101012;font-weight:800}
 #log{flex:1;overflow-y:auto;padding:18px 16px;min-height:0}
 #ideabox{padding:2px 16px 8px}
 .who{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#fafafa;margin-bottom:4px}
-.pchip.on{background:rgba(94,142,255,.45)}
+.pchip.on{background:rgba(227,154,45,.45)}
 .bub{max-width:85%;margin:8px 0;padding:10px 13px;border-radius:14px;word-break:break-word;white-space:pre-wrap;text-align:left}
-.bub.me{margin-left:auto;background:rgba(94,142,255,.35)}
+.bub.me{margin-left:auto;background:rgba(227,154,45,.35)}
 .bub.six{margin-right:auto;background:rgba(255,255,255,.07)}
 .bar{display:flex;gap:8px;align-items:center;padding:10px 12px;background:#101012}
 .bar input[type=text]{flex:1;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:11px 16px;font-family:inherit;min-width:0;font-size:16px;height:44px;box-sizing:border-box}
-.bar button[type=submit]{background:#5e8eff;color:#fff;border:0;border-radius:50%;width:44px;height:44px;flex:none;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;padding:0}
+.bar button[type=submit]{background:#e39a2d;color:#fff;border:0;border-radius:50%;width:44px;height:44px;flex:none;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;padding:0}
 @media (max-width:900px){ .airail{display:none} .aihead{display:flex} }
 .dockwrap{position:relative;background:#101012;border-top:1px solid rgba(255,255,255,.09);padding:8px 12px 2px}
 #sugpanel{position:absolute;left:12px;right:12px;bottom:calc(100% + 6px);background:#111113;border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:8px;z-index:40;box-shadow:0 14px 34px rgba(0,0,0,.55);max-height:62vh;overflow-y:auto}
 .sughead{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#a1a1aa;padding:4px 8px}
 .sugrow{display:block;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid rgba(255,255,255,.06);color:#f4f4f5;padding:10px 8px;font-size:14.5px;cursor:pointer;font-family:inherit;border-radius:8px}
-.sugrow:hover{background:rgba(94,142,255,.14)}
+.sugrow:hover{background:rgba(227,154,45,.14)}
 .sugfoot{display:flex;gap:8px;padding-top:8px}
 .sugact{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#f4f4f5;border-radius:9px;padding:8px;font-family:inherit;cursor:pointer;font-size:13.5px}
 .sugbtn:active,.sugbtn:focus{background:rgba(255,255,255,.06);color:#d4d4d8}
 .sugbtn{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.16);color:#d4d4d8;border-radius:999px;padding:7px 13px;font-size:13.5px;cursor:pointer;font-family:inherit}
 .imgbtn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:50%;width:44px;height:44px;flex:none;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;padding:0}
-.imgbtn.on{background:rgba(94,142,255,.5);border-color:rgba(94,142,255,.85)}
+.imgbtn.on{background:rgba(227,154,45,.5);border-color:rgba(227,154,45,.85)}
 .bub ul.mdlist{margin:4px 0;padding-left:18px}.bub ul.mdlist li{margin:2px 0}.bub code{background:rgba(255,255,255,.13);padding:1px 5px;border-radius:5px;font-size:.92em}
 .aimini{background:#f4f4f5;color:#0a0a0b;border:0;border-radius:9px;padding:7px 12px;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit}
 
@@ -2672,11 +2672,11 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 @media (max-width:900px){.hwgrid{grid-template-columns:1fr}}
 .hwcard{background:#101012;border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:16px;text-align:left}
 .hwcard-h{display:flex;align-items:center;gap:8px;font-weight:800;font-size:15px;margin-bottom:12px}
-.hwcard-h svg{color:#9db9ff;flex:none}
+.hwcard-h svg{color:#f6cf8d;flex:none}
 #count{margin-left:auto;opacity:.55;font-size:12px;font-weight:600}
 #drop{border:1.5px dashed rgba(255,255,255,.35);border-radius:14px;padding:14px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;color:#d4d4d8}
-#drop.dragging{border-color:#5e8eff;background:rgba(94,142,255,.08)}
-#drop svg{color:#9db9ff}
+#drop.dragging{border-color:#e39a2d;background:rgba(227,154,45,.08)}
+#drop svg{color:#f6cf8d}
 #droplabel{font-size:13.5px;line-height:1.5;opacity:.85}
 #prev{display:none;max-width:100%;max-height:200px;border-radius:10px;margin-top:6px}
 #rmimg{display:none;margin-top:8px;background:rgba(255,255,255,.1);color:#f4f4f5;border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:7px 13px;font-weight:700;cursor:pointer;font-family:inherit}
@@ -2685,7 +2685,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 #editq{width:100%;background:rgba(255,255,255,.04);color:#f4f4f5;border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:11px 12px;font-family:inherit;font-size:16px;box-sizing:border-box}
 .hwmodes{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
 .mode{display:flex;flex-direction:column;align-items:flex-start;gap:3px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:12px 13px;cursor:pointer;font-family:inherit;color:#f4f4f5;text-align:left}
-.mode svg{color:#9db9ff;margin-bottom:2px}
+.mode svg{color:#f6cf8d;margin-bottom:2px}
 .mode b{font-size:14.5px}
 .mode span{font-size:12px;opacity:.6;line-height:1.4}
 .mode:active{transform:scale(.98)}
@@ -2695,12 +2695,12 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 #rmimg:hover{background:rgba(255,255,255,.18)}
 .mode.primary{background:#f4f4f5;color:#0a0a0b;border-color:#f4f4f5}
 .mode.primary svg{color:#0a0a0b}
-.statpill{margin-left:auto;background:rgba(94,142,255,.16);border:1px solid rgba(94,142,255,.4);color:#c7d6ff;border-radius:999px;padding:4px 11px;font-size:12px;font-weight:700;white-space:nowrap}
+.statpill{margin-left:auto;background:rgba(227,154,45,.16);border:1px solid rgba(227,154,45,.4);color:#c7d6ff;border-radius:999px;padding:4px 11px;font-size:12px;font-weight:700;white-space:nowrap}
 #copy{display:none;margin-left:8px;background:rgba(255,255,255,.08);color:#f4f4f5;border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:6px 12px;font-weight:700;cursor:pointer;font-family:inherit;align-items:center;gap:6px;font-size:13px}
 #out{display:none;line-height:1.65;word-break:break-word;font-size:15px}
 #out .mdlist{margin:6px 0 6px 18px;padding:0}
 #empty{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;opacity:.55;padding:36px 12px;line-height:1.55}
-#empty svg{color:#9db9ff}
+#empty svg{color:#f6cf8d}
 .hwfoot{opacity:.6;font-size:13px;margin-top:14px;line-height:1.55}
 
 .hwcard{background:linear-gradient(180deg,#121214,#0e0e10);border-color:rgba(255,255,255,.11);border-radius:18px;box-shadow:0 2px 10px rgba(0,0,0,.25)}
@@ -2889,11 +2889,11 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 @media(max-width:760px){.solver{grid-column:span 1}}
 #min{flex:1;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:12px;font-family:inherit;font-size:16px;min-width:0}
 .kgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}
-.kgrid button,.tbtn{background:rgba(94,142,255,.16);color:#f4f4f5;border:1px solid rgba(255,255,255,.3);border-radius:12px;padding:12px 6px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
+.kgrid button,.tbtn{background:rgba(227,154,45,.16);color:#f4f4f5;border:1px solid rgba(255,255,255,.3);border-radius:12px;padding:12px 6px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
 .kgrid button:hover,.tbtn:hover{border-color:rgba(255,255,255,.55)}
 #mout{font-size:23px;font-weight:800;margin-top:14px;word-break:break-word}
 #msteps{margin-top:8px;font-size:14px;line-height:1.7;opacity:.92}
-#msteps div{border-left:2px solid rgba(94,142,255,.4);padding-left:10px;margin:4px 0}
+#msteps div{border-left:2px solid rgba(227,154,45,.4);padding-left:10px;margin:4px 0}
 #mhist{margin-top:12px;font-size:12.5px;opacity:.6;line-height:1.65}
 #note{width:100%;min-height:170px;background:rgba(0,0,0,.3);color:#f2f2f2;border:1px solid rgba(255,255,255,.25);border-radius:12px;padding:10px;font-family:inherit;font-size:14px;box-sizing:border-box}
 #sw{font-size:38px;text-align:center;font-weight:800;margin:8px 0 12px}
@@ -3100,7 +3100,7 @@ function drawPlot(ast) {
   ctx.strokeStyle = 'rgba(255,255,255,.35)';
   ctx.beginPath(); ctx.moveTo(W / 2, 0); ctx.lineTo(W / 2, H); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2); ctx.stroke();
-  ctx.strokeStyle = '#9db9ff'; ctx.lineWidth = 2; ctx.beginPath();
+  ctx.strokeStyle = '#f6cf8d'; ctx.lineWidth = 2; ctx.beginPath();
   var pen = false;
   for (i = 0; i <= 200; i++) { y = pts[i]; if (!isFinite(y)) { pen = false; continue; } var px = W * i / 200, py = H / 2 - (y / ymax) * (H / 2 - 10); if (py < -60 || py > H + 60) { pen = false; continue; } if (!pen) { ctx.moveTo(px, py); pen = true; } else ctx.lineTo(px, py); }
   ctx.stroke();
@@ -3153,7 +3153,7 @@ const SEARCH = `<!DOCTYPE html>
 ${FONT_LINKS}<style>${GALAXY_CSS}</style>
 <style>
 #sbtoggle{flex:none;width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;align-self:center}
-#sbtoggle.on{background:rgba(94,142,255,.25);border-color:rgba(94,142,255,.6)}
+#sbtoggle.on{background:rgba(227,154,45,.25);border-color:rgba(227,154,45,.6)}
 body.sb-off:has(aside#sb),body.has-sb.sb-off{padding-left:16px}
 body.sb-off #sb{display:none}
 body.sb-off #stage{max-width:none}
@@ -3171,7 +3171,7 @@ body.sb-off #stage iframe{height:78dvh}
 #addtab button{background:#f4f4f5;color:#0a0a0b;border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;font-family:inherit}
 #tabstrip{display:flex;gap:6px;width:100%;max-width:980px;margin:0 auto 12px;overflow-x:auto;padding:2px;scrollbar-width:none}
 .btab{display:flex;align-items:center;gap:8px;background:#121214;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:8px 10px;min-width:118px;max-width:200px;cursor:pointer;flex:none}
-.btab.on{background:#1e1e22;border-color:rgba(94,142,255,.65)}
+.btab.on{background:#1e1e22;border-color:rgba(227,154,45,.65)}
 .bav{width:20px;height:20px;border-radius:6px;background:#3f3f46;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex:none}
 .btt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
 .bx{margin-left:auto;width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;background:transparent;border:0;color:#a1a1aa;cursor:pointer;font-size:11px;padding:0;line-height:1}
@@ -3601,7 +3601,7 @@ function ytSearchPage(query, hit) {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}<div class="wrap">
-<a class="back" href="/yt">← youtube</a> <a href="/go?q=https://www.youtube.com" style="display:inline-block;float:right;background:#5e8eff;color:#fff;font-weight:700;border-radius:999px;padding:6px 14px;text-decoration:none;font-size:13.5px">enter youtube →</a>
+<a class="back" href="/yt">← youtube</a> <a href="/go?q=https://www.youtube.com" style="display:inline-block;float:right;background:#e39a2d;color:#fff;font-weight:700;border-radius:999px;padding:6px 14px;text-decoration:none;font-size:13.5px">enter youtube →</a>
 <h1>6ix<span>Networks</span></h1>
 <form action="/yt/search" method="get"><input name="q" type="text" value="${escHtml(query)}" placeholder="search youtube ✦" autocomplete="off"><button type="submit">go</button></form>
 <div class="grid" style="margin-top:18px">${cards}</div>
@@ -3652,7 +3652,7 @@ async function handleYtSearch(req, res, q) {
     } catch { /* try next instance */ }
   }
   res.writeHead(502, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
-  res.end('<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">all search instances are down rn — <a style="color:#9db9ff" href="/yt/search?q=' + encodeURIComponent(query) + '">retry</a></body>');
+  res.end('<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">all search instances are down rn — <a style="color:#f6cf8d" href="/yt/search?q=' + encodeURIComponent(query) + '">retry</a></body>');
 }
 
 
@@ -3771,7 +3771,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <video id="vid" controls playsinline preload="auto" ${poster ? `poster="${poster}"` : ''} style="width:100%;border-radius:18px;background:#000;aspect-ratio:16/9;margin-top:12px"></video>
 <iframe id="ytembed" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="width:100%;aspect-ratio:16/9;border:0;border-radius:18px;background:#000;margin-top:12px;display:none"></iframe>
 <div style="display:flex;gap:8px;margin:12px 2px 4px;flex-wrap:wrap;align-items:center">
-<button id="modeStream" style="background:rgba(94,142,255,.25);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:700">✦ stream mode</button>
+<button id="modeStream" style="background:rgba(227,154,45,.25);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:700">✦ stream mode</button>
 <button id="modeEmbed" style="background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:700;opacity:.65">embed player</button>
 <span id="ytstat" style="opacity:.75;font-size:13px">stream mode — the file itself, straight through the network</span>
 </div>
@@ -3885,12 +3885,12 @@ function ytWatchPage2(id, hit, phit, uvUrl) {
 ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
 <div class="wrap">
 <a class="back" href="/yt">← youtube</a>
-<a href="/go?q=https://www.youtube.com" style="display:inline-block;float:right;background:#5e8eff;color:#fff;font-weight:700;border-radius:999px;padding:6px 14px;text-decoration:none;font-size:13.5px">enter youtube →</a>
+<a href="/go?q=https://www.youtube.com" style="display:inline-block;float:right;background:#e39a2d;color:#fff;font-weight:700;border-radius:999px;padding:6px 14px;text-decoration:none;font-size:13.5px">enter youtube →</a>
 <iframe id="ytuv" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="width:100%;aspect-ratio:16/9;border:0;border-radius:18px;background:#000;margin-top:12px"></iframe>
 <video id="vid" controls playsinline preload="auto" ${poster ? `poster="${poster}"` : ''} style="width:100%;border-radius:18px;background:#000;aspect-ratio:16/9;margin-top:12px;display:none"></video>
 <iframe id="ytembed" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="width:100%;aspect-ratio:16/9;border:0;border-radius:18px;background:#000;margin-top:12px;display:none"></iframe>
 <div style="display:flex;gap:8px;margin:12px 2px 4px;flex-wrap:wrap;align-items:center">
-<button id="modeUv" style="background:rgba(94,142,255,.25);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:700">✦ youtube mode</button>
+<button id="modeUv" style="background:rgba(227,154,45,.25);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:700">✦ youtube mode</button>
 <button id="modeStream" style="background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:700;opacity:.65">stream mode</button>
 <button id="modeEmbed" style="background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:700;opacity:.65">embed player</button>
 <span id="ytstat" style="opacity:.75;font-size:13px">youtube mode — the real youtube, through the network</span>
@@ -4035,11 +4035,11 @@ function shellPage(servers) {
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script>
 <title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 <style>html,body{margin:0;height:100%;height:100dvh;background:#0a0a0b;overflow:hidden}iframe{position:fixed;inset:0;width:100%;height:100%;height:100dvh;border:0}
-#dot{position:fixed;right:14px;bottom:14px;z-index:9;width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(14,14,16,.55);color:#9db9ff;opacity:.35;cursor:pointer;font-size:14px;line-height:1}
+#dot{position:fixed;right:14px;bottom:14px;z-index:9;width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(14,14,16,.55);color:#f6cf8d;opacity:.35;cursor:pointer;font-size:14px;line-height:1}
 #dot:hover{opacity:1}
 body.tabup #dot{bottom:120px}body.tabup #menu{bottom:160px}
 #menu{position:fixed;right:14px;bottom:52px;z-index:9;display:none;flex-direction:column;gap:6px;background:rgba(11,11,13,.94);border:1px solid rgba(255,255,255,.3);border-radius:14px;padding:10px}
-#menu button{background:rgba(94,142,255,.14);color:#f4f4f5;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;text-align:left;font-family:system-ui}
+#menu button{background:rgba(227,154,45,.14);color:#f4f4f5;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;text-align:left;font-family:system-ui}
 </style></head><body>
 <iframe id="f" allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone" allowfullscreen></iframe>
 <button id="dot">✦</button>
