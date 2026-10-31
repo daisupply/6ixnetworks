@@ -1189,7 +1189,7 @@ function playPage(u, t) {
   if (!/^https:\/\//i.test(u || '')) {
     return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#f6cf8d" href="/gs">back to games</a></body>';
   }
-  const prox = SJ_OK() ? '/engine?u=' + b64urlEncode(u) : gproxied(u);
+  const prox = UV_OK() ? '/uv/service/' + uvEncodeUrl(u) : gproxied(u);
   const alt = proxied(u);
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
@@ -4602,6 +4602,7 @@ try {
   SJ_WISP = wmod.server;
   try { if (wmod.logging) wmod.logging.set_level(process.env.WISP_LOG ? (wmod.logging[process.env.WISP_LOG] ?? wmod.logging.NONE) : wmod.logging.NONE); } catch (e) {}
   try { Object.assign(SJ_WISP.options, { allow_udp_streams: false, hostname_blacklist: [/^localhost$/, /^127\./, /^10\./, /^192\.168\./, /^172\.(1[6-9]|2[0-9]|3[01])\./, /^::1$/, /\.local$/] }); } catch (e) {}
+  try { const wsn = require('wisp-server-node'); if (wsn && typeof wsn.routeRequest === 'function') SJ_WISP = wsn; } catch (e) {}
   SJ_DIR = require('@mercuryworkshop/scramjet/path').scramjetPath;
   try { SJ_BAREMUX_DIR = require('@mercuryworkshop/bare-mux/node').baremuxPath; } catch (e) { SJ_BAREMUX_DIR = path2.join(path2.dirname(require.resolve('@mercuryworkshop/bare-mux')), 'dist'); }
   SJ_EPOXY_DIR = (() => { const cands = []; try { const rp = require.resolve('@mercuryworkshop/epoxy-transport'); const marker = 'node_modules/@mercuryworkshop/epoxy-transport'; const ix = rp.replace(/\\/g, '/').indexOf(marker); if (ix >= 0) cands.push(rp.slice(0, ix + marker.length) + '/dist'); cands.push(path2.dirname(rp)); } catch (e) {}
@@ -4964,8 +4965,8 @@ const server = http.createServer(async (req, res) => {
     return res.end(PWA_MANIFEST);
   }
   if (u.pathname === '/sw.js') {
-    if (SJ_OK()) { res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(SJ_SW); }
     if (UV_OK()) { res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(UV_SW); }
+    if (SJ_OK()) { res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(SJ_SW); }
     res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(SW_JS);
   }
@@ -5183,7 +5184,7 @@ const server = http.createServer(async (req, res) => {
     const hit = await fetchVideoInfo(vidId);
     const phit = hit ? null : await fetchPipedStreams(vidId);
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
-    const uvUrl = SJ_OK() ? '/engine?u=' + b64urlEncode('https://www.youtube.com/watch?v=' + vidId) + '&nf=1' : (UV_OK() ? '/uv/service/' + uvEncodeUrl('https://www.youtube.com/watch?v=' + vidId) : null);
+    const uvUrl = UV_OK() ? '/uv/service/' + uvEncodeUrl('https://www.youtube.com/watch?v=' + vidId) : null;
     return res.end(uvUrl ? ytWatchPage2(vidId, hit, phit, uvUrl) : ytWatchPage(vidId, hit, phit));
   }
   if (u.pathname === '/yt/stream') {
@@ -5245,7 +5246,6 @@ const server = http.createServer(async (req, res) => {
     const dest = normalizeInput(u.searchParams.get('q') || '');
     if (!dest) { res.writeHead(302, { location: '/home' }); return res.end(); }
     if (isSearchDest(dest)) { res.writeHead(302, { location: proxied(dest) }); return res.end(); }
-    if (SJ_OK()) { res.writeHead(302, { location: '/engine?u=' + b64urlEncode(dest) }); return res.end(); }
     if (UV_OK()) { res.writeHead(302, { location: '/uv/service/' + uvEncodeUrl(dest) }); return res.end(); }
     res.writeHead(302, { location: proxied(dest) });
     return res.end();
@@ -5311,7 +5311,6 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/uv' || u.pathname === '/sj') {
     const dest = normalizeInput(u.searchParams.get('url') || '');
     if (dest && isSearchDest(dest)) { res.writeHead(302, { location: proxied(dest) }); return res.end(); }
-    if (SJ_OK() && dest) { res.writeHead(302, { location: '/engine?u=' + b64urlEncode(dest) }); return res.end(); }
     if (UV_OK() && dest) { res.writeHead(302, { location: '/uv/service/' + uvEncodeUrl(dest) }); return res.end(); }
     res.writeHead(302, { location: '/home' });
     return res.end();
