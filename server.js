@@ -1437,6 +1437,7 @@ body{display:block;padding:0}
 .main6 .msg:hover{background:rgba(255,255,255,.025)}
 .main6 .msg.top{margin-top:15px}
 .main6 .mav{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;margin-top:1px}
+.main6 .mav{overflow:hidden}.main6 .mav img{width:100%;height:100%;object-fit:cover;display:block}
 .main6 .msg.grp .mav{visibility:hidden}
 .main6 .mbody{flex:1;min-width:0}
 .main6 .mhead{display:flex;align-items:baseline;gap:8px}
@@ -1662,7 +1663,7 @@ function line(m){
   if (m.id) d.dataset.mid = m.id;
   var av = document.createElement('div'); av.className = 'mav';
   if (m.bot) { av.textContent = '✦'; av.style.background = 'rgba(227,154,45,.85)'; }
-  else { var dn = m.disp || m.name || 'anon'; av.textContent = dn.slice(0, 1).toUpperCase(); av.style.background = (m.hue !== null && m.hue !== undefined) ? 'hsl(' + m.hue + ',45%,38%)' : avColor(m.name || 'anon'); }
+  else { var dn = m.disp || m.name || 'anon'; if (m.av) { var avi = document.createElement('img'); avi.src = m.av; avi.alt = ''; av.appendChild(avi); } else { av.textContent = dn.slice(0, 1).toUpperCase(); av.style.background = (m.hue !== null && m.hue !== undefined) ? 'hsl(' + m.hue + ',45%,38%)' : avColor(m.name || 'anon'); } }
   d.appendChild(av);
   var body = document.createElement('div'); body.className = 'mbody';
   if (!grouped) {
@@ -1811,14 +1812,14 @@ function sendImageFile(f){
   img.onerror=function(){ URL.revokeObjectURL(url); line({sys:true, text:'couldnt read that image'}); };
   img.src=url;
 }
-var myProfile = { user: null, disp: '', bio: '', hue: null };
+var myProfile = { user: null, disp: '', bio: '', hue: null, av: '' };
 try { var _h = localStorage.getItem('six_hue'); if (_h !== null && _h !== '') myProfile.hue = parseInt(_h, 10); myProfile.disp = localStorage.getItem('six_disp') || ''; myProfile.bio = localStorage.getItem('six_bio') || ''; } catch (e) {}
 var pfHue = null;
 function shownName(){ return myProfile.disp || curName(); }
 function myHueCss(){ return myProfile.hue != null ? 'hsl(' + myProfile.hue + ',45%,38%)' : avColor(curName() || 'anon'); }
 function paintMe(){
   var nm = shownName();
-  var av = document.getElementById('myav'); if (av) { av.textContent = (nm || 'a').slice(0, 1).toUpperCase(); av.style.background = myHueCss(); }
+  var av = document.getElementById('myav'); if (av) { if (myProfile.av) { av.innerHTML = ''; var mav2 = document.createElement('img'); mav2.src = myProfile.av; mav2.alt = ''; mav2.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block'; av.appendChild(mav2); } else { av.textContent = (nm || 'a').slice(0, 1).toUpperCase(); av.style.background = myHueCss(); } }
   var md = document.getElementById('mydisp'); if (md) md.textContent = nm;
   var ms = document.getElementById('mysub'); if (ms) ms.textContent = myProfile.user ? ('@' + myProfile.user + (myProfile.bio ? ' · ' + myProfile.bio : '')) : (myProfile.bio || 'guest — style saves on this device');
   var pav = document.getElementById('pfav'); if (pav) { pav.textContent = (nm || 'a').slice(0, 1).toUpperCase(); pav.style.background = pfHue != null ? 'hsl(' + pfHue + ',45%,38%)' : myHueCss(); }
@@ -1855,7 +1856,7 @@ document.getElementById('pfsave').addEventListener('click', function () {
 paintMe();
 fetch('/auth/me').then(function(r){ return r.json(); }).then(function(o){
   if(o && o.user){
-    myProfile.user = o.user; myProfile.disp = o.disp || ''; myProfile.bio = o.bio || ''; myProfile.hue = (o.hue === null || o.hue === undefined) ? null : o.hue;
+    myProfile.user = o.user; myProfile.disp = o.disp || ''; myProfile.bio = o.bio || ''; myProfile.hue = (o.hue === null || o.hue === undefined) ? null : o.hue; myProfile.av = o.av || '';
     nameEl.value = o.user;
     nameEl.disabled = true;
     nameEl.title = 'locked to ur account';
@@ -2789,6 +2790,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .rq .nm{font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rq .meta{font-size:12.5px;color:#a79e8d;margin-top:2px}
 .rq .vlink{color:#8a7a5c}
+.rq .byav{width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:-4px;margin-right:5px}
 .rq .onsite{display:inline-block;margin-top:6px;font-size:12.5px;font-weight:800;color:#171106;background:#9fe870;border-radius:999px;padding:4px 11px;text-decoration:none}
 .rq .vote{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;background:#241d15;border:1px solid rgba(255,236,200,.2);color:#d8d2c4;border-radius:12px;padding:7px 12px;cursor:pointer;font-family:inherit}
 .rq .vote.on{background:#f6cf8d;color:#171106;border-color:#f6cf8d}
@@ -2815,7 +2817,7 @@ var rqList=document.getElementById('rqList');
 function render(list){
   if(!list.length){ rqList.innerHTML='<div class="empty">no requests yet — be the first to drop one</div>'; return; }
   rqList.innerHTML=list.map(function(r, ix){
-    var meta='by '+escT(r.by)+' · '+ago(r.ts);
+    var meta=(r.byAv ? '<img class="byav" src="'+escT(r.byAv)+'" alt="">' : '')+'by '+escT(r.by)+' · '+ago(r.ts);
     var link=r.link ? ' · <a class="vlink" href="/go?q='+encodeURIComponent(r.link)+'" target="_blank" rel="noopener">link</a>' : '';
     var play=r.play ? '<a class="onsite" href="/play?u='+encodeURIComponent(r.play.u)+'&t='+encodeURIComponent(r.play.t)+'">already here — play it</a>' : '';
     return '<div class="rq'+(ix<3?' top':'')+'"><div class="rank">'+(ix+1)+'</div><div class="mid"><div class="nm">'+escT(r.name)+'</div><div class="meta">'+meta+link+'</div>'+play+'</div><button type="button" class="vote'+(r.mine?' on':'')+'" data-vote="'+r.id+'"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 14 7-7 7 7"/></svg><b>'+r.votes+'</b></button></div>';
@@ -3132,23 +3134,109 @@ copyBtn.addEventListener('click', function(){
 </html>`;
 }
 
+function userPage() {
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+.up{max-width:560px;margin:0 auto;text-align:left;width:100%}
+.card{background:#171310;border:1px solid rgba(255,236,200,.16);border-radius:18px;overflow:hidden}
+.pbanner{height:110px;background:linear-gradient(120deg,#3a2a12,#171106)}
+.pbody{padding:0 18px 18px;margin-top:-44px}
+.pav{width:88px;height:88px;border-radius:50%;border:3px solid #171310;background:#3f3f46;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:34px;color:#fff;overflow:hidden}
+.pav img{width:100%;height:100%;object-fit:cover;display:block}
+.pdisp{font-size:24px;font-weight:800;margin-top:9px}
+.pname{color:#a79e8d;font-size:14px}
+.pstatus{margin-top:8px;font-size:15.5px;color:#f6e3bb}
+.pbio{margin-top:7px;font-size:15px;color:#d8d2c4;line-height:1.55}
+.pmeta{margin-top:10px;font-size:13px;color:#8a7a5c}
+.stats{display:flex;gap:10px;margin-top:14px}
+.stat{flex:1;background:#0d0b08;border:1px solid rgba(255,236,200,.13);border-radius:13px;padding:10px 12px;text-align:center}
+.stat b{display:block;font-size:19px;color:#f6cf8d}
+.stat span{font-size:12px;color:#a79e8d}
+#uMsg{color:#a79e8d;padding:22px 0;text-align:center}
+</style></head>
+<body>${STAR_CANVAS}<div class="wrap">
+<a class="back" href="/home">← home</a>
+<div class="up"><div id="uMsg">loading profile...</div>
+<div class="card" id="uCard" hidden><div class="pbanner" id="uBanner"></div><div class="pbody">
+<div class="pav" id="uAv"></div>
+<div class="pdisp" id="uDisp"></div>
+<div class="pname" id="uName"></div>
+<div class="pstatus" id="uStatus"></div>
+<div class="pbio" id="uBio"></div>
+<div class="pmeta" id="uMeta"></div>
+<div class="stats"><div class="stat"><b id="uReqs">0</b><span>game requests</span></div><div class="stat"><b id="uVotes">0</b><span>votes received</span></div></div>
+</div></div></div>
+${SIDEBAR_HTML}
+</div>
+<script src="/cloak.js"></script>
+<script>
+var MONTHS=['january','february','march','april','may','june','july','august','september','october','november','december'];
+var name = '';
+try { name = decodeURIComponent(location.pathname.split('/')[2] || ''); } catch(e){}
+fetch('/api/user/' + encodeURIComponent(name)).then(function(r){ return r.json(); }).then(function(o){
+  if(!o || !o.ok){ document.getElementById('uMsg').textContent = 'no account named ' + (name || '?') + ' — yet'; return; }
+  document.getElementById('uMsg').hidden = true;
+  document.getElementById('uCard').hidden = false;
+  var av = document.getElementById('uAv');
+  if(o.av){ var im = document.createElement('img'); im.src = o.av; im.alt = ''; av.appendChild(im); }
+  else { av.textContent = (o.disp || o.user || 'a').slice(0, 1).toUpperCase(); if(o.hue !== null && o.hue !== undefined) av.style.background = 'hsl(' + o.hue + ',45%,38%)'; }
+  var d = document.getElementById('uDisp');
+  d.textContent = o.disp || o.user;
+  if(o.hue !== null && o.hue !== undefined) d.style.color = 'hsl(' + o.hue + ',80%,72%)';
+  document.getElementById('uName').textContent = '@' + o.user;
+  var st = document.getElementById('uStatus'); st.textContent = o.status || ''; st.style.display = o.status ? '' : 'none';
+  var bio = document.getElementById('uBio'); bio.textContent = o.bio || ''; bio.style.display = o.bio ? '' : 'none';
+  document.getElementById('uMeta').textContent = o.created ? ('member since ' + MONTHS[new Date(o.created).getMonth()] + ' ' + new Date(o.created).getFullYear()) : 'one of the ogs — here before join dates';
+  if(o.banner !== null && o.banner !== undefined) document.getElementById('uBanner').style.background = 'linear-gradient(120deg,hsl(' + o.banner + ',55%,32%),hsl(' + ((o.banner + 40) % 360) + ',60%,18%))';
+  document.getElementById('uReqs').textContent = o.reqs || 0;
+  document.getElementById('uVotes').textContent = o.votes || 0;
+}).catch(function(){ document.getElementById('uMsg').textContent = 'couldnt load that profile rn'; });
+</script>
+</body>
+</html>`;
+}
+
 function accountPage() {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
-.acc{max-width:430px;margin:0 auto;text-align:left}
-.acc input{width:100%;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:11px;font-family:inherit;margin:5px 0 10px}
+.acc{max-width:560px;margin:0 auto;text-align:left;width:100%}
+.acc input[type=text],.acc input[type=password],.acc textarea{width:100%;background:#0d0b08;color:#f4f4f5;border:1px solid rgba(255,236,200,.22);border-radius:10px;padding:11px;font-family:inherit;margin:5px 0 10px;font-size:16px;box-sizing:border-box}
 .acc h3{margin:20px 0 4px}
-#out{margin-top:14px;min-height:22px;color:#fafafa}
+#out{margin-top:14px;min-height:22px;color:#f6cf8d}
+.card{background:#171310;border:1px solid rgba(255,236,200,.16);border-radius:18px;overflow:hidden;margin-bottom:16px}
+.pbanner{height:92px;background:linear-gradient(120deg,#3a2a12,#171106)}
+.pbody{padding:0 18px 16px;margin-top:-38px}
+.pav{width:76px;height:76px;border-radius:50%;border:3px solid #171310;background:#3f3f46;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:30px;color:#fff;overflow:hidden}
+.pav img{width:100%;height:100%;object-fit:cover;display:block}
+.pdisp{font-size:21px;font-weight:800;margin-top:8px}
+.pname{color:#a79e8d;font-size:13.5px}
+.pstatus{margin-top:7px;font-size:14.5px;color:#f6e3bb}
+.pbio{margin-top:6px;font-size:14.5px;color:#d8d2c4;line-height:1.5}
+.pmeta{margin-top:9px;font-size:12.5px;color:#8a7a5c}
+.pmeta a{color:#f6cf8d;font-weight:700}
+.sec{background:#171310;border:1px solid rgba(255,236,200,.13);border-radius:18px;padding:16px 18px;margin-bottom:16px}
+.sec h3{margin:0 0 10px;font-size:16px}
+.sec label{display:block;font-size:13px;color:#a79e8d;margin:12px 0 2px}
+.sec input[type=range]{width:100%;accent-color:#e39a2d;margin:6px 0 4px}
+.rowflex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.swatch{width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,236,200,.3);flex:none}
+.chk{display:flex;gap:7px;align-items:center;font-size:13.5px;color:#d8d2c4}
+.chk input{width:17px;height:17px;accent-color:#e39a2d}
+.btnrow{display:flex;gap:9px;margin-top:14px;flex-wrap:wrap}
+.msg{font-size:13.5px;color:#f6cf8d;min-height:18px;margin-top:9px}
+.avrow{display:flex;gap:12px;align-items:center}
+.avprev{width:54px;height:54px;border-radius:50%;background:#3f3f46;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:21px;color:#fff;overflow:hidden;flex:none}
+.avprev img{width:100%;height:100%;object-fit:cover;display:block}
 </style></head>
-<body><div class="stars"></div>
-<div class="wrap">
+<body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/home">← home</a>
-<h1>👤 ur account</h1>
-<p style="opacity:.8">one name thats actually urs — in chat it locks to u n nobody else can use it. simple on purpose: no email, no codes, no bs. password is hashed, sessions last 30 days. one warning: there is NO password reset — forget it n that name is gone, so remember it</p>
+<h1>ur <span>account</span></h1>
+<p style="opacity:.8;max-width:560px">one name thats actually urs — in chat it locks to u n nobody else can use it. no email, no codes, no bs. password is hashed, sessions last 30 days, n everything saves to real storage now so it survives restarts. one warning: there is NO password reset — forget it n that name is gone, so remember it</p>
 <div class="acc">
-<div id="state"></div>
 <div id="forms">
 <h3>make an account</h3>
 <input id="su" type="text" maxlength="16" placeholder="username — a-z, 0-9, _ (3-16 chars)" autocomplete="off">
@@ -3159,40 +3247,155 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <input id="lp" type="password" maxlength="64" placeholder="password">
 <button class="chip" id="blogin" type="button">log in</button>
 </div>
+<div id="editor" hidden>
+<div class="card"><div class="pbanner" id="pvBanner"></div><div class="pbody">
+<div class="pav" id="pvAv"></div>
+<div class="pdisp" id="pvDisp"></div>
+<div class="pname" id="pvName"></div>
+<div class="pstatus" id="pvStatus"></div>
+<div class="pbio" id="pvBio"></div>
+<div class="pmeta" id="pvMeta"></div>
+</div></div>
+<div class="sec"><h3>profile</h3>
+<label>display name</label><input id="eDisp" type="text" maxlength="24" placeholder="how ur name shows in chat" autocomplete="off">
+<label>status</label><input id="eStatus" type="text" maxlength="40" placeholder="in class, gaming, up late..." autocomplete="off">
+<label>bio</label><textarea id="eBio" rows="3" maxlength="90" placeholder="a couple lines about u"></textarea>
+<label>name color</label>
+<div class="rowflex"><div class="swatch" id="hueSw"></div><input id="eHue" type="range" min="0" max="359" value="36" style="flex:1"><label class="chk"><input id="eHueAuto" type="checkbox"> auto</label></div>
+<label>banner color</label>
+<div class="rowflex"><div class="swatch" id="banSw"></div><input id="eBanner" type="range" min="0" max="359" value="36" style="flex:1"><label class="chk"><input id="eBannerAuto" type="checkbox"> default</label></div>
+<label>avatar</label>
+<div class="avrow"><div class="avprev" id="avPrev"></div><button class="chip" id="avPick" type="button">upload pic</button><button class="chip" id="avRemove" type="button">remove</button><input id="avFile" type="file" accept="image/*" hidden></div>
+<div class="btnrow"><button class="chip" id="eSave" type="button" style="background:#f6cf8d;color:#171106;border-color:#f6cf8d">save profile</button></div>
+<div class="msg" id="eMsg"></div>
+</div>
+<div class="sec"><h3>account</h3>
+<label>change username</label>
+<div class="rowflex"><input id="eNewName" type="text" maxlength="16" placeholder="new username" autocomplete="off" style="flex:1;margin:0"><button class="chip" id="eRename" type="button">rename</button></div>
+<label>change password</label>
+<input id="eOldPass" type="password" maxlength="64" placeholder="old password">
+<input id="eNewPass" type="password" maxlength="64" placeholder="new password (4+ chars)">
+<div class="btnrow"><button class="chip" id="ePass" type="button">change password</button><button class="chip" id="eLogout" type="button">log out</button></div>
+<div class="msg" id="aMsg"></div>
+</div>
+</div>
 <div id="out"></div>
 </div>
 ${SIDEBAR_HTML}
 </div>
 <script src="/cloak.js"></script>
-<script src="/stars.js?e=95"></script>
 <script>
-var outEl=document.getElementById('out'), stateEl=document.getElementById('state'), formsEl=document.getElementById('forms');
-function showState(user){
-  if(user){
-    formsEl.style.display='none';
-    stateEl.innerHTML='';
-    var d=document.createElement('div');
-    d.setAttribute('style','background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.35);border-radius:14px;padding:14px');
-    var t=document.createElement('div'); t.textContent='🔒 logged in as '+user; t.setAttribute('style','font-weight:800;margin-bottom:8px');
-    var go=document.createElement('a'); go.href='/chat'; go.className='chip'; go.textContent='go chat as '+user; go.setAttribute('style','text-decoration:none;margin-right:8px');
-    var lo=document.createElement('button'); lo.className='chip'; lo.type='button'; lo.textContent='log out';
-    lo.addEventListener('click', function(){ fetch('/auth/logout', { method:'POST' }).then(function(){ location.reload(); }); });
-    d.appendChild(t); d.appendChild(go); d.appendChild(lo);
-    stateEl.appendChild(d);
-  }
+var outEl=document.getElementById('out');
+var MONTHS=['january','february','march','april','may','june','july','august','september','october','november','december'];
+var me=null, avData='', avDirty=false;
+function $(id){ return document.getElementById(id); }
+function hueCss(h, l){ return 'hsl(' + h + ',70%,' + (l || 65) + '%)'; }
+function paintPreview(){
+  if(!me) return;
+  var disp = $('eDisp').value || me.user;
+  $('pvDisp').textContent = disp;
+  $('pvDisp').style.color = $('eHueAuto').checked ? '' : hueCss(+$('eHue').value, 72);
+  $('pvName').textContent = '@' + me.user;
+  var st = $('eStatus').value; $('pvStatus').textContent = st; $('pvStatus').style.display = st ? '' : 'none';
+  var bio = $('eBio').value; $('pvBio').textContent = bio; $('pvBio').style.display = bio ? '' : 'none';
+  var bh = $('eBannerAuto').checked ? null : +$('eBanner').value;
+  $('pvBanner').style.background = (bh === null) ? 'linear-gradient(120deg,#3a2a12,#171106)' : 'linear-gradient(120deg,hsl(' + bh + ',55%,32%),hsl(' + ((bh + 40) % 360) + ',60%,18%))';
+  $('hueSw').style.background = $('eHueAuto').checked ? '#3f3f46' : hueCss(+$('eHue').value, 45);
+  $('banSw').style.background = $('eBannerAuto').checked ? '#3a2a12' : ('hsl(' + $('eBanner').value + ',55%,32%)');
+  var since = me.created ? ('member since ' + MONTHS[new Date(me.created).getMonth()] + ' ' + new Date(me.created).getFullYear() + ' · ') : '';
+  $('pvMeta').innerHTML = '';
+  var sp = document.createElement('span'); sp.textContent = since;
+  var lk = document.createElement('a'); lk.href = '/u/' + encodeURIComponent(me.user); lk.textContent = 'view public profile';
+  $('pvMeta').appendChild(sp); $('pvMeta').appendChild(lk);
+  paintAv();
 }
-fetch('/auth/me').then(function(r){ return r.json(); }).then(function(o){ if(o && o.user) showState(o.user); }).catch(function(){});
-function auth(kind, uId, pId){
-  var user=document.getElementById(uId).value.trim(), pass=document.getElementById(pId).value;
-  if(!user || !pass){ outEl.textContent='fill in both boxes twin'; return; }
-  outEl.textContent='one sec…';
-  fetch('/auth/'+kind, { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ user: user, pass: pass }) })
+function paintAv(){
+  var targets = [$('pvAv'), $('avPrev')];
+  targets.forEach(function(el){
+    el.innerHTML = '';
+    if(avData){ var im = document.createElement('img'); im.src = avData; im.alt = ''; el.appendChild(im); }
+    else { el.textContent = ((me && (me.disp || me.user)) || 'a').slice(0, 1).toUpperCase(); el.style.background = $('eHueAuto').checked ? '#3f3f46' : hueCss(+$('eHue').value, 38); }
+  });
+}
+function fillEditor(o){
+  me = o;
+  $('eDisp').value = o.disp || '';
+  $('eStatus').value = o.status || '';
+  $('eBio').value = o.bio || '';
+  if(o.hue === null || o.hue === undefined){ $('eHueAuto').checked = true; } else { $('eHueAuto').checked = false; $('eHue').value = o.hue; }
+  if(o.banner === null || o.banner === undefined){ $('eBannerAuto').checked = true; } else { $('eBannerAuto').checked = false; $('eBanner').value = o.banner; }
+  avData = o.av || ''; avDirty = false;
+  paintPreview();
+}
+function loadMe(){
+  fetch('/auth/me').then(function(r){ return r.json(); }).then(function(o){
+    if(o && o.user){ $('forms').hidden = true; $('editor').hidden = false; fillEditor(o); }
+  }).catch(function(){});
+}
+['eDisp','eStatus','eBio','eHue','eBanner','eHueAuto','eBannerAuto'].forEach(function(id){
+  var el = $(id); if(el){ el.addEventListener('input', paintPreview); el.addEventListener('change', paintPreview); }
+});
+$('avPick').addEventListener('click', function(){ $('avFile').click(); });
+$('avRemove').addEventListener('click', function(){ avData = ''; avDirty = true; paintAv(); });
+$('avFile').addEventListener('change', function(){
+  var f = this.files && this.files[0]; if(!f) return;
+  var url = URL.createObjectURL(f);
+  var img = new Image();
+  img.onload = function(){
+    function encode(size, q){
+      var c = document.createElement('canvas'); c.width = size; c.height = size;
+      var x = c.getContext('2d');
+      var s = Math.min(img.width, img.height);
+      x.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+      return c.toDataURL('image/jpeg', q);
+    }
+    var d = encode(128, 0.85);
+    if(d.length > 135000) d = encode(96, 0.72);
+    if(d.length > 135000){ $('eMsg').textContent = 'that pic is too heavy — try another'; URL.revokeObjectURL(url); return; }
+    avData = d; avDirty = true; paintAv();
+    URL.revokeObjectURL(url);
+  };
+  img.onerror = function(){ $('eMsg').textContent = 'couldnt read that pic'; URL.revokeObjectURL(url); };
+  img.src = url;
+});
+$('eSave').addEventListener('click', function(){
+  var body = { disp: $('eDisp').value.trim(), status: $('eStatus').value.trim(), bio: $('eBio').value.trim(), hue: $('eHueAuto').checked ? null : +$('eHue').value, banner: $('eBannerAuto').checked ? null : +$('eBanner').value };
+  if(avDirty) body.av = avData;
+  $('eMsg').textContent = 'saving...';
+  fetch('/auth/profile', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
     .then(function(r){ return r.json(); })
-    .then(function(o){ if(o && o.ok){ location.href='/chat'; } else { outEl.textContent=(o && o.err) || 'that didnt work — try again'; } })
-    .catch(function(){ outEl.textContent='couldnt reach the account server rn'; });
+    .then(function(o){ if(o && o.ok){ $('eMsg').textContent = 'saved — its in real storage, this sticks'; avDirty = false; loadMe(); } else { $('eMsg').textContent = (o && o.err) || 'couldnt save rn'; } })
+    .catch(function(){ $('eMsg').textContent = 'couldnt save rn'; });
+});
+$('eRename').addEventListener('click', function(){
+  var name = $('eNewName').value.trim();
+  if(!name){ $('aMsg').textContent = 'type the new name first'; return; }
+  $('aMsg').textContent = 'renaming...';
+  fetch('/auth/rename', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: name }) })
+    .then(function(r){ return r.json(); })
+    .then(function(o){ if(o && o.ok){ location.reload(); } else { $('aMsg').textContent = (o && o.err) || 'rename didnt work'; } })
+    .catch(function(){ $('aMsg').textContent = 'rename didnt work'; });
+});
+$('ePass').addEventListener('click', function(){
+  $('aMsg').textContent = 'changing...';
+  fetch('/auth/pass', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ old: $('eOldPass').value, next: $('eNewPass').value }) })
+    .then(function(r){ return r.json(); })
+    .then(function(o){ if(o && o.ok){ $('aMsg').textContent = 'password changed'; $('eOldPass').value = ''; $('eNewPass').value = ''; } else { $('aMsg').textContent = (o && o.err) || 'couldnt change it'; } })
+    .catch(function(){ $('aMsg').textContent = 'couldnt change it'; });
+});
+$('eLogout').addEventListener('click', function(){ fetch('/auth/logout', { method: 'POST' }).then(function(){ location.reload(); }); });
+function auth(kind, uId, pId){
+  var user = $(uId).value.trim(), pass = $(pId).value;
+  if(!user || !pass){ outEl.textContent = 'fill in both boxes twin'; return; }
+  outEl.textContent = 'one sec...';
+  fetch('/auth/' + kind, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ user: user, pass: pass }) })
+    .then(function(r){ return r.json(); })
+    .then(function(o){ if(o && o.ok){ location.href = '/chat'; } else { outEl.textContent = (o && o.err) || 'that didnt work — try again'; } })
+    .catch(function(){ outEl.textContent = 'couldnt reach the account server rn'; });
 }
-document.getElementById('bsignup').addEventListener('click', function(){ auth('signup', 'su', 'sp'); });
-document.getElementById('blogin').addEventListener('click', function(){ auth('login', 'lu', 'lp'); });
+$('bsignup').addEventListener('click', function(){ auth('signup', 'su', 'sp'); });
+$('blogin').addEventListener('click', function(){ auth('login', 'lu', 'lp'); });
+loadMe();
 </script>
 </body>
 </html>`;
@@ -4713,6 +4916,11 @@ function voterKeyFor(req) {
   const id = crypto.randomBytes(12).toString('hex');
   return { key: 'c:' + id, setCookie: 'six_voter=' + id + '; Path=/; Max-Age=31536000; HttpOnly; SameSite=Lax' };
 }
+function voterUser(req) {
+  const sm = (req.headers.cookie || '').match(/six_sess=([a-f0-9]+)/);
+  if (sm) { const s = SESSIONS.get(sm[1]); if (s && s.exp > Date.now()) return s.name; }
+  return '';
+}
 function voterName(req) {
   const sm = (req.headers.cookie || '').match(/six_sess=([a-f0-9]+)/);
   if (sm) { const s = SESSIONS.get(sm[1]); if (s && s.exp > Date.now()) { const rec = ACCOUNTS.get(s.name.toLowerCase()); return (rec && rec.disp) || s.name; } }
@@ -4724,7 +4932,8 @@ async function greqList(vkey) {
     let g = null;
     for (const cand of games) { if (greqNorm(cand.t) === r.norm) { g = cand; break; } }
     if (!g) for (const cand of games) { const gn = greqNorm(cand.t); if (gn && ((r.norm.length >= 3 && gn.includes(r.norm)) || (gn.length >= 3 && r.norm.includes(gn)))) { g = cand; break; } }
-    return { id: r.id, name: r.name, link: r.link, by: r.by, votes: r.voters.size, mine: r.voters.has(vkey), ts: r.ts, play: g ? { u: g.u, t: g.t } : null };
+    const byRec = r.byUser ? ACCOUNTS.get(r.byUser.toLowerCase()) : null;
+    return { id: r.id, name: r.name, link: r.link, by: r.by, byAv: byRec ? (byRec.av || '') : '', votes: r.voters.size, mine: r.voters.has(vkey), ts: r.ts, play: g ? { u: g.u, t: g.t } : null };
   }).sort((a, b) => b.votes - a.votes || b.ts - a.ts);
 }
 const CHAT_ROOMS = new Map();
@@ -4737,14 +4946,16 @@ function chatIdentityNode(req, wantName) {
   if (lower && (RESERVED_NAMES.includes(lower) || ACCOUNTS.has(lower))) return 'anon';
   return want;
 }
+function validAv(v) { if (v === '' || v === null || v === undefined) return ''; const s = String(v); return (/^data:image\/(png|jpeg|webp|gif);base64,[a-zA-Z0-9+/=]+$/.test(s) && s.length <= 140000) ? s : null; }
 function validHue(v) { if (v === null || v === undefined || v === '') return null; const n = parseInt(v, 10); return (isFinite(n) && n >= 0 && n <= 359) ? n : null; }
 function chatProfileNode(req, wantName, wantHue) {
   const name = chatIdentityNode(req, wantName);
   const tok = (req.headers.cookie || '').match(/six_sess=([a-f0-9]+)/);
-  if (tok) { const s = SESSIONS.get(tok[1]); if (s && s.exp > Date.now()) { const rec = ACCOUNTS.get(s.name.toLowerCase()); if (rec) return { name: rec.name, disp: rec.disp || '', bio: rec.bio || '', hue: validHue(rec.hue) }; } }
-  return { name, disp: '', bio: '', hue: validHue(wantHue) };
+  if (tok) { const s = SESSIONS.get(tok[1]); if (s && s.exp > Date.now()) { const rec = ACCOUNTS.get(s.name.toLowerCase()); if (rec) return { name: rec.name, disp: rec.disp || '', bio: rec.bio || '', hue: validHue(rec.hue), av: rec.av || '' }; } }
+  return { name, disp: '', bio: '', hue: validHue(wantHue), av: '' };
 }
-function stampMsg(msg, prof) { if (prof.disp) msg.disp = prof.disp; if (prof.hue !== null && prof.hue !== undefined) msg.hue = prof.hue; return msg; }
+function stampMsg(msg, prof) { if (prof.disp) msg.disp = prof.disp; if (prof.hue !== null && prof.hue !== undefined) msg.hue = prof.hue; if (prof.av) msg.av = prof.av; return msg; }
+function enrichMsgAv(m) { if (!m || m.bot || !m.name) return m; const rec = ACCOUNTS.get(String(m.name).toLowerCase()); return (rec && rec.av) ? Object.assign({}, m, { av: rec.av }) : m; }
 const SESSIONS = new Map();
 // ===== v113 durable store: Upstash Redis REST (env-gated, write-through) =====
 const STORE_URL = process.env.UPSTASH_REDIS_REST_URL || '';
@@ -4763,7 +4974,7 @@ function storeSet(key, val) { storeCmd([['SET', key, val]]); }
 function storeDel(key) { storeCmd([['DEL', key]]); }
 function persistAcct(lower) { const rec = ACCOUNTS.get(lower); if (rec) storeSet('acct:' + lower, JSON.stringify(rec)); }
 function persistSess(token) { const s = SESSIONS.get(token); if (s) storeSet('sess:' + token, JSON.stringify(s)); }
-function persistReq(r) { storeSet('greq:' + r.id, JSON.stringify({ id: r.id, name: r.name, link: r.link, by: r.by, norm: r.norm, voters: [...r.voters], ts: r.ts })); }
+function persistReq(r) { storeSet('greq:' + r.id, JSON.stringify({ id: r.id, name: r.name, link: r.link, by: r.by, byUser: r.byUser || '', norm: r.norm, voters: [...r.voters], ts: r.ts })); }
 async function hydrateStore() {
   if (!STORE_ON) { console.log('store: in-memory only (no UPSTASH env vars)'); return; }
   const keys = await storeCmd([['KEYS', 'acct:*'], ['KEYS', 'sess:*'], ['KEYS', 'greq:*']], 9000);
@@ -4778,7 +4989,7 @@ async function hydrateStore() {
         const o = JSON.parse(v);
         if (k.startsWith('acct:')) { ACCOUNTS.set(k.slice(5), o); na++; }
         else if (k.startsWith('sess:')) { if (o && o.exp > Date.now()) { SESSIONS.set(k.slice(5), o); ns++; } }
-        else if (k.startsWith('greq:')) { GAME_REQUESTS.set(o.id, { id: o.id, name: o.name, link: o.link || '', by: o.by || 'anon', norm: o.norm, voters: new Set(o.voters || []), ts: o.ts || Date.now() }); if (o.id > greqSeq) greqSeq = o.id; ng++; }
+        else if (k.startsWith('greq:')) { GAME_REQUESTS.set(o.id, { id: o.id, name: o.name, link: o.link || '', by: o.by || 'anon', byUser: o.byUser || '', norm: o.norm, voters: new Set(o.voters || []), ts: o.ts || Date.now() }); if (o.id > greqSeq) greqSeq = o.id; ng++; }
       } catch (e) {}
     });
   }
@@ -4793,7 +5004,7 @@ function wsEncode(str) {
   return Buffer.concat([h, p]);
 }
 function chatBroadcast(room, obj) { const data = wsEncode(JSON.stringify(obj)); for (const sk of room.socks) { try { sk.write(data); } catch {} } }
-function chatPost(roomName, msg) { const room = chatRoomOf(roomName); if (!msg.id) msg.id = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); room.msgs.push(msg); room.msgs = room.msgs.slice(-60); for (let i = 0; i < room.msgs.length - 20; i++) { const m = room.msgs[i]; if (m.img) { delete m.img; m.imgGone = true; } } chatBroadcast(room, { type: 'msg', msg }); return msg; }
+function chatPost(roomName, msg) { const room = chatRoomOf(roomName); if (!msg.id) msg.id = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); const storedMsg = Object.assign({}, msg); delete storedMsg.av; room.msgs.push(storedMsg); room.msgs = room.msgs.slice(-60); for (let i = 0; i < room.msgs.length - 20; i++) { const m = room.msgs[i]; if (m.img) { delete m.img; m.imgGone = true; } } chatBroadcast(room, { type: 'msg', msg }); return msg; }
 const REACT_SET = ['heart', 'fire', 'laugh', 'up', 'skull'];
 function chatReact(roomName, name, id, r) { if (!REACT_SET.includes(r)) return; const room = chatRoomOf(roomName); const msg = room.msgs.find(m => m.id === String(id || '').slice(0, 24)); if (!msg) return; msg.reacts = msg.reacts || {}; const arr = msg.reacts[r] = msg.reacts[r] || []; const ix = arr.indexOf(name); if (ix >= 0) arr.splice(ix, 1); else arr.push(name); if (!arr.length) delete msg.reacts[r]; chatBroadcast(room, { type: 'react', id: msg.id, reacts: msg.reacts }); }
 function chatPresence(roomName) { const room = chatRoomOf(roomName); chatBroadcast(room, { type: 'presence', n: room.socks.size }); }
@@ -4823,7 +5034,7 @@ function chatUpgrade(req, socket) {
   const pid = Math.random().toString(36).slice(2, 10);
   room.peers.set(socket, { pid, name, voice: false, disp: prof.disp, hue: prof.hue });
   try { socket.write(wsEncode(JSON.stringify({ type: 'rtc-id', id: pid }))); } catch {}
-  try { socket.write(wsEncode(JSON.stringify({ type: 'history', msgs: room.msgs.slice(-50) }))); } catch {}
+  try { socket.write(wsEncode(JSON.stringify({ type: 'history', msgs: room.msgs.slice(-50).map(enrichMsgAv) }))); } catch {}
   chatBroadcast(room, { type: 'sys', text: name + ' slid in ✦' });
   chatPresence(roomName);
   let buf = Buffer.alloc(0); let last = 0; let dead = false;
@@ -5311,7 +5522,7 @@ const server = http.createServer(async (req, res) => {
     if (item) { dup = true; item.voters.add(vk.key); persistReq(item); }
     else {
       if (GAME_REQUESTS.size >= 300) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ok: false, err: 'requests are full rn' })); }
-      item = { id: ++greqSeq, name, link, by: voterName(req), norm, voters: new Set([vk.key]), ts: Date.now() };
+      item = { id: ++greqSeq, name, link, by: voterName(req), byUser: voterUser(req), norm, voters: new Set([vk.key]), ts: Date.now() };
       GAME_REQUESTS.set(item.id, item); persistReq(item);
     }
     res.writeHead(200, { 'content-type': 'application/json' });
@@ -5330,7 +5541,7 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname.startsWith('/auth/')) {
     const kind = u.pathname.slice('/auth/'.length);
     const cookieTok = (req.headers.cookie || '').match(/six_sess=([a-f0-9]+)/);
-    if (kind === 'me') { const s = cookieTok ? SESSIONS.get(cookieTok[1]) : null; const okS = s && s.exp > Date.now(); const rec = okS ? ACCOUNTS.get(s.name.toLowerCase()) : null; res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ user: okS ? s.name : null, disp: rec ? (rec.disp || '') : '', bio: rec ? (rec.bio || '') : '', hue: rec ? validHue(rec.hue) : null })); }
+    if (kind === 'me') { const s = cookieTok ? SESSIONS.get(cookieTok[1]) : null; const okS = s && s.exp > Date.now(); const rec = okS ? ACCOUNTS.get(s.name.toLowerCase()) : null; res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ user: okS ? s.name : null, disp: rec ? (rec.disp || '') : '', bio: rec ? (rec.bio || '') : '', hue: rec ? validHue(rec.hue) : null, av: rec ? (rec.av || '') : '', status: rec ? (rec.status || '') : '', banner: rec ? validHue(rec.banner) : null, created: rec ? (rec.created || null) : null })); }
     if ((kind === 'signup' || kind === 'login') && req.method === 'POST') {
       const b = await readJsonBody(req);
       const name = String(b.user || '').trim(); const lower = name.toLowerCase(); const pass = String(b.pass || '');
@@ -5340,7 +5551,7 @@ const server = http.createServer(async (req, res) => {
         else if (RESERVED_NAMES.includes(lower)) out = { ok: false, err: 'that name is taken' };
         else if (pass.length < 4) out = { ok: false, err: 'password needs 4+ characters' };
         else if (ACCOUNTS.has(lower)) out = { ok: false, err: 'that name is taken — log in instead' };
-        else { const salt = randHex(16); ACCOUNTS.set(lower, { name, salt, hash: await sha256hex(salt + ':' + pass), disp: '', bio: '', hue: null }); persistAcct(lower); const token = randHex(24); SESSIONS.set(token, { name, exp: Date.now() + 30 * 24 * 3600e3 }); persistSess(token); out = { ok: true, user: name, token }; }
+        else { const salt = randHex(16); ACCOUNTS.set(lower, { name, salt, hash: await sha256hex(salt + ':' + pass), disp: '', bio: '', hue: null, av: '', status: '', banner: null, created: Date.now() }); persistAcct(lower); const token = randHex(24); SESSIONS.set(token, { name, exp: Date.now() + 30 * 24 * 3600e3 }); persistSess(token); out = { ok: true, user: name, token }; }
       } else {
         const rec = ACCOUNTS.get(lower);
         if (!rec) out = { ok: false, err: 'no account with that name — sign up first' };
@@ -5356,12 +5567,51 @@ const server = http.createServer(async (req, res) => {
       const s = cookieTok ? SESSIONS.get(cookieTok[1]) : null;
       const rec = s && s.exp > Date.now() ? ACCOUNTS.get(s.name.toLowerCase()) : null;
       if (!rec) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ok: false, err: 'log in first' })); }
-      const b = await readJsonBody(req);
-      rec.disp = cleanText(b.disp).slice(0, 24);
-      rec.bio = cleanText(b.bio).slice(0, 90);
-      rec.hue = validHue(b.hue); persistAcct(s.name.toLowerCase());
+      const b = await readJsonBody(req, 262144);
+      if ('disp' in b) rec.disp = cleanText(b.disp).slice(0, 24);
+      if ('bio' in b) rec.bio = cleanText(b.bio).slice(0, 90);
+      if ('hue' in b) rec.hue = validHue(b.hue);
+      if ('status' in b) rec.status = cleanText(b.status).slice(0, 40);
+      if ('banner' in b) rec.banner = validHue(b.banner);
+      if ('av' in b) { const av = validAv(b.av); if (av === null) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ok: false, err: 'avatar too big or not an image' })); } rec.av = av; }
+      if (!rec.created) rec.created = Date.now();
+      persistAcct(s.name.toLowerCase());
       res.writeHead(200, { 'content-type': 'application/json' });
-      return res.end(JSON.stringify({ ok: true, disp: rec.disp, bio: rec.bio, hue: rec.hue }));
+      return res.end(JSON.stringify({ ok: true, disp: rec.disp, bio: rec.bio, hue: rec.hue, av: rec.av || '', status: rec.status || '', banner: validHue(rec.banner) }));
+    }
+    if (kind === 'rename' && req.method === 'POST') {
+      const s = cookieTok ? SESSIONS.get(cookieTok[1]) : null;
+      const rec = s && s.exp > Date.now() ? ACCOUNTS.get(s.name.toLowerCase()) : null;
+      if (!rec) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ok: false, err: 'log in first' })); }
+      const b = await readJsonBody(req);
+      const name = String(b.name || '').trim(); const lower = name.toLowerCase();
+      let out;
+      if (!validUsername(lower)) out = { ok: false, err: 'username: 3-16 chars, lowercase letters, numbers, _ only' };
+      else if (RESERVED_NAMES.includes(lower)) out = { ok: false, err: 'that name is taken' };
+      else if (lower !== s.name.toLowerCase() && ACCOUNTS.has(lower)) out = { ok: false, err: 'that name is taken' };
+      else {
+        const oldLower = s.name.toLowerCase();
+        ACCOUNTS.delete(oldLower); storeDel('acct:' + oldLower);
+        rec.name = name; ACCOUNTS.set(lower, rec); persistAcct(lower);
+        for (const [tok, sess] of SESSIONS) { if (sess.name.toLowerCase() === oldLower) { sess.name = name; persistSess(tok); } }
+        for (const r of GAME_REQUESTS.values()) { if (r.byUser && r.byUser.toLowerCase() === oldLower) { r.byUser = name; if (r.by === s.name) r.by = rec.disp || name; persistReq(r); } }
+        out = { ok: true, user: name };
+      }
+      res.writeHead(200, { 'content-type': 'application/json' });
+      return res.end(JSON.stringify(out));
+    }
+    if (kind === 'pass' && req.method === 'POST') {
+      const s = cookieTok ? SESSIONS.get(cookieTok[1]) : null;
+      const rec = s && s.exp > Date.now() ? ACCOUNTS.get(s.name.toLowerCase()) : null;
+      if (!rec) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ok: false, err: 'log in first' })); }
+      const b = await readJsonBody(req);
+      const oldH = await sha256hex(rec.salt + ':' + String(b.old || ''));
+      let out;
+      if (oldH !== rec.hash) out = { ok: false, err: 'old password is wrong' };
+      else if (String(b.next || '').length < 4) out = { ok: false, err: 'new password needs 4+ characters' };
+      else { rec.salt = randHex(16); rec.hash = await sha256hex(rec.salt + ':' + String(b.next)); persistAcct(s.name.toLowerCase()); out = { ok: true }; }
+      res.writeHead(200, { 'content-type': 'application/json' });
+      return res.end(JSON.stringify(out));
     }
     if (kind === 'logout' && req.method === 'POST') { if (cookieTok) { SESSIONS.delete(cookieTok[1]); storeDel('sess:' + cookieTok[1]); } res.writeHead(200, { 'content-type': 'application/json', 'set-cookie': 'six_sess=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0' }); return res.end('{"ok":true}'); }
     res.writeHead(404, { 'content-type': 'application/json' }); return res.end('{"ok":false}');
@@ -5425,7 +5675,7 @@ const server = http.createServer(async (req, res) => {
     if (cleanRoom(u.searchParams.get('room')).startsWith('p-') && room.socks.size === 0 && room.msgs.length && room.pollAct && Date.now() - room.pollAct > 90000) room.msgs = [];
     room.pollAct = Date.now();
     const since = parseInt(u.searchParams.get('since') || '0', 10) || 0;
-    const msgs = since > 0 ? room.msgs.filter(m => m.ts > since) : room.msgs.slice(-50);
+    const msgs = (since > 0 ? room.msgs.filter(m => m.ts > since) : room.msgs.slice(-50)).map(enrichMsgAv);
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end(JSON.stringify({ msgs, n: room.socks.size }));
   }
@@ -5467,6 +5717,19 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/requests') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(requestsPage());
+  }
+  if (u.pathname.startsWith('/api/user/') && req.method === 'GET') {
+    const nm = decodeURIComponent(u.pathname.slice('/api/user/'.length)).toLowerCase();
+    const rec = ACCOUNTS.get(nm);
+    res.writeHead(200, { 'content-type': 'application/json' });
+    if (!rec) return res.end(JSON.stringify({ ok: false }));
+    let reqs = 0, votes = 0;
+    for (const r of GAME_REQUESTS.values()) { if (r.byUser && r.byUser.toLowerCase() === nm) { reqs++; votes += r.voters.size; } }
+    return res.end(JSON.stringify({ ok: true, user: rec.name, disp: rec.disp || '', av: rec.av || '', status: rec.status || '', bio: rec.bio || '', hue: validHue(rec.hue), banner: validHue(rec.banner), created: rec.created || null, reqs, votes }));
+  }
+  if (u.pathname.startsWith('/u/') && u.pathname.length > 3 && req.method === 'GET') {
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
+    return res.end(userPage());
   }
   if (u.pathname === '/play') {
     if (UV_OK() && u.searchParams.get('u')) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageUv(u.searchParams.get('u') || '', u.searchParams.get('t') || 'Game')); }
