@@ -475,7 +475,7 @@ footer,.foot{color:#5d5d66}
 }
 
 /* ===== v87 top bar + drip-down menu + animated sky ===== */
-#stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+#stars{position:fixed;inset:0;z-index:-1;pointer-events:none}
 body>*{position:relative;z-index:1}
 #topbar{position:fixed;top:0;left:0;right:0;z-index:60;height:56px;display:flex;align-items:center;gap:16px;padding:0 14px;background:rgba(6,5,3,.72);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);border-bottom:1px solid rgba(255,255,255,.08)}
 .tb-logo{font-weight:800;font-size:17px;color:#fafafa;text-decoration:none;letter-spacing:-.02em;flex:none}
@@ -934,7 +934,7 @@ function gamesPage(games) {
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{position:absolute;top:6px;right:8px;z-index:2;font-size:19px;line-height:1;color:rgba(255,255,255,.85);text-shadow:0 1px 6px rgba(0,0,0,.85);cursor:pointer;padding:3px 5px}.fav.on{color:#fbbf24}.chip{background:rgba(227,154,45,.14);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:700;font-family:inherit}.chip.on{background:rgba(227,154,45,.45)}
 #feat{position:relative;display:block;border-radius:20px;overflow:hidden;margin:4px 0 18px;border:1px solid rgba(255,236,200,.14);text-decoration:none;color:#fff;background:#0d0b08;width:100%;max-width:1120px}
-#feat img{width:100%;height:230px;object-fit:cover;display:block;opacity:.85}
+#feat img{width:100%;height:230px;object-fit:cover;display:block;opacity:1}
 #feat .feat-cap{position:absolute;left:0;right:0;bottom:0;padding:38px 18px 14px;background:linear-gradient(180deg,transparent,rgba(0,0,0,.82));display:flex;align-items:flex-end;gap:10px}
 #feat .feat-tag{font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#0a0a0b;background:#f6cf8d;border-radius:999px;padding:4px 9px;flex:none;margin-bottom:3px}
 #feat .feat-t{font-size:21px;font-weight:800;letter-spacing:-.01em}
