@@ -316,6 +316,7 @@ const SIDEBAR_HTML = `<button id="sbBtn" aria-label="menu"><svg width="19" heigh
 <a href="/yt"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg>youtube</a>
 <a href="/chat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>6ixchat</a>
 <a href="/ai"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>six ai</a>
+<a href="/space"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none"/><ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(-18 12 12)"/></svg>space</a>
 <a href="/hw"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>hw helper</a>
 <a href="/emu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="16.5" cy="11" r=".4" fill="currentColor"/><circle cx="18.5" cy="14" r=".4" fill="currentColor"/></svg>emulator</a>
 <a href="/tools"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>tools</a>
@@ -2455,6 +2456,159 @@ async function askSixDoc(env, text, mode) {
   return g ? stripActs(g).slice(0, 9000) : null;
 }
 
+function spacePage() {
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#000000"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+html,body{height:100%}
+body{display:block;padding:0;margin:0;overflow:hidden;background:#000}
+#void{position:fixed;inset:0;display:block}
+.halo{position:fixed;left:50%;top:42%;width:74vmin;height:74vmin;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(255,166,66,.16) 0%,rgba(255,120,40,.07) 34%,rgba(120,80,255,.045) 58%,transparent 70%);filter:blur(18px);pointer-events:none}
+.chrome{transition:opacity .6s ease}
+body.noui .chrome{opacity:0;pointer-events:none}
+.brand{position:fixed;top:calc(16px + env(safe-area-inset-top));left:20px;font-weight:800;font-size:16px;letter-spacing:-.01em;color:#fafafa;z-index:5}
+.brand span{color:#ffb36b}
+.mainbtn{position:fixed;top:calc(14px + env(safe-area-inset-top));right:16px;background:#f4f4f5;color:#0a0a0b;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:6px;z-index:5}
+.clockbox{position:fixed;left:0;right:0;top:66%;text-align:center;z-index:4;pointer-events:none;padding:0 16px}
+#clock{font-size:clamp(46px,10vw,86px);font-weight:300;letter-spacing:.05em;color:#f5f0e8;line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 0 34px rgba(255,170,80,.25)}
+#dateline{margin-top:9px;font-size:13.5px;letter-spacing:.14em;text-transform:lowercase;color:rgba(245,240,232,.55)}
+#breath{margin-top:15px;font-size:15px;letter-spacing:.3em;text-transform:lowercase;color:rgba(255,196,120,.85);min-height:20px;opacity:0;transition:opacity .8s ease}
+.controls{position:fixed;left:0;right:0;bottom:calc(20px + env(safe-area-inset-bottom));display:flex;gap:9px;justify-content:center;z-index:5;flex-wrap:wrap;padding:0 14px}
+.ctl{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);color:#e7e2d9;border-radius:999px;padding:9px 16px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.ctl:hover{background:rgba(255,255,255,.11)}
+.ctl.on{background:rgba(255,166,66,.18);border-color:rgba(255,166,66,.55);color:#ffd9a8}
+.hint{position:fixed;left:0;right:0;padding:0 18px;box-sizing:border-box;bottom:calc(64px + env(safe-area-inset-bottom));text-align:center;font-size:12px;color:rgba(245,240,232,.34);z-index:4;pointer-events:none}
+</style></head><body>
+<canvas id="void"></canvas><div class="halo"></div>
+<div class="brand chrome">six <span>✦</span> space</div>
+<a class="mainbtn chrome" href="/home"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>main page</a>
+<div class="clockbox chrome"><div id="clock">--:--</div><div id="dateline"></div><div id="breath"></div></div>
+<div class="hint chrome">a quiet place on the network — tap the view to bring the buttons back</div>
+<div class="controls chrome">
+<button class="ctl" id="bbreathe" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>breathe</button>
+<button class="ctl" id="bsound" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>sound</button>
+<button class="ctl" id="bhide" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>just the view</button>
+</div>
+<script src="/cloak.js"></script>
+<script>
+var cv = document.getElementById('void'), cx2 = cv.getContext('2d');
+var W = 0, H = 0, R = 60, DPR = 1;
+var calm = false; try { calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+function size() {
+  DPR = Math.min(1.5, window.devicePixelRatio || 1);
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  cx2.setTransform(DPR, 0, 0, DPR, 0, 0);
+  R = Math.max(54, Math.min(W, H) * 0.155);
+}
+window.addEventListener('resize', size); size();
+var stars = [], parts = [];
+for (var i = 0; i < 170; i++) stars.push({ x: Math.random(), y: Math.random(), r: Math.random() * 1.3 + 0.3, p: Math.random() * 6.28, s: 0.4 + Math.random() * 0.9 });
+function spawn(p, outer) {
+  p.r = R * (outer ? (2.3 + Math.random() * 0.7) : (1.18 + Math.pow(Math.random(), 1.4) * 1.75));
+  p.a = Math.random() * 6.283;
+  p.sz = 0.6 + Math.random() * 1.7;
+  p.hue = 24 + Math.random() * 22;
+  p.hot = Math.random() < 0.14;
+  return p;
+}
+for (var j = 0; j < 300; j++) parts.push(spawn({}, false));
+var breathe = false, bT0 = 0;
+function breathScale(now) {
+  if (!breathe) return 1;
+  var cyc = ((now - bT0) % 16000) / 1000;
+  var ph = cyc < 4 ? 0 : cyc < 8 ? 1 : cyc < 12 ? 2 : 3;
+  var pr = (cyc % 4) / 4, sm = pr * pr * (3 - 2 * pr);
+  var sc = ph === 0 ? 1 + 0.05 * sm : ph === 1 ? 1.05 : ph === 2 ? 1.05 - 0.05 * sm : 1;
+  var bt = document.getElementById('breath');
+  var label = ph === 0 ? 'breathe in' : ph === 1 ? 'hold' : ph === 2 ? 'breathe out' : 'hold';
+  if (bt && bt.textContent !== label) bt.textContent = label;
+  return sc;
+}
+var last = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  var dt = Math.min(50, now - (last || now)); last = now;
+  var cxp = W / 2, cyp = H * 0.42;
+  var sc = breathScale(now) * (calm ? 1 : 1 + 0.006 * Math.sin(now / 3400));
+  var rr = R * sc;
+  cx2.clearRect(0, 0, W, H);
+  cx2.globalCompositeOperation = 'source-over';
+  for (var i = 0; i < stars.length; i++) { var st = stars[i]; var tw = 0.35 + 0.65 * Math.abs(Math.sin(now / 1000 * st.s + st.p)); cx2.globalAlpha = 0.75 * tw; cx2.fillStyle = '#dfe8ff'; cx2.beginPath(); cx2.arc(st.x * W, st.y * H, st.r, 0, 6.283); cx2.fill(); }
+  cx2.globalAlpha = 1;
+  cx2.globalCompositeOperation = 'lighter';
+  function drawPart(p, front) {
+    var y = Math.sin(p.a);
+    if (front ? y < 0 : y >= 0) return;
+    var x = cxp + Math.cos(p.a) * p.r, yy = cyp + y * p.r * 0.36;
+    var dop = 0.55 + 0.5 * Math.cos(p.a + 0.7);
+    var fade = Math.min(1, (p.r / rr - 1.1) * 2.2 + 0.25);
+    cx2.globalAlpha = Math.max(0.05, 0.8 * dop * fade);
+    cx2.fillStyle = p.hot ? '#fff3df' : 'hsl(' + p.hue + ',92%,' + (52 + dop * 16) + '%)';
+    cx2.beginPath(); cx2.arc(x, yy, p.sz * (0.7 + dop * 0.5), 0, 6.283); cx2.fill();
+  }
+  var spd = (calm ? 0.25 : 1) * dt / 16.7;
+  for (var k = 0; k < parts.length; k++) { var p = parts[k]; p.a += spd * 0.55 / Math.pow(p.r / rr, 1.5) * 0.016; p.r -= spd * rr * 0.0035 * (60 / Math.max(30, p.r)); if (p.r < rr * 1.13) spawn(p, true); drawPart(p, false); }
+  cx2.globalCompositeOperation = 'source-over';
+  cx2.globalAlpha = 1;
+  cx2.fillStyle = '#000';
+  cx2.beginPath(); cx2.arc(cxp, cyp, rr, 0, 6.283); cx2.fill();
+  cx2.save();
+  cx2.shadowColor = 'rgba(255,180,90,.95)'; cx2.shadowBlur = 26;
+  cx2.strokeStyle = 'rgba(255,214,150,.95)'; cx2.lineWidth = 2;
+  cx2.beginPath(); cx2.arc(cxp, cyp, rr + 1, 0, 6.283); cx2.stroke();
+  cx2.restore();
+  cx2.globalCompositeOperation = 'lighter';
+  for (var k2 = 0; k2 < parts.length; k2++) drawPart(parts[k2], true);
+  cx2.globalAlpha = 1; cx2.globalCompositeOperation = 'source-over';
+}
+requestAnimationFrame(frame);
+var days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+var months = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+function tick() {
+  var d = new Date(), h = d.getHours(), m = d.getMinutes();
+  var hh = h % 12; if (hh === 0) hh = 12;
+  document.getElementById('clock').textContent = hh + ':' + (m < 10 ? '0' : '') + m;
+  var mood = (h >= 23 || h < 4) ? 'the quiet hours' : h < 6 ? 'almost morning' : h < 12 ? 'morning' : h < 18 ? 'daytime' : h < 21 ? 'evening' : 'night settlin in';
+  document.getElementById('dateline').textContent = days[d.getDay()] + ' · ' + months[d.getMonth()] + ' ' + d.getDate() + ' · ' + mood;
+}
+tick(); setInterval(tick, 5000);
+var actx = null, master = null, soundOn = false;
+function toggleSound() {
+  var btn = document.getElementById('bsound');
+  if (!actx) {
+    try {
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      master = actx.createGain(); master.gain.value = 0;
+      var lp = actx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 240;
+      master.connect(lp); lp.connect(actx.destination);
+      [[54, 'sine', 0.5], [108.3, 'sine', 0.22], [162.7, 'triangle', 0.07]].forEach(function (cfg) { var o = actx.createOscillator(); o.type = cfg[1]; o.frequency.value = cfg[0]; var g = actx.createGain(); g.gain.value = cfg[2]; o.connect(g); g.connect(master); o.start(); });
+      var lfo = actx.createOscillator(); lfo.frequency.value = 0.07; var lg = actx.createGain(); lg.gain.value = 0.012; lfo.connect(lg); lg.connect(master.gain); lfo.start();
+    } catch (e) { return; }
+  }
+  if (actx.state === 'suspended') actx.resume();
+  soundOn = !soundOn;
+  master.gain.setTargetAtTime(soundOn ? 0.05 : 0, actx.currentTime, 1.2);
+  btn.classList.toggle('on', soundOn);
+}
+document.getElementById('bsound').addEventListener('click', toggleSound);
+document.getElementById('bbreathe').addEventListener('click', function () {
+  breathe = !breathe; bT0 = performance.now();
+  this.classList.toggle('on', breathe);
+  var bt = document.getElementById('breath');
+  bt.style.opacity = breathe ? '1' : '0';
+  if (!breathe) bt.textContent = '';
+});
+document.getElementById('bhide').addEventListener('click', function () { document.body.classList.add('noui'); });
+document.addEventListener('click', function (e) { if (document.body.classList.contains('noui') && e.target === cv) document.body.classList.remove('noui'); });
+</script>
+</body>
+</html>`;
+}
+
+
 function hwPage() {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
@@ -3118,6 +3272,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style>
 <a class="lcard" href="/yt"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg><b>youtube</b><span>watch without ever leaving</span></a>
 <a class="lcard" href="/chat"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><b>6ixchat</b><span>rooms, voice + video, the group chat</span></a>
 <a class="lcard" href="/ai"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><b>six ai</b><span>ask six anything — he answers in the room too</span></a>
+<a class="lcard" href="/space"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none"/><ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(-18 12 12)"/></svg><b>space</b><span>a calm black hole for late nights</span></a>
 <a class="lcard" href="/hw"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><b>hw helper</b><span>paste the hw or a screenshot, six handles it</span></a>
 <a class="lcard" href="/emu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="16.5" cy="11" r=".4" fill="currentColor"/><circle cx="18.5" cy="14" r=".4" fill="currentColor"/></svg><b>emulator</b><span>retro consoles in the browser</span></a>
 </div>
@@ -4493,6 +4648,10 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/apps') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(appsPage());
+  }
+  if (u.pathname === '/space') {
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
+    return res.end(spacePage());
   }
   if (u.pathname === '/play') {
     if (UV_OK() && u.searchParams.get('u')) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageUv(u.searchParams.get('u') || '', u.searchParams.get('t') || 'Game')); }
