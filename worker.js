@@ -2987,7 +2987,14 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .sec{background:#171310;border:1px solid rgba(255,236,200,.13);border-radius:18px;padding:16px 18px;margin-bottom:16px}
 .sec h3{margin:0 0 10px;font-size:16px}
 .sec label{display:block;font-size:13px;color:#a79e8d;margin:12px 0 2px}
-.sec input[type=range]{width:100%;accent-color:#e39a2d;margin:6px 0 4px}
+.wheel{position:relative;width:56px;height:56px;border-radius:50%;flex:none;background:conic-gradient(#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid rgba(255,236,200,.3)}
+.wheel i{width:36px;height:36px;border-radius:50%;display:block;background:#3f3f46;border:2px solid rgba(0,0,0,.45);pointer-events:none}
+.wheel.off{filter:grayscale(.9);opacity:.5}
+.wheel input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;padding:0;margin:0;border:none;background:none;-webkit-appearance:none;appearance:none}
+.wmeta{display:flex;flex-direction:column;gap:1px}
+.wmeta b{font-size:14.5px;color:#f4f4f5}
+.wmeta span{font-size:12.5px;color:#a79e8d}
+.autobtn{margin-left:auto}
 .rowflex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .swatch{width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,236,200,.3);flex:none}
 .chk{display:flex;gap:7px;align-items:center;font-size:13.5px;color:#d8d2c4}
@@ -3027,9 +3034,9 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <label>status</label><input id="eStatus" type="text" maxlength="40" placeholder="in class, gaming, up late..." autocomplete="off">
 <label>bio</label><textarea id="eBio" rows="3" maxlength="90" placeholder="a couple lines about u"></textarea>
 <label>name color</label>
-<div class="rowflex"><div class="swatch" id="hueSw"></div><input id="eHue" type="range" min="0" max="359" value="36" style="flex:1"><label class="chk"><input id="eHueAuto" type="checkbox"> auto</label></div>
+<div class="rowflex"><label class="wheel" id="hueWheel"><i id="hueDot"></i><input id="eHue" type="color" value="#e39a2d"></label><div class="wmeta"><b id="hueHex">#e39a2d</b><span>tap the wheel — pick any color</span></div><button class="chip autobtn" id="eHueAuto" type="button">auto</button></div>
 <label>banner color</label>
-<div class="rowflex"><div class="swatch" id="banSw"></div><input id="eBanner" type="range" min="0" max="359" value="36" style="flex:1"><label class="chk"><input id="eBannerAuto" type="checkbox"> default</label></div>
+<div class="rowflex"><label class="wheel" id="banWheel"><i id="banDot"></i><input id="eBanner" type="color" value="#e39a2d"></label><div class="wmeta"><b id="banHex">#e39a2d</b><span>tap the wheel — pick any color</span></div><button class="chip autobtn" id="eBannerAuto" type="button">default</button></div>
 <label>avatar</label>
 <div class="avrow"><div class="avprev" id="avPrev"></div><button class="chip" id="avPick" type="button">upload pic</button><button class="chip" id="avRemove" type="button">remove</button><input id="avFile" type="file" accept="image/*" hidden></div>
 <div class="btnrow"><button class="chip" id="eSave" type="button" style="background:#f6cf8d;color:#171106;border-color:#f6cf8d">save profile</button></div>
@@ -3056,18 +3063,30 @@ var MONTHS=['january','february','march','april','may','june','july','august','s
 var me=null, avData='', avDirty=false;
 function $(id){ return document.getElementById(id); }
 function hueCss(h, l){ return 'hsl(' + h + ',70%,' + (l || 65) + '%)'; }
+var nameHue = null, banHue = null;
+function hueToHex(h){ h = ((h % 360) + 360) % 360; var x = 1 - Math.abs(((h / 60) % 2) - 1), r = 0, g = 0, b = 0;
+  if(h < 60){ r = 1; g = x; } else if(h < 120){ r = x; g = 1; } else if(h < 180){ g = 1; b = x; } else if(h < 240){ g = x; b = 1; } else if(h < 300){ r = x; b = 1; } else { r = 1; b = x; }
+  var p = function(v){ var s = Math.round(v * 255).toString(16); return s.length < 2 ? '0' + s : s; };
+  return '#' + p(r) + p(g) + p(b); }
+function hexToHue(hex){ var r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, b = parseInt(hex.slice(5, 7), 16) / 255;
+  var mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn; if(!d) return 0;
+  var h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60; return Math.round(h < 0 ? h + 360 : h); }
 function paintPreview(){
   if(!me) return;
   var disp = $('eDisp').value || me.user;
   $('pvDisp').textContent = disp;
-  $('pvDisp').style.color = $('eHueAuto').checked ? '' : hueCss(+$('eHue').value, 72);
+  $('pvDisp').style.color = nameHue === null ? '' : hueCss(nameHue, 72);
   $('pvName').textContent = '@' + me.user;
   var st = $('eStatus').value; $('pvStatus').textContent = st; $('pvStatus').style.display = st ? '' : 'none';
   var bio = $('eBio').value; $('pvBio').textContent = bio; $('pvBio').style.display = bio ? '' : 'none';
-  var bh = $('eBannerAuto').checked ? null : +$('eBanner').value;
+  var bh = banHue;
   $('pvBanner').style.background = (bh === null) ? 'linear-gradient(120deg,#3a2a12,#171106)' : 'linear-gradient(120deg,hsl(' + bh + ',55%,32%),hsl(' + ((bh + 40) % 360) + ',60%,18%))';
-  $('hueSw').style.background = $('eHueAuto').checked ? '#3f3f46' : hueCss(+$('eHue').value, 45);
-  $('banSw').style.background = $('eBannerAuto').checked ? '#3a2a12' : ('hsl(' + $('eBanner').value + ',55%,32%)');
+  $('hueDot').style.background = nameHue === null ? '#3f3f46' : hueCss(nameHue, 45);
+  $('hueHex').textContent = nameHue === null ? 'auto' : hueToHex(nameHue);
+  $('hueWheel').className = 'wheel' + (nameHue === null ? ' off' : '');
+  $('banDot').style.background = banHue === null ? '#3a2a12' : ('hsl(' + banHue + ',55%,32%)');
+  $('banHex').textContent = banHue === null ? 'default amber' : hueToHex(banHue);
+  $('banWheel').className = 'wheel' + (banHue === null ? ' off' : '');
   var since = me.created ? ('member since ' + MONTHS[new Date(me.created).getMonth()] + ' ' + new Date(me.created).getFullYear() + ' · ') : '';
   $('pvMeta').innerHTML = '';
   var sp = document.createElement('span'); sp.textContent = since;
@@ -3080,7 +3099,7 @@ function paintAv(){
   targets.forEach(function(el){
     el.innerHTML = '';
     if(avData){ var im = document.createElement('img'); im.src = avData; im.alt = ''; el.appendChild(im); }
-    else { el.textContent = ((me && (me.disp || me.user)) || 'a').slice(0, 1).toUpperCase(); el.style.background = $('eHueAuto').checked ? '#3f3f46' : hueCss(+$('eHue').value, 38); }
+    else { el.textContent = ((me && (me.disp || me.user)) || 'a').slice(0, 1).toUpperCase(); el.style.background = nameHue === null ? '#3f3f46' : hueCss(nameHue, 38); }
   });
 }
 function fillEditor(o){
@@ -3088,8 +3107,8 @@ function fillEditor(o){
   $('eDisp').value = o.disp || '';
   $('eStatus').value = o.status || '';
   $('eBio').value = o.bio || '';
-  if(o.hue === null || o.hue === undefined){ $('eHueAuto').checked = true; } else { $('eHueAuto').checked = false; $('eHue').value = o.hue; }
-  if(o.banner === null || o.banner === undefined){ $('eBannerAuto').checked = true; } else { $('eBannerAuto').checked = false; $('eBanner').value = o.banner; }
+  nameHue = (o.hue === null || o.hue === undefined) ? null : o.hue; if(nameHue !== null) $('eHue').value = hueToHex(nameHue);
+  banHue = (o.banner === null || o.banner === undefined) ? null : o.banner; if(banHue !== null) $('eBanner').value = hueToHex(banHue);
   avData = o.av || ''; avDirty = false;
   paintPreview();
 }
@@ -3098,9 +3117,15 @@ function loadMe(){
     if(o && o.user){ $('forms').hidden = true; $('editor').hidden = false; fillEditor(o); }
   }).catch(function(){});
 }
-['eDisp','eStatus','eBio','eHue','eBanner','eHueAuto','eBannerAuto'].forEach(function(id){
+['eDisp','eStatus','eBio'].forEach(function(id){
   var el = $(id); if(el){ el.addEventListener('input', paintPreview); el.addEventListener('change', paintPreview); }
 });
+function pickHue(){ nameHue = hexToHue($('eHue').value); paintPreview(); }
+$('eHue').addEventListener('input', pickHue); $('eHue').addEventListener('change', pickHue);
+function pickBan(){ banHue = hexToHue($('eBanner').value); paintPreview(); }
+$('eBanner').addEventListener('input', pickBan); $('eBanner').addEventListener('change', pickBan);
+$('eHueAuto').addEventListener('click', function(){ nameHue = null; paintPreview(); });
+$('eBannerAuto').addEventListener('click', function(){ banHue = null; paintPreview(); });
 $('avPick').addEventListener('click', function(){ $('avFile').click(); });
 $('avRemove').addEventListener('click', function(){ avData = ''; avDirty = true; paintAv(); });
 $('avFile').addEventListener('change', function(){
@@ -3125,7 +3150,7 @@ $('avFile').addEventListener('change', function(){
   img.src = url;
 });
 $('eSave').addEventListener('click', function(){
-  var body = { disp: $('eDisp').value.trim(), status: $('eStatus').value.trim(), bio: $('eBio').value.trim(), hue: $('eHueAuto').checked ? null : +$('eHue').value, banner: $('eBannerAuto').checked ? null : +$('eBanner').value };
+  var body = { disp: $('eDisp').value.trim(), status: $('eStatus').value.trim(), bio: $('eBio').value.trim(), hue: nameHue, banner: banHue };
   if(avDirty) body.av = avData;
   $('eMsg').textContent = 'saving...';
   fetch('/auth/profile', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
