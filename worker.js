@@ -3422,21 +3422,24 @@ function renderBtabs(){
       (function(tb2, fr){
         if(!tb2.raw) return;
         var tries = 0;
+        var swap = function(){
+          tb2.rescued = true; clearInterval(iv);
+          var isU = tb2.raw.indexOf('://') > 0 || (tb2.raw.indexOf(' ') < 0 && tb2.raw.indexOf('.') > 0);
+          var dest = isU ? tb2.raw : ('https://www.bing.com/search?q=' + encodeURIComponent(tb2.raw));
+          fr.src = '/go?q=' + encodeURIComponent(dest) + '&classic=1';
+          var vv2 = stage.querySelector('[data-veil="' + tb2.id + '"]'); if(vv2) vv2.remove();
+        };
         var iv = setInterval(function(){
           tries++;
-          if(tries > 25 || tb2.rescued) { clearInterval(iv); return; }
+          if(tb2.rescued) { clearInterval(iv); return; }
           var doc = null;
           try { doc = fr.contentWindow.document; } catch(e) {}
           if(doc && doc.body) {
             var txt = (doc.body.textContent || '').slice(0, 1500);
-            if(/error processing your request|failed to load/i.test(txt)) {
-              tb2.rescued = true; clearInterval(iv);
-              var isU = tb2.raw.indexOf('://') > 0 || (tb2.raw.indexOf(' ') < 0 && tb2.raw.indexOf('.') > 0);
-              var dest = isU ? tb2.raw : ('https://www.bing.com/search?q=' + encodeURIComponent(tb2.raw));
-              fr.src = '/go?q=' + encodeURIComponent(dest) + '&classic=1';
-              var vv2 = stage.querySelector('[data-veil="' + tb2.id + '"]'); if(vv2) vv2.remove();
-            } else if(txt.trim().length > 60) { clearInterval(iv); }
-          }
+            if(/error processing your request|failed to load/i.test(txt)) { swap(); }
+            else if(txt.trim().length > 60) { clearInterval(iv); }
+            else if(tries >= 25) { swap(); }
+          } else if(tries >= 25) { swap(); }
         }, 1200);
       })(tb, f);
     }
