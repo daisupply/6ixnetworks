@@ -3511,6 +3511,17 @@ body{height:100dvh;display:flex;flex-direction:column;overflow:hidden;box-sizing
 .veil{border-radius:0}
 #ntp{flex:1;overflow-y:auto;width:100%}
 @media(max-width:820px){ #stage{padding-bottom:74px} }
+
+/* ===== v109 browser-true shell: full bleed, frame flush, bg only on home tab ===== */
+body{padding:56px 0 0}
+body.has-tb{padding-top:56px}
+#tabstrip{background:#16120d;margin:0;padding:6px 8px 0;border:0;border-radius:0}
+#toolbar{margin:0;border-radius:0;border-left:0;border-right:0;padding:6px 8px}
+#toolbar #omni{padding:4px 4px 4px 10px}
+#omni input{padding:8px 6px}
+#stage{padding:0}
+#ntp{padding:0 16px}
+@media(max-width:820px){ #stage{padding-bottom:0} }
 </style></head>
 <body>${STAR_CANVAS}
 <div id="tabstrip"></div>
