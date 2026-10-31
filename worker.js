@@ -736,7 +736,7 @@ function normalizeInput(q) {
   if (!s) return null;
   if (/^https?:\/\//i.test(s)) return s;
   if (/^[^\s]+\.[a-z]{2,}(\/\S*)?$/i.test(s)) return 'https://' + s;
-  return 'https://www.google.com/search?q=' + encodeURIComponent(s);
+  return 'https://duckduckgo.com/?q=' + encodeURIComponent(s);
 }
 
 
@@ -3329,7 +3329,7 @@ body.sb-off #stage iframe{height:78dvh}
     <input name="q" type="text" placeholder="search or type a site \u2726" autocomplete="off" autofocus list="sg">
     <button type="submit">go</button>
   </form></div>
-<div id="engbar"><div id="engseg"><button type="button" data-eng="google" class="on">google</button><button type="button" data-eng="bing">bing</button><button type="button" data-eng="ddg">duckduckgo</button></div></div><datalist id="sg"></datalist>
+<div id="engbar"><div id="engseg"><button type="button" data-eng="ddg" class="on">duckduckgo</button><button type="button" data-eng="google">google</button><button type="button" data-eng="bing">bing</button></div></div><datalist id="sg"></datalist>
 <div id="stage"></div>
 <div id="ntp">
 <div class="hero"><h1>6ix<span>networks</span></h1><p>search the whole web thru the network — everything runs on the engine now</p></div>
@@ -3461,9 +3461,9 @@ function closeBtab(ix){
   bsave(); renderBtabs();
 }
 var ENGINES={ google:'https://www.google.com/search?q=', bing:'https://www.bing.com/search?q=', ddg:'https://duckduckgo.com/?q=' };
-function engUrl(q){ var e='google'; try{ e=localStorage.getItem('gx_eng')||'google'; }catch(x){} if(!ENGINES[e]) e='google'; return ENGINES[e]+encodeURIComponent(q); }
-function setEng(e){ if(!ENGINES[e]) e='google'; try{ localStorage.setItem('gx_eng', e); }catch(x){} document.querySelectorAll('#engseg button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-eng')===e); }); }
-(function(){ var cur='google'; try{ cur=localStorage.getItem('gx_eng')||'google'; }catch(x){} document.querySelectorAll('#engseg button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-eng')===cur); b.addEventListener('click', function(){ setEng(b.getAttribute('data-eng')); }); }); })();
+function engUrl(q){ var e='ddg'; try{ e=localStorage.getItem('gx_eng')||'ddg'; }catch(x){} if(!ENGINES[e]) e='ddg'; return ENGINES[e]+encodeURIComponent(q); }
+function setEng(e){ if(!ENGINES[e]) e='ddg'; try{ localStorage.setItem('gx_eng', e); }catch(x){} document.querySelectorAll('#engseg button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-eng')===e); }); }
+(function(){ var cur='ddg'; try{ cur=localStorage.getItem('gx_eng')||'ddg'; }catch(x){} document.querySelectorAll('#engseg button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-eng')===cur); b.addEventListener('click', function(){ setEng(b.getAttribute('data-eng')); }); }); })();
 function actFrame(){ var act=btabs[bactive]; if(!act) return null; return document.querySelector('#stage iframe[data-bid="'+act.id+'"]'); }
 var nb=document.getElementById('nback'), nf=document.getElementById('nfwd'), nr=document.getElementById('nreload');
 if(nb) nb.addEventListener('click', function(){ var f=actFrame(); if(f){ try{ f.contentWindow.history.back(); }catch(e){} } });
