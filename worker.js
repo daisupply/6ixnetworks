@@ -287,7 +287,7 @@ const TABBAR_HTML = `<nav id="tabbar"><a href="/home"><svg width="21" height="21
 <script>
 (function(){ if (window.parent !== window) { document.documentElement.classList.add('gx-framed'); var bar0 = document.getElementById('tabbar'); if (bar0) bar0.style.bottom = '6px'; var sh0 = document.getElementById('tabSheet'); if (sh0) sh0.style.bottom = '80px'; } var p = location.pathname; document.querySelectorAll('#tabbar a, #tabSheet a').forEach(function(a){ if (a.getAttribute('href') === p) a.classList.add('on'); }); var tm = document.getElementById('tabMore'), sh = document.getElementById('tabSheet'); if (tm && sh) { tm.addEventListener('click', function(){ sh.classList.toggle('open'); }); document.addEventListener('click', function(e){ if (sh.classList.contains('open') && !sh.contains(e.target) && !tm.contains(e.target)) sh.classList.remove('open'); }); } })();
 </script>`;
-const SIDEBAR_HTML = `<canvas id=\"stars\"></canvas><script src=\"/stars.js\"></script><header id=\"topbar\"><a class=\"tb-logo\" href=\"/home\">6ix<span>networks</span></a><nav class=\"tb-links\"><a href=\"/home\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg>home</a><a href=\"/gs\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>games</a><a href=\"/apps\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2\" width=\"10\" height=\"20\" rx=\"2\"/><path d=\"M12 18h.01\"/></svg>apps</a><a href=\"/yt\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"4\"/><path d=\"m10 9 5 3-5 3z\" fill=\"currentColor\" stroke=\"none\"/></svg>youtube</a><a href=\"/chat\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg>6ixchat</a><a href=\"/ai\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>six ai</a></nav><div class=\"tb-menuwrap\"><button id=\"menuBtn\" type=\"button\" aria-label=\"menu\">menu<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\"/></svg></button><div id=\"dropmenu\"><div class=\"dm-grid\"><a href=\"/home\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg>home</a><a href=\"/search\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m21 21-4.3-4.3\"/></svg>search</a><a href=\"/gs\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>games</a><a href=\"/apps\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2\" width=\"10\" height=\"20\" rx=\"2\"/><path d=\"M12 18h.01\"/></svg>apps</a><a href=\"/yt\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"4\"/><path d=\"m10 9 5 3-5 3z\" fill=\"currentColor\" stroke=\"none\"/></svg>youtube</a><a href=\"/chat\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg>6ixchat</a><a href=\"/ai\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>six ai</a><a href=\"/space\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"3.2\" fill=\"currentColor\" stroke=\"none\"/><ellipse cx=\"12\" cy=\"12\" rx=\"10\" ry=\"4.2\" transform=\"rotate(-18 12 12)\"/></svg>space</a><a href=\"/hw\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\"/><path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"/></svg>hw helper</a><a href=\"/emu\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"7\" width=\"20\" height=\"11\" rx=\"5\"/><path d=\"M7.5 10.5v4M5.5 12.5h4\"/><circle cx=\"16.5\" cy=\"11\" r=\".4\" fill=\"currentColor\"/><circle cx=\"18.5\" cy=\"14\" r=\".4\" fill=\"currentColor\"/></svg>emulator</a><a href=\"/tools\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1\"/><circle cx=\"16\" cy=\"6\" r=\"2\"/><circle cx=\"10\" cy=\"12\" r=\"2\"/><circle cx=\"18\" cy=\"18\" r=\"2\"/></svg>tools</a><a href=\"/account\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg>account</a></div><div class=\"dm-sec\">disguise</div><div class=\"sb-cloak\"><button onclick=\"cloakTab('google')\">google</button><button onclick=\"cloakTab('classroom')\">classroom</button><button onclick=\"cloakTab('docs')\">docs</button><button onclick=\"cloakTab('drive')\">drive</button><button onclick=\"cloakOpen()\">open cloaked tab</button></div><div class=\"dm-foot\">everything stays inside the network — nothing loads from its home site</div></div></div></header>${TABBAR_HTML}<script>
+const SIDEBAR_HTML = `<canvas id=\"stars\"></canvas><script src=\"/stars.js?e=92\"></script><header id=\"topbar\"><a class=\"tb-logo\" href=\"/home\">6ix<span>networks</span></a><nav class=\"tb-links\"><a href=\"/home\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg>home</a><a href=\"/gs\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>games</a><a href=\"/apps\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2\" width=\"10\" height=\"20\" rx=\"2\"/><path d=\"M12 18h.01\"/></svg>apps</a><a href=\"/yt\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"4\"/><path d=\"m10 9 5 3-5 3z\" fill=\"currentColor\" stroke=\"none\"/></svg>youtube</a><a href=\"/chat\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg>6ixchat</a><a href=\"/ai\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>six ai</a></nav><div class=\"tb-menuwrap\"><button id=\"menuBtn\" type=\"button\" aria-label=\"menu\">menu<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\"/></svg></button><div id=\"dropmenu\"><div class=\"dm-grid\"><a href=\"/home\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg>home</a><a href=\"/search\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m21 21-4.3-4.3\"/></svg>search</a><a href=\"/gs\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>games</a><a href=\"/apps\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2\" width=\"10\" height=\"20\" rx=\"2\"/><path d=\"M12 18h.01\"/></svg>apps</a><a href=\"/yt\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"4\"/><path d=\"m10 9 5 3-5 3z\" fill=\"currentColor\" stroke=\"none\"/></svg>youtube</a><a href=\"/chat\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg>6ixchat</a><a href=\"/ai\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>six ai</a><a href=\"/space\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"3.2\" fill=\"currentColor\" stroke=\"none\"/><ellipse cx=\"12\" cy=\"12\" rx=\"10\" ry=\"4.2\" transform=\"rotate(-18 12 12)\"/></svg>space</a><a href=\"/hw\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\"/><path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"/></svg>hw helper</a><a href=\"/emu\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"7\" width=\"20\" height=\"11\" rx=\"5\"/><path d=\"M7.5 10.5v4M5.5 12.5h4\"/><circle cx=\"16.5\" cy=\"11\" r=\".4\" fill=\"currentColor\"/><circle cx=\"18.5\" cy=\"14\" r=\".4\" fill=\"currentColor\"/></svg>emulator</a><a href=\"/tools\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1\"/><circle cx=\"16\" cy=\"6\" r=\"2\"/><circle cx=\"10\" cy=\"12\" r=\"2\"/><circle cx=\"18\" cy=\"18\" r=\"2\"/></svg>tools</a><a href=\"/account\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg>account</a></div><div class=\"dm-sec\">disguise</div><div class=\"sb-cloak\"><button onclick=\"cloakTab('google')\">google</button><button onclick=\"cloakTab('classroom')\">classroom</button><button onclick=\"cloakTab('docs')\">docs</button><button onclick=\"cloakTab('drive')\">drive</button><button onclick=\"cloakOpen()\">open cloaked tab</button></div><div class=\"dm-foot\">everything stays inside the network — nothing loads from its home site</div></div></div></header>${TABBAR_HTML}<script>
 (function(){ document.body.classList.add('has-tb'); var p = location.pathname; document.querySelectorAll('.tb-links a,.dm-grid a').forEach(function(a){ if (a.getAttribute('href') === p) a.classList.add('on'); });
 var mb = document.getElementById('menuBtn');
 if (mb) mb.addEventListener('click', function(e){ e.stopPropagation(); document.body.classList.toggle('menu-open'); });
@@ -504,7 +504,7 @@ const STARS_JS = `
   var DPR=Math.min(window.devicePixelRatio||1,1.5);
   var reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var clouds=[];
-  var CDEFS=[{a:0.055,hue:'232,160,60'},{a:0.04,hue:'246,207,141'},{a:0.05,hue:'217,130,40'},{a:0.03,hue:'235,230,255'},{a:0.045,hue:'232,160,60'}];
+  var CDEFS=[{a:0.07,hue:'232,160,60'},{a:0.052,hue:'246,207,141'},{a:0.064,hue:'217,130,40'},{a:0.04,hue:'235,230,255'},{a:0.058,hue:'232,160,60'}];
   function seedClouds(){ clouds=[];
     for(var i=0;i<CDEFS.length;i++){ var d=CDEFS[i];
       clouds.push({x:0.12+Math.random()*0.76,y:0.1+Math.random()*0.7,vx:0,vy:0,tx:0.12+Math.random()*0.76,ty:0.1+Math.random()*0.7,r:0.34+Math.random()*0.3,vr:0,a:d.a*(0.75+Math.random()*0.5),va:0,hue:d.hue,pick:600+Math.floor(Math.random()*1500),wob:Math.random()*6.28});
@@ -530,7 +530,7 @@ const STARS_JS = `
       if(spd>0.00045){ cl.vx=cl.vx/spd*0.00045; cl.vy=cl.vy/spd*0.00045; }
       cl.x+=cl.vx; cl.y+=cl.vy;
       cl.vr += (Math.random()-0.5)*0.00012; cl.vr*=0.99; cl.r+=cl.vr; if(cl.r<0.24){ cl.r=0.24; cl.vr=0; } if(cl.r>0.72){ cl.r=0.72; cl.vr=0; }
-      cl.va += (Math.random()-0.5)*0.00006; cl.va*=0.99; cl.a+=cl.va; if(cl.a<0.018){ cl.a=0.018; cl.va=0; } if(cl.a>0.08){ cl.a=0.08; cl.va=0; }
+      cl.va += (Math.random()-0.5)*0.00006; cl.va*=0.99; cl.a+=cl.va; if(cl.a<0.024){ cl.a=0.024; cl.va=0; } if(cl.a>0.105){ cl.a=0.105; cl.va=0; }
       cl.wob += 0.0035;
       var ccx=cl.x*W, ccy=cl.y*H, ccr=cl.r*Math.max(W,H);
       for(var sb=0;sb<SUB;sb++){
@@ -541,7 +541,7 @@ const STARS_JS = `
         ctx.fillStyle=gg; ctx.fillRect(gx2-gr2,gy2-gr2,gr2*2,gr2*2);
       }
     }
-    ctx.globalCompositeOperation='source-over';    for(var i=0;i<stars.length;i++){ var st=stars[i]; st.p+=st.s*0.016; st.y-=st.d; st.x-=st.dx; if(st.y<-2){ st.y=H+2; st.x=Math.random()*W; } if(st.x<-2){ st.x=W+2; }
+    ctx.globalCompositeOperation='source-over';    for(var i=0;i<stars.length;i++){ var st=stars[i]; if(!reduced){ st.p+=st.s*0.016; st.y-=st.d; st.x-=st.dx; } if(st.y<-2){ st.y=H+2; st.x=Math.random()*W; } if(st.x<-2){ st.x=W+2; }
       var a=0.35+0.65*Math.abs(Math.sin(st.p));
       ctx.beginPath(); ctx.arc(st.x,st.y,st.r,0,6.2832); ctx.fillStyle=st.am?('rgba(246,207,141,'+(a*0.95)+')'):('rgba(235,230,255,'+(a*0.9)+')'); ctx.fill();
       if(st.r>1.15){ ctx.beginPath(); ctx.arc(st.x,st.y,st.r*3.2,0,6.2832); ctx.fillStyle='rgba(227,154,45,'+(a*0.10)+')'; ctx.fill(); }
@@ -553,7 +553,7 @@ const STARS_JS = `
       ctx.strokeStyle=mg; ctx.lineWidth=1.7; ctx.beginPath(); ctx.moveTo(meteor.x,meteor.y); ctx.lineTo(meteor.x-meteor.vx*9,meteor.y-meteor.vy*9); ctx.stroke();
       if(meteor.l<=0||meteor.x<-80||meteor.y>H+80) meteor=null;
     }
-    if(!reduced) requestAnimationFrame(draw);
+    requestAnimationFrame(draw);
   }
   size(); window.addEventListener('resize',size); requestAnimationFrame(draw);
 })();
@@ -894,7 +894,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CA
 <iframe class="gameframe" id="gf" src="${prox}" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
 <div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
 <script src="/cloak.js"></script>
-<script src="/stars.js"></script>
+<script src="/stars.js?e=92"></script>
 <script>
 var PROX=${JSON.stringify(prox)}, ALT=${JSON.stringify(alt)}, stage=0;
 var gf=document.getElementById('gf'), stEl=document.getElementById('st');
@@ -969,7 +969,7 @@ button.play{background:rgba(227,154,45,.3);color:#fff;border:1px solid rgba(255,
 ${SIDEBAR_HTML}
 </div>
 <script src="/cloak.js"></script>
-<script src="/stars.js"></script>
+<script src="/stars.js?e=92"></script>
 <script>
 var DATA=${JSON.stringify(data)};
 var extmap={nes:'nes',smc:'snes',sfc:'snes',gb:'gb',gbc:'gb',gba:'gba',z64:'n64',n64:'n64',v64:'n64',md:'segaMD',gen:'segaMD',a26:'atari2600'};
@@ -1153,7 +1153,7 @@ body{display:block;padding:0}
 .head6 .mainbtn{padding:9px 16px;font-size:13.5px;box-shadow:0 6px 18px rgba(0,0,0,.35)}
 .mode{border-radius:15px}
 
-</style></head><body>${STAR_CANVAS}<canvas id="stars"></canvas><script src="/stars.js"></script><div class="app6">
+</style></head><body>${STAR_CANVAS}<canvas id="stars"></canvas><script src="/stars.js?e=92"></script><div class="app6">
 
 
 <aside class="chatrail"><div class="brand6">6ix<span>Chat</span></div>
@@ -1221,7 +1221,7 @@ ${CLOAK_BAR}
 </div></div>
 
 <script src="/cloak.js"></script>
-<script src="/stars.js"></script>
+<script src="/stars.js?e=92"></script>
 <script>
 var nameEl=document.getElementById('name'), msgsEl=document.getElementById('msgs'), presEl=document.getElementById('pres'), textEl=document.getElementById('text');
 var myName=localStorage.getItem('six_name')||'';
@@ -2219,7 +2219,7 @@ html,body{height:100%}body{display:block;padding:0;margin:0}
 .aicredit{margin-top:10px;font-size:11.5px;color:#8a7a5c;letter-spacing:.05em}
 
 </style></head><body>${STAR_CANVAS}
-<canvas id="stars"></canvas><script src="/stars.js"></script><div class="aiapp app6">
+<canvas id="stars"></canvas><script src="/stars.js?e=92"></script><div class="aiapp app6">
 <aside class="airail">
 <div class="aibrand">six <span>&#10022; ai</span></div>
 <button class="ainew" id="newchat" type="button">+ new chat</button>
@@ -2245,7 +2245,7 @@ html,body{height:100%}body{display:block;padding:0;margin:0}
 </div>
 ${TABBAR_HTML}
 <script src="/cloak.js"></script>
-<script src="/stars.js"></script>
+<script src="/stars.js?e=92"></script>
 <script>
 var IDEA_VAULT = ["roast me like u actually mean it", "roast my fit: black hoodie, gray sweats, beat forces", "give me a comeback for 'u fell off'", "write a diss track verse about my opp", "clown somebody who talks big but never pulls up", "what do i text back to 'k.'", "she left me on delivered 3 hours, whats the move", "write my apology text to my girl but make it sound real", "give me a flirty first text that aint corny", "how do i slide in her dms without bein weird", "what business could i start with $100 in waseca", "give me a side hustle that actually works in a small town", "how do i flip $50 into $200 this week", "is tiktok shop reselling worth it, be real", "write me a 7 day money plan for a broke student", "give me a tiktok idea that could actually blow up", "write me a stretchtok overlay thats mean as hell", "invent a volt city episode in 10 lines", "give me a caption for a siege clip where i go crazy", "what sound should i use for a gaming clip rn", "best siege operator for solo queue and why", "give me a warmup routine to stop bein bronze", "whats the most annoying operator in r6 rn", "make a tier list of siege maps worst to best", "how do i aim train without gettin bored", "would u rather lose ur phone or ur girl for a week", "rank these: money, love, clout, peace", "is a hotdog a sandwich, argue ur case", "whats ur most controversial food take", "if u had 24 hours invisible what u doin", "zombies or aliens, which invasion u survivin", "fight one horse sized duck or 100 duck sized horses", "whats the worst superpower to have", "time travel to the past or future and why", "if animals could talk which one is the biggest hater", "write a horror story in 5 lines set in waseca", "make up a conspiracy theory about my school", "write a fake news headline about me that sounds real", "give me a villain origin story for a waseca kid", "write a rap bar about bein broke but dangerous", "explain taxes like im not tryna hear a lecture", "how do i stop bein lazy fr", "give me a morning routine that aint corny", "what do i say in a job interview when they ask my weakness", "write my resume summary but make me sound hireable", "best gas station snack combo under $5", "rank fast food fries worst to best", "whats the perfect 2am meal", "is cereal better dry or with milk, defend it", "make a tier list of little debbie snacks", "act like my evil twin for the next answer", "talk like a waseca local the whole answer", "answer me like ur my conscience at 3am", "be my hype man for 30 seconds", "tell me a secret about the internet nobody talks about", "what should i post on my story today", "give me a bio for tiktok thats cold", "write a fake comment section arguing about my clip", "whats a username idea for a backup account", "give me 3 hooks for the first 2 seconds of a video", "how do i get out of a speeding ticket convo with a cop (hypothetically)", "whats the dumbest law u know", "if i ran waseca for a day whats my first law", "give me a fake excuse generator for bein late", "how do i act normal when im high at the function (joke answer only)", "best drake song for a late night drive", "make me a playlist vibe: sad but dangerous", "what song should be my alarm", "write a 4 bar hook about my life rn", "rank lucki, drake, d4vd for a night drive", "whats my red flag be honest", "give me an ego check in one line", "tell me why im the main character", "what would my villain arc look like", "rate my life choices so far out of 10 and explain", "teach me a card trick i can do with no setup", "give me a pickup line thats so bad its good", "write a roast battle between me and a raccoon", "what does my dream life look like in 5 years, paint it", "end this with the realest sentence u got", "give me a would u rather thats actually hard", "unpopular opinion generator, go", "whats a hill u would die on", "two truths and a lie about the moon, i gotta guess", "make a fake group chat argument about whos broke", "how do i make $20 today no cap", "write an ad for my shop dai supply that sounds expensive", "give me a product description for sunglasses that sells itself", "what should dai supply sell next", "write a monday deal post for my shop ig story", "say something thatll make me lock in", "give me a quote to put on my wall", "what do i do when everybody sleepin on me", "talk me out of texting my ex", "last one: surprise me with somethin i aint expect", "give me a fake fortune cookie message thats oddly specific", "whats the best excuse to leave a function early", "invent a holiday that should exist", "describe my aura in 3 words and explain", "write a diss to monday mornings"];
 function showIdeas(list){ var row = document.getElementById('ideaRow'); row.innerHTML = ''; list.forEach(function(p){ var b = document.createElement('button'); b.type = 'button'; b.className = 'sugrow'; b.textContent = p; b.addEventListener('click', function(){ var q = document.getElementById('q'); q.value = p; document.getElementById('askbar').requestSubmit(); }); row.appendChild(b); }); }
@@ -2651,7 +2651,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 ${SIDEBAR_HTML}
 </div>
 <script src="/cloak.js"></script>
-<script src="/stars.js"></script>
+<script src="/stars.js?e=92"></script>
 <script>
 var docEl=document.getElementById('doc'), outEl=document.getElementById('out'), statEl=document.getElementById('stat'), countEl=document.getElementById('count'), copyBtn=document.getElementById('copy'), emptyEl=document.getElementById('empty');
 function fmtMd(text){
@@ -2753,7 +2753,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 ${SIDEBAR_HTML}
 </div>
 <script src="/cloak.js"></script>
-<script src="/stars.js"></script>
+<script src="/stars.js?e=92"></script>
 <script>
 var outEl=document.getElementById('out'), stateEl=document.getElementById('state'), formsEl=document.getElementById('forms');
 function showState(user){
@@ -3265,7 +3265,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}<div class="
 ${CLOAK_BAR}
 </div>
 <script src="/cloak.js"></script>
-<script src="/stars.js"></script>
+<script src="/stars.js?e=92"></script>
 </body></html>`;
 }
 function looksBlocked(text) {
@@ -3445,7 +3445,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}<div class="
 ${SIDEBAR_HTML}
 </div>
 <script src="/cloak.js"></script>
-<script src="/stars.js"></script>
+<script src="/stars.js?e=92"></script>
 </body></html>`;
 }
 async function fetchYtSearchApi(query) {
@@ -4322,7 +4322,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CA
 <iframe class="gameframe" id="gf" src="about:blank" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
 <div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
 <script src="/cloak.js"></script>
-<script src="/stars.js"></script>
+<script src="/stars.js?e=92"></script>
 <script>window.GX_WISP = "wss://sixixnetworks.onrender.com/wisp/";</script>
 <script src="/uv-assets/baremux/index.js?e=67"></script>
 <script>
@@ -4390,7 +4390,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CA
 <iframe class="gameframe" id="gf" src="about:blank" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
 <div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
 <script src="/cloak.js"></script>
-<script src="/stars.js"></script>
+<script src="/stars.js?e=92"></script>
 <script>window.GX_WISP = "wss://sixixnetworks.onrender.com/wisp/";</script>
 <script src="/uv-assets/baremux/index.js?e=67"></script>
 <script>
@@ -4453,7 +4453,7 @@ export default {
       return new Response(cfBoot(SEARCH), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' } });
     }
     if (u.pathname === '/stars.js') {
-      return new Response(STARS_JS, { headers: { 'content-type': 'text/javascript; charset=utf-8' } });
+      return new Response(STARS_JS, { headers: { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' } });
     }
     if (u.pathname === '/shell') {
       const servers = u.searchParams.has('ext') ? ['https://s.usareme.site/', 'https://sixsearch.deionmont1.workers.dev/'] : null;
