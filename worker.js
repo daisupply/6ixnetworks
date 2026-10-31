@@ -287,38 +287,12 @@ const TABBAR_HTML = `<nav id="tabbar"><a href="/home"><svg width="21" height="21
 <script>
 (function(){ if (window.parent !== window) { document.documentElement.classList.add('gx-framed'); var bar0 = document.getElementById('tabbar'); if (bar0) bar0.style.bottom = '6px'; var sh0 = document.getElementById('tabSheet'); if (sh0) sh0.style.bottom = '80px'; } var p = location.pathname; document.querySelectorAll('#tabbar a, #tabSheet a').forEach(function(a){ if (a.getAttribute('href') === p) a.classList.add('on'); }); var tm = document.getElementById('tabMore'), sh = document.getElementById('tabSheet'); if (tm && sh) { tm.addEventListener('click', function(){ sh.classList.toggle('open'); }); document.addEventListener('click', function(e){ if (sh.classList.contains('open') && !sh.contains(e.target) && !tm.contains(e.target)) sh.classList.remove('open'); }); } })();
 </script>`;
-const SIDEBAR_HTML = `<button id="sbBtn" aria-label="menu"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><div id="sbScrim"></div>
-<aside id="sb">
-<a class="sb-logo" href="/home">6ix<span>networks</span></a>
-<nav>
-<a href="/home"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>home</a>
-<a href="/search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>search</a>
-<a href="/gs"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>games</a>
-<a href="/apps"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M12 18h.01"/></svg>apps</a>
-<a href="/yt"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg>youtube</a>
-<a href="/chat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>6ixchat</a>
-<a href="/ai"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>six ai</a>
-<a href="/space"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none"/><ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(-18 12 12)"/></svg>space</a>
-<a href="/hw"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>hw helper</a>
-<a href="/emu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="16.5" cy="11" r=".4" fill="currentColor"/><circle cx="18.5" cy="14" r=".4" fill="currentColor"/></svg>emulator</a>
-<a href="/tools"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>tools</a>
-<a href="/account"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>account</a>
-</nav>
-<div class="sb-sec">disguise</div>
-<div class="sb-cloak">
-<button onclick="cloakTab('google')">google</button>
-<button onclick="cloakTab('classroom')">classroom</button>
-<button onclick="cloakTab('docs')">docs</button>
-<button onclick="cloakTab('drive')">drive</button>
-<button onclick="cloakOpen()">open cloaked tab</button>
-</div>
-<div class="sb-foot">everything stays inside the network — nothing loads from its home site</div>
-</aside>
-${TABBAR_HTML}
-<script>
-(function(){ document.body.classList.add('has-sb'); var p = location.pathname; document.querySelectorAll('#sb nav a').forEach(function(a){ if (a.getAttribute('href') === p) a.classList.add('on'); });
-var b = document.getElementById('sbBtn'); if (b) b.addEventListener('click', function(){ document.body.classList.toggle('sb-open'); });
-var s = document.getElementById('sbScrim'); if (s) s.addEventListener('click', function(){ document.body.classList.remove('sb-open'); }); })();
+const SIDEBAR_HTML = `<canvas id=\"stars\"></canvas><script src=\"/stars.js\"></script><header id=\"topbar\"><a class=\"tb-logo\" href=\"/home\">6ix<span>networks</span></a><nav class=\"tb-links\"><a href=\"/home\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg>home</a><a href=\"/gs\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>games</a><a href=\"/apps\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2\" width=\"10\" height=\"20\" rx=\"2\"/><path d=\"M12 18h.01\"/></svg>apps</a><a href=\"/yt\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"4\"/><path d=\"m10 9 5 3-5 3z\" fill=\"currentColor\" stroke=\"none\"/></svg>youtube</a><a href=\"/chat\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg>6ixchat</a><a href=\"/ai\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>six ai</a></nav><div class=\"tb-menuwrap\"><button id=\"menuBtn\" type=\"button\" aria-label=\"menu\">menu<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\"/></svg></button><div id=\"dropmenu\"><div class=\"dm-grid\"><a href=\"/home\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg>home</a><a href=\"/search\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m21 21-4.3-4.3\"/></svg>search</a><a href=\"/gs\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>games</a><a href=\"/apps\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2\" width=\"10\" height=\"20\" rx=\"2\"/><path d=\"M12 18h.01\"/></svg>apps</a><a href=\"/yt\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"4\"/><path d=\"m10 9 5 3-5 3z\" fill=\"currentColor\" stroke=\"none\"/></svg>youtube</a><a href=\"/chat\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg>6ixchat</a><a href=\"/ai\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>six ai</a><a href=\"/space\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"3.2\" fill=\"currentColor\" stroke=\"none\"/><ellipse cx=\"12\" cy=\"12\" rx=\"10\" ry=\"4.2\" transform=\"rotate(-18 12 12)\"/></svg>space</a><a href=\"/hw\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\"/><path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"/></svg>hw helper</a><a href=\"/emu\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"7\" width=\"20\" height=\"11\" rx=\"5\"/><path d=\"M7.5 10.5v4M5.5 12.5h4\"/><circle cx=\"16.5\" cy=\"11\" r=\".4\" fill=\"currentColor\"/><circle cx=\"18.5\" cy=\"14\" r=\".4\" fill=\"currentColor\"/></svg>emulator</a><a href=\"/tools\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1\"/><circle cx=\"16\" cy=\"6\" r=\"2\"/><circle cx=\"10\" cy=\"12\" r=\"2\"/><circle cx=\"18\" cy=\"18\" r=\"2\"/></svg>tools</a><a href=\"/account\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg>account</a></div><div class=\"dm-sec\">disguise</div><div class=\"sb-cloak\"><button onclick=\"cloakTab('google')\">google</button><button onclick=\"cloakTab('classroom')\">classroom</button><button onclick=\"cloakTab('docs')\">docs</button><button onclick=\"cloakTab('drive')\">drive</button><button onclick=\"cloakOpen()\">open cloaked tab</button></div><div class=\"dm-foot\">everything stays inside the network — nothing loads from its home site</div></div></div></header>${TABBAR_HTML}<script>
+(function(){ document.body.classList.add('has-tb'); var p = location.pathname; document.querySelectorAll('.tb-links a,.dm-grid a').forEach(function(a){ if (a.getAttribute('href') === p) a.classList.add('on'); });
+var mb = document.getElementById('menuBtn');
+if (mb) mb.addEventListener('click', function(e){ e.stopPropagation(); document.body.classList.toggle('menu-open'); });
+document.addEventListener('click', function(e){ if (document.body.classList.contains('menu-open') && !e.target.closest('#dropmenu')) document.body.classList.remove('menu-open'); });
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') document.body.classList.remove('menu-open'); }); })();
 </script>`;
 // ---------- galaxy theme ----------
 // relaxing deep-space look shared by every page: layered nebula gradients,
@@ -473,6 +447,38 @@ footer,.foot{color:#5d5d66}
 #tabbar{background:rgba(19,19,23,.55);border-color:rgba(255,255,255,.15);border-radius:30px;box-shadow:0 14px 40px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.14)}
 #tabSheet{background:rgba(19,19,23,.62);border-color:rgba(255,255,255,.15)}
 }
+
+/* ===== v87 top bar + drip-down menu + animated sky ===== */
+#stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+body>*{position:relative;z-index:1}
+#topbar{position:fixed;top:0;left:0;right:0;z-index:60;height:56px;display:flex;align-items:center;gap:16px;padding:0 14px;background:rgba(6,5,3,.72);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);border-bottom:1px solid rgba(255,255,255,.08)}
+.tb-logo{font-weight:800;font-size:17px;color:#fafafa;text-decoration:none;letter-spacing:-.02em;flex:none}
+.tb-logo span{color:#c99a52;font-weight:700}
+.tb-links{display:flex;gap:2px;margin-left:6px}
+.tb-links a{display:flex;align-items:center;gap:8px;color:#c9c9ce;text-decoration:none;font-size:14px;font-weight:550;padding:8px 11px;border-radius:10px}
+.tb-links a svg{opacity:.75}
+.tb-links a:hover{background:rgba(255,255,255,.07);color:#fff}
+.tb-links a.on{background:rgba(227,154,45,.16);color:#fff;box-shadow:inset 0 0 0 1px rgba(227,154,45,.3)}
+.tb-links a.on svg{color:#f6cf8d;opacity:1}
+.tb-menuwrap{margin-left:auto;position:relative;flex:none}
+#menuBtn{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.06);color:#f4f4f5;border:1px solid rgba(255,255,255,.14);border-radius:11px;padding:9px 15px;font-size:14px;font-weight:600;box-shadow:none;cursor:pointer;font-family:inherit}
+#menuBtn:hover{background:rgba(255,255,255,.1);transform:none}
+#menuBtn svg{transition:transform .25s ease}
+body.menu-open #menuBtn svg{transform:rotate(180deg)}
+body.menu-open #menuBtn{background:rgba(227,154,45,.18);border-color:rgba(227,154,45,.45)}
+#dropmenu{position:absolute;top:calc(100% + 10px);right:0;width:min(432px,calc(100vw - 20px));background:rgba(13,11,8,.92);-webkit-backdrop-filter:blur(26px) saturate(1.5);backdrop-filter:blur(26px) saturate(1.5);border:1px solid rgba(255,255,255,.13);border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.65);padding:14px;opacity:0;transform:translateY(-10px) scale(.97);transform-origin:top right;pointer-events:none;transition:opacity .2s ease,transform .24s cubic-bezier(.2,.9,.3,1.25)}
+body.menu-open #dropmenu{opacity:1;transform:none;pointer-events:auto}
+.dm-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.dm-grid a{display:flex;align-items:center;gap:11px;padding:10px;border-radius:11px;color:#dcdce0;text-decoration:none;font-size:14.5px;font-weight:550}
+.dm-grid a svg{color:#f6cf8d;flex:none;opacity:.9}
+.dm-grid a:hover{background:rgba(255,255,255,.07);color:#fff}
+.dm-grid a.on{background:rgba(227,154,45,.15);color:#fff}
+.dm-sec{margin:14px 4px 8px;font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:#8a7a5c}
+#dropmenu .sb-cloak{padding:0}
+.dm-foot{margin-top:14px;padding:0 4px;color:#5d564a;font-size:12px;line-height:1.5}
+body.has-tb{padding-top:84px}
+#sbBtn,#sb,#sbScrim{display:none!important}
+@media(max-width:900px){ .tb-links{display:none} }
 `;
 const PWA_MANIFEST = JSON.stringify({ name: '6ixNetworks', short_name: '6ix', description: '6ixNetworks — search, games, 6ixChat, six ai', start_url: '/', scope: '/', display: 'standalone', background_color: '#0a0a0b', theme_color: '#0a0a0b', icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }] });
 const SW_JS = `self.addEventListener('install', function(e){ self.skipWaiting(); });
@@ -486,31 +492,40 @@ const ICON_180 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAR00lEQVR42u2dW3
 const STARS_JS = `
 (function(){
   var c=document.getElementById('stars'); if(!c) return;
-  var ctx=c.getContext('2d'); var W=0,H=0,stars=[],meteor=null;
+  var ctx=c.getContext('2d'); var W=0,H=0,stars=[],meteor=null,t0=Date.now();
   var DPR=Math.min(window.devicePixelRatio||1,1.5);
   var reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var blobs=[{fx:0.22,fy:0.16,r:0.55,a:0.055,ph:0.4,sp:0.011},{fx:0.8,fy:0.3,r:0.45,a:0.04,ph:2.4,sp:0.008},{fx:0.55,fy:0.85,r:0.6,a:0.045,ph:4.4,sp:0.006}];
   function size(){ W=window.innerWidth; H=window.innerHeight; c.width=W*DPR; c.height=H*DPR; c.style.width=W+'px'; c.style.height=H+'px'; ctx.setTransform(DPR,0,0,DPR,0,0);
-    var n=Math.min(170, Math.floor(W*H/11000)); stars=[];
-    for(var i=0;i<n;i++) stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+0.3,p:Math.random()*6.283,s:0.4+Math.random()*1.1,d:Math.random()*0.008+0.002});
+    var n=Math.min(190, Math.floor(W*H/10000)); stars=[];
+    for(var i=0;i<n;i++) stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+0.3,p:Math.random()*6.283,s:0.4+Math.random()*1.1,d:Math.random()*0.008+0.002,dx:0.002+Math.random()*0.009,am:Math.random()<0.16});
   }
   function draw(){
+    var t=(Date.now()-t0)/1000;
     ctx.clearRect(0,0,W,H);
-    for(var i=0;i<stars.length;i++){ var st=stars[i]; st.p+=st.s*0.016; st.y-=st.d; if(st.y<-2){ st.y=H+2; st.x=Math.random()*W; }
+    for(var b=0;b<blobs.length;b++){ var bl=blobs[b];
+      var bx=bl.fx*W+Math.sin(t*bl.sp*6.28+bl.ph)*36, by=bl.fy*H+Math.cos(t*bl.sp*5.1+bl.ph)*26, br=bl.r*Math.max(W,H);
+      var g=ctx.createRadialGradient(bx,by,0,bx,by,br);
+      g.addColorStop(0,'rgba(232,160,60,'+bl.a+')'); g.addColorStop(1,'rgba(232,160,60,0)');
+      ctx.fillStyle=g; ctx.fillRect(bx-br,by-br,br*2,br*2);
+    }
+    for(var i=0;i<stars.length;i++){ var st=stars[i]; st.p+=st.s*0.016; st.y-=st.d; st.x-=st.dx; if(st.y<-2){ st.y=H+2; st.x=Math.random()*W; } if(st.x<-2){ st.x=W+2; }
       var a=0.35+0.65*Math.abs(Math.sin(st.p));
-      ctx.beginPath(); ctx.arc(st.x,st.y,st.r,0,6.2832); ctx.fillStyle='rgba(230,225,255,'+(a*0.9)+')'; ctx.fill();
+      ctx.beginPath(); ctx.arc(st.x,st.y,st.r,0,6.2832); ctx.fillStyle=st.am?('rgba(246,207,141,'+(a*0.95)+')'):('rgba(235,230,255,'+(a*0.9)+')'); ctx.fill();
       if(st.r>1.15){ ctx.beginPath(); ctx.arc(st.x,st.y,st.r*3.2,0,6.2832); ctx.fillStyle='rgba(227,154,45,'+(a*0.10)+')'; ctx.fill(); }
     }
-    if(!meteor && !reduced && Math.random()<0.0022){ meteor={x:Math.random()*W*0.7+W*0.2,y:Math.random()*H*0.25,vx:-7-Math.random()*3,vy:4+Math.random()*2,l:1}; }
+    if(!meteor && !reduced && Math.random()<0.0038){ meteor={x:Math.random()*W*0.7+W*0.2,y:Math.random()*H*0.25,vx:-7-Math.random()*3,vy:4+Math.random()*2,l:1}; }
     if(meteor){ meteor.x+=meteor.vx; meteor.y+=meteor.vy; meteor.l-=0.016;
-      var g=ctx.createLinearGradient(meteor.x,meteor.y,meteor.x-meteor.vx*9,meteor.y-meteor.vy*9);
-      g.addColorStop(0,'rgba(255,255,255,'+(0.85*Math.max(meteor.l,0))+')'); g.addColorStop(1,'rgba(255,255,255,0)');
-      ctx.strokeStyle=g; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(meteor.x,meteor.y); ctx.lineTo(meteor.x-meteor.vx*9,meteor.y-meteor.vy*9); ctx.stroke();
+      var mg=ctx.createLinearGradient(meteor.x,meteor.y,meteor.x-meteor.vx*9,meteor.y-meteor.vy*9);
+      mg.addColorStop(0,'rgba(255,240,214,'+(0.9*Math.max(meteor.l,0))+')'); mg.addColorStop(1,'rgba(255,190,90,0)');
+      ctx.strokeStyle=mg; ctx.lineWidth=1.7; ctx.beginPath(); ctx.moveTo(meteor.x,meteor.y); ctx.lineTo(meteor.x-meteor.vx*9,meteor.y-meteor.vy*9); ctx.stroke();
       if(meteor.l<=0||meteor.x<-80||meteor.y>H+80) meteor=null;
     }
     if(!reduced) requestAnimationFrame(draw);
   }
   size(); window.addEventListener('resize',size); requestAnimationFrame(draw);
-})();`;
+})();
+`;
 
 
 // ---------- YouTube network ----------
@@ -1099,9 +1114,10 @@ body{display:block;padding:0}
 .main6 .bar input[type=text]{background:#101013;border-color:rgba(255,255,255,.14)}
 .dme{background:rgba(255,255,255,.05)}
 .pf-card{background:#0e0e10}
+.app6{background:transparent}
 .mode{border-radius:15px}
 
-</style></head><body>${STAR_CANVAS}<div class="app6">
+</style></head><body>${STAR_CANVAS}<canvas id="stars"></canvas><script src="/stars.js"></script><div class="app6">
 
 
 <aside class="chatrail"><div class="brand6">6ix<span>Chat</span></div>
@@ -2147,9 +2163,10 @@ html,body{height:100%}body{display:block;padding:0;margin:0}
 
 .airail{background:linear-gradient(180deg,#0d0d0f,#0a0a0c)}
 .aihead{background:#0c0c0e}
+.aiapp{background:transparent}
 
 </style></head><body>${STAR_CANVAS}
-<div class="aiapp app6">
+<canvas id="stars"></canvas><script src="/stars.js"></script><div class="aiapp app6">
 <aside class="airail">
 <div class="aibrand">six <span>&#10022; ai</span></div>
 <button class="ainew" id="newchat" type="button">+ new chat</button>
@@ -3030,7 +3047,7 @@ body.sb-off #stage iframe{height:78dvh}
 <div id="tabstrip"></div>
   <h1>6ix<span>Networks</span> — search</h1>
   <form id="omni" action="/go" method="get">
-    <button id="sbtoggle" type="button" title="toggle the sidebar — full view"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18"/></svg></button>
+    
     <input name="q" type="text" placeholder="search or type a site \u2726" autocomplete="off" autofocus list="sg">
     <button type="submit">go</button>
   </form><datalist id="sg"></datalist>
