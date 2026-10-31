@@ -3297,16 +3297,39 @@ body.sb-off #stage iframe{height:78dvh}
 .tabtile{background:linear-gradient(165deg,#1c1712,#131009);border-color:rgba(255,236,200,.13);border-radius:18px;padding:14px}
 .tabtile:hover{border-color:rgba(246,207,141,.4)}
 
+
+/* ===== v96 chrome remake ===== */
+#tabstrip{max-width:1180px;background:linear-gradient(180deg,rgba(36,29,21,.65),rgba(26,21,16,.65));border:1px solid rgba(255,236,200,.1);border-bottom:0;border-radius:16px 16px 0 0;padding:9px 9px 0;margin-bottom:0}
+.btab{border-radius:12px 12px 0 0;border-bottom:0;padding:10px 12px}
+.btab.on{background:#171310;border-color:rgba(246,207,141,.55);box-shadow:none}
+#newtab{border-radius:10px 10px 0 0;align-self:flex-end}
+#toolbar{display:flex;gap:10px;align-items:center;width:100%;max-width:1180px;margin:0 auto;background:#171310;border:1px solid rgba(255,236,200,.12);border-top:0;border-radius:0 0 16px 16px;padding:9px 10px;box-sizing:border-box}
+.navbtns{display:flex;gap:6px;flex:none}
+.navbtns button{width:38px;height:38px;border-radius:50%;background:#241d15;border:1px solid rgba(255,236,200,.14);color:#d8d2c4;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;box-shadow:none}
+.navbtns button:hover{color:#f6cf8d;border-color:rgba(246,207,141,.4)}
+#toolbar #omni{flex:1;max-width:none;margin:0;box-shadow:none}
+#engbar{display:flex;justify-content:center;padding:12px 0 2px;width:100%}
+#engseg{display:flex;background:#14110d;border:1px solid rgba(255,236,200,.15);border-radius:999px;padding:4px;gap:4px}
+#engseg button{background:transparent;border:0;color:#a79e8d;font-family:inherit;font-weight:700;font-size:13.5px;padding:8px 18px;border-radius:999px;cursor:pointer;box-shadow:none}
+#engseg button.on{background:#f6cf8d;color:#171106}
+#stage{flex:1;display:flex;flex-direction:column;width:calc(100% + 20px);max-width:1180px;padding:0 4px;box-sizing:border-box}
+#tabstrip{width:calc(100% + 20px)}
+#toolbar{width:calc(100% + 20px)}
+#stage iframe{flex:1;height:auto;min-height:62dvh;width:100%;border-radius:14px}
+@media(max-width:820px){ #stage{padding-bottom:82px} }
+@media(max-width:640px){ .navbtns button{width:34px;height:34px} #engseg button{padding:8px 13px;font-size:12.5px} #toolbar{gap:7px;padding:8px} }
+
 </style></head>
 <body>${STAR_CANVAS}
 <div id="tabstrip"></div>
   
+  <div id="toolbar"><div class="navbtns"><button type="button" id="nback" aria-label="back"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><button type="button" id="nfwd" aria-label="forward"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button><button type="button" id="nreload" aria-label="reload"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/></svg></button></div>
   <form id="omni" action="/go" method="get">
     
-    <select id="engsel" aria-label="search engine"><option value="google">google</option><option value="bing">bing</option><option value="ddg">duckduckgo</option></select>
     <input name="q" type="text" placeholder="search or type a site \u2726" autocomplete="off" autofocus list="sg">
     <button type="submit">go</button>
-  </form><datalist id="sg"></datalist>
+  </form></div>
+<div id="engbar"><div id="engseg"><button type="button" data-eng="google" class="on">google</button><button type="button" data-eng="bing">bing</button><button type="button" data-eng="ddg">duckduckgo</button></div></div><datalist id="sg"></datalist>
 <div id="stage"></div>
 <div id="ntp">
 <div class="hero"><h1>6ix<span>networks</span></h1><p>search the whole web thru the network — everything runs on the engine now</p></div>
@@ -3419,8 +3442,13 @@ function closeBtab(ix){
 }
 var ENGINES={ google:'https://www.google.com/search?q=', bing:'https://www.bing.com/search?q=', ddg:'https://duckduckgo.com/?q=' };
 function engUrl(q){ var e='google'; try{ e=localStorage.getItem('gx_eng')||'google'; }catch(x){} if(!ENGINES[e]) e='google'; return ENGINES[e]+encodeURIComponent(q); }
-var engsel=document.getElementById('engsel');
-if(engsel){ try{ engsel.value=localStorage.getItem('gx_eng')||'google'; }catch(x){} engsel.addEventListener('change', function(){ try{ localStorage.setItem('gx_eng', engsel.value); }catch(x){} }); }
+function setEng(e){ if(!ENGINES[e]) e='google'; try{ localStorage.setItem('gx_eng', e); }catch(x){} document.querySelectorAll('#engseg button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-eng')===e); }); }
+(function(){ var cur='google'; try{ cur=localStorage.getItem('gx_eng')||'google'; }catch(x){} document.querySelectorAll('#engseg button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-eng')===cur); b.addEventListener('click', function(){ setEng(b.getAttribute('data-eng')); }); }); })();
+function actFrame(){ var act=btabs[bactive]; if(!act) return null; return document.querySelector('#stage iframe[data-bid="'+act.id+'"]'); }
+var nb=document.getElementById('nback'), nf=document.getElementById('nfwd'), nr=document.getElementById('nreload');
+if(nb) nb.addEventListener('click', function(){ var f=actFrame(); if(f){ try{ f.contentWindow.history.back(); }catch(e){} } });
+if(nf) nf.addEventListener('click', function(){ var f=actFrame(); if(f){ try{ f.contentWindow.history.forward(); }catch(e){} } });
+if(nr) nr.addEventListener('click', function(){ var f=actFrame(); if(f){ f.src=f.src; } });
 function openTab(raw, title){
   var q=(raw||'').trim(); if(!q) return;
   var isUrl = q.indexOf('://')>0 || (q.indexOf(' ')<0 && q.indexOf('.')>0);
@@ -4978,12 +5006,14 @@ async function chatProfile(env, request, wantName, wantHue) {
     }
     if (u.pathname === '/uv' || u.pathname === '/sj') {
       const dest = normalizeInput(u.searchParams.get('url') || '');
+      if (dest && isSearchDest(dest)) return Response.redirect(u.origin + proxied(dest), 302);
       if (dest) return Response.redirect(u.origin + '/uv/service/' + cfXorEncode(dest), 302);
       return Response.redirect(u.origin + '/home', 302);
     }
     if (u.pathname === '/go') {
       const dest = normalizeInput(u.searchParams.get('q') || '');
       if (!dest) return Response.redirect(u.origin + '/home', 302);
+      if (isSearchDest(dest)) return Response.redirect(u.origin + proxied(dest), 302);
       return Response.redirect(u.origin + '/uv/service/' + cfXorEncode(dest), 302);
     }
     if (u.pathname.startsWith('/px/')) {
