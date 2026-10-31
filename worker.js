@@ -3321,10 +3321,21 @@ body.sb-off #stage iframe{height:78dvh}
 
 html,body{height:100%}
 body{height:100dvh;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box}
+#tabstrip{display:flex;gap:6px;width:100%;max-width:none;margin:0;padding:2px;overflow-x:auto;scrollbar-width:none;flex:none;background:transparent;border:0}
+#tabstrip::-webkit-scrollbar{display:none}
+.btab{display:flex;align-items:center;gap:7px;height:38px;padding:0 6px 0 9px;flex:1 1 0;min-width:86px;max-width:210px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);border-radius:11px;cursor:pointer}
+.btab.on{background:#2b2115;border-color:rgba(246,207,141,.45)}
+.btab .bav{width:21px;height:21px;border-radius:6px;font-size:11px;flex:none;display:flex;align-items:center;justify-content:center}
+.btab .btt{flex:1;min-width:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btab .bx{flex:none;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+#newtab{flex:none;width:38px;height:38px;height:38px;border-radius:11px;align-self:center}
+#toolbar{display:flex;gap:8px;align-items:center;width:100%;max-width:none;margin:6px 0 0;padding:8px;background:#16120d;border:1px solid rgba(255,236,200,.13);border-top:1px solid rgba(255,236,200,.13);border-radius:16px;flex:none}
+#omni{display:flex;gap:6px;flex:1 1 0%;min-width:0}
+#omni input{flex:1 1 0%;min-width:0;width:0}
 #stage{flex:1;min-height:0;width:100%;max-width:none;padding:0}
 #stage iframe{flex:1;width:100%;height:100%;min-height:0;border:0;border-radius:0;display:block}
+.veil{border-radius:0}
 #ntp{flex:1;overflow-y:auto;width:100%}
-#toolbar{max-width:none}
 @media(max-width:820px){ #stage{padding-bottom:74px} }
 </style></head>
 <body>${STAR_CANVAS}
@@ -3423,7 +3434,7 @@ function renderBtabs(){
       f.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen; gamepad; pointer-lock');
       f.setAttribute('allowfullscreen', '');
       f.src=tb.url;
-      f.addEventListener('load', function(){ var vv=stage.querySelector('[data-veil="'+tb.id+'"]'); if(vv) vv.remove(); try{ var t=f.contentWindow.document.title; if(t && t!=='Google'){ tb.title=t.slice(0,60); bsave(); renderBtabs(); } }catch(e){} });
+      f.addEventListener('load', function(){ var vv=stage.querySelector('[data-veil="'+tb.id+'"]'); if(vv) vv.remove(); try{ var t=f.contentWindow.document.title; if(t && t!=='Google' && t!=='Error'){ tb.title=t.slice(0,60); bsave(); renderBtabs(); } }catch(e){} });
       var vl=document.createElement('div'); vl.className='veil'; vl.setAttribute('data-veil', tb.id); vl.innerHTML='<div class="vx">✦</div><div>tunneling thru the network…</div>'; stage.appendChild(vl);
       setTimeout(function(){ var vv3=stage.querySelector('[data-veil="'+tb.id+'"]'); if(vv3) vv3.remove(); }, 6000);
       stage.appendChild(f);
@@ -3461,6 +3472,7 @@ function renderBtabs(){
   });
   bEl('ntp').style.display = (act && act.url) ? 'none' : 'block';
   stage.style.display = (act && act.url) ? 'flex' : 'none';
+  var onEl=strip.querySelector('.btab.on'); if(onEl){ var sl=onEl.offsetLeft-8; if(strip.scrollLeft>sl || sl>strip.scrollLeft+strip.clientWidth-onEl.offsetWidth) strip.scrollLeft=sl; }
   var qi=document.querySelector('#omni input[name=q]');
   if(qi && act && document.activeElement!==qi) qi.value = act.raw || '';
 }
