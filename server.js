@@ -521,21 +521,45 @@ const STARS_JS = `
   var ctx=c.getContext('2d'); var W=0,H=0,stars=[],meteor=null,t0=Date.now();
   var DPR=Math.min(window.devicePixelRatio||1,1.5);
   var reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var blobs=[{fx:0.22,fy:0.16,r:0.55,a:0.055,ph:0.4,sp:0.011},{fx:0.8,fy:0.3,r:0.45,a:0.04,ph:2.4,sp:0.008},{fx:0.55,fy:0.85,r:0.6,a:0.045,ph:4.4,sp:0.006}];
+  var clouds=[];
+  var CDEFS=[{a:0.055,hue:'232,160,60'},{a:0.04,hue:'246,207,141'},{a:0.05,hue:'217,130,40'},{a:0.03,hue:'235,230,255'},{a:0.045,hue:'232,160,60'}];
+  function seedClouds(){ clouds=[];
+    for(var i=0;i<CDEFS.length;i++){ var d=CDEFS[i];
+      clouds.push({x:0.12+Math.random()*0.76,y:0.1+Math.random()*0.7,vx:0,vy:0,tx:0.12+Math.random()*0.76,ty:0.1+Math.random()*0.7,r:0.34+Math.random()*0.3,vr:0,a:d.a*(0.75+Math.random()*0.5),va:0,hue:d.hue,pick:600+Math.floor(Math.random()*1500),wob:Math.random()*6.28});
+    }
+  }
   function size(){ W=window.innerWidth; H=window.innerHeight; c.width=W*DPR; c.height=H*DPR; c.style.width=W+'px'; c.style.height=H+'px'; ctx.setTransform(DPR,0,0,DPR,0,0);
     var n=Math.min(190, Math.floor(W*H/10000)); stars=[];
+    if(!clouds.length) seedClouds();
     for(var i=0;i<n;i++) stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+0.3,p:Math.random()*6.283,s:0.4+Math.random()*1.1,d:Math.random()*0.008+0.002,dx:0.002+Math.random()*0.009,am:Math.random()<0.16});
   }
   function draw(){
     var t=(Date.now()-t0)/1000;
     ctx.clearRect(0,0,W,H);
-    for(var b=0;b<blobs.length;b++){ var bl=blobs[b];
-      var bx=bl.fx*W+Math.sin(t*bl.sp*6.28+bl.ph)*36, by=bl.fy*H+Math.cos(t*bl.sp*5.1+bl.ph)*26, br=bl.r*Math.max(W,H);
-      var g=ctx.createRadialGradient(bx,by,0,bx,by,br);
-      g.addColorStop(0,'rgba(232,160,60,'+bl.a+')'); g.addColorStop(1,'rgba(232,160,60,0)');
-      ctx.fillStyle=g; ctx.fillRect(bx-br,by-br,br*2,br*2);
+    ctx.globalCompositeOperation='lighter';
+    var SUB = W < 700 ? 2 : 3;
+    for(var ci=0;ci<clouds.length;ci++){ var cl=clouds[ci];
+      cl.pick--;
+      if(cl.pick<=0){ cl.tx=0.08+Math.random()*0.84; cl.ty=0.06+Math.random()*0.8; cl.pick=800+Math.floor(Math.random()*1800); }
+      cl.vx += (cl.tx-cl.x)*0.0000035 + (Math.random()-0.5)*0.000004;
+      cl.vy += (cl.ty-cl.y)*0.0000035 + (Math.random()-0.5)*0.000004;
+      cl.vx *= 0.996; cl.vy *= 0.996;
+      var spd=Math.sqrt(cl.vx*cl.vx+cl.vy*cl.vy);
+      if(spd>0.00045){ cl.vx=cl.vx/spd*0.00045; cl.vy=cl.vy/spd*0.00045; }
+      cl.x+=cl.vx; cl.y+=cl.vy;
+      cl.vr += (Math.random()-0.5)*0.00012; cl.vr*=0.99; cl.r+=cl.vr; if(cl.r<0.24){ cl.r=0.24; cl.vr=0; } if(cl.r>0.72){ cl.r=0.72; cl.vr=0; }
+      cl.va += (Math.random()-0.5)*0.00006; cl.va*=0.99; cl.a+=cl.va; if(cl.a<0.018){ cl.a=0.018; cl.va=0; } if(cl.a>0.08){ cl.a=0.08; cl.va=0; }
+      cl.wob += 0.0035;
+      var ccx=cl.x*W, ccy=cl.y*H, ccr=cl.r*Math.max(W,H);
+      for(var sb=0;sb<SUB;sb++){
+        var off=sb===0?0:ccr*0.16, ang=cl.wob*(sb%2?1:-1)+sb*2.1;
+        var gx2=ccx+Math.cos(ang)*off, gy2=ccy+Math.sin(ang)*off*0.7, gr2=ccr*(sb===0?1:0.72);
+        var gg=ctx.createRadialGradient(gx2,gy2,0,gx2,gy2,gr2);
+        gg.addColorStop(0,'rgba('+cl.hue+','+(cl.a*(sb===0?1:0.7)).toFixed(4)+')'); gg.addColorStop(1,'rgba('+cl.hue+',0)');
+        ctx.fillStyle=gg; ctx.fillRect(gx2-gr2,gy2-gr2,gr2*2,gr2*2);
+      }
     }
-    for(var i=0;i<stars.length;i++){ var st=stars[i]; st.p+=st.s*0.016; st.y-=st.d; st.x-=st.dx; if(st.y<-2){ st.y=H+2; st.x=Math.random()*W; } if(st.x<-2){ st.x=W+2; }
+    ctx.globalCompositeOperation='source-over';    for(var i=0;i<stars.length;i++){ var st=stars[i]; st.p+=st.s*0.016; st.y-=st.d; st.x-=st.dx; if(st.y<-2){ st.y=H+2; st.x=Math.random()*W; } if(st.x<-2){ st.x=W+2; }
       var a=0.35+0.65*Math.abs(Math.sin(st.p));
       ctx.beginPath(); ctx.arc(st.x,st.y,st.r,0,6.2832); ctx.fillStyle=st.am?('rgba(246,207,141,'+(a*0.95)+')'):('rgba(235,230,255,'+(a*0.9)+')'); ctx.fill();
       if(st.r>1.15){ ctx.beginPath(); ctx.arc(st.x,st.y,st.r*3.2,0,6.2832); ctx.fillStyle='rgba(227,154,45,'+(a*0.10)+')'; ctx.fill(); }
