@@ -4595,7 +4595,7 @@ function chatUpgrade(req, socket) {
 
 
 // ---------- scramjet engine (node build only — the cloudflare worker keeps the classic shim) ----------
-let SJ_WISP = null, SJ_DIR = null, SJ_BAREMUX_DIR = null, SJ_EPOXY_DIR = null;
+let SJ_WISP = null, SJ_DIR = null, SJ_BAREMUX_DIR = null, SJ_EPOXY_DIR = null, SJ_LIBCURL_DIR = null;
 try {
   const fs2 = require('fs'); const path2 = require('path');
   const wmod = require('@mercuryworkshop/wisp-js/server');
@@ -4605,6 +4605,8 @@ try {
   SJ_DIR = require('@mercuryworkshop/scramjet/path').scramjetPath;
   try { SJ_BAREMUX_DIR = require('@mercuryworkshop/bare-mux/node').baremuxPath; } catch (e) { SJ_BAREMUX_DIR = path2.join(path2.dirname(require.resolve('@mercuryworkshop/bare-mux')), 'dist'); }
   SJ_EPOXY_DIR = (() => { const cands = []; try { const rp = require.resolve('@mercuryworkshop/epoxy-transport'); const marker = 'node_modules/@mercuryworkshop/epoxy-transport'; const ix = rp.replace(/\\/g, '/').indexOf(marker); if (ix >= 0) cands.push(rp.slice(0, ix + marker.length) + '/dist'); cands.push(path2.dirname(rp)); } catch (e) {}
+    for (const c of cands) { try { if (fs2.existsSync(path2.join(c, 'index.mjs'))) return c; } catch (e) {} } return cands[0] || null; })();
+  SJ_LIBCURL_DIR = (() => { const cands = []; try { const rp = require.resolve('@mercuryworkshop/libcurl-transport'); const marker = 'node_modules/@mercuryworkshop/libcurl-transport'; const ix = rp.replace(/\\/g, '/').indexOf(marker); if (ix >= 0) cands.push(rp.slice(0, ix + marker.length) + '/dist'); cands.push(path2.dirname(rp)); } catch (e) {}
     for (const c of cands) { try { if (fs2.existsSync(path2.join(c, 'index.mjs'))) return c; } catch (e) {} } return cands[0] || null; })();
   if (!fs2.existsSync(path2.join(SJ_DIR, 'scramjet.all.js'))) throw new Error('scramjet dist missing');
   console.log('scramjet engine ready (wisp on /wisp/)');
@@ -4758,7 +4760,7 @@ async function sjBoot() {
   await navigator.serviceWorker.ready;
   if (!navigator.serviceWorker.controller) { stat('waking the engine…'); await new Promise(function(res) { var to = setTimeout(res, 7000); navigator.serviceWorker.addEventListener('controllerchange', function() { clearTimeout(to); res(); }); }); }
   stat('connectin the tunnel…');
-  await conn.setTransport('/sj-assets/epoxy/index.mjs', [{ wisp: (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/' }]);
+  await conn.setTransport('/sj-assets/libcurl/index.mjs', [{ websocket: (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/' }]);
   stat('startin the engine…');
   await sjCtl.init();
 }
@@ -5319,11 +5321,11 @@ const server = http.createServer(async (req, res) => {
     const rel = u.pathname.slice(isUv ? '/uv-assets/'.length : '/sj-assets/'.length);
     const seg = rel.split('/')[0];
     let kind, file;
-    if (seg === 'baremux' || seg === 'epoxy' || seg === 'scramjet') { kind = seg; file = rel.slice(seg.length + 1); }
+    if (seg === 'baremux' || seg === 'epoxy' || seg === 'scramjet' || seg === 'libcurl') { kind = seg; file = rel.slice(seg.length + 1); }
     else if (isUv) { kind = 'uv'; file = rel; }
     else { kind = 'scramjet'; file = rel; }
     if (kind === 'uv' && file === 'uv.config.js' && UV_OK()) { res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(UV_CONFIG); }
-    const base = kind === 'scramjet' ? SJ_DIR : kind === 'baremux' ? SJ_BAREMUX_DIR : kind === 'epoxy' ? SJ_EPOXY_DIR : kind === 'uv' ? UV_DIR : null;
+    const base = kind === 'scramjet' ? SJ_DIR : kind === 'baremux' ? SJ_BAREMUX_DIR : kind === 'epoxy' ? SJ_EPOXY_DIR : kind === 'libcurl' ? SJ_LIBCURL_DIR : kind === 'uv' ? UV_DIR : null;
     if (!base || !file || file.includes('..')) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('not found'); }
     const fsx = require('fs'); const pathx = require('path');
     const fp = pathx.join(base, file);
