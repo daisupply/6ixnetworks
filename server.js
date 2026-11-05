@@ -4268,6 +4268,26 @@ html.gx-framed .aiapp.app6{padding-bottom:0}
 .bub.six{align-self:flex-start;max-width:88%}
 .bub .who{margin:0 0 3px;color:rgba(var(--star),.92)}
 #dot{display:none!important}
+/* ===== v291 chatgpt-style reading layout ===== */
+.bub.six{align-self:stretch;width:auto;max-width:100%;background:transparent;border:0;border-radius:0;padding:8px 0 4px;margin:6px 0 2px;font-size:15.5px;line-height:1.75;box-shadow:none;white-space:normal}
+.bub.six .who{display:none}
+.bub.me{align-self:flex-end;max-width:76%;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.07);border-radius:24px;padding:10px 16px;line-height:1.55}
+.bub.six .mdp{margin:0 0 11px}
+.bub.six .mdp:last-child{margin-bottom:0}
+.bub.six ol.mdlist,.bub.six ul.mdlist{margin:2px 0 12px;padding-left:22px}
+.bub.six ol.mdlist li,.bub.six ul.mdlist li{margin:4px 0;line-height:1.7}
+.bub.six ol.mdlist li::marker,.bub.six ul.mdlist li::marker{color:#a1a1aa}
+.bub.six .mdh{margin:18px 0 7px}
+.bub.six .mdh:first-child{margin-top:2px}
+.bub.six .mdq{margin:10px 0}
+.bub.six .codeblk{margin:10px 0}
+.macts{display:flex;gap:2px;margin-top:9px;opacity:.5;transition:opacity .18s ease}
+.bub.six:hover .macts,.macts:focus-within{opacity:1}
+.mact{background:transparent;border:0;color:#a1a1aa;width:30px;height:30px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex:none}
+.mact:hover{background:rgba(255,255,255,.09);color:#f4f4f5}
+.mact svg{width:16px;height:16px}
+.mact.on{color:rgb(var(--star))}
+@media (hover:none){ .macts{opacity:.75} }
 
 </style></head><body>${STAR_CANVAS}
 <canvas id="stars"></canvas><script src="/stars.js?e=96"></script>${SIDEBAR_HTML}<div class="aiapp app6">
@@ -4311,7 +4331,7 @@ var GREET = 'yo ✦ im six — one ai, six brains fused into it, so im smarter t
 var THREADS = [], CUR = null;
 function saveThread(){ try { if(!CUR) return; CUR.hist = hist.slice(-60); var fu = hist.find(function(m){ return m.role === 'user'; }); CUR.name = fu ? fu.content.slice(0, 34) : 'new chat'; localStorage.setItem('gx_ai_threads_v1', JSON.stringify(THREADS.slice(0, 12))); localStorage.setItem('gx_ai_cur', CUR.id); renderThreads(); } catch(e){} }
 function renderThreads(){ var tl = document.getElementById('threads'); if(!tl) return; tl.innerHTML = ''; THREADS.forEach(function(th){ var b2 = document.createElement('button'); b2.type = 'button'; b2.className = 'aithread' + (CUR && th.id === CUR.id ? ' on' : ''); b2.textContent = th.name || 'new chat'; b2.addEventListener('click', function(){ openThread(th.id); }); tl.appendChild(b2); }); }
-function openThread(id){ var th = THREADS.find(function(x){ return x.id === id; }); if(!th) return; CUR = th; hist = th.hist.slice(); logEl.innerHTML = ''; hist.forEach(function(m){ bubble(m.role === 'user' ? 'me' : 'six', m.content, m.role === 'user' ? null : 'six'); }); if(!hist.length) bubble('six', GREET); saveThread(); }
+function openThread(id){ var th = THREADS.find(function(x){ return x.id === id; }); if(!th) return; CUR = th; hist = th.hist.slice(); logEl.innerHTML = ''; var lastMe = null; hist.forEach(function(m, ix){ var b = bubble(m.role === 'user' ? 'me' : 'six', m.content, m.role === 'user' ? null : 'six'); b._hi = ix; if (m.role === 'user') { lastMe = b; } else { b._ubub = lastMe; b._prompt = lastMe ? lastMe._text : null; if (m.content) addActions(b, m.content); } }); if(!hist.length) bubble('six', GREET); saveThread(); }
 function newThread(){ THREADS.unshift({ id: 't' + Date.now(), name: 'new chat', hist: [] }); openThread(THREADS[0].id); qEl.focus(); }
 try { THREADS = JSON.parse(localStorage.getItem('gx_ai_threads_v1') || '[]'); } catch(e){ THREADS = []; }
 if(!THREADS.length) THREADS = [{ id: 't' + Date.now(), name: 'new chat', hist: [] }];
@@ -4386,10 +4406,35 @@ logEl.addEventListener('click', function(e){
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code.textContent).then(done).catch(done);
   else done();
 });
-function bubble(cls, text, whoName){ var d=document.createElement('div'); d.className='bub '+cls; if(whoName){ var w=document.createElement('div'); w.className='who'; w.textContent=whoName+' ✦'; d.appendChild(w); } var s=document.createElement('span'); if(cls==='six'){ s.innerHTML=fmtMd(text); } else { s.textContent=text; } d.appendChild(s); d._span=s; logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight; return d; }
+function bubble(cls, text, whoName){ var d=document.createElement('div'); d.className='bub '+cls; if(whoName){ var w=document.createElement('div'); w.className='who'; w.textContent=whoName+' ✦'; d.appendChild(w); } var s=document.createElement('span'); if(cls==='six'){ s.innerHTML=fmtMd(text); } else { s.textContent=text; } d.appendChild(s); d._span=s; d._text=text; logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight; return d; }
+var SVG_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+var SVG_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+var SVG_UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/></svg>';
+var SVG_DN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 14V2"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/></svg>';
+var SVG_RE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"/><path d="M3 3v5h5"/></svg>';
+function addActions(d, raw){
+  if (!d || d.querySelector('.macts')) return;
+  var row = document.createElement('div'); row.className = 'macts';
+  function btn(svg, label, fn){ var b = document.createElement('button'); b.type = 'button'; b.className = 'mact'; b.setAttribute('aria-label', label); b.title = label; b.innerHTML = svg; b.addEventListener('click', function(){ fn(b); }); row.appendChild(b); return b; }
+  btn(SVG_COPY, 'copy', function(b){ var done = function(){ b.innerHTML = SVG_CHECK; setTimeout(function(){ b.innerHTML = SVG_COPY; }, 1300); }; if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(raw).then(done).catch(done); else done(); });
+  function fb(b){ var was = b.classList.contains('on'); var bs = row.querySelectorAll('.mact'); for (var i = 0; i < bs.length; i++) bs[i].classList.remove('on'); if (!was) b.classList.add('on'); }
+  btn(SVG_UP, 'good answer', fb);
+  btn(SVG_DN, 'bad answer', fb);
+  btn(SVG_RE, 'regenerate', function(){ regen(d); });
+  d.appendChild(row);
+}
+function regen(d){
+  var p = d._prompt; if (!p) return;
+  var hi = (typeof d._hi === 'number') ? d._hi : -1; if (hi < 1) return;
+  var n = d._ubub || d; var nodes = [];
+  while (n) { nodes.push(n); n = n.nextElementSibling; }
+  nodes.forEach(function(x){ x.remove(); });
+  hist = hist.slice(0, hi - 1); saveThread();
+  ask(p);
+}
 
 function ask(text){
-  hist.push({ role:'user', content: text }); saveThread(); bubble('me', text);
+  hist.push({ role:'user', content: text }); saveThread(); var ub = bubble('me', text); ub._hi = hist.length - 1;
   var wantImg = imgMode || /^(draw|paint|sketch)\\s/i.test(text) || /(make|create|generate|draw)\\s+(me\\s+)?(an?\\s+)?(image|picture|photo|drawing|pic)/i.test(text) || /^image of\\s/i.test(text);
   if(wantImg){
     var w2 = bubble('six', 'drawing…', 'six');
@@ -4407,7 +4452,7 @@ function ask(text){
       .catch(function(){ w2._span.textContent = 'image gen is unreachable rn ✦'; });
     return;
   }
-var wait = bubble('six', '', 'six');
+var wait = bubble('six', '', 'six'); wait._prompt = text; wait._ubub = ub;
   wait._span.innerHTML = '<span class="tdots"><i></i><i></i><i></i></span>';
   fetch('/ai/ask', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ messages: hist.slice(-10) }) })
     .then(function(r){ return r.json(); })
@@ -4418,6 +4463,7 @@ var wait = bubble('six', '', 'six');
       if(m){ try { act = JSON.parse(m[1]); } catch(e){ try { act = JSON.parse(m[1].split(String.fromCharCode(92)).join('')); } catch(e2){} } t = t.replace(m[0], '').trim() || 'on it ✦'; }
       revealSix(wait, t);
       hist.push({ role:'assistant', content: t }); saveThread();
+      wait._hi = hist.length - 1; addActions(wait, t);
       if(act) setTimeout(function(){ runAct(act, wait); }, 700);
     })
     .catch(function(){ wait._span.textContent = 'six is unreachable rn ✦ try again in a sec'; });
