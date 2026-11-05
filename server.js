@@ -2150,7 +2150,7 @@ function gxSjInit(){
       if (reg && !reg.active) await new Promise(function(res){ var w = reg.installing || reg.waiting; if (!w) return res(); var done = false; var fin = function(){ if (!done) { done = true; res(); } }; w.addEventListener('statechange', function(){ if (w.state === 'activated') fin(); }); setTimeout(fin, 10000); });
     }
     var conn = new BareMux.BareMuxConnection('/uv-assets/baremux/worker.js?e=68');
-    if ((await conn.getTransport()) !== '/uv-assets/epoxy/index.mjs?e=68') await conn.setTransport('/uv-assets/epoxy/index.mjs?e=68', [{ wisp: (window.GX_WISP || (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/') }]);
+    if ((await conn.getTransport()) !== '/libcurl/index.mjs?v=296') await conn.setTransport('/libcurl/index.mjs?v=296', [{ websocket: (window.GX_WISP || (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/') }]);
     var sj = new ($scramjetLoadController().ScramjetController)({ prefix: '/sj/service/', files: { wasm: '/sj-assets/scramjet.wasm.wasm', all: '/sj-assets/scramjet.all.js', sync: '/sj-assets/scramjet.sync.js' } });
     await sj.init();
     return sj;
@@ -11196,13 +11196,13 @@ function chatUpgrade(req, socket) {
 
 // ---------- proxy tunnel (wisp) + shared engine assets (node build) ----------
 const UV_GZ = new Map();
-let SJ_WISP = null, SJ_BAREMUX_DIR = null, SJ_EPOXY_DIR = null, SJ_WISP_IMPL = 'none';
+let SJ_WISP = null, SJ_BAREMUX_DIR = null, SJ_EPOXY_DIR = null, SJ_WISP_IMPL = 'none', SJ_LIBCURL_DIR = null;
 try {
   const fs2 = require('fs'); const path2 = require('path');
   const wmod = require('@mercuryworkshop/wisp-js/server');
   SJ_WISP = wmod.server;
   try { if (wmod.logging) wmod.logging.set_level(process.env.WISP_LOG ? (wmod.logging[process.env.WISP_LOG] ?? wmod.logging.NONE) : wmod.logging.NONE); } catch (e) {}
-  try { Object.assign(SJ_WISP.options, { allow_private_ips: true, allow_udp_streams: false, hostname_blacklist: [/^localhost$/, /^127\./, /^10\./, /^192\.168\./, /^172\.(1[6-9]|2[0-9]|3[01])\./, /^::1$/, /\.local$/] }); } catch (e) {}
+  try { Object.assign(SJ_WISP.options, { allow_private_ips: true, allow_udp_streams: false, dns_servers: ['1.1.1.1', '1.0.0.1'], hostname_blacklist: [/^localhost$/, /^127\./, /^10\./, /^192\.168\./, /^172\.(1[6-9]|2[0-9]|3[01])\./, /^::1$/, /\.local$/] }); } catch (e) {}
   try { if (!SJ_WISP || typeof SJ_WISP.routeRequest !== 'function') { const wsn = require('wisp-server-node'); if (wsn && typeof wsn.routeRequest === 'function') { SJ_WISP = wsn; SJ_WISP_IMPL = 'wisp-server-node'; } } else SJ_WISP_IMPL = 'wisp-js'; } catch (e) { SJ_WISP_IMPL = 'wisp-js'; }
   try { SJ_BAREMUX_DIR = require('@mercuryworkshop/bare-mux/node').baremuxPath; } catch (e) { SJ_BAREMUX_DIR = path2.join(path2.dirname(require.resolve('@mercuryworkshop/bare-mux')), 'dist'); }
   SJ_EPOXY_DIR = (() => { const cands = []; const sep = path2.sep;
@@ -11211,6 +11211,8 @@ try {
     for (const c of cands) { try { if (c && fs2.existsSync(path2.join(c, 'index.mjs'))) return c; } catch (e) {} }
     return cands[0] || null; })();
   console.log('epoxy dir:', SJ_EPOXY_DIR, SJ_EPOXY_DIR ? ('index.mjs: ' + fs2.existsSync(path2.join(SJ_EPOXY_DIR, 'index.mjs'))) : 'MISSING');
+  try { SJ_LIBCURL_DIR = path2.join(__dirname, 'node_modules', '@mercuryworkshop', 'libcurl-transport', 'dist'); if (!fs2.existsSync(path2.join(SJ_LIBCURL_DIR, 'index.mjs'))) SJ_LIBCURL_DIR = null; } catch (e) { SJ_LIBCURL_DIR = null; }
+  console.log('libcurl dir:', SJ_LIBCURL_DIR || 'MISSING');
   console.log('proxy tunnel ready (wisp on /wisp/, impl: ' + SJ_WISP_IMPL + ')');
 } catch (e) { console.log('proxy tunnel unavailable:', e.message); }
 
@@ -11334,7 +11336,7 @@ const server = http.createServer(async (req, res) => {
   // exempt and answers normally; real browsers never match the bot filter.
   if (req.method === 'GET' && u.pathname !== '/' && isBotReq(req)) {
     const p = u.pathname;
-    const skip = p === '/study' || p === '/privacy' || p === '/robots.txt' || p === '/sitemap.xml' || p === '/enter' || p === '/healthz' || p === '/ui.js' || p === '/cloak.js' || p === '/sw.js' || p === '/favicon.ico' || p.startsWith('/api') || p.startsWith('/auth') || p.startsWith('/go') || p.startsWith('/gproxy') || p.startsWith('/px/') || p.startsWith('/uv') || p.startsWith('/sj') || p.startsWith('/wisp') || p.startsWith('/baremux') || p.startsWith('/epoxy') || p.startsWith('/dl') || p.startsWith('/yt/stream') || p.startsWith('/icons/') || p === '/fonts.css' || p.startsWith('/font/');
+    const skip = p === '/study' || p === '/privacy' || p === '/robots.txt' || p === '/sitemap.xml' || p === '/enter' || p === '/healthz' || p === '/ui.js' || p === '/cloak.js' || p === '/sw.js' || p === '/favicon.ico' || p.startsWith('/api') || p.startsWith('/auth') || p.startsWith('/go') || p.startsWith('/gproxy') || p.startsWith('/px/') || p.startsWith('/uv') || p.startsWith('/sj') || p.startsWith('/wisp') || p.startsWith('/baremux') || p.startsWith('/epoxy') || p.startsWith('/libcurl') || p.startsWith('/dl') || p.startsWith('/yt/stream') || p.startsWith('/icons/') || p === '/fonts.css' || p.startsWith('/font/');
     if (!skip) {
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
       return res.end(studyPage());
@@ -11355,7 +11357,7 @@ const server = http.createServer(async (req, res) => {
     return res.end(isBotReq(req) ? studyPage() : homeServed());
   }
   if (u.pathname === '/search') {
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' });
     return res.end(SEARCH);
   }  if (u.pathname === '/stars.js') {
     res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' });
@@ -11364,7 +11366,7 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/shell') {
     const servers = u.searchParams.has('ext') ? ['https://s.usareme.site/', 'https://sixsearch.deionmont1.workers.dev/'] : null;
     if (isBotReq(req)) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(studyPage()); }
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' });
     return res.end(shellPage(servers));
   }
     if (u.pathname === '/customize') {
@@ -11393,7 +11395,7 @@ const server = http.createServer(async (req, res) => {
     return res.end(PWA_MANIFEST);
   }
   if (u.pathname === '/sj/sw.js') {
-    if (SJ_OK()) { res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(SJ_SW); }
+    if (SJ_OK()) { res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' }); return res.end(SJ_SW); }
     res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('nf');
   }
   if (u.pathname === '/sw.js') {
@@ -12171,7 +12173,7 @@ const server = http.createServer(async (req, res) => {
     const pengM = ((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv|raw)/) || [])[1]);
     const peng = (pengM === 'raw' && !rawGameHost(gu2)) ? 'sj' : (pengM || (rawGameHost(gu2) ? 'raw' : 'sj'));
     if (gu2 && peng === 'raw') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageRaw(gu2, u.searchParams.get('t') || 'Game')); }
-    if (gu2 && peng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageSj(gu2, u.searchParams.get('t') || 'Game')); }
+    if (gu2 && peng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' }); return res.end(playPageSj(gu2, u.searchParams.get('t') || 'Game')); }
     if (UV_OK() && gu2) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageUv(gu2, u.searchParams.get('t') || 'Game')); }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(playPage(gu2, u.searchParams.get('t') || 'Game'));
@@ -12179,7 +12181,7 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/appplay') {
     if (u.searchParams.get('u') && isVdHost(u.searchParams.get('u'))) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(appPlayPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App')); }
     const aeng = ((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv)/) || [])[1]) || 'sj';
-    if (u.searchParams.get('u') && aeng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(appPlayPageSj(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App')); }
+    if (u.searchParams.get('u') && aeng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' }); return res.end(appPlayPageSj(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App')); }
     if (UV_OK() && u.searchParams.get('u')) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(appPlayPageUv(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App')); }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(appPlayPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App'));
@@ -12425,7 +12427,7 @@ const server = http.createServer(async (req, res) => {
   }
   if (u.pathname.startsWith('/sj/service/')) {
     const target = sjDecodeUrl(u.pathname.slice('/sj/service/'.length));
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' });
     return res.end(sjWarmPage(target));
   }
   if (u.pathname === '/uv') {
@@ -12440,6 +12442,28 @@ const server = http.createServer(async (req, res) => {
     if (UV_OK() && dest) { res.writeHead(302, { location: '/uv/service/' + uvEncodeUrl(dest) }); return res.end(); }
     res.writeHead(302, { location: '/home' });
     return res.end();
+  }
+  if (u.pathname.startsWith('/libcurl/')) {
+    const rel = u.pathname.slice('/libcurl/'.length);
+    if (!SJ_LIBCURL_DIR || !rel || rel.includes('..')) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('not found'); }
+    const fsx = require('fs'); const pathx = require('path');
+    const fp = pathx.join(SJ_LIBCURL_DIR, rel);
+    if (!fp.startsWith(SJ_LIBCURL_DIR) || !fsx.existsSync(fp)) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('not found'); }
+    const ext = pathx.extname(fp).toLowerCase();
+    const mime = ext === '.wasm' ? 'application/wasm' : ext === '.json' ? 'application/json' : ext === '.map' ? 'application/json' : 'text/javascript; charset=utf-8';
+    const hdrs = { 'content-type': mime, 'cache-control': 'public, max-age=31536000, immutable', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' };
+    if (/\bgzip\b/.test(req.headers['accept-encoding'] || '') && /\.(js|mjs|json|wasm|map)$/.test(fp)) {
+      try {
+        const zlibx = require('zlib');
+        const st = fsx.statSync(fp);
+        let c = UV_GZ.get(fp);
+        if (!c || c.m !== st.mtimeMs) { c = { m: st.mtimeMs, buf: zlibx.gzipSync(fsx.readFileSync(fp), { level: 6 }) }; UV_GZ.set(fp, c); if (UV_GZ.size > 40) UV_GZ.clear(); }
+        res.writeHead(200, { ...hdrs, 'content-encoding': 'gzip', 'content-length': c.buf.length, 'vary': 'accept-encoding' });
+        return res.end(c.buf);
+      } catch (e) { /* fall through to the raw stream */ }
+    }
+    res.writeHead(200, hdrs);
+    return fsx.createReadStream(fp).pipe(res);
   }
   if (u.pathname.startsWith('/sj-assets/')) {
     const rel = u.pathname.slice('/sj-assets/'.length);
