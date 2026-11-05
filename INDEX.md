@@ -1,6 +1,6 @@
 # Project index — generated function/route map (regenerate after structural changes)
 
-**Hot functions (most calls — read these first):** push ×146, $ ×124, proxied ×48, esc ×42, parse ×37, fmt ×37, setStat ×30, escHtml ×30, readJsonBody ×28, peek ×27, cloakTab ×26, applyAudio ×25, log ×23, arm ×23, done ×21, logLine ×18, connect ×18, useNet ×17, retry ×17, validHue ×16, rw ×15, line ×14, voterUser ×13, persistAcct ×13, curName ×13
+**Hot functions (most calls — read these first):** push ×146, $ ×124, proxied ×48, esc ×42, parse ×37, fmt ×37, setStat ×30, escHtml ×30, readJsonBody ×28, peek ×27, cloakTab ×26, applyAudio ×25, done ×24, log ×23, arm ×23, logLine ×18, connect ×18, useNet ×17, retry ×17, validHue ×16, rw ×15, line ×14, voterUser ×13, persistAcct ×13, curName ×13
 
 ## server.js (12222 lines)
 

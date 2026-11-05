@@ -974,7 +974,7 @@ var p = location.pathname; document.querySelectorAll('#siderail .rl a').forEach(
 // a slow twinkling starfield canvas (served from /stars.js), glass panels,
 // soft rounded type (Inter + Inter), all-lowercase niche copy.
 const FONT_LINKS = '<link href="/fonts.css" rel="stylesheet">';
-const STAR_CANVAS = ''; // minimal theme: no starfield
+const STAR_CANVAS = "<script>(function(){try{var c=localStorage.getItem('gx_sky')||'nebula';document.body.setAttribute('data-sky',c);}catch(e){document.body.setAttribute('data-sky','nebula');}})();</script>"; // sky boot (v292): same background on every page
 const GALAXY_CSS = `
 .xlights{display:none;pointer-events:none}body[data-lights="on"] .xlights{display:block}.xlights svg{width:100%;height:100%;display:block;overflow:visible}.xlights.xsite{position:fixed !important;top:-14px !important;left:0 !important;right:0 !important;height:54px !important;z-index:3}body[data-nav="bar"] .xlights.xsite{top:36px !important}@media (max-width:1099px){.xlights.xsite{top:36px !important}}.xlights .xb{animation:xblink 1.8s linear infinite}.xlights .xg{animation:xglowp 2.6s ease-in-out infinite}@keyframes xblink{0%,52%{opacity:1}62%,100%{opacity:.15}}@keyframes xglowp{0%,100%{opacity:.65}50%{opacity:.12}}body[data-motion="off"] .xlights .xb,body[data-motion="off"] .xlights .xg{animation:none}@media (prefers-reduced-motion: reduce){.xlights .xb,.xlights .xg{animation:none}}
 *{box-sizing:border-box;margin:0}
@@ -8887,11 +8887,11 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
     h2['content-encoding'] = 'gzip';
     h2['vary'] = 'accept-encoding';
     res.writeHead(status, h2);
-    pipeline(Readable.fromWeb(upstream.body), zlib.createGzip({ level: 5 }), res, () => {});
+    try { pipeline(Readable.fromWeb(upstream.body), zlib.createGzip({ level: 5 }), res, () => {}); } catch (e) { try { res.destroy(); } catch (e2) {} }
     return;
   }
   res.writeHead(status, outHeaders);
-  if (upstream.body) pipeline(Readable.fromWeb(upstream.body), res, () => {});
+  if (upstream.body) { try { pipeline(Readable.fromWeb(upstream.body), res, () => {}); } catch (e) { try { res.destroy(); } catch (e2) {} } }
   else res.end();
 }
 
@@ -9769,7 +9769,7 @@ function shellPage(servers) {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script>
 <title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-<style>html,body{margin:0;height:100%;height:100dvh;background:#0a0a0b;overflow:hidden}iframe{position:fixed;inset:0;width:100%;height:100%;height:100dvh;border:0}
+<style>html,body{margin:0;height:100%;height:100dvh;background:#070518;overflow:hidden}iframe{position:fixed;inset:0;width:100%;height:100%;height:100dvh;border:0}
 #dot{position:fixed;right:14px;bottom:14px;z-index:9;width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(14,14,16,.55);color:#e4e4e7;opacity:.35;cursor:pointer;font-size:14px;line-height:1}
 #dot:hover{opacity:1}
 body.tabup #dot{bottom:120px}body.tabup #menu{bottom:160px}
@@ -9782,7 +9782,7 @@ body.tabup #dot{bottom:120px}body.tabup #menu{bottom:160px}
 .lcard svg{color:#d9d9de!important}
 .lcard:hover{border-color:rgba(255,255,255,.22)!important;box-shadow:none!important}
 .card,.appRow{box-shadow:none!important}
-</style></head><body>
+body[data-sky]{background-color:#060609;background-image:radial-gradient(1100px 700px at 50% -10%,rgba(167,139,250,.07),rgba(0,0,0,0) 60%),radial-gradient(920px 640px at 88% 108%,rgba(167,139,250,.15),rgba(0,0,0,0) 62%),radial-gradient(780px 560px at 4% 96%,rgba(139,92,246,.13),rgba(0,0,0,0) 60%)}body[data-sky="nebula"]{background-color:#070518;background-image:radial-gradient(1000px 650px at 50% 28%,rgba(255,255,255,.05),rgba(10,8,32,0) 62%),radial-gradient(820px 620px at 84% 88%,rgba(37,80,235,.17),rgba(10,8,32,0) 60%)}</style></head><body>${STAR_CANVAS}
 <iframe id="f" allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone" allowfullscreen></iframe>
 <button id="dot">✦</button>
 <div id="menu">
@@ -11272,7 +11272,7 @@ const server = http.createServer(async (req, res) => {
       for (const h of ['content-type', 'content-length', 'content-range', 'accept-ranges']) { const v = r.headers.get(h); if (v) oh[h] = v; }
       res.writeHead(r.status, oh);
       if (!r.body) return res.end();
-      await new Promise(function (done) { pipeline(Readable.fromWeb(r.body), res, function () { done(); }); });
+      await new Promise(function (done) { try { pipeline(Readable.fromWeb(r.body), res, function () { done(); }); } catch (e) { done(); } });
       return;
     } catch { if (!res.headersSent) { res.writeHead(502, { 'content-type': 'text/plain' }); } return res.end(); }
   }
@@ -11905,7 +11905,7 @@ const server = http.createServer(async (req, res) => {
               for (const h of ['content-type', 'content-length', 'content-range', 'accept-ranges']) { const v = up.headers.get(h); if (v && !(h === 'content-length' && up.headers.get('content-encoding'))) hh[h] = v; }
               if (wantDl && up.status === 200) { const nm = String(hit2.title || '').replace(/[^\w \-\.]/g, '').trim().slice(0, 80); hh['content-disposition'] = 'attachment; filename="' + (nm || ('video-' + vidId)) + '.mp4"'; }
               res.writeHead(up.status, hh);
-              if (up.body) await new Promise(done => pipeline(Readable.fromWeb(up.body), res, () => done()));
+              if (up.body) await new Promise(done => { try { pipeline(Readable.fromWeb(up.body), res, () => done()); } catch (e) { done(); } });
               return;
             }
             tried.add('file:' + hit2.client);
@@ -11932,7 +11932,7 @@ const server = http.createServer(async (req, res) => {
             if (firstChunk && firstChunk.length) {
               res.writeHead(200, hh);
               res.write(firstChunk);
-              await new Promise(done => pipeline(ff.stdout, res, () => done()));
+              await new Promise(done => { try { pipeline(ff.stdout, res, () => done()); } catch (e) { done(); } });
               try { ff.kill('SIGKILL'); } catch { }
               return;
             }
