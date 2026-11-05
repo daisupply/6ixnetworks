@@ -2165,13 +2165,14 @@ function playPageUv(u, t) {
     return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#e4e4e7" href="/gs">back to games</a></body>';
   }
   const prox = '/uv/service/' + uvEncodeUrl(u);
+  const rawChip = rawGameHost(u) ? `<button onclick="document.cookie='gx_eng=raw; Path=/; Max-Age=31536000; SameSite=Lax'; location.reload();">direct</button>` : '';
   const alt = proxied(u);
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body class="playbody">${STAR_CANVAS}
 <div class="top"><a href="/gs">← games</a><span class="title">${escHtml(t || 'Game')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
-<button class="on" onclick="useNet()">network</button> ${ENG_HTML}
+<button class="on" onclick="useNet()">network</button> ${ENG_HTML}${rawChip}
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
 <button onclick="cloakTab('google')">cloak: google</button>
@@ -2342,13 +2343,14 @@ function playPageSj(u, t) {
     return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#e4e4e7" href="/gs">back to games</a></body>';
   }
   const prox = '/sj/service/' + sjEncodeUrl(u);
+  const rawChip = rawGameHost(u) ? `<button onclick="document.cookie='gx_eng=raw; Path=/; Max-Age=31536000; SameSite=Lax'; location.reload();">direct</button>` : '';
   const alt = proxied(u);
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body class="playbody">${STAR_CANVAS}
 <div class="top"><a href="/gs">← games</a><span class="title">${escHtml(t || 'Game')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
-<button class="on" onclick="useNet()">network</button> ${ENG_HTML}
+<button class="on" onclick="useNet()">network</button> ${ENG_HTML}${rawChip}
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
 <button onclick="cloakTab('google')">cloak: google</button>
@@ -2471,18 +2473,47 @@ gf.addEventListener('load', function(){ setTimeout(check, 4000); });
 <script>window.onGxEng=function(){ location.reload(); };</script><script>${ENG_JS}</script></body>
 </html>`;
 }
+
+const RAW_GAME_HOSTS = ['1v1.lol'];
+function rawGameHost(u){ try { var h = new URL(u).hostname.toLowerCase(); return RAW_GAME_HOSTS.some(function(x){ return h === x || h.slice(-(x.length + 1)) === '.' + x; }); } catch (e) { return false; } }
+function playPageRaw(u, t) {
+  if (!/^https:\/\//i.test(u || '')) {
+    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#e4e4e7" href="/gs">back to games</a></body>';
+  }
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CANVAS}
+<div class="top"><a href="/gs">← games</a><span class="title">${escHtml(t || 'Game')}</span>
+<button class="on">direct</button>
+<button onclick="setEng('sj')">scramjet</button>
+<button onclick="setEng('uv')">uv</button>
+<button onclick="retry()">retry</button>
+<button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
+<button onclick="cloakTab('google')">cloak: google</button>
+<button onclick="cloakOpen()">cloaked tab</button></div>
+<iframe class="gameframe" id="gf" src="${escHtml(u)}" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
+<script src="/ui.js"></script>
+<script>
+try{ var gu=new URLSearchParams(location.search).get('u'); if(gu){ var R=[]; try{ R=JSON.parse(localStorage.getItem('gx_recent'))||[]; }catch(e){} R=[gu].concat(R.filter(function(x){ return x!==gu; })).slice(0,12); localStorage.setItem('gx_recent', JSON.stringify(R)); } }catch(e){}
+function setEng(v){ try{ localStorage.setItem('gx_engine', v); }catch(e){} document.cookie='gx_eng='+v+'; Path=/; Max-Age=31536000; SameSite=Lax'; location.reload(); }
+function retry(){ document.getElementById('gf').src=${JSON.stringify(u)}; }
+</script>
+</body></html>`;
+}
 function playPage(u, t) {
   if (!/^https:\/\//i.test(u || '')) {
     return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#e4e4e7" href="/gs">back to games</a></body>';
   }
   const prox = UV_OK() ? '/uv/service/' + uvEncodeUrl(u) : gproxied(u);
+  const rawChip = rawGameHost(u) ? `<button onclick="document.cookie='gx_eng=raw; Path=/; Max-Age=31536000; SameSite=Lax'; location.reload();">direct</button>` : '';
   const alt = proxied(u);
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body class="playbody">${STAR_CANVAS}
 <div class="top"><a href="/gs">← games</a><span class="title">${escHtml(t || 'Game')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
-<button class="on" onclick="useNet()">network</button> ${ENG_HTML}
+<button class="on" onclick="useNet()">network</button> ${ENG_HTML}${rawChip}
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
 <button onclick="cloakTab('google')">cloak: google</button>
@@ -11828,11 +11859,14 @@ const server = http.createServer(async (req, res) => {
     return res.end(userPage());
   }
   if (u.pathname === '/play') {
-    const peng = ((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv)/) || [])[1]) || 'sj';
-    if (u.searchParams.get('u') && peng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageSj(u.searchParams.get('u') || '', u.searchParams.get('t') || 'Game')); }
-    if (UV_OK() && u.searchParams.get('u')) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageUv(u.searchParams.get('u') || '', u.searchParams.get('t') || 'Game')); }
+    const gu2 = u.searchParams.get('u') || '';
+    const pengM = ((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv|raw)/) || [])[1]);
+    const peng = pengM || (rawGameHost(gu2) ? 'raw' : 'sj');
+    if (gu2 && peng === 'raw') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageRaw(gu2, u.searchParams.get('t') || 'Game')); }
+    if (gu2 && peng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageSj(gu2, u.searchParams.get('t') || 'Game')); }
+    if (UV_OK() && gu2) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageUv(gu2, u.searchParams.get('t') || 'Game')); }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
-    return res.end(playPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'Game'));
+    return res.end(playPage(gu2, u.searchParams.get('t') || 'Game'));
   }
   if (u.pathname === '/appplay') {
     if (u.searchParams.get('u') && isVdHost(u.searchParams.get('u'))) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(appPlayPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App')); }
