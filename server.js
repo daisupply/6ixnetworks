@@ -144,10 +144,7 @@ async function summarizeUrl(env, ub) {
   return s;
 }
 async function askSixSummary(env, url, title, text) {
-  const out = await askSix(null, [
-    { role: 'system', content: 'You are Six, the AI inside the 6ixNetworks proxy. Summarize the web page below for a student: the gist in 3-5 short sentences, plain text, no markdown symbols. If the page has clear key facts, add them after as short lines starting with "• ". If the text is mostly navigation junk or you cannot tell what the page is about, say so honestly in one line. voice: all lowercase, casual, straight-talking, can be a little funny when it fits, short lines, zero corporate tone.' },
-    { role: 'user', content: 'URL: ' + url + '\nTITLE: ' + title + '\n\n' + text }
-  ], null, 'summary');
+  const out = await askSix([{ role: 'user', content: 'URL: ' + url + '\nTITLE: ' + title + '\n\n' + text }], 'You are Six, the AI inside the 6ixNetworks proxy. Summarize the web page below for a student: the gist in 3-5 short sentences, plain text, no markdown symbols. If the page has clear key facts, add them after as short lines starting with "• ". If the text is mostly navigation junk or you cannot tell what the page is about, say so honestly in one line. voice: all lowercase, casual, straight-talking, can be a little funny when it fits, short lines, zero corporate tone.', 'summary');
   if (!out || out.indexOf('six is') === 0 || out.indexOf('six only') === 0) return null;
   return out;
 }
@@ -213,7 +210,16 @@ function getSetCookies(headers) {
 
 function isPrivateHost(hostname) {
   const h = hostname.toLowerCase();
-  if (h === 'localhost' || h.endsWith('.local') || h === '::1') return true;
+  if (h === 'localhost' || h.endsWith('.local')) return true;
+  if (h.indexOf(':') >= 0) {
+    if (h === '::1' || h === '::' || h === '0:0:0:0:0:0:0:1') return true;
+    if (/^fe[89ab]/.test(h)) return true;
+    if (/^f[cd]/.test(h)) return true;
+    const mm = h.match(/::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+    if (mm) return isPrivateHost(mm[1]);
+    if (h.indexOf('::ffff:') === 0) return true;
+    return false;
+  }
   const m = h.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
   if (m) {
     const a = +m[1], b = +m[2];
@@ -3052,7 +3058,7 @@ body[data-sky] .app6 .cr-item.on,body[data-sky] .app6 .cr-item.on:hover,body[dat
 .msg.bot .mav{box-shadow:0 0 0 2px rgba(var(--star),.35);position:relative}
 .msg.bot .mav img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;margin:0}
 @media (min-width:821px){ .main6 .bar{max-width:880px;margin-left:auto;margin-right:auto;width:calc(100% - 32px)} }
-</style></head><body>${STAR_CANVAS}<canvas id="stars"></canvas><script src="/stars.js?e=96"></script>${SIDEBAR_HTML}<div class="app6">
+</style></head><body>${STAR_CANVAS}${SIDEBAR_HTML}<div class="app6">
 
 
 <aside class="chatrail"><div class="brand6">6ix<span>Chat</span></div>
@@ -4347,8 +4353,7 @@ html.gx-framed .aiapp.app6{padding-bottom:0}
 .mact.on{color:rgb(var(--star))}
 @media (hover:none){ .macts{opacity:.75} }
 
-</style></head><body>${STAR_CANVAS}
-<canvas id="stars"></canvas><script src="/stars.js?e=96"></script>${SIDEBAR_HTML}<div class="aiapp app6">
+</style></head><body>${STAR_CANVAS}${SIDEBAR_HTML}<div class="aiapp app6">
 <aside class="airail">
 <div class="aibrand">six <span>&#10022; ai</span></div>
 <button class="ainew" id="newchat" type="button">+ new chat</button>
@@ -4372,7 +4377,6 @@ html.gx-framed .aiapp.app6{padding-bottom:0}
 <form class="bar" id="askbar"><button class="imgbtn" id="imgmode" type="button" aria-label="image mode"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.6-4.6L6 21"/></svg></button><input type="text" id="q" placeholder="ask six anything..." autocomplete="off" maxlength="1000"><button type="submit" aria-label="send"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></button></form>
 </main>
 </div>
-${TABBAR_HTML}
 <script src="/ui.js"></script>
 <script src="/stars.js?e=96"></script>
 <script>
@@ -5602,6 +5606,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <button class="chip" id="more" type="button" style="display:none;margin:18px auto 4px">load more</button>
 ${SIDEBAR_HTML}
 </div>
+<script src="/ui.js"></script>
 <script>
 function aesc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function acard(a){
@@ -9012,7 +9017,7 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
   if (res.socket) { try { res.socket.setNoDelay(true); } catch { } }
   // collect request body (for proxied form posts)
   const chunks = [];
-  for await (const c of req) chunks.push(c);
+  try { for await (const c of req) chunks.push(c); } catch { return; }
   const body = chunks.length ? Buffer.concat(chunks) : undefined;
 
   const accept = req.headers['accept'] || 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8';
@@ -9122,7 +9127,8 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
   const isCss = ct && ct.includes('text/css');
 
   if (isHtml || isCss) {
-    const text = await upstream.text();
+    let text;
+    try { text = await upstream.text(); } catch { res.writeHead(502, { 'content-type': 'text/plain' }); return res.end('upstream cut off'); }
     if (isHtml && isNav && (status === 403 || status === 429 || CHAL_SIG.test(text.slice(0, 4000)))) {
       const relayed = await fetchViaRelay(target.toString());
       if (relayed) {
@@ -9149,7 +9155,8 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
   // buffered forever (virtual-direct movies "never finishing").
   const isHls = (ct && /mpegurl/i.test(ct)) || /\.m3u8$/i.test(target.pathname);
   if (isHls && req.method === 'GET' && status === 200) {
-    const plText = await upstream.text();
+    let plText;
+    try { plText = await upstream.text(); } catch { res.writeHead(502, { 'content-type': 'text/plain' }); return res.end('upstream cut off'); }
     const plBuf = Buffer.from(rewritePlaylist(plText, target.toString(), gameMode), 'utf8');
     outHeaders['content-type'] = 'application/vnd.apple.mpegurl';
     return sendCompressed(req, res, 200, outHeaders, plBuf);
@@ -9169,7 +9176,8 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
   }
   const cacheableRes = cacheableReq && status === 200 && isStaticAsset(target, ct || '');
   if (cacheableRes) {
-    const buf = Buffer.from(await upstream.arrayBuffer());
+    let buf;
+    try { buf = Buffer.from(await upstream.arrayBuffer()); } catch { res.writeHead(502, { 'content-type': 'text/plain' }); return res.end('upstream cut off'); }
     if (buf.length <= 8e6) {
       const ck2 = target.toString();
       const old = MEM_CACHE.get(ck2);
@@ -10872,7 +10880,7 @@ function greqNorm(name) { return String(name || '').toLowerCase().replace(/[^a-z
 let sixPickMem = null;
 let sixPickBusy = null;
 const SIX_PICK_LINES = ['ran thru the whole catalog so u dont have to — this the one today twin', 'i dont miss. todays feature goes stupid, just tap it', 'checked everything on the page n this ones carrying today. ur welcome', 'the algorithm is me. i am the algorithm. play this', 'this been sitting in the catalog too quiet — not anymore. featured'];
-function sixPickDay() { return new Date().toISOString().slice(0, 10); }
+function sixPickDay() { try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago' }).format(new Date()); } catch { return new Date().toISOString().slice(0, 10); } }
 function sixHash(s) { let h = 7; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); }
 function sixPickShape(g, blurb, src) { return { ok: true, t: g.t, c: g.c || '', img: g.img ? proxied(g.img) : '', href: '/play?u=' + encodeURIComponent(g.u) + '&t=' + encodeURIComponent(g.t), blurb: blurb || '', src }; }
 function sixPickFallback(pool, day) { const g = pool[sixHash('sixpick:' + day) % pool.length]; return sixPickShape(g, SIX_PICK_LINES[sixHash('line:' + day) % SIX_PICK_LINES.length], 'rotation'); }
@@ -11259,6 +11267,7 @@ self.addEventListener("fetch", (event) => { event.respondWith(__sjHandle(event))
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
 `;
+process.on('unhandledRejection', (e) => { try { console.error('unhandledRejection:', (e && e.message) || e); } catch { } });
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://localhost');
   if (u.pathname.length > 1 && u.pathname.endsWith('/') && !/^\/(uv|sj|px|browse|gproxy|wisp)/.test(u.pathname)) u.pathname = u.pathname.slice(0, -1);
@@ -11874,6 +11883,10 @@ const server = http.createServer(async (req, res) => {
         rec.name = name; ACCOUNTS.set(lower, rec); persistAcct(lower);
         for (const [tok, sess] of SESSIONS) { if (sess.name.toLowerCase() === oldLower) { sess.name = name; persistSess(tok); } }
         for (const r of GAME_REQUESTS.values()) { if (r.byUser && r.byUser.toLowerCase() === oldLower) { r.byUser = name; if (r.by === s.name) r.by = rec.disp || name; persistReq(r); } }
+        for (const [ak, ar] of ACCOUNTS) { let ch = false; for (const k of ['friends', 'fin', 'fout']) { if (Array.isArray(ar[k]) && ar[k].indexOf(oldLower) >= 0) { ar[k] = ar[k].map(x => x === oldLower ? lower : x); ch = true; } } if (ch) persistAcct(ak); }
+        for (const r of GAME_REQUESTS.values()) { if (r.voters && r.voters.has('u:' + oldLower)) { r.voters.delete('u:' + oldLower); r.voters.add('u:' + lower); persistReq(r); } }
+        for (const [rtk, rr] of RESETS) { if (rr && rr.name && rr.name.toLowerCase() === oldLower) { rr.name = name; storeSet('rst:' + rtk, JSON.stringify(rr)); } }
+        try { const myFr = Array.isArray(rec.friends) ? rec.friends : []; for (const f of myFr) { const oR = dmRoomFor(oldLower, f), nR = dmRoomFor(lower, f); if (oR !== nR && CHAT_ROOMS.has(oR)) { if (!CHAT_ROOMS.has(nR)) CHAT_ROOMS.set(nR, CHAT_ROOMS.get(oR)); CHAT_ROOMS.delete(oR); persistChatRoom(nR); chatStoreCmd([['DEL', 'chat:' + oR]]); } } } catch { }
         out = { ok: true, user: name };
       }
       res.writeHead(200, { 'content-type': 'application/json' });
@@ -11888,7 +11901,7 @@ const server = http.createServer(async (req, res) => {
       let out;
       if (oldH !== rec.hash) out = { ok: false, err: 'old password is wrong' };
       else if (String(b.next || '').length < 8) out = { ok: false, err: 'new password needs 8+ characters' };
-      else { rec.salt = randHex(16); rec.hash = await sha256hex(rec.salt + ':' + String(b.next)); persistAcct(s.name.toLowerCase()); out = { ok: true }; }
+      else { rec.salt = randHex(16); rec.hash = await sha256hex(rec.salt + ':' + String(b.next)); persistAcct(s.name.toLowerCase()); for (const [tk, ss] of SESSIONS) { if (ss.name && ss.name.toLowerCase() === s.name.toLowerCase() && (!cookieTok || tk !== cookieTok[1])) { SESSIONS.delete(tk); storeDel('sess:' + tk); } } out = { ok: true }; }
       res.writeHead(200, { 'content-type': 'application/json' });
       return res.end(JSON.stringify(out));
     }
@@ -11919,6 +11932,7 @@ const server = http.createServer(async (req, res) => {
     const b = await readJsonBody(req);
     const q = cleanText(b.question).slice(0, 300);
     const roomName = cleanRoom(b.room);
+    if (!dmAccess(req, roomName, b.peer)) { res.writeHead(403, { 'content-type': 'application/json' }); return res.end('{"ok":false,"error":"dm locked"}'); }
     if (q) {
       chatBroadcast(chatRoomOf(roomName), { type: 'sixtyping' });
       const hist = chatRoomOf(roomName).msgs.slice(-14).map(m => (m.bot ? 'six (you)' : m.name) + ': ' + m.text).join('\n').slice(-1800);
@@ -12058,7 +12072,7 @@ const server = http.createServer(async (req, res) => {
     const dh = { 'content-type': upstream.headers.get('content-type') || 'application/octet-stream', 'content-disposition': 'attachment; filename="' + fname + '"' };
     if (dlen && !upstream.headers.get('content-encoding')) dh['content-length'] = dlen;
     res.writeHead(200, dh);
-    if (upstream.body) { const reader = upstream.body.getReader(); while (true) { const { done, value } = await reader.read(); if (done) break; res.write(Buffer.from(value)); } }
+    if (upstream.body) { const reader = upstream.body.getReader(); try { while (true) { const { done, value } = await reader.read(); if (done) break; res.write(Buffer.from(value)); } } catch { } }
     return res.end();
   }
   if (u.pathname === '/api/games') {
@@ -12155,7 +12169,7 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/play') {
     const gu2 = u.searchParams.get('u') || '';
     const pengM = ((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv|raw)/) || [])[1]);
-    const peng = pengM || (rawGameHost(gu2) ? 'raw' : 'sj');
+    const peng = (pengM === 'raw' && !rawGameHost(gu2)) ? 'sj' : (pengM || (rawGameHost(gu2) ? 'raw' : 'sj'));
     if (gu2 && peng === 'raw') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageRaw(gu2, u.searchParams.get('t') || 'Game')); }
     if (gu2 && peng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageSj(gu2, u.searchParams.get('t') || 'Game')); }
     if (UV_OK() && gu2) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageUv(gu2, u.searchParams.get('t') || 'Game')); }
