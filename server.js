@@ -2076,6 +2076,37 @@ loadCatalog();
 function uvEncodeUrl(str) { let out = ''; for (let i = 0; i < str.length; i++) out += i % 2 ? String.fromCharCode(str.charCodeAt(i) ^ 2) : str[i]; return encodeURIComponent(out); }
 function uvDecodeUrl(str) { let s = str || ''; try { s = decodeURIComponent(s); } catch (e) {} let out = ''; for (let i = 0; i < s.length; i++) out += i % 2 ? String.fromCharCode(s.charCodeAt(i) ^ 2) : s[i]; return out; }
 const UV_BOOT = '<script src="/uv-assets/baremux/index.js?e=68"></' + 'script><script>(function(){ if (window.__gxUv) return; window.__gxUv = 1; (async function(){ try { var conn = new BareMux.BareMuxConnection(\'/uv-assets/baremux/worker.js?e=68\'); if ((await conn.getTransport()) !== \'/uv-assets/epoxy/index.mjs?e=68\') await conn.setTransport(\'/uv-assets/epoxy/index.mjs?e=68\', [{ wisp: (location.protocol === \'https:\' ? \'wss:\' : \'ws:\') + \'//\' + location.host + \'/wisp/\' }]); } catch (e) {} })(); })();</' + 'script>';
+// ---------- engine toggle (v287): scramjet is the default rider, uv stays one tap away ----------
+// the pick lives in localStorage gx_engine + cookie gx_eng (the cookie is what
+// the server reads on /go, /play, /appplay; localStorage is the per-door mirror).
+const ENG_CSS = `.engt{display:inline-flex;gap:2px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:3px;vertical-align:middle;flex:none}
+.engt button{background:transparent;border:0;color:#a1a1aa;font-family:inherit;font-size:12px;font-weight:700;line-height:1;padding:6px 11px;border-radius:999px;cursor:pointer;letter-spacing:.02em}
+.engt button.on{background:#e4e4e7;color:#0a0a0b}
+.engt button:not(.on):hover{color:#f4f4f5}`;
+const ENG_HTML = `<span class="engt" role="group" aria-label="proxy engine" title="proxy engine"><button type="button" data-eng="sj">scramjet</button><button type="button" data-eng="uv">uv</button></span>`;
+const ENG_JS = `function gxEng(){ try{ var c=(document.cookie.match(/(?:^|;\\s*)gx_eng=(sj|uv)/)||[])[1]; if(c) return c; var l=localStorage.getItem('gx_engine'); if(l==='sj'||l==='uv') return l; }catch(e){} return 'sj'; }
+function paintEng(){ var v=gxEng(); var gs=document.querySelectorAll('.engt'); for(var i=0;i<gs.length;i++){ var bs=gs[i].querySelectorAll('button'); for(var j=0;j<bs.length;j++){ if(bs[j].getAttribute('data-eng')===v) bs[j].classList.add('on'); else bs[j].classList.remove('on'); } } }
+function gxSetEng(v){ try{ localStorage.setItem('gx_engine', v); }catch(e){} try{ document.cookie='gx_eng='+v+'; Path=/; Max-Age=31536000; SameSite=Lax'; }catch(e){} paintEng(); if(window.onGxEng) window.onGxEng(v); }
+(function(){ var bs=document.querySelectorAll('.engt button'); for(var i=0;i<bs.length;i++){ (function(b){ b.addEventListener('click', function(){ gxSetEng(b.getAttribute('data-eng')); }); })(bs[i]); } paintEng(); })();`;
+const SJ_INIT_JS = `var __gxSj = null;
+function gxSjInit(){
+  if (__gxSj) return __gxSj;
+  __gxSj = (async function(){
+    if ('serviceWorker' in navigator) {
+      await navigator.serviceWorker.register('/sw.js');
+      await navigator.serviceWorker.ready;
+      if (!navigator.serviceWorker.controller) await new Promise(function(res){ var to=setTimeout(res, 7000); navigator.serviceWorker.addEventListener('controllerchange', function(){ clearTimeout(to); res(); }); });
+    }
+    var conn = new BareMux.BareMuxConnection('/uv-assets/baremux/worker.js?e=68');
+    if ((await conn.getTransport()) !== '/uv-assets/epoxy/index.mjs?e=68') await conn.setTransport('/uv-assets/epoxy/index.mjs?e=68', [{ wisp: (window.GX_WISP || (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/') }]);
+    var sj = new ($scramjetLoadController().ScramjetController)({ prefix: '/sj/service/', files: { wasm: '/sj-assets/scramjet.wasm.wasm', all: '/sj-assets/scramjet.all.js', sync: '/sj-assets/scramjet.sync.js' } });
+    await sj.init();
+    return sj;
+  })();
+  return __gxSj;
+}`;
+function sjEncodeUrl(str) { return encodeURIComponent(str); }
+function sjDecodeUrl(str) { try { return decodeURIComponent(str); } catch (e) { return str; } }
 function uvWarmPage(target) {
   let classic = '/home';
   try { if (/^https:\/\//i.test(target || '')) classic = proxied(target); } catch (e) {}
@@ -2118,9 +2149,9 @@ function playPageUv(u, t) {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CANVAS}
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body class="playbody">${STAR_CANVAS}
 <div class="top"><a href="/gs">← games</a><span class="title">${escHtml(t || 'Game')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
-<button class="on" onclick="useNet()">network</button>
+<button class="on" onclick="useNet()">network</button> ${ENG_HTML}
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
 <button onclick="cloakTab('google')">cloak: google</button>
@@ -2179,7 +2210,7 @@ gf.addEventListener('load', function(){ setTimeout(check, 4000); });
   arm();
 })();
 </script>
-</body>
+<script>window.onGxEng=function(){ location.reload(); };</script><script>${ENG_JS}</script></body>
 </html>`;
 }
 
@@ -2192,9 +2223,9 @@ function appPlayPageUv(u, t) {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CANVAS}
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body class="playbody">${STAR_CANVAS}
 <div class="top"><a href="/apps">← apps</a><span class="title">${escHtml(t || 'App')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
-<button class="on" onclick="useNet()">network</button>
+<button class="on" onclick="useNet()">network</button> ${ENG_HTML}
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
 <button onclick="cloakTab('google')">cloak: google</button>
@@ -2253,7 +2284,171 @@ gf.addEventListener('load', function(){ setTimeout(check, 4000); });
   arm();
 })();
 </script>
+<script>window.onGxEng=function(){ location.reload(); };</script><script>${ENG_JS}</script></body>
+</html>`;
+}
+function sjWarmPage(target) {
+  let classic = '/home';
+  try { if (/^https:\/\//i.test(target || '')) classic = proxied(target); } catch (e) {}
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body><div class="wrap" style="text-align:center;padding-top:16vh">
+<div class="brand6">6ix<span>networks</span></div>
+<p class="sub">loading…</p>
+<p id="slow" class="sub" style="display:none">taking long — <a href="${escHtml(classic)}">open it the classic way</a></p>
+</div>
+<script src="/uv-assets/baremux/index.js?e=68"></script>
+<script src="/sj-assets/scramjet.all.js?v=287"></script>
+<script>${SJ_INIT_JS}</script>
+<script>
+(async function(){
+  try { var bk = 'gx_warm_' + location.pathname; var bn = +(sessionStorage.getItem(bk) || 0); if (bn >= 3) { location.replace(document.querySelector('#slow a').href); return; } sessionStorage.setItem(bk, String(bn + 1)); } catch (e) {}
+  var slow = document.getElementById('slow');
+  setTimeout(function(){ slow.style.display = 'block'; }, 8000);
+  try {
+    await gxSjInit();
+    if (sessionStorage.getItem('gxWarm') === '1') { slow.style.display = 'block'; return; }
+    sessionStorage.setItem('gxWarm', '1');
+    location.replace(location.href);
+  } catch (e) { slow.style.display = 'block'; }
+})();
+</script>
 </body>
+</html>`;
+}
+function playPageSj(u, t) {
+  if (!/^https:\/\//i.test(u || '')) {
+    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#e4e4e7" href="/gs">back to games</a></body>';
+  }
+  const prox = '/sj/service/' + sjEncodeUrl(u);
+  const alt = proxied(u);
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body class="playbody">${STAR_CANVAS}
+<div class="top"><a href="/gs">← games</a><span class="title">${escHtml(t || 'Game')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
+<button class="on" onclick="useNet()">network</button> ${ENG_HTML}
+<button onclick="retry()">retry</button>
+<button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
+<button onclick="cloakTab('google')">cloak: google</button>
+<button onclick="cloakTab('drive')" style="background:rgba(255,255,255,.07);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()">cloaked tab</button></div>
+<iframe class="gameframe" id="gf" src="about:blank" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
+<div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
+<script src="/ui.js"></script>
+<script src="/stars.js?e=96"></script>
+<script src="/uv-assets/baremux/index.js?e=68"></script>
+<script src="/sj-assets/scramjet.all.js?v=287"></script>
+<script>${SJ_INIT_JS}</script>
+<script>
+var BOOTING=true;
+var PROX=${JSON.stringify(prox)};
+var gf=document.getElementById('gf'), stEl=document.getElementById('st');
+try{ var gu=new URLSearchParams(location.search).get('u'); if(gu){ var R=[]; try{ R=JSON.parse(localStorage.getItem('gx_recent'))||[]; }catch(e){} R=[gu].concat(R.filter(function(x){ return x!==gu; })).slice(0,12); localStorage.setItem('gx_recent', JSON.stringify(R)); } }catch(e){}
+var tries=0, alive=false;
+function errPage(){
+  try{
+    var d=gf.contentDocument;
+    if(!d || !d.body) return false;
+    var t=d.body.innerText||'';
+    return /error processing your request|failed to load|proxy could not reach|that host is blocked|bad proxy path|scramjet/i.test(t);
+  }catch(e){ return false; }
+}
+function hasLife(){
+  try{
+    var d=gf.contentDocument;
+    if(!d || !d.body) return false;
+    if(d.querySelector('canvas,iframe,video,embed,object')) return true;
+    return d.body.innerHTML.length > 5000 && (d.body.innerText||'').trim().length > 40;
+  }catch(e){ return false; }
+}
+function check(){
+  if(BOOTING || alive) return;
+  if(hasLife()){ alive=true; if(stEl) stEl.textContent=''; return; }
+  if(errPage()){
+    if(tries<2){ tries++; if(stEl) stEl.textContent='reconnecting\u2026'; gf.src=PROX; arm(); }
+    else { if(stEl) stEl.textContent=''; document.getElementById('dead').style.display='block'; }
+  }
+}
+function arm(){ [6000, 14000, 26000, 45000].forEach(function(ms){ setTimeout(check, ms); }); }
+function useNet(){ tries=0; alive=false; document.getElementById('dead').style.display='none'; if(stEl) stEl.textContent=''; gf.src=PROX; arm(); }
+function retry(){ useNet(); }
+gf.addEventListener('load', function(){ setTimeout(check, 4000); });
+(async function(){
+  try { await gxSjInit(); } catch (e) { if(stEl) stEl.textContent='scramjet didnt start \u2014 flip to uv up top'; }
+  BOOTING=false;
+  gf.src=PROX;
+  arm();
+})();
+</script>
+<script>window.onGxEng=function(){ location.reload(); };</script><script>${ENG_JS}</script></body>
+</html>`;
+}
+function appPlayPageSj(u, t) {
+  if (!/^https:\/\//i.test(u || '')) {
+    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad app link — <a style="color:#e4e4e7" href="/apps">back to apps</a></body>';
+  }
+  const prox = '/sj/service/' + sjEncodeUrl(u);
+  const alt = proxied(u);
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body class="playbody">${STAR_CANVAS}
+<div class="top"><a href="/apps">← apps</a><span class="title">${escHtml(t || 'App')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
+<button class="on" onclick="useNet()">network</button> ${ENG_HTML}
+<button onclick="retry()">retry</button>
+<button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
+<button onclick="cloakTab('google')">cloak: google</button>
+<button onclick="cloakTab('drive')" style="background:rgba(255,255,255,.07);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()">cloaked tab</button></div>
+<iframe class="gameframe" id="gf" src="about:blank" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
+<div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
+<script src="/ui.js"></script>
+<script src="/stars.js?e=96"></script>
+<script src="/uv-assets/baremux/index.js?e=68"></script>
+<script src="/sj-assets/scramjet.all.js?v=287"></script>
+<script>${SJ_INIT_JS}</script>
+<script>
+var BOOTING=true;
+var PROX=${JSON.stringify(prox)};
+var gf=document.getElementById('gf'), stEl=document.getElementById('st');
+try{ var gu=new URLSearchParams(location.search).get('u'); if(gu){ var R=[]; try{ R=JSON.parse(localStorage.getItem('gx_arecent'))||[]; }catch(e){} R=[gu].concat(R.filter(function(x){ return x!==gu; })).slice(0,12); localStorage.setItem('gx_arecent', JSON.stringify(R)); } }catch(e){}
+var tries=0, alive=false;
+function errPage(){
+  try{
+    var d=gf.contentDocument;
+    if(!d || !d.body) return false;
+    var t=d.body.innerText||'';
+    return /error processing your request|failed to load|proxy could not reach|that host is blocked|bad proxy path|scramjet/i.test(t);
+  }catch(e){ return false; }
+}
+function hasLife(){
+  try{
+    var d=gf.contentDocument;
+    if(!d || !d.body) return false;
+    if(d.querySelector('canvas,iframe,video,embed,object')) return true;
+    return d.body.innerHTML.length > 5000 && (d.body.innerText||'').trim().length > 40;
+  }catch(e){ return false; }
+}
+function check(){
+  if(BOOTING || alive) return;
+  if(hasLife()){ alive=true; if(stEl) stEl.textContent=''; return; }
+  if(errPage()){
+    if(tries<2){ tries++; if(stEl) stEl.textContent='reconnecting\u2026'; gf.src=PROX; arm(); }
+    else { if(stEl) stEl.textContent=''; document.getElementById('dead').style.display='block'; }
+  }
+}
+function arm(){ [6000, 14000, 26000, 45000].forEach(function(ms){ setTimeout(check, ms); }); }
+function useNet(){ tries=0; alive=false; document.getElementById('dead').style.display='none'; if(stEl) stEl.textContent=''; gf.src=PROX; arm(); }
+function retry(){ useNet(); }
+gf.addEventListener('load', function(){ setTimeout(check, 4000); });
+(async function(){
+  try { await gxSjInit(); } catch (e) { if(stEl) stEl.textContent='scramjet didnt start \u2014 flip to uv up top'; }
+  BOOTING=false;
+  gf.src=PROX;
+  arm();
+})();
+</script>
+<script>window.onGxEng=function(){ location.reload(); };</script><script>${ENG_JS}</script></body>
 </html>`;
 }
 function playPage(u, t) {
@@ -2265,9 +2460,9 @@ function playPage(u, t) {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CANVAS}
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body class="playbody">${STAR_CANVAS}
 <div class="top"><a href="/gs">← games</a><span class="title">${escHtml(t || 'Game')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
-<button class="on" onclick="useNet()">network</button>
+<button class="on" onclick="useNet()">network</button> ${ENG_HTML}
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
 <button onclick="cloakTab('google')">cloak: google</button>
@@ -2305,7 +2500,7 @@ gf.addEventListener('load', function(){ setTimeout(check, 3000); });
 arm();
 </script>
 <script>${NOTIF_JS}</script>
-</body>
+<script>window.onGxEng=function(){ location.reload(); };</script><script>${ENG_JS}</script></body>
 </html>`;
 }
 
@@ -2318,9 +2513,9 @@ function appPlayPage(u, t) {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CANVAS}
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body class="playbody">${STAR_CANVAS}
 <div class="top"><a href="/apps">← apps</a><span class="title">${escHtml(t || 'App')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
-<button class="on" onclick="useNet()">network</button>
+<button class="on" onclick="useNet()">network</button> ${ENG_HTML}
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
 <button onclick="cloakTab('google')">cloak: google</button>
@@ -2358,7 +2553,7 @@ gf.addEventListener('load', function(){ setTimeout(check, 3000); });
 arm();
 </script>
 <script>${NOTIF_JS}</script>
-</body>
+<script>window.onGxEng=function(){ location.reload(); };</script><script>${ENG_JS}</script></body>
 </html>`;
 }
 
@@ -4289,7 +4484,7 @@ async function askImageFallback(prompt) {
 // parts of the site. robots + sitemap list those pages on whatever host is
 // asking, so the face travels with the code to any domain.
 const META_TAGS = '<meta name="description" content="6ix Study Tools — free homework help, an AI study assistant, a calculator, notepad, focus timers and a calm study space for students."><meta property="og:title" content="6ix Study Tools"><meta property="og:description" content="Free homework help, study tools and an AI study assistant for students."><meta property="og:type" content="website">';
-const META_SKIP = ['/browse', '/gproxy', '/px/', '/go', '/uv', '/api', '/auth', '/wisp', '/ai/game-'];
+const META_SKIP = ['/browse', '/gproxy', '/px/', '/go', '/uv', '/sj', '/api', '/auth', '/wisp', '/ai/game-'];
 const BOT_UA = /bot|crawl|spider|securly|pagescan|urlscan|headless|preview|lighthouse|curl|wget|python|scrapy|httpclient|goguardian|lightspeed|contentkeeper|iboss|linewize|hapara|mosyle|jamf|smoothwall|fortiguard|classwize|netsupport|phantomjs|puppeteer|playwright|selenium|webdriver|okhttp|axios|go-http|libwww|scanner|ahrefs|semrush|facebookexternalhit|java\//i;
 function isBotReq(req) { const ua = String((req.headers && req.headers['user-agent']) || ''); return !ua || BOT_UA.test(ua); }
 function studyPage(gate) {
@@ -7728,7 +7923,7 @@ body.has-tb{padding-top:0}
 .aipanel .aithink{opacity:.6}
 .aipanel .aifoot{max-width:760px;margin:6px auto 0}
 .aipanel .aisearch{background:rgba(255,255,255,.06);border:1px solid rgba(var(--star),.25);color:#e9e4f5;border-radius:999px;padding:9px 16px;font-weight:700;cursor:pointer;font-family:inherit;font-size:14px}
-</style></head>
+</style><style>${ENG_CSS}</style></head>
 <body>${STAR_CANVAS}<canvas id="stars"></canvas><script src="/stars.js?e=96"></script>
 <div id="tabstrip"></div>
   
@@ -7737,7 +7932,7 @@ body.has-tb{padding-top:0}
     
     <input name="q" type="text" placeholder="search or type a site \u2726" autocomplete="off" autofocus list="sg">
     <button type="button" id="aimode" aria-pressed="false" title="ai mode"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z"/></svg>ai</button>
-  </form></div>
+  </form>${ENG_HTML}</div>
 <datalist id="sg"></datalist>
 <div id="stage"></div>
 <div id="ntp">
@@ -7751,7 +7946,7 @@ body.has-tb{padding-top:0}
 var qi=document.querySelector('input[name=q]'), sg=document.getElementById('sg'), sgt=null;
 if(qi && sg){ qi.addEventListener('input', function(){ clearTimeout(sgt); var v=qi.value.trim(); if(v.length<2){ sg.innerHTML=''; return; } sgt=setTimeout(function(){ fetch('/suggest?q='+encodeURIComponent(v)).then(function(r){ return r.json(); }).then(function(list){ sg.innerHTML=''; (list||[]).forEach(function(s){ var o=document.createElement('option'); o.value=s; sg.appendChild(o); }); }).catch(function(){}); }, 160); }); }
 </script>
-<script>
+<script src="/uv-assets/baremux/index.js?e=68"></script><script src="/sj-assets/scramjet.all.js?v=287"></script><script>${SJ_INIT_JS}</script><script>${ENG_JS}</script><script>window.onGxEng=function(v){ if(v==='sj'&&window.gxSjInit) gxSjInit().catch(function(){}); try{ var act=btabs[bactive]; if(!act||!act.url||act.ai||!act.raw) return; var q=act.raw; var isU=q.indexOf('://')>0||(q.indexOf(' ')<0&&q.indexOf('.')>0); var dest=isU?q:engUrl(q); var f=actFrame(); if(f) f.remove(); act.url='/go?q='+encodeURIComponent(dest); bsave(); renderBtabs(); }catch(e){} }; if(window.gxEng&&gxEng()==='sj'&&window.gxSjInit) gxSjInit().catch(function(){});</script><script>
 var TKEY='gx_tabs_v1';
 var DEF=[];
 function loadTabs(){ try{ var v=JSON.parse(localStorage.getItem(TKEY)); if(Array.isArray(v)) return v; }catch(e){} return DEF.slice(); }
@@ -8058,7 +8253,7 @@ const HOME = `<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script>
 <title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-${FONT_LINKS}<style>${GALAXY_CSS}</style>
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style>
 </head>
 <body>${STAR_CANVAS}
   <div id="heroClock" style="font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(var(--star),.55);margin-bottom:6px"></div>
@@ -8072,6 +8267,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style>
     <button type="submit">go</button>
     <div id="heroSug" hidden></div>
   </form>
+  <div style="margin-top:12px">${ENG_HTML}</div>
   <div class="hchips"><a href="/yt">6ixtube</a><a href="/gs">games</a><a href="/movies">6ixflix</a><a href="/news">news</a><a href="/confess">confessions</a><a href="/chat">6ixchat</a><a href="/ai">ask six</a></div>
   <div class="statCard"><div class="scTime" id="scTime">--:--</div><div class="scDate" id="scDate"></div><div class="scRow scBatt"><svg width="23" height="13" viewBox="0 0 25 13" fill="none" aria-hidden="true"><rect x="0.7" y="0.7" width="20" height="11.6" rx="3.2" stroke="currentColor" stroke-opacity=".55"/><rect id="scBatFill" x="2.7" y="2.7" width="0" height="7.6" rx="1.6" fill="currentColor"/><path d="M23.2 4.4v4.2a2.3 2.3 0 0 0 0-4.2z" fill="currentColor" fill-opacity=".55"/></svg><span id="scBat">battery unavailable</span></div><div class="scDiv"></div><div class="scRow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.4"/><path d="M3.6 19c.6-2.9 2.7-4.4 5.4-4.4s4.8 1.5 5.4 4.4"/><path d="M15.8 5.1a3.4 3.4 0 0 1 0 5.8M17.9 14.9c1.6.7 2.7 1.9 3.1 4.1"/></svg><span><b id="scOn">–</b> <span id="scOnW">users</span> online</span></div></div>
   <script>
@@ -8316,7 +8512,7 @@ fetch('/api/activity').then(function(r){ return r.json(); }).then(function(o){
   // turn bare domains into https:// before submitting is handled server-side too
 </script>
 <script>${NOTIF_JS}</script>
-</body>
+<script>${ENG_JS}</script></body>
 </html>`;
 
 function isSearchDest(dest) {
@@ -10668,6 +10864,24 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
 `;
+// ---------- scramjet engine (v287 — rides again, this time next to uv, not instead of it) ----------
+let SJ_DIR = null;
+try {
+  const fs4 = require('fs'); const path4 = require('path');
+  SJ_DIR = path4.join(__dirname, 'node_modules', '@mercuryworkshop', 'scramjet', 'dist');
+  if (!fs4.existsSync(path4.join(SJ_DIR, 'scramjet.all.js'))) throw new Error('sj dist missing');
+  console.log('scramjet engine ready');
+} catch (e) { console.log('scramjet unavailable:', e.message); }
+const SJ_OK = () => !!SJ_DIR;
+const SJ_SW = `importScripts("/sj-assets/scramjet.all.js");
+const __sjSw = new ($scramjetLoadWorker().ScramjetServiceWorker)();
+self.addEventListener("fetch", async (event) => {
+  try { await __sjSw.loadConfig(); } catch (e) {}
+  if (__sjSw.route(event)) event.respondWith(__sjSw.fetch(event));
+});
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
+`;
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://localhost');
   if (u.pathname.length > 1 && u.pathname.endsWith('/') && !/^\/(uv|sj|px|browse|gproxy|wisp)/.test(u.pathname)) u.pathname = u.pathname.slice(0, -1);
@@ -10734,7 +10948,7 @@ const server = http.createServer(async (req, res) => {
   // exempt and answers normally; real browsers never match the bot filter.
   if (req.method === 'GET' && u.pathname !== '/' && isBotReq(req)) {
     const p = u.pathname;
-    const skip = p === '/study' || p === '/privacy' || p === '/robots.txt' || p === '/sitemap.xml' || p === '/enter' || p === '/healthz' || p === '/ui.js' || p === '/cloak.js' || p === '/sw.js' || p === '/favicon.ico' || p.startsWith('/api') || p.startsWith('/auth') || p.startsWith('/go') || p.startsWith('/gproxy') || p.startsWith('/px/') || p.startsWith('/uv') || p.startsWith('/wisp') || p.startsWith('/baremux') || p.startsWith('/epoxy') || p.startsWith('/dl') || p.startsWith('/yt/stream') || p.startsWith('/icons/') || p === '/fonts.css' || p.startsWith('/font/');
+    const skip = p === '/study' || p === '/privacy' || p === '/robots.txt' || p === '/sitemap.xml' || p === '/enter' || p === '/healthz' || p === '/ui.js' || p === '/cloak.js' || p === '/sw.js' || p === '/favicon.ico' || p.startsWith('/api') || p.startsWith('/auth') || p.startsWith('/go') || p.startsWith('/gproxy') || p.startsWith('/px/') || p.startsWith('/uv') || p.startsWith('/sj') || p.startsWith('/wisp') || p.startsWith('/baremux') || p.startsWith('/epoxy') || p.startsWith('/dl') || p.startsWith('/yt/stream') || p.startsWith('/icons/') || p === '/fonts.css' || p.startsWith('/font/');
     if (!skip) {
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
       return res.end(studyPage());
@@ -10789,6 +11003,8 @@ const server = http.createServer(async (req, res) => {
     return res.end(PWA_MANIFEST);
   }
   if (u.pathname === '/sw.js') {
+    if (UV_OK() && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(UV_SW + '\n' + SJ_SW); }
+    if (SJ_OK() && !UV_OK()) { res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(SJ_SW); }
     if (UV_OK()) { res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(UV_SW); }
     res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(SW_JS);
@@ -11541,12 +11757,16 @@ const server = http.createServer(async (req, res) => {
     return res.end(userPage());
   }
   if (u.pathname === '/play') {
+    const peng = ((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv)/) || [])[1]) || 'sj';
+    if (u.searchParams.get('u') && peng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageSj(u.searchParams.get('u') || '', u.searchParams.get('t') || 'Game')); }
     if (UV_OK() && u.searchParams.get('u')) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageUv(u.searchParams.get('u') || '', u.searchParams.get('t') || 'Game')); }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(playPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'Game'));
   }
   if (u.pathname === '/appplay') {
     if (u.searchParams.get('u') && isVdHost(u.searchParams.get('u'))) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(appPlayPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App')); }
+    const aeng = ((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv)/) || [])[1]) || 'sj';
+    if (u.searchParams.get('u') && aeng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(appPlayPageSj(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App')); }
     if (UV_OK() && u.searchParams.get('u')) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(appPlayPageUv(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App')); }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(appPlayPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App'));
@@ -11694,6 +11914,8 @@ const server = http.createServer(async (req, res) => {
     if (!dest) { res.writeHead(302, { location: '/home' }); return res.end(); }
     if (u.searchParams.get('classic') === '1') { res.writeHead(302, { location: proxied(dest) }); return res.end(); }
     if (isVdHost(dest)) { res.writeHead(302, { location: '/appplay?u=' + encodeURIComponent(dest) + '&t=' + encodeURIComponent(new URL(dest).hostname.replace(/^www\./, '')) }); return res.end(); }
+    const engPick = (u.searchParams.get('eng') === 'uv' || u.searchParams.get('eng') === 'sj') ? u.searchParams.get('eng') : (((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv)/) || [])[1]) || 'sj');
+    if (engPick === 'sj' && SJ_OK()) { res.writeHead(302, { location: '/sj/service/' + sjEncodeUrl(dest) }); return res.end(); }
     if (UV_OK()) { res.writeHead(302, { location: '/uv/service/' + uvEncodeUrl(dest) }); return res.end(); }
     res.writeHead(302, { location: proxied(dest) });
     return res.end();
@@ -11788,11 +12010,45 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(uvWarmPage(target));
   }
-  if (u.pathname === '/uv' || u.pathname === '/sj') {
+  if (u.pathname.startsWith('/sj/service/')) {
+    const target = sjDecodeUrl(u.pathname.slice('/sj/service/'.length));
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
+    return res.end(sjWarmPage(target));
+  }
+  if (u.pathname === '/uv') {
     const dest = normalizeInput(u.searchParams.get('url') || '');
     if (UV_OK() && dest) { res.writeHead(302, { location: '/uv/service/' + uvEncodeUrl(dest) }); return res.end(); }
     res.writeHead(302, { location: '/home' });
     return res.end();
+  }
+  if (u.pathname === '/sj') {
+    const dest = normalizeInput(u.searchParams.get('url') || '');
+    if (SJ_OK() && dest) { res.writeHead(302, { location: '/sj/service/' + sjEncodeUrl(dest) }); return res.end(); }
+    if (UV_OK() && dest) { res.writeHead(302, { location: '/uv/service/' + uvEncodeUrl(dest) }); return res.end(); }
+    res.writeHead(302, { location: '/home' });
+    return res.end();
+  }
+  if (u.pathname.startsWith('/sj-assets/')) {
+    const rel = u.pathname.slice('/sj-assets/'.length);
+    if (!SJ_DIR || !rel || rel.includes('..')) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('not found'); }
+    const fsx = require('fs'); const pathx = require('path');
+    const fp = pathx.join(SJ_DIR, rel);
+    if (!fp.startsWith(SJ_DIR) || !fsx.existsSync(fp)) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('not found'); }
+    const ext = pathx.extname(fp).toLowerCase();
+    const mime = ext === '.wasm' ? 'application/wasm' : ext === '.json' ? 'application/json' : ext === '.map' ? 'application/json' : 'text/javascript; charset=utf-8';
+    const hdrs = { 'content-type': mime, 'cache-control': 'public, max-age=31536000, immutable', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' };
+    if (/\bgzip\b/.test(req.headers['accept-encoding'] || '') && /\.(js|mjs|json|wasm|map)$/.test(fp)) {
+      try {
+        const zlibx = require('zlib');
+        const st = fsx.statSync(fp);
+        let c = UV_GZ.get(fp);
+        if (!c || c.m !== st.mtimeMs) { c = { m: st.mtimeMs, buf: zlibx.gzipSync(fsx.readFileSync(fp), { level: 6 }) }; UV_GZ.set(fp, c); if (UV_GZ.size > 40) UV_GZ.clear(); }
+        res.writeHead(200, { ...hdrs, 'content-encoding': 'gzip', 'content-length': c.buf.length, 'vary': 'accept-encoding' });
+        return res.end(c.buf);
+      } catch (e) { /* fall through to the raw stream */ }
+    }
+    res.writeHead(200, hdrs);
+    return fsx.createReadStream(fp).pipe(res);
   }
   if (u.pathname.startsWith('/uv-assets/')) {
     const rel = u.pathname.slice('/uv-assets/'.length);
