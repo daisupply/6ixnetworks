@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: 6ixnetworks
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: UPSTREAM_PROXY
+        sync: false

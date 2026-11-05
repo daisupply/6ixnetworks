@@ -1,0 +1,34 @@
+name = "6ixnetworks"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# public entrance: s.usareme.site serves the entire site (the worker is
+# host-agnostic — every route works on any attached domain).
+# attach it in the dashboard: worker -> Settings -> Domains & Routes
+# -> Add -> Custom Domain -> s.usareme.site
+routes = [{ pattern = "s.usareme.site", custom_domain = true }]
+
+[durable_objects]
+bindings = [
+  { name = "CHAT", class_name = "ChatRoom" },
+  { name = "ACCOUNTS", class_name = "Accounts" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ChatRoom"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["Accounts"]
+
+[ai]
+binding = "AI"
+
+# optional secret — set it in the cloudflare dashboard (worker -> settings
+# -> variables and secrets), NEVER as a plain var or in the repo:
+# GEMINI_API_KEY: a Google AI Studio free key — six runs on gemini for
+# text, vision and image generation, workers ai is only the fallback.
+# optional extra keys multiply the free quota: add GEMINI_API_KEY2,
+# GEMINI_API_KEY3, GEMINI_API_KEY4 the same way (best: one ai studio
+# project per key — keys in one project share that project's quota).
