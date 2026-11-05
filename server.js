@@ -2079,15 +2079,22 @@ const UV_BOOT = '<script src="/uv-assets/baremux/index.js?e=68"></' + 'script><s
 // ---------- engine toggle (v287): scramjet is the default rider, uv stays one tap away ----------
 // the pick lives in localStorage gx_engine + cookie gx_eng (the cookie is what
 // the server reads on /go, /play, /appplay; localStorage is the per-door mirror).
-const ENG_CSS = `.engt{display:inline-flex;gap:2px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:3px;vertical-align:middle;flex:none}
-.engt button{background:transparent;border:0;color:#a1a1aa;font-family:inherit;font-size:12px;font-weight:700;line-height:1;padding:6px 11px;border-radius:999px;cursor:pointer;letter-spacing:.02em}
-.engt button.on{background:#e4e4e7;color:#0a0a0b}
-.engt button:not(.on):hover{color:#f4f4f5}`;
-const ENG_HTML = `<span class="engt" role="group" aria-label="proxy engine" title="proxy engine"><button type="button" data-eng="sj">scramjet</button><button type="button" data-eng="uv">uv</button></span>`;
+const ENG_CSS = `.engt{position:relative;display:inline-flex;gap:2px;background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.13);border-radius:999px;padding:3px;vertical-align:middle;flex:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 4px 14px rgba(0,0,0,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.engt-thumb{position:absolute;top:3px;bottom:3px;left:0;width:0;border-radius:999px;background:linear-gradient(180deg,#fafafa,#d4d4d8);box-shadow:0 2px 8px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.9);opacity:0;transition:transform .3s cubic-bezier(.45,1.45,.4,1),width .3s cubic-bezier(.45,1.45,.4,1),opacity .18s ease;pointer-events:none}
+.engt.ready .engt-thumb{opacity:1}
+.engt button{position:relative;z-index:1;background:transparent;border:0;color:#a1a1aa;font-family:inherit;font-size:12px;font-weight:700;line-height:1;padding:7px 12px;border-radius:999px;cursor:pointer;letter-spacing:.03em;display:inline-flex;align-items:center;gap:6px;transition:color .2s ease}
+.engt button svg{width:11px;height:11px;flex:none;opacity:.75;transition:opacity .2s ease}
+.engt button.on{color:#0a0a0b}
+.engt button.on svg{opacity:1}
+.engt:not(.ready) button.on{background:linear-gradient(180deg,#fafafa,#d4d4d8);color:#0a0a0b}
+.engt button:not(.on):hover{color:#f4f4f5}
+.engt button:focus-visible{outline:2px solid rgba(255,255,255,.55);outline-offset:2px}`;
+const ENG_HTML = `<span class=\"engt\" role=\"group\" aria-label=\"proxy engine\" title=\"proxy engine\"><span class=\"engt-thumb\" aria-hidden=\"true\"></span><button type=\"button\" data-eng=\"sj\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M22 2 11 13\"/><path d=\"M22 2 15 22l-4-9-9-4Z\"/></svg>scramjet</button><button type=\"button\" data-eng=\"uv\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4\"/></svg>uv</button></span>`;
 const ENG_JS = `function gxEng(){ try{ var c=(document.cookie.match(/(?:^|;\\s*)gx_eng=(sj|uv)/)||[])[1]; if(c) return c; var l=localStorage.getItem('gx_engine'); if(l==='sj'||l==='uv') return l; }catch(e){} return 'sj'; }
-function paintEng(){ var v=gxEng(); var gs=document.querySelectorAll('.engt'); for(var i=0;i<gs.length;i++){ var bs=gs[i].querySelectorAll('button'); for(var j=0;j<bs.length;j++){ if(bs[j].getAttribute('data-eng')===v) bs[j].classList.add('on'); else bs[j].classList.remove('on'); } } }
+function paintEngThumb(g){ if(!g) return; var on=g.querySelector('button.on'); var th=g.querySelector('.engt-thumb'); if(!on||!th||!on.offsetWidth){ g.classList.remove('ready'); return; } th.style.width=on.offsetWidth+'px'; th.style.transform='translateX('+on.offsetLeft+'px)'; g.classList.add('ready'); }
+function paintEng(){ var v=gxEng(); var gs=document.querySelectorAll('.engt'); for(var i=0;i<gs.length;i++){ var bs=gs[i].querySelectorAll('button'); for(var j=0;j<bs.length;j++){ if(bs[j].getAttribute('data-eng')===v) bs[j].classList.add('on'); else bs[j].classList.remove('on'); } paintEngThumb(gs[i]); } }
 function gxSetEng(v){ try{ localStorage.setItem('gx_engine', v); }catch(e){} try{ document.cookie='gx_eng='+v+'; Path=/; Max-Age=31536000; SameSite=Lax'; }catch(e){} paintEng(); if(window.onGxEng) window.onGxEng(v); }
-(function(){ var bs=document.querySelectorAll('.engt button'); for(var i=0;i<bs.length;i++){ (function(b){ b.addEventListener('click', function(){ gxSetEng(b.getAttribute('data-eng')); }); })(bs[i]); } paintEng(); })();`;
+(function(){ var bs=document.querySelectorAll('.engt button'); for(var i=0;i<bs.length;i++){ (function(b){ b.addEventListener('click', function(){ gxSetEng(b.getAttribute('data-eng')); }); })(bs[i]); } paintEng(); window.addEventListener('resize', paintEng); window.addEventListener('load', paintEng); setTimeout(paintEng, 350); })();`;
 const SJ_INIT_JS = `var __gxSj = null;
 function gxSjPrimeIdb(){
   var STORES = ['config','cookies','redirectTrackers','referrerPolicies','publicSuffixList'];
