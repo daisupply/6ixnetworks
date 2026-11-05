@@ -2089,13 +2089,25 @@ function paintEng(){ var v=gxEng(); var gs=document.querySelectorAll('.engt'); f
 function gxSetEng(v){ try{ localStorage.setItem('gx_engine', v); }catch(e){} try{ document.cookie='gx_eng='+v+'; Path=/; Max-Age=31536000; SameSite=Lax'; }catch(e){} paintEng(); if(window.onGxEng) window.onGxEng(v); }
 (function(){ var bs=document.querySelectorAll('.engt button'); for(var i=0;i<bs.length;i++){ (function(b){ b.addEventListener('click', function(){ gxSetEng(b.getAttribute('data-eng')); }); })(bs[i]); } paintEng(); })();`;
 const SJ_INIT_JS = `var __gxSj = null;
+function gxSjPrimeIdb(){
+  var STORES = ['config','cookies','redirectTrackers','referrerPolicies','publicSuffixList'];
+  function openDb(){ return new Promise(function(res, rej){ try { var r = indexedDB.open('$scramjet', 1); r.onupgradeneeded = function(){ var db = r.result; STORES.forEach(function(s){ if (!db.objectStoreNames.contains(s)) db.createObjectStore(s); }); }; r.onsuccess = function(){ res(r.result); }; r.onerror = function(){ rej(r.error); }; } catch (e) { rej(e); } }); }
+  function delDb(){ return new Promise(function(res){ var done = false; var fin = function(){ if (!done) { done = true; res(); } }; try { var d = indexedDB.deleteDatabase('$scramjet'); d.onsuccess = fin; d.onerror = fin; d.onblocked = fin; } catch (e) { fin(); } setTimeout(fin, 2500); }); }
+  return openDb().then(function(db){
+    var ok = STORES.every(function(s){ return db.objectStoreNames.contains(s); });
+    try { db.close(); } catch (e) {}
+    if (ok) return true;
+    var un = ('serviceWorker' in navigator) ? navigator.serviceWorker.getRegistration('/sj/').then(function(reg){ return reg ? reg.unregister() : false; }).catch(function(){ return false; }) : Promise.resolve(false);
+    return un.then(delDb).then(openDb).then(function(db2){ try { db2.close(); } catch (e) {} return true; });
+  });
+}
 function gxSjInit(){
   if (__gxSj) return __gxSj;
   __gxSj = (async function(){
+    await gxSjPrimeIdb().catch(function(){});
     if ('serviceWorker' in navigator) {
-      await navigator.serviceWorker.register('/sw.js');
-      await navigator.serviceWorker.ready;
-      if (!navigator.serviceWorker.controller) await new Promise(function(res){ var to=setTimeout(res, 7000); navigator.serviceWorker.addEventListener('controllerchange', function(){ clearTimeout(to); res(); }); });
+      var reg = await navigator.serviceWorker.register('/sj/sw.js', { updateViaCache: 'none' });
+      if (reg && !reg.active) await new Promise(function(res){ var w = reg.installing || reg.waiting; if (!w) return res(); var done = false; var fin = function(){ if (!done) { done = true; res(); } }; w.addEventListener('statechange', function(){ if (w.state === 'activated') fin(); }); setTimeout(fin, 10000); });
     }
     var conn = new BareMux.BareMuxConnection('/uv-assets/baremux/worker.js?e=68');
     if ((await conn.getTransport()) !== '/uv-assets/epoxy/index.mjs?e=68') await conn.setTransport('/uv-assets/epoxy/index.mjs?e=68', [{ wisp: (window.GX_WISP || (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/') }]);
@@ -2103,6 +2115,7 @@ function gxSjInit(){
     await sj.init();
     return sj;
   })();
+  __gxSj.catch(function(){ __gxSj = null; });
   return __gxSj;
 }`;
 function sjEncodeUrl(str) { return encodeURIComponent(str); }
@@ -2299,7 +2312,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body><div class="wrap" style="t
 <p id="slow" class="sub" style="display:none">taking long — <a href="${escHtml(classic)}">open it the classic way</a></p>
 </div>
 <script src="/uv-assets/baremux/index.js?e=68"></script>
-<script src="/sj-assets/scramjet.all.js?v=287"></script>
+<script src="/sj-assets/scramjet.all.js?v=289"></script>
 <script>${SJ_INIT_JS}</script>
 <script>
 (async function(){
@@ -2338,7 +2351,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body c
 <script src="/ui.js"></script>
 <script src="/stars.js?e=96"></script>
 <script src="/uv-assets/baremux/index.js?e=68"></script>
-<script src="/sj-assets/scramjet.all.js?v=287"></script>
+<script src="/sj-assets/scramjet.all.js?v=289"></script>
 <script>${SJ_INIT_JS}</script>
 <script>
 var BOOTING=true;
@@ -2405,7 +2418,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body c
 <script src="/ui.js"></script>
 <script src="/stars.js?e=96"></script>
 <script src="/uv-assets/baremux/index.js?e=68"></script>
-<script src="/sj-assets/scramjet.all.js?v=287"></script>
+<script src="/sj-assets/scramjet.all.js?v=289"></script>
 <script>${SJ_INIT_JS}</script>
 <script>
 var BOOTING=true;
@@ -7946,7 +7959,7 @@ body.has-tb{padding-top:0}
 var qi=document.querySelector('input[name=q]'), sg=document.getElementById('sg'), sgt=null;
 if(qi && sg){ qi.addEventListener('input', function(){ clearTimeout(sgt); var v=qi.value.trim(); if(v.length<2){ sg.innerHTML=''; return; } sgt=setTimeout(function(){ fetch('/suggest?q='+encodeURIComponent(v)).then(function(r){ return r.json(); }).then(function(list){ sg.innerHTML=''; (list||[]).forEach(function(s){ var o=document.createElement('option'); o.value=s; sg.appendChild(o); }); }).catch(function(){}); }, 160); }); }
 </script>
-<script src="/uv-assets/baremux/index.js?e=68"></script><script src="/sj-assets/scramjet.all.js?v=287"></script><script>${SJ_INIT_JS}</script><script>${ENG_JS}</script><script>window.onGxEng=function(v){ if(v==='sj'&&window.gxSjInit) gxSjInit().catch(function(){}); try{ var act=btabs[bactive]; if(!act||!act.url||act.ai||!act.raw) return; var q=act.raw; var isU=q.indexOf('://')>0||(q.indexOf(' ')<0&&q.indexOf('.')>0); var dest=isU?q:engUrl(q); var f=actFrame(); if(f) f.remove(); act.url='/go?q='+encodeURIComponent(dest); bsave(); renderBtabs(); }catch(e){} }; if(window.gxEng&&gxEng()==='sj'&&window.gxSjInit) gxSjInit().catch(function(){});</script><script>
+<script src="/uv-assets/baremux/index.js?e=68"></script><script src="/sj-assets/scramjet.all.js?v=289"></script><script>${SJ_INIT_JS}</script><script>${ENG_JS}</script><script>window.onGxEng=function(v){ if(v==='sj'&&window.gxSjInit) gxSjInit().catch(function(){}); try{ var act=btabs[bactive]; if(!act||!act.url||act.ai||!act.raw) return; var q=act.raw; var isU=q.indexOf('://')>0||(q.indexOf(' ')<0&&q.indexOf('.')>0); var dest=isU?q:engUrl(q); var f=actFrame(); if(f) f.remove(); act.url='/go?q='+encodeURIComponent(dest); bsave(); renderBtabs(); }catch(e){} }; if(window.gxEng&&gxEng()==='sj'&&window.gxSjInit) gxSjInit().catch(function(){});</script><script>
 var TKEY='gx_tabs_v1';
 var DEF=[];
 function loadTabs(){ try{ var v=JSON.parse(localStorage.getItem(TKEY)); if(Array.isArray(v)) return v; }catch(e){} return DEF.slice(); }
@@ -10875,10 +10888,12 @@ try {
 const SJ_OK = () => !!SJ_DIR;
 const SJ_SW = `importScripts("/sj-assets/scramjet.all.js");
 const __sjSw = new ($scramjetLoadWorker().ScramjetServiceWorker)();
-self.addEventListener("fetch", async (event) => {
-  try { await __sjSw.loadConfig(); } catch (e) {}
-  if (__sjSw.route(event)) event.respondWith(__sjSw.fetch(event));
-});
+async function __sjHandle(event) {
+  try { await __sjSw.loadConfig(); } catch (e) { return fetch(event.request); }
+  if (__sjSw.route(event)) return __sjSw.fetch(event);
+  return fetch(event.request);
+}
+self.addEventListener("fetch", (event) => { event.respondWith(__sjHandle(event)); });
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
 `;
@@ -11002,8 +11017,11 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'application/manifest+json', 'cache-control': 'public, max-age=86400' });
     return res.end(PWA_MANIFEST);
   }
+  if (u.pathname === '/sj/sw.js') {
+    if (SJ_OK()) { res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(SJ_SW); }
+    res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('nf');
+  }
   if (u.pathname === '/sw.js') {
-    if (UV_OK() && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(UV_SW + '\n' + SJ_SW); }
     if (SJ_OK() && !UV_OK()) { res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(SJ_SW); }
     if (UV_OK()) { res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(UV_SW); }
     res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' });
