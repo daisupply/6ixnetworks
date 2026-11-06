@@ -1587,6 +1587,7 @@ body{display:block;padding:0}
 <div class="ytlogo">6ixtube</div>
 <p>youtube thru ur own network — click a video n it streams right here</p>
 <form class="ytsearch" action="/yt/search" method="get"><input name="q" type="text" placeholder="search youtube" autocomplete="off"><button type="submit">search</button></form>
+<div style="text-align:center;margin-top:12px"><a href="/music" style="color:#a78bfa;font-weight:700;text-decoration:none;font-size:14px">just music? → 6ixmusic</a></div>
 <div class="ytpaste" id="pasteBox"><input id="pasteIn" type="text" placeholder="or paste a youtube link — we'll stream it" autocomplete="off"><button id="pasteGo" type="button">stream it</button></div>
 </div>
 <h2 class="yth"><span>✦</span> trending rn</h2>
@@ -6276,11 +6277,15 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <p class="sub"><span id="wMeta"></span> <span class="prov" id="wProv"></span></p>
 <div class="mvwrap"><iframe id="mvFrame" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="no-referrer"></iframe><video id="mvVid" controls playsinline preload="auto" hidden></video><div id="ytBox" hidden></div><div id="mvLoad">tuning in\u2026</div></div>
 <div id="wDesc" hidden><img id="wDescImg" alt=""><div class="wdmain"><p id="wDescTxt"></p><p class="wdsix" id="wDescSix" hidden></p><p class="wdmeta" id="wDescMeta"></p></div></div>
-<div class="ctl" id="srcCtl" style="flex-wrap:wrap;row-gap:8px">
+<div class="ctl" id="srcCtl" style="flex-wrap:wrap;row-gap:8px" hidden>
 <span class="lab">source</span>
 <span class="ddslot" id="srcSlot"></span><select id="srcSel" hidden></select>
 <span class="lab">route</span>
 <span class="ddslot" id="rtSlot"></span><select id="rtSel" hidden><option value="lite">virtual direct</option><option value="tunnel">tunnel</option><option value="direct" selected>direct</option><option value="rh">ramhead</option></select>
+</div>
+<div class="ctl" id="tuneRow">
+<button class="mchip" id="tuneBtn" type="button">source + route</button>
+<span class="lab" id="tuneLab"></span>
 </div>
 <div class="ctl" id="libRow" hidden>
 <a class="mchip" id="dlBtn" href="#" style="text-decoration:none">download the whole movie</a>
@@ -6404,7 +6409,9 @@ SRCS.forEach(function(sc, ix){
 });
 var srcDD = buildWDD(srcSel, document.getElementById('srcSlot'), function(v){ userPicked = true; srcMode = +v; armDirSave(); loadPlayer(); }, function(){ return String(srcMode); });
 var rtDD = buildWDD(document.getElementById('rtSel'), document.getElementById('rtSlot'), function(v){ route = v; cancelDirSave(); loadPlayer(); if (v !== 'direct') sixResolve(); }, function(){ return route; });
-function syncSrcUI(){ if (srcDD) srcDD.sync(); if (rtDD) rtDD.sync(); }
+function syncTune(){ var lab = document.getElementById('tuneLab'); if (lab) lab.textContent = (SRCS[srcMode] || SRCS[0]).n + ' · ' + route + ' — six picks, tap to tune it urself'; }
+function syncSrcUI(){ if (srcDD) srcDD.sync(); if (rtDD) rtDD.sync(); syncTune(); }
+document.getElementById('tuneBtn').addEventListener('click', function(){ document.getElementById('srcCtl').hidden = false; document.getElementById('tuneRow').hidden = true; });
 syncSrcUI();
 // six source ranking: remembered winner per title + /api/resolve probe order.
 // the walker below still walks srcMode+1 on its own — this only picks the
@@ -6595,6 +6602,7 @@ function ytMode(){
   document.getElementById('wMeta').textContent = 'free on youtube · official upload';
   setProv('youtube · official player');
   document.getElementById('srcCtl').hidden = true;
+  document.getElementById('tuneRow').hidden = true;
   document.getElementById('mvFrame').hidden = true;
   document.getElementById('ytBox').hidden = false;
   document.getElementById('mvHint').textContent = 'this one plays right here thru the official youtube player - free with ads, straight from the studio upload. the controls under it are ours.';
@@ -6621,7 +6629,7 @@ function streamOff(){
   try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {}
   v.hidden = true;
   document.getElementById('mvFrame').hidden = false;
-  document.getElementById('srcCtl').hidden = false;
+  document.getElementById('tuneRow').hidden = false;
   document.getElementById('libRow').hidden = true;
   document.getElementById('libHint').hidden = true;
   document.getElementById('mvHint').hidden = false;
@@ -6635,6 +6643,7 @@ function streamPlay(url, raw, mb, label){
   fr.src = 'about:blank';
   fr.hidden = true;
   document.getElementById('srcCtl').hidden = true;
+  document.getElementById('tuneRow').hidden = true;
   document.getElementById('mvHint').hidden = true;
   document.getElementById('libHint').hidden = false;
   document.getElementById('libRow').hidden = false;
@@ -6689,6 +6698,7 @@ if(libM){
   setProv('built-in · file');
   document.getElementById('wMeta').textContent = 'built-in movie · ' + libM.y + ' · ' + libM.run + (libM.note ? ' · ' + libM.note : '');
   document.getElementById('srcCtl').hidden = true;
+  document.getElementById('tuneRow').hidden = true;
   document.getElementById('mvHint').hidden = true;
   document.getElementById('libHint').hidden = false;
   document.getElementById('libRow').hidden = false;
@@ -6710,6 +6720,7 @@ if(libM){
   setProv('the vault · file');
   document.getElementById('wMeta').textContent = 'the vault · archive.org' + (yr ? ' · ' + yr : '');
   document.getElementById('srcCtl').hidden = true;
+  document.getElementById('tuneRow').hidden = true;
   document.getElementById('mvHint').hidden = true;
   document.getElementById('libHint').hidden = false;
   document.getElementById('libRow').hidden = false;
@@ -9229,6 +9240,107 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
 }
 
 
+function musDur(s) { s = Math.max(0, Math.floor(+s || 0)); var m = Math.floor(s / 60), r = s % 60; return m + ':' + (r < 10 ? '0' : '') + r; }
+async function musicPage(q) {
+  q = String(q || '').slice(0, 100);
+  let vids = [], title = 'top music rn';
+  if (q) {
+    const hit = await fetchYtSearchIt(q);
+    if (hit) vids = hit.vids;
+    title = 'results for "' + q + '"';
+  } else {
+    const feed = await fetchYtFeed('music');
+    if (feed) vids = feed.vids;
+  }
+  const cards = vids.map(v => ({ id: (v && (v.videoId || v.id)) || '', t: (v && (v.title || v.t)) || '', a: (v && (v.author || v.a)) || '', len: (v && (v.lengthSeconds || v.len)) || 0 })).filter(v => v.id).slice(0, 30).map(v => {
+    const img = proxied('https://i.ytimg.com/vi/' + v.id + '/hqdefault.jpg');
+    return '<button type="button" class="mcard" data-id="' + escHtml(v.id) + '" data-t="' + escHtml(v.t) + '" data-a="' + escHtml(v.a) + '"><span class="mthumb"><img loading="lazy" src="' + img + '" alt=""><span class="mdur">' + (v.len ? musDur(v.len) : '') + '</span></span><span class="mt">' + escHtml(v.t) + '</span><span class="ma">' + escHtml(v.a) + '</span></button>';
+  }).join('');
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+${FONT_LINKS}<style>${GALAXY_CSS}
+body{display:block;padding:0}
+.mwrap{width:100%;box-sizing:border-box;max-width:1000px;margin:0 auto;padding:66px 16px 150px}
+.mhead{text-align:center;margin:10px 0 8px}
+.mlogo{font-size:40px;font-weight:800;letter-spacing:-.02em;background:linear-gradient(94deg,#f0abfc,#a78bfa 40%,#38bdf8 75%,#34d399);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+.msearch{display:flex;gap:8px;align-items:center;background:rgba(12,10,24,.85);border:1px solid rgba(var(--star),.16);border-radius:999px;padding:6px 6px 6px 18px;max-width:620px;margin:18px auto 0;box-shadow:0 14px 34px rgba(0,0,0,.35)}
+.msearch input{flex:1;min-width:0;background:transparent;border:0;outline:none;color:#fff;font-size:16px;font-family:inherit}
+.msearch button{background:linear-gradient(120deg,rgb(var(--acc)),rgb(var(--acc2)));color:#fff;border:0;border-radius:999px;padding:10px 22px;font-weight:700;cursor:pointer;font-family:inherit}
+.mh{font-size:19px;font-weight:800;margin:28px 2px 12px;color:#f4f2ff}
+.mh span{color:rgb(var(--star))}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:13px}
+@media(max-width:560px){.mgrid{grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px}.mlogo{font-size:32px}}
+.mcard{display:block;text-align:left;background:rgba(14,12,26,.66);border:1px solid rgba(255,255,255,.07);border-radius:16px;overflow:hidden;cursor:pointer;font-family:inherit;padding:0;transition:transform .15s ease,border-color .15s ease}
+.mcard:hover{transform:translateY(-2px);border-color:rgba(var(--star),.35)}
+.mcard.on{border-color:rgb(var(--acc));box-shadow:0 0 0 1px rgb(var(--acc))}
+.mthumb{position:relative;display:block;aspect-ratio:16/9;background:#000}
+.mthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.mdur{position:absolute;right:7px;bottom:7px;background:rgba(0,0,0,.8);color:#fff;font-size:11.5px;font-weight:700;border-radius:7px;padding:2px 6px}
+.mt{display:block;padding:10px 12px 0;font-size:14.5px;font-weight:600;color:#f1eefc;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ma{display:block;padding:3px 12px 12px;font-size:12.5px;color:#9d97b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mempty{color:#9d97b8;font-size:14.5px;padding:14px 2px}
+.mpill{position:fixed;left:12px;right:12px;bottom:14px;z-index:400;max-width:760px;margin:0 auto;display:flex;align-items:center;gap:12px;background:rgba(13,11,24,.92);-webkit-backdrop-filter:blur(22px) saturate(1.4);backdrop-filter:blur(22px) saturate(1.4);border:1px solid rgba(var(--star),.25);border-radius:999px;padding:9px 14px 9px 10px;box-shadow:0 20px 50px rgba(0,0,0,.55)}
+@media(max-width:820px){.mpill{bottom:88px}}
+.mpill img{width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none;background:#000}
+.mmeta{flex:1;min-width:0}
+.mmeta b{display:block;color:#fff;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mmeta span{display:block;color:#9d97b8;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mbtn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);color:#fff;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;padding:0}
+.mbtn.main{background:linear-gradient(120deg,rgb(var(--acc)),rgb(var(--acc2)));border:0;width:44px;height:44px}
+.mbtn svg{display:block}
+</style></head><body>${STAR_CANVAS}
+<div class="mwrap">
+<div class="mhead">
+<div class="mlogo">6ixmusic</div>
+<form class="msearch" action="/music" method="get"><input name="q" type="text" placeholder="search a song or artist" autocomplete="off" value="${escHtml(q)}"><button type="submit">search</button></form>
+</div>
+<h2 class="mh"><span>✦</span> ${escHtml(title)}</h2>
+<div class="mgrid">${cards || '<p class="mempty">nothing came back — try another search</p>'}</div>
+</div>
+<div class="mpill" id="mPill" hidden>
+<img id="mArt" alt="">
+<div class="mmeta"><b id="mT"></b><span id="mA"></span></div>
+<button class="mbtn" id="mPrev" type="button" aria-label="previous"><svg width="17" height="17" viewBox="0 0 24 24" fill="#fff"><path d="M7 6h2.5v12H7zM19 6v12L9.5 12z"/></svg></button>
+<button class="mbtn main" id="mPlay" type="button" aria-label="play or pause"><svg id="mPlayIco" width="19" height="19" viewBox="0 0 24 24" fill="#fff"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg></button>
+<button class="mbtn" id="mNext" type="button" aria-label="next"><svg width="17" height="17" viewBox="0 0 24 24" fill="#fff"><path d="M14.5 6H17v12h-2.5zM5 6v12l9.5-6z"/></svg></button>
+<button class="mbtn" id="mX" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button>
+</div>
+<audio id="mAu" preload="auto"></audio>
+${SIDEBAR_HTML}<script src="/ui.js"></script>
+<script>
+var au = document.getElementById('mAu'), pill = document.getElementById('mPill'), cur = -1;
+var cards = Array.prototype.slice.call(document.querySelectorAll('.mcard'));
+var icoPlay = '<path d="M8 5v14l11-7z"/>', icoPause = '<path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/>';
+function setIco(){ document.getElementById('mPlayIco').innerHTML = au.paused ? icoPlay : icoPause; }
+function playAt(i){
+  if (i < 0 || i >= cards.length) return;
+  cur = i; var c = cards[i], id = c.getAttribute('data-id');
+  document.getElementById('mT').textContent = c.getAttribute('data-t');
+  document.getElementById('mA').textContent = c.getAttribute('data-a');
+  document.getElementById('mArt').src = 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg';
+  pill.hidden = false;
+  au.src = '/yt/stream?v=' + encodeURIComponent(id);
+  var pr = au.play(); if (pr && pr.catch) pr.catch(function(){});
+  cards.forEach(function(x, xi){ x.classList.toggle('on', xi === i); });
+  try {
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({ title: c.getAttribute('data-t'), artist: c.getAttribute('data-a'), artwork: [{ src: 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg', sizes: '480x360', type: 'image/jpeg' }] });
+      navigator.mediaSession.setActionHandler('previoustrack', function(){ playAt(cur - 1); });
+      navigator.mediaSession.setActionHandler('nexttrack', function(){ playAt(cur + 1); });
+    }
+  } catch (e) {}
+}
+cards.forEach(function(c, i){ c.addEventListener('click', function(){ if (cur === i && !au.paused) { au.pause(); } else if (cur === i) { au.play(); } else playAt(i); setIco(); }); });
+au.addEventListener('play', setIco); au.addEventListener('pause', setIco);
+au.addEventListener('ended', function(){ playAt(cur + 1); });
+document.getElementById('mPlay').addEventListener('click', function(){ if (au.paused) au.play(); else au.pause(); });
+document.getElementById('mNext').addEventListener('click', function(){ playAt(cur + 1); });
+document.getElementById('mPrev').addEventListener('click', function(){ playAt(cur - 1); });
+document.getElementById('mX').addEventListener('click', function(){ try { au.pause(); au.removeAttribute('src'); au.load(); } catch (e) {} pill.hidden = true; cur = -1; cards.forEach(function(x){ x.classList.remove('on'); }); });
+</script>
+</body></html>`;
+}
 function ytSearchPage(query, hit) {
   const abs = (u) => { try { return new URL(u, hit.inst).href; } catch { return u; } };
   const fmtLen = (s) => { s = Math.floor(+s || 0); if (!s) return ''; const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = String(s % 60).padStart(2, '0'); return h ? h + ':' + String(m).padStart(2, '0') + ':' + ss : m + ':' + ss; };
@@ -9274,6 +9386,7 @@ body{display:block;padding:0}
 <div class="ythead">
 <a class="ytlogo" href="/yt">6ixtube</a>
 <form class="ytsearch" action="/yt/search" method="get"><input name="q" type="text" value="${escHtml(query)}" placeholder="search youtube" autocomplete="off"><button type="submit">search</button></form>
+<div style="text-align:center;margin-top:12px"><a href="/music" style="color:#a78bfa;font-weight:700;text-decoration:none;font-size:14px">just music? → 6ixmusic</a></div>
 <div class="ytpaste" id="pasteBox"><input id="pasteIn" type="text" placeholder="or paste a youtube link — we'll stream it" autocomplete="off"><button id="pasteGo" type="button">stream it</button></div>
 </div>
 <h2 class="yth">results for <span>&ldquo;${escHtml(query)}&rdquo;</span></h2>
@@ -12288,6 +12401,10 @@ const server = http.createServer(async (req, res) => {
     const dout = dv ? await fetchYtDesc(dv) : null;
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(JSON.stringify(dout || { ok: false }));
+  }
+  if (u.pathname === '/music') {
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
+    return res.end(await musicPage(u.searchParams.get('q') || ''));
   }
   if (u.pathname === '/yt') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
