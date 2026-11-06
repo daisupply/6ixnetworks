@@ -1111,6 +1111,21 @@ button{border-radius:8px!important}
     try { FRAME.contentWindow.postMessage({ sixBar: bar.hidden ? 0 : 1 }, location.origin); } catch (e) {}
   }
   if (FRAME) FRAME.addEventListener('load', function(){ setTimeout(postBar, 300); });
+  var fadeTm = null;
+  function fadeIn(){
+    try {
+      var target = parseFloat(localStorage.getItem('gx_vol'));
+      if (isNaN(target)) target = 0.85;
+      if (fadeTm) clearInterval(fadeTm);
+      au.volume = 0;
+      var step = 0;
+      fadeTm = setInterval(function(){
+        step++;
+        au.volume = Math.min(target, target * step / 9);
+        if (step >= 9) { clearInterval(fadeTm); fadeTm = null; }
+      }, 30);
+    } catch (e) {}
+  }
   function load(pos){
     var t = cur(); if (!t) return;
     seekPos = pos || 0;
@@ -1122,6 +1137,7 @@ button{border-radius:8px!important}
         if (!blob) { paint(); return; }
         objUrl = URL.createObjectURL(blob);
         au.src = objUrl;
+        fadeIn();
         if (wantPlay) { var p = au.play(); if (p && p.catch) p.catch(function(){ paint(); }); }
         paint();
       });
@@ -1129,6 +1145,7 @@ button{border-radius:8px!important}
       return;
     }
     au.src = '/yt/stream?v=' + encodeURIComponent(t.id) + '&kind=a';
+    fadeIn();
     paint();
   }
   var ORD = null, ORDP = 0;
@@ -1148,11 +1165,18 @@ button{border-radius:8px!important}
     if (n2 >= Q.length) return rep === 1 ? 0 : -1;
     return n2;
   }
-  function warmNext(){
-    var n = nextIdx(); if (n < 0) return;
-    var t = Q[n]; if (!t || isLocal(t) || warmed[t.id]) return;
+  function warmOne(t){
+    if (!t || isLocal(t) || warmed[t.id]) return;
     warmed[t.id] = 1;
     try { fetch('/yt/stream?v=' + encodeURIComponent(t.id) + '&kind=a', { headers: { Range: 'bytes=0-0' } }).then(function(r){ try { r.body && r.body.cancel(); } catch (e) {} }).catch(function(){}); } catch (e) {}
+  }
+  function warmNext(){
+    var n = nextIdx(); if (n < 0) return;
+    warmOne(Q[n]);
+    var n2 = -1;
+    if (shuf && ORD) { if (ORDP + 2 < ORD.length) n2 = ORD[ORDP + 2]; }
+    else if (n + 1 < Q.length) n2 = n + 1;
+    if (n2 >= 0) warmOne(Q[n2]);
   }
   function playAt(i, pos){
     if (i < 0 || i >= Q.length) return;
@@ -11964,6 +11988,21 @@ html,body{overflow-x:clip}
     try { FRAME.contentWindow.postMessage({ sixBar: bar.hidden ? 0 : 1 }, location.origin); } catch (e) {}
   }
   if (FRAME) FRAME.addEventListener('load', function(){ setTimeout(postBar, 300); });
+  var fadeTm = null;
+  function fadeIn(){
+    try {
+      var target = parseFloat(localStorage.getItem('gx_vol'));
+      if (isNaN(target)) target = 0.85;
+      if (fadeTm) clearInterval(fadeTm);
+      au.volume = 0;
+      var step = 0;
+      fadeTm = setInterval(function(){
+        step++;
+        au.volume = Math.min(target, target * step / 9);
+        if (step >= 9) { clearInterval(fadeTm); fadeTm = null; }
+      }, 30);
+    } catch (e) {}
+  }
   function load(pos){
     var t = cur(); if (!t) return;
     seekPos = pos || 0;
@@ -11975,6 +12014,7 @@ html,body{overflow-x:clip}
         if (!blob) { paint(); return; }
         objUrl = URL.createObjectURL(blob);
         au.src = objUrl;
+        fadeIn();
         if (wantPlay) { var p = au.play(); if (p && p.catch) p.catch(function(){ paint(); }); }
         paint();
       });
@@ -11982,6 +12022,7 @@ html,body{overflow-x:clip}
       return;
     }
     au.src = '/yt/stream?v=' + encodeURIComponent(t.id) + '&kind=a';
+    fadeIn();
     paint();
   }
   var ORD = null, ORDP = 0;
@@ -12001,11 +12042,18 @@ html,body{overflow-x:clip}
     if (n2 >= Q.length) return rep === 1 ? 0 : -1;
     return n2;
   }
-  function warmNext(){
-    var n = nextIdx(); if (n < 0) return;
-    var t = Q[n]; if (!t || isLocal(t) || warmed[t.id]) return;
+  function warmOne(t){
+    if (!t || isLocal(t) || warmed[t.id]) return;
     warmed[t.id] = 1;
     try { fetch('/yt/stream?v=' + encodeURIComponent(t.id) + '&kind=a', { headers: { Range: 'bytes=0-0' } }).then(function(r){ try { r.body && r.body.cancel(); } catch (e) {} }).catch(function(){}); } catch (e) {}
+  }
+  function warmNext(){
+    var n = nextIdx(); if (n < 0) return;
+    warmOne(Q[n]);
+    var n2 = -1;
+    if (shuf && ORD) { if (ORDP + 2 < ORD.length) n2 = ORD[ORDP + 2]; }
+    else if (n + 1 < Q.length) n2 = n + 1;
+    if (n2 >= 0) warmOne(Q[n2]);
   }
   function playAt(i, pos){
     if (i < 0 || i >= Q.length) return;
@@ -13009,6 +13057,10 @@ async function sixVerifySongs(vids) {
   return vids.map(v => { const vd = songVerdict.get(v.id); if (typeof vd === 'string' && vd.indexOf('A:') === 0) v.a = vd.slice(2); return v; }).filter(v => songVerdict.get(v.id) !== 0);
 }
 
+function musArtistCap(list, cap) {
+  const counts = {};
+  return (list || []).filter(v => { const k = String(v.a || '').toLowerCase().trim(); if (!k) return true; counts[k] = (counts[k] || 0) + 1; return counts[k] <= cap; });
+}
 async function buildForYou(p) {
   const key = 'fy:' + sixHash(JSON.stringify(p));
   const c = forYouCache.get(key);
@@ -13032,7 +13084,7 @@ async function buildForYou(p) {
         'artists they reach for FIRST when they open the app: ' + (p.open.join(', ') || 'unknown') + '\n' +
         'what they search for: ' + (p.searches.join(' | ') || 'nothing yet') + '\n' +
         'reply with ONLY this JSON, nothing else, no markdown: {"queries":["<youtube music search phrase>"],"line":"<one short line in ur voice about this mix, lowercase, max 90 chars>"}\n' +
-        'give 5 queries: at least one "songs like <their top finished song>", their top artists, similar artists they would love, and one curveball in the same world. search phrases only, no urls. real released songs only — no type beats, no instrumentals, no karaoke.';
+        'give 5 queries: at least one "songs like <their top finished song>", their top artists, similar artists they would love, and one curveball in the same world. SPREAD IT OUT: at least 6 different artists across the queries, max 2 queries on any one artist, and one query MUST be a discovery pick — an artist in his world he has not played yet. search phrases only, no urls. real released songs only — no type beats, no instrumentals, no karaoke.';
       const reply = await Promise.race([
         askSix([{ role: 'user', content: prompt }], SIX_SYSTEM),
         new Promise(res => setTimeout(() => res(''), 12000))
@@ -13049,14 +13101,17 @@ async function buildForYou(p) {
   }
   if (!queries) queries = fyFallbackQueries(p);
   if (!line) line = FY_LINES[sixHash('fyline:' + key) % FY_LINES.length];
-  const hits = await Promise.all(queries.slice(0, 4).map(q => fetchYtSearchIt(q).catch(() => null)));
+  const hits = await Promise.all(queries.slice(0, 5).map(q => fetchYtSearchIt(q).catch(() => null)));
   const pools = hits.map(h => h ? musNorm(h.vids, p.mode !== 'yt') : []);
   const merged = [];
-  for (let r = 0; r < 8 && merged.length < 30; r++) {
-    for (const pool of pools) { if (pool[r] && merged.length < 30) merged.push(pool[r]); }
+  for (let r = 0; r < 12 && merged.length < 44; r++) {
+    for (const pool of pools) { if (pool[r] && merged.length < 44) merged.push(pool[r]); }
   }
   let vids = musDedupe(merged, 1);
+  const reserve = vids;
+  vids = musArtistCap(vids, 4);
   if (p.mode !== 'yt') vids = await sixVerifySongs(vids);
+  if (vids.length < 24) { const have = new Set(vids.map(v => v.id)); for (const v of reserve) { if (vids.length >= 30) break; if (!have.has(v.id)) { vids.push(v); have.add(v.id); } } vids = musArtistCap(vids, 5); }
   vids = vids.slice(0, 30);
   const out = { ok: !!vids.length, vids, line, src, queries };
   if (vids.length) { forYouCache.set(key, { at: Date.now(), out }); if (forYouCache.size > 60) forYouCache.delete(forYouCache.keys().next().value); }
@@ -13150,7 +13205,7 @@ async function buildAiPlaylist(b) {
     name = (artists.join(', ') || type || 'my mix').slice(0, 40);
   } else {
     try {
-      const prompt = 'u are six, building a DISCOVERY playlist. the listener asked for artists: ' + (artists.join(', ') || 'none') + ' — and this type of songs: ' + (type || 'none') + '. go WIDER than the ask: similar artists, adjacent sounds, hidden gems in the same world. reply with ONLY this JSON, nothing else: {"name":"<short playlist name, lowercase>","queries":["<youtube music search phrase>"]} — give exactly 6 search phrases, all landing on real released songs (no type beats, no instrumentals, no karaoke).';
+      const prompt = 'u are six, building a DISCOVERY playlist. the listener asked for artists: ' + (artists.join(', ') || 'none') + ' — and this type of songs: ' + (type || 'none') + '. go WIDER than the ask: similar artists, adjacent sounds, hidden gems in the same world. reply with ONLY this JSON, nothing else: {"name":"<short playlist name, lowercase>","queries":["<youtube music search phrase>"]} — give exactly 6 search phrases, all landing on real released songs (no type beats, no instrumentals, no karaoke). VARIETY IS THE POINT: at least 5 DIFFERENT artists across the 6 phrases, no artist in more than 2 phrases.';
       const reply = await Promise.race([askSix([{ role: 'user', content: prompt }], SIX_SYSTEM), new Promise(res => setTimeout(() => res(''), 12000))]);
       const m = String(reply || '').match(/\{[\s\S]*?\}/);
       if (m) { const j = JSON.parse(m[0]); if (j && Array.isArray(j.queries)) { queries = j.queries.map(x => fyCleanStr(x, 80)).filter(Boolean).slice(0, 6); name = fyCleanStr(j.name, 40); } }
@@ -13173,7 +13228,16 @@ async function buildAiPlaylist(b) {
     for (let r = 0; r < 6 && merged.length < 30; r++) for (const pool of pools) { if (pool[r] && merged.length < 30) merged.push(pool[r]); }
   }
   let vids = musDedupe(merged, 1);
+  vids = musArtistCap(vids, style === 'specific' ? 8 : 3);
   if (strict) vids = await sixVerifySongs(vids);
+  if (vids.length < 6 && artists.length) {
+    const hits2 = await Promise.all(artists.slice(0, 4).map(a => fetchYtSearchIt(a + ' songs').catch(() => null)));
+    const pools2 = hits2.map(h => h ? musNorm(h.vids, strict) : []);
+    let m2 = [];
+    pools2.forEach(pl => { m2 = m2.concat(pl); });
+    m2 = musArtistCap(musDedupe(m2, 1), 6);
+    if (m2.length > vids.length) vids = m2;
+  }
   vids = vids.slice(0, 24);
   return { ok: !!vids.length, name: name || 'six made this', vids, style };
 }
