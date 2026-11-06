@@ -5774,6 +5774,70 @@ function newsShape(c) {
 }
 
 
+
+// ===== v357 announcement banner (home screen; controlled from the Banner Control space) =====
+const BANNER_TONES = ['nebula', 'amber', 'alert', 'mint'];
+const BANNER_DEFAULT = { enabled: true, id: 'welcome', text: 'welcome to 6ixnetworks', sub: '', ctaText: '', ctaHref: '', tone: 'nebula', updated: 0 };
+let bannerCfg = null;
+let bannerBusy = null;
+function bannerEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function bannerShape(c) {
+  c = c || {};
+  return {
+    enabled: c.enabled !== false,
+    id: String(c.id || 'welcome').slice(0, 40),
+    text: String(c.text || '').slice(0, 140),
+    sub: String(c.sub || '').slice(0, 200),
+    ctaText: String(c.ctaText || '').slice(0, 40),
+    ctaHref: String(c.ctaHref || '').slice(0, 300),
+    tone: BANNER_TONES.includes(c.tone) ? c.tone : 'nebula',
+    updated: Number(c.updated || 0) || 0,
+  };
+}
+async function bannerLoad() {
+  if (bannerCfg) return bannerCfg;
+  if (bannerBusy) return bannerBusy;
+  bannerBusy = (async () => {
+    try { const got = await storeCmd([['GET', 'cfg:banner']], 6000); if (got && got[0]) { try { bannerCfg = bannerShape(JSON.parse(got[0])); } catch {} } } catch {}
+    if (!bannerCfg) bannerCfg = Object.assign({}, BANNER_DEFAULT);
+    bannerBusy = null;
+    return bannerCfg;
+  })();
+  return bannerBusy;
+}
+function bannerPersist() { try { storeSet('cfg:banner', JSON.stringify(bannerCfg)); } catch {} }
+function bannerHrefOk(h) {
+  if (!h) return true;
+  if (h.startsWith('/')) return !h.startsWith('//');
+  return /^https:\/\//i.test(h);
+}
+function bannerHtml(c) {
+  if (!c.enabled || !c.text) return '';
+  let inner = '<div class="gxbn-main"><span class="gxbn-star">✦</span><span class="gxbn-text">' + bannerEsc(c.text) + '</span>';
+  if (c.sub) inner += '<span class="gxbn-sub">' + bannerEsc(c.sub) + '</span>';
+  inner += '</div>';
+  if (c.ctaText && c.ctaHref) inner += '<a class="gxbn-cta" href="' + bannerEsc(c.ctaHref) + '">' + bannerEsc(c.ctaText) + '</a>';
+  inner += '<button class="gxbn-x" type="button" aria-label="dismiss announcement">×</button>';
+  return '<div class="gxbn gxbn-' + c.tone + '" id="gxBanner" data-bid="' + bannerEsc(c.id) + '" role="region" aria-label="announcement">' + inner + '</div>';
+}
+const BANNER_CSS = '<style>'
+  + '.gxbn{position:relative;z-index:5;width:100%;max-width:1060px;margin:0 auto 14px;padding:11px 46px 11px 16px;border-radius:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#15151c;border:1px solid rgba(255,255,255,.09);color:#f4f4f5;box-shadow:0 8px 24px rgba(0,0,0,.28)}'
+  + '.gxbn-main{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;min-width:0;flex:1 1 auto}'
+  + '.gxbn-star{color:rgb(var(--star));font-size:15px;line-height:1}'
+  + '.gxbn-text{font-weight:800;font-size:14.5px;letter-spacing:.01em;line-height:1.35}'
+  + '.gxbn-sub{font-size:13px;color:#b9b9c6;line-height:1.4}'
+  + '.gxbn-cta{flex:0 0 auto;background:#f4f4f5;color:#0a0a0b;font-weight:800;font-size:13px;padding:7px 13px;border-radius:999px;text-decoration:none;line-height:1.2}'
+  + '.gxbn-x{position:absolute;top:50%;right:8px;transform:translateY(-50%);width:30px;height:30px;padding:0;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08);color:#d6d6e0;font-size:17px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer}'
+  + '.gxbn-amber{background:#1d1807;border-color:rgba(251,191,36,.35)}'
+  + '.gxbn-amber .gxbn-star{color:#fbbf24}'
+  + '.gxbn-alert{background:#220d12;border-color:rgba(244,63,94,.4)}'
+  + '.gxbn-alert .gxbn-star{color:#fb7185}'
+  + '.gxbn-mint{background:#0a1a12;border-color:rgba(52,211,153,.35)}'
+  + '.gxbn-mint .gxbn-star{color:#34d399}'
+  + '@media(max-width:820px){.gxbn{margin-top:16px;margin-bottom:12px;padding:10px 42px 10px 13px;border-radius:12px}.gxbn-text{font-size:13.5px}.gxbn-sub{font-size:12.5px}.gxbn-cta{padding:6px 11px;font-size:12.5px}}'
+  + '</style>';
+const BANNER_JS = '<script>(function(){var b=document.getElementById("gxBanner");if(!b)return;var id=b.getAttribute("data-bid")||"";try{if(localStorage.getItem("gx_banner_hide")===id){b.style.display="none";return}}catch(e){}var x=b.querySelector(".gxbn-x");if(x)x.addEventListener("click",function(){try{localStorage.setItem("gx_banner_hide",id)}catch(e){}b.style.display="none"})})();</script>';
+
 // ===== v172 confessions =====
 let confList = null;
 let confBusy = null;
@@ -9671,7 +9735,7 @@ const HOME_FUN = `<style>
   }
 })();
 </script>`;
-function homeServed() { return HOME.replace('</body>', HOME_FUN + '</body>').replace(/<p class="splash">[^<]*<\/p>/, '<p class="splash">' + splashPick() + '</p>'); }
+function homeServed() { const bn = bannerHtml(bannerCfg || BANNER_DEFAULT); const bb = bn ? BANNER_CSS + '\n' + bn + BANNER_JS + '\n' : ''; return HOME.replace('<div id="heroClock"', bb + '<div id="heroClock"').replace('</body>', HOME_FUN + '</body>').replace(/<p class="splash">[^<]*<\/p>/, '<p class="splash">' + splashPick() + '</p>'); }
 const HOME = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14441,6 +14505,24 @@ const server = http.createServer(async (req, res) => {
     for (const [k, t] of onlineSeen) { if (now - t < 90000) n++; else onlineSeen.delete(k); }
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-cache' });
     return res.end(JSON.stringify({ n }));
+  }
+  if (u.pathname === '/api/banner' && req.method === 'GET') {
+    const c = await bannerLoad();
+    res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-cache' });
+    return res.end(JSON.stringify(Object.assign({ ok: true, control: !!process.env.BANNER_KEY }, bannerShape(c))));
+  }
+  if (u.pathname === '/api/banner' && req.method === 'POST') {
+    const key = process.env.BANNER_KEY || '';
+    if (!key) { res.writeHead(503, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ok: false, err: 'banner control is not connected yet — BANNER_KEY is not set on the server' })); }
+    if (String(req.headers['x-banner-key'] || '') !== key) { res.writeHead(403, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ok: false, err: 'bad banner key' })); }
+    const b = await readJsonBody(req);
+    const next = bannerShape({ enabled: !!b.enabled, text: b.text, sub: b.sub, ctaText: b.ctaText, ctaHref: b.ctaHref, tone: b.tone, id: Date.now().toString(36), updated: Date.now() });
+    if (next.enabled && !next.text) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ok: false, err: 'an enabled banner needs text' })); }
+    if (!bannerHrefOk(next.ctaHref)) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ok: false, err: 'cta link must start with / or https://' })); }
+    bannerCfg = next;
+    bannerPersist();
+    res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-cache' });
+    return res.end(JSON.stringify(Object.assign({ ok: true, control: true }, next)));
   }
   if (u.pathname === '/api/confess' && req.method === 'GET') {
     await confLoad();
