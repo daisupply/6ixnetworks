@@ -13896,8 +13896,32 @@ async function storeCmd(cmds, timeoutMs) {
     return Array.isArray(j) ? j.map(x => x && x.result) : null;
   } catch (e) { return null; }
 }
-function storeSet(key, val) { storeCmd([['SET', key, val]]); }
-function storeDel(key) { storeCmd([['DEL', key]]); }
+// v356 (his order: free-tier Upstash — slow down + batch): writes no longer
+// fire one HTTP request each. they queue per key (last write wins, so ten
+// saves of the same account collapse into ONE command) and flush as a single
+// /pipeline call every 3s. a failed flush requeues with a 15s backoff.
+const storeQueue = new Map();
+let storeFlushTimer = null;
+function scheduleStoreFlush(ms) {
+  if (storeFlushTimer) return;
+  storeFlushTimer = setTimeout(flushStoreQueue, ms || 3000);
+}
+async function flushStoreQueue() {
+  if (storeFlushTimer) { clearTimeout(storeFlushTimer); storeFlushTimer = null; }
+  if (!storeQueue.size) return;
+  const cmds = [...storeQueue.values()];
+  storeQueue.clear();
+  const r = await storeCmd(cmds, 9000);
+  if (!r) {
+    for (const c of cmds) if (!storeQueue.has(c[1])) storeQueue.set(c[1], c);
+    scheduleStoreFlush(15000);
+  }
+}
+async function flushAllStores() { try { await flushStoreQueue(); } catch {} try { await flushChatQueue(); } catch {} }
+process.on('SIGTERM', () => { setTimeout(() => process.exit(0), 2500).unref(); flushAllStores().then(() => process.exit(0)); });
+process.on('SIGINT', () => { setTimeout(() => process.exit(0), 2500).unref(); flushAllStores().then(() => process.exit(0)); });
+function storeSet(key, val) { if (!STORE_ON) return; storeQueue.set(key, ['SET', key, val]); if (storeQueue.size > 200) flushStoreQueue(); else scheduleStoreFlush(); }
+function storeDel(key) { if (!STORE_ON) return; storeQueue.set(key, ['DEL', key]); scheduleStoreFlush(); }
 
 // ===== v139 chat history store: second Upstash DB just for chat (env-gated, write-through) =====
 const CHAT_STORE_URL = process.env.UPSTASH_CHAT_REST_URL || '';
@@ -13912,22 +13936,44 @@ async function chatStoreCmd(cmds, timeoutMs) {
     return Array.isArray(j) ? j.map(x => x && x.result) : null;
   } catch (e) { return null; }
 }
+// v356: chat used to SET the whole room on EVERY message + reaction. now a
+// post just marks the room dirty; a flusher every 10s writes each dirty room
+// ONCE with its latest state, all rooms in a single /pipeline call.
+const chatDirty = new Set();
+let chatFlushTimer = null;
 function persistChatRoom(roomName) {
   if (!CHAT_STORE_ON || roomName.startsWith('p-')) return;
-  const room = CHAT_ROOMS.get(roomName);
-  if (!room) return;
-  const out = [];
-  let size = 0;
-  for (let i = room.msgs.length - 1; i >= 0; i--) {
-    const m = Object.assign({}, room.msgs[i]);
-    if (m.img) {
-      if (size + m.img.length > 180000) { delete m.img; m.imgGone = true; }
-      else size += m.img.length;
+  chatDirty.add(roomName);
+  if (!chatFlushTimer) chatFlushTimer = setTimeout(flushChatQueue, 10000);
+}
+async function flushChatQueue() {
+  chatFlushTimer = null;
+  if (!chatDirty.size) return;
+  const rooms = [...chatDirty];
+  chatDirty.clear();
+  const cmds = [];
+  for (const roomName of rooms) {
+    const room = CHAT_ROOMS.get(roomName);
+    if (!room) continue;
+    const out = [];
+    let size = 0;
+    for (let i = room.msgs.length - 1; i >= 0; i--) {
+      const m = Object.assign({}, room.msgs[i]);
+      if (m.img) {
+        if (size + m.img.length > 180000) { delete m.img; m.imgGone = true; }
+        else size += m.img.length;
+      }
+      out.unshift(m);
+      size += 400;
     }
-    out.unshift(m);
-    size += 400;
+    cmds.push(['SET', 'chat:' + roomName, JSON.stringify(out)]);
   }
-  chatStoreCmd([['SET', 'chat:' + roomName, JSON.stringify(out)]]);
+  if (!cmds.length) return;
+  const r = await chatStoreCmd(cmds, 9000);
+  if (!r) {
+    for (const rn of rooms) chatDirty.add(rn);
+    if (!chatFlushTimer) chatFlushTimer = setTimeout(flushChatQueue, 20000);
+  }
 }
 async function hydrateChatStore() {
   if (!CHAT_STORE_ON) { console.log('chat store: in-memory only (no UPSTASH_CHAT env vars)'); return; }
