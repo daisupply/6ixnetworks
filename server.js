@@ -1531,7 +1531,7 @@ body{padding-top:env(safe-area-inset-top)!important;box-sizing:border-box}
 }
 
 @media (max-width:820px){
-.mhead{background:rgba(8,7,15,.96)!important}
+.wrap .mhead{background:rgba(8,7,15,.96)!important}
 .mvcard .mt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3;min-height:2.6em}
 }
 
@@ -2187,6 +2187,14 @@ function loadMore(){
     moreEl.textContent = moreC[f0] ? '' : "that's everything youtube is giving us here — try another category";
   }).catch(function(){ moreBusy = false; moreEl.textContent = 'more videos hiccuped — keep scrolling to retry'; });
 }
+document.addEventListener('pointerdown', function(e){
+  var a = e.target && e.target.closest ? e.target.closest('a[href*="/yt/watch?v="]') : null;
+  if (!a) return;
+  var href = a.getAttribute('href') || '';
+  var vi = href.indexOf('v=');
+  var id = vi >= 0 ? href.slice(vi + 2).split('&')[0] : '';
+  if (id.length >= 6 && id.length <= 20) { try { fetch('/yt/warm?v=' + encodeURIComponent(id) + '&kind=v'); } catch (err) {} }
+}, true);
 function pokeMore(){ var s = document.getElementById('ytsent'); if (!s) return; var r = s.getBoundingClientRect(); if (r.top < window.innerHeight + 800) loadMore(); }
 if ('IntersectionObserver' in window) { var io = new IntersectionObserver(function(es){ if (es[0].isIntersecting) loadMore(); }, { rootMargin: '800px' }); io.observe(document.getElementById('ytsent')); }
 /* paste a link, stream it */
@@ -11349,6 +11357,14 @@ ${CLOAK_BAR}
 </div>
 <script src="/ui.js"></script>
 <script>
+document.addEventListener('pointerdown', function(e){
+  var a = e.target && e.target.closest ? e.target.closest('a[href*="/yt/watch?v="]') : null;
+  if (!a) return;
+  var href = a.getAttribute('href') || '';
+  var vi = href.indexOf('v=');
+  var id = vi >= 0 ? href.slice(vi + 2).split('&')[0] : '';
+  if (id.length >= 6 && id.length <= 20) { try { fetch('/yt/warm?v=' + encodeURIComponent(id) + '&kind=v'); } catch (err) {} }
+}, true);
 var EMBED=document.getElementById('ytembed'), VID=document.getElementById('vid'), STAT=document.getElementById('ytstat'), PILL=document.getElementById('ytretry');
 var PROG=${JSON.stringify(progUrl)}, EMBEDSRC=${JSON.stringify(embedSrc)};
 var VIDID=${JSON.stringify(id)};
@@ -11531,6 +11547,14 @@ ${CLOAK_BAR}
 </div>
 <script src="/ui.js"></script>
 <script>
+document.addEventListener('pointerdown', function(e){
+  var a = e.target && e.target.closest ? e.target.closest('a[href*="/yt/watch?v="]') : null;
+  if (!a) return;
+  var href = a.getAttribute('href') || '';
+  var vi = href.indexOf('v=');
+  var id = vi >= 0 ? href.slice(vi + 2).split('&')[0] : '';
+  if (id.length >= 6 && id.length <= 20) { try { fetch('/yt/warm?v=' + encodeURIComponent(id) + '&kind=v'); } catch (err) {} }
+}, true);
 var EMBED=document.getElementById('ytembed'), VID=document.getElementById('vid'), STAT=document.getElementById('ytstat'), PILL=document.getElementById('ytretry');
 var PROG=${JSON.stringify(progUrl)}, EMBEDSRC=${JSON.stringify(embedSrc)};
 var VIDID=${JSON.stringify(id)};
@@ -14668,7 +14692,8 @@ const server = http.createServer(async (req, res) => {
   }
   if (u.pathname === '/yt/warm') {
     const wv = (u.searchParams.get('v') || '').trim();
-    if (/^[\w-]{6,20}$/.test(wv)) { try { ytAudioJob(wv); } catch (e) {} }
+    const wk = u.searchParams.get('kind') || 'a';
+    if (/^[\w-]{6,20}$/.test(wv)) { try { if (wk === 'v') { ytResolve(wv).catch(() => {}); } else { ytAudioJob(wv); } } catch (e) {} }
     res.writeHead(204); return res.end();
   }
   if (u.pathname === '/yt/stream') {
