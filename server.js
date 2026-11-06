@@ -5834,6 +5834,7 @@ const BANNER_CSS = '<style>'
   + '.gxbn-alert .gxbn-star{color:#fb7185}'
   + '.gxbn-mint{background:#0a1a12;border-color:rgba(52,211,153,.35)}'
   + '.gxbn-mint .gxbn-star{color:#34d399}'
+  + '@media(min-width:821px){.gxbn{margin-top:34px}}'
   + '@media(max-width:820px){.gxbn{margin-top:16px;margin-bottom:12px;padding:10px 42px 10px 13px;border-radius:12px}.gxbn-text{font-size:13.5px}.gxbn-sub{font-size:12.5px}.gxbn-cta{padding:6px 11px;font-size:12.5px}}'
   + '</style>';
 const BANNER_JS = '<script>(function(){var b=document.getElementById("gxBanner");if(!b)return;var id=b.getAttribute("data-bid")||"";try{if(localStorage.getItem("gx_banner_hide")===id){b.style.display="none";return}}catch(e){}var x=b.querySelector(".gxbn-x");if(x)x.addEventListener("click",function(){try{localStorage.setItem("gx_banner_hide",id)}catch(e){}b.style.display="none"})})();</script>';
