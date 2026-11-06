@@ -1506,6 +1506,12 @@ body{padding-top:0!important}
 body{padding-top:env(safe-area-inset-top)!important;box-sizing:border-box}
 }
 
+@media (max-width:820px){
+.mhead{background:rgba(8,7,15,.96)!important}
+.mvcard .mt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3;min-height:2.6em}
+}
+
+
 
 
 @media (pointer:coarse){input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea,select{font-size:16px!important}}
