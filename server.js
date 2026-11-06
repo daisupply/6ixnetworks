@@ -7118,6 +7118,7 @@ document.getElementById('wTitle').textContent = ttl;
 document.getElementById('wMeta').textContent = (kind === 'series' ? 'show' : 'movie') + (yr ? ' \u00b7 ' + yr : '');
 if(kind === 'series') document.getElementById('seRow').hidden = false;
 var SRCS = [
+  { n: 'flx', w: 1, m: function(x){ return (+x) ? '/flx/watch?id=' + x + '&type=movie' : 'https://vidlink.pro/movie/' + x; }, t: function(x, s, e){ return (+x) ? '/flx/watch?id=' + x + '&type=tv&s=' + s + '&e=' + e : 'https://vidlink.pro/tv/' + x + '/' + s + '/' + e; } },
   { n: 'vidsrc', w: 1, m: function(x){ return 'https://vidsrc.to/embed/movie/' + x; }, t: function(x, s, e){ return 'https://vidsrc.to/embed/tv/' + x + '/' + s + '/' + e; } },
   { n: 'vidlink', m: function(x){ return 'https://vidlink.pro/movie/' + x; }, t: function(x, s, e){ return 'https://vidlink.pro/tv/' + x + '/' + s + '/' + e; } },
   { n: 'videasy', w: 1, m: function(x){ return 'https://player.videasy.to/movie/' + x; }, t: function(x, s, e){ return 'https://player.videasy.to/tv/' + x + '/' + s + '/' + e; } },
