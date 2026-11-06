@@ -811,7 +811,130 @@ body[data-motion=\"off\"] #stars.gx-home{display:block}
 #tabSheet a .meav{width:26px;height:26px;font-size:11px}
 @media(min-width:1100px){body[data-nav=\"side\"] #tbMe{display:none}}
 
-</style><header id=\"topbar\"><a class=\"tb-logo\" href=\"/home\">6ix<span>networks</span></a><nav class=\"tb-links\"><a href=\"/home\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg>home</a><a href=\"/gs\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>games</a><a href=\"/chat\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg>6ixchat</a><a href=\"/ai\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>six ai</a><a href=\"/movies\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"2\" width=\"20\" height=\"20\" rx=\"2.18\"/><path d=\"M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5\"/></svg>6ixflix</a><a href=\"/news\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2\"/><path d=\"M18 14h-8\"/><path d=\"M15 18h-5\"/><path d=\"M10 6h8v4h-8V6Z\"/></svg>news</a><a href=\"/people\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/></svg>people</a><a href=\"/confess\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 10h.01\"/><path d=\"M15 10h.01\"/><path d=\"M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z\"/></svg>confessions</a></nav><a class=\"tb-search\" href=\"/search\" aria-label=\"search\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m21 21-4.3-4.3\"/></svg></a><a id=\"tbMe\" href=\"/account\" hidden></a><div class=\"tb-menuwrap\"><button id=\"menuBtn\" type=\"button\" aria-label=\"menu\">menu<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\"/></svg></button><div id=\"dropmenu\"><div class=\"dm-grid\"><a href=\"/home\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg>home</a><a href=\"/gs\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>games</a><a href=\"/chat\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg>6ixchat</a><a href=\"/ai\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>six ai</a><a href=\"/yt\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"4\"/><path d=\"m10 9 5 3-5 3z\" fill=\"currentColor\" stroke=\"none\"/></svg>6ixtube</a><a href=\"/music\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18V5l12-2v13\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><circle cx=\"18\" cy=\"16\" r=\"3\"/></svg>6ixmusic</a><a href=\"/movies\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"2\" width=\"20\" height=\"20\" rx=\"2.18\"/><path d=\"M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5\"/></svg>6ixflix</a><a href=\"/search\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m21 21-4.3-4.3\"/></svg>search</a><a href=\"/apps\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2\" width=\"10\" height=\"20\" rx=\"2\"/><path d=\"M12 18h.01\"/></svg>apps</a><a href=\"/hw\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\"/><path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"/></svg>hw helper</a><a href=\"/emu\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"7\" width=\"20\" height=\"11\" rx=\"5\"/><path d=\"M7.5 10.5v4M5.5 12.5h4\"/><circle cx=\"16.5\" cy=\"11\" r=\".4\" fill=\"currentColor\"/><circle cx=\"18.5\" cy=\"14\" r=\".4\" fill=\"currentColor\"/></svg>emulator</a><a href=\"/news\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2\"/><path d=\"M18 14h-8\"/><path d=\"M15 18h-5\"/><path d=\"M10 6h8v4h-8V6Z\"/></svg>news</a><a href=\"/requests\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 17 6-6 4 4 8-8\"/><path d=\"M14 7h7v7\"/></svg>requests</a><a href=\"/people\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/></svg>people</a><a href=\"/confess\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 10h.01\"/><path d=\"M15 10h.01\"/><path d=\"M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z\"/></svg>confessions</a><a href=\"/forge\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"6\" y1=\"12\" x2=\"10\" y2=\"12\"/><line x1=\"8\" y1=\"10\" x2=\"8\" y2=\"14\"/><line x1=\"15\" y1=\"13\" x2=\"15.01\" y2=\"13\"/><line x1=\"18\" y1=\"11\" x2=\"18.01\" y2=\"11\"/><path d=\"M17.32 5H6.68a4 4 0 0 0-3.978 3.59C2.62 9.42 2 14.46 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.62-6.584-.685-7.258A4 4 0 0 0 17.32 5z\"/></svg>forge</a><a href=\"/tools\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1\"/><circle cx=\"16\" cy=\"6\" r=\"2\"/><circle cx=\"10\" cy=\"12\" r=\"2\"/><circle cx=\"18\" cy=\"18\" r=\"2\"/></svg>tools</a><a href=\"/space\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"3.2\" fill=\"currentColor\" stroke=\"none\"/><ellipse cx=\"12\" cy=\"12\" rx=\"10\" ry=\"4.2\" transform=\"rotate(-18 12 12)\"/></svg>space</a><a href=\"/download\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" y1=\"15\" x2=\"12\" y2=\"3\"/></svg>download</a><a href=\"/account\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg>account</a></div><div class=\"dm-sec\">ask six</div><form id=\"dmAsk\"><input id=\"dmQ\" type=\"text\" placeholder=\"ask six anything...\" autocomplete=\"off\"><button type=\"submit\">ask</button></form><div id=\"dmAns\" hidden></div><div class=\"dm-sec\">tab style</div><div class=\"sb-cloak\"><button onclick=\"cloakTab('google')\">google</button><button onclick=\"cloakTab('classroom')\">classroom</button><button onclick=\"cloakTab('docs')\">docs</button><button onclick=\"cloakTab('drive')\">drive</button><button onclick=\"cloakOpen()\">open in a tab</button><button type="button" data-clickoff onclick="gxClickoff()">clickoff: off</button></div><div class=\"dm-sec\">sky</div><div class=\"sb-cloak dm-sky\"><button type=\"button\" data-sky=\"nebula\" onclick=\"gxSetSky('nebula')\">nebula</button><button type=\"button\" data-sky=\"amber\" onclick=\"gxSetSky('amber')\">amber</button><button type=\"button\" data-sky=\"violet\" onclick=\"gxSetSky('violet')\">violet</button><button type=\"button\" data-sky=\"ice\" onclick=\"gxSetSky('ice')\">ice</button><button type=\"button\" data-sky=\"blood\" onclick=\"gxSetSky('blood')\">blood moon</button></div><div class=\"dm-sec\">personalize</div><div class=\"sb-cloak dm-pers\"><button type=\"button\" data-navm=\"bar\" onclick=\"gxSetNav('bar')\">top bar</button><button type=\"button\" data-navm=\"side\" onclick=\"gxSetNav('side')\">sidebar</button><button type=\"button\" data-accm=\"\" onclick=\"gxSetAcc('')\">accent: sky</button><button type=\"button\" data-accm=\"crimson\" onclick=\"gxSetAcc('crimson')\">crimson</button><button type=\"button\" data-accm=\"azure\" onclick=\"gxSetAcc('azure')\">azure</button><button type=\"button\" data-accm=\"toxic\" onclick=\"gxSetAcc('toxic')\">toxic</button><button type=\"button\" data-accm=\"gold\" onclick=\"gxSetAcc('gold')\">gold</button><button type=\"button\" data-accm=\"rose\" onclick=\"gxSetAcc('rose')\">rose</button><button type=\"button\" data-motion onclick=\"gxToggleMotion()\">animations: on</button><button type=\"button\" data-lights onclick=\"gxToggleLights()\">christmas lights: on</button><a href=\"/customize\" style=\"flex:1 1 100%;text-align:center;background:rgba(var(--acc),.18);border:1px solid rgba(var(--star),.4);color:#fff;border-radius:999px;padding:8px 11px;font-size:12.5px;font-weight:700;text-decoration:none\">make it urs \u2014 full builder</a></div></div></div></header><aside id=\"siderail\"><a class=\"rl-logo\" href=\"/home\">6ix<span>networks</span></a><nav class=\"rl\"><a href=\"/home\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg><span>home</span></a><a href=\"/gs\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg><span>games</span></a><a href=\"/chat\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg><span>6ixchat</span></a><a href=\"/ai\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg><span>six ai</span></a><a href=\"/yt\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"4\"/><path d=\"m10 9 5 3-5 3z\" fill=\"currentColor\" stroke=\"none\"/></svg><span>6ixtube</span></a><a href=\"/music\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18V5l12-2v13\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><circle cx=\"18\" cy=\"16\" r=\"3\"/></svg><span>6ixmusic</span></a><a href=\"/movies\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"2\" width=\"20\" height=\"20\" rx=\"2.18\"/><path d=\"M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5\"/></svg><span>6ixflix</span></a><a href=\"/search\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m21 21-4.3-4.3\"/></svg><span>search</span></a><a href=\"/apps\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2\" width=\"10\" height=\"20\" rx=\"2\"/><path d=\"M12 18h.01\"/></svg><span>apps</span></a><a href=\"/hw\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\"/><path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"/></svg><span>hw helper</span></a><a href=\"/emu\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"7\" width=\"20\" height=\"11\" rx=\"5\"/><path d=\"M7.5 10.5v4M5.5 12.5h4\"/><circle cx=\"16.5\" cy=\"11\" r=\".4\" fill=\"currentColor\"/><circle cx=\"18.5\" cy=\"14\" r=\".4\" fill=\"currentColor\"/></svg><span>emulator</span></a><a href=\"/news\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2\"/><path d=\"M18 14h-8\"/><path d=\"M15 18h-5\"/><path d=\"M10 6h8v4h-8V6Z\"/></svg><span>news</span></a><a href=\"/requests\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 17 6-6 4 4 8-8\"/><path d=\"M14 7h7v7\"/></svg><span>requests</span></a><a href=\"/people\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/></svg><span>people</span></a><a href=\"/confess\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 10h.01\"/><path d=\"M15 10h.01\"/><path d=\"M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z\"/></svg><span>confessions</span></a><a href=\"/forge\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"6\" y1=\"12\" x2=\"10\" y2=\"12\"/><line x1=\"8\" y1=\"10\" x2=\"8\" y2=\"14\"/><line x1=\"15\" y1=\"13\" x2=\"15.01\" y2=\"13\"/><line x1=\"18\" y1=\"11\" x2=\"18.01\" y2=\"11\"/><path d=\"M17.32 5H6.68a4 4 0 0 0-3.978 3.59C2.62 9.42 2 14.46 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.62-6.584-.685-7.258A4 4 0 0 0 17.32 5z\"/></svg><span>forge</span></a><a href=\"/tools\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1\"/><circle cx=\"16\" cy=\"6\" r=\"2\"/><circle cx=\"10\" cy=\"12\" r=\"2\"/><circle cx=\"18\" cy=\"18\" r=\"2\"/></svg><span>tools</span></a><a href=\"/space\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"3.2\" fill=\"currentColor\" stroke=\"none\"/><ellipse cx=\"12\" cy=\"12\" rx=\"10\" ry=\"4.2\" transform=\"rotate(-18 12 12)\"/></svg><span>space</span></a><a href=\"/download\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" y1=\"15\" x2=\"12\" y2=\"3\"/></svg><span>download</span></a></nav><div class=\"rl-foot\"><a href=\"/account\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg><span>account</span></a><button id=\"railMenu\" type=\"button\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1\"/><circle cx=\"16\" cy=\"6\" r=\"2\"/><circle cx=\"10\" cy=\"12\" r=\"2\"/><circle cx=\"18\" cy=\"18\" r=\"2\"/></svg><span>more</span></button></div></aside><div class=\"xlights xsite\" aria-hidden=\"true\"></div>${TABBAR_HTML}<script>
+#gxBar{position:fixed;left:0;right:0;bottom:0;z-index:390;display:flex;align-items:center;gap:16px;padding:10px 18px;background:rgba(13,11,22,.97);border-top:1px solid rgba(255,255,255,.13);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 -14px 40px rgba(0,0,0,.45)}
+#gxBar[hidden]{display:none}
+#gxArt{width:52px;height:52px;border-radius:6px;object-fit:cover;background:#000;flex:none}
+.gxb-meta{min-width:0;width:225px;flex:none}
+.gxb-meta b{display:block;color:#fff;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gxb-meta span{display:block;color:#9d97b8;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gxb-mid{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.gxb-btns{display:flex;align-items:center;justify-content:center;gap:7px}
+.gxb-btn{position:relative;width:38px;height:38px;border-radius:8px;background:transparent;border:0;color:#cfc9ea;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex:none}
+.gxb-btn:hover{background:rgba(255,255,255,.09);color:#fff}
+.gxb-btn.on{color:rgb(var(--acc));background:rgba(var(--acc),.16)}
+.gxb-main{width:44px;height:44px;background:#fff;color:#0b0a12;border-radius:8px}
+.gxb-main:hover{background:rgb(var(--star));color:#0b0a12}
+#gxRepN{position:absolute;right:3px;bottom:2px;font-size:9px;font-weight:800;color:rgb(var(--acc))}
+.gxb-prog{display:flex;align-items:center;gap:10px;color:#9d97b8;font-size:11.5px;font-variant-numeric:tabular-nums}
+.gxb-tr{flex:1;height:5px;background:rgba(255,255,255,.15);border-radius:3px;cursor:pointer}
+#gxFill{height:100%;width:0;background:rgb(var(--star));border-radius:3px;pointer-events:none}
+.gxb-end{display:flex;align-items:center;gap:5px;flex:none}
+#gxLike.on{color:#ff5d7a}
+#gxLike.on svg{fill:#ff5d7a}
+.gxb-volwrap{display:flex;align-items:center;gap:6px;color:#cfc9ea;padding:0 2px}
+#gxVolR{width:82px;accent-color:rgb(var(--acc));cursor:pointer}
+@media (max-width:820px){#gxBar{bottom:74px;padding:8px 10px;gap:9px}#gxArt{width:44px;height:44px}.gxb-meta{width:auto;flex:1}.gxb-prog{display:none}.gxb-volwrap{display:none}#gxShuf,#gxRep,#gxDl,#gxQB{display:none}.gxb-btns{gap:1px}.gxb-btn{width:34px;height:34px}.gxb-main{width:40px;height:40px}}
+</style><header id=\"topbar\"><a class=\"tb-logo\" href=\"/home\">6ix<span>networks</span></a><nav class=\"tb-links\"><a href=\"/home\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg>home</a><a href=\"/gs\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>games</a><a href=\"/chat\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg>6ixchat</a><a href=\"/ai\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>six ai</a><a href=\"/movies\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"2\" width=\"20\" height=\"20\" rx=\"2.18\"/><path d=\"M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5\"/></svg>6ixflix</a><a href=\"/news\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2\"/><path d=\"M18 14h-8\"/><path d=\"M15 18h-5\"/><path d=\"M10 6h8v4h-8V6Z\"/></svg>news</a><a href=\"/people\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/></svg>people</a><a href=\"/confess\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 10h.01\"/><path d=\"M15 10h.01\"/><path d=\"M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z\"/></svg>confessions</a></nav><a class=\"tb-search\" href=\"/search\" aria-label=\"search\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m21 21-4.3-4.3\"/></svg></a><a id=\"tbMe\" href=\"/account\" hidden></a><div class=\"tb-menuwrap\"><button id=\"menuBtn\" type=\"button\" aria-label=\"menu\">menu<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\"/></svg></button><div id=\"dropmenu\"><div class=\"dm-grid\"><a href=\"/home\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg>home</a><a href=\"/gs\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>games</a><a href=\"/chat\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg>6ixchat</a><a href=\"/ai\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>six ai</a><a href=\"/yt\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"4\"/><path d=\"m10 9 5 3-5 3z\" fill=\"currentColor\" stroke=\"none\"/></svg>6ixtube</a><a href=\"/music\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18V5l12-2v13\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><circle cx=\"18\" cy=\"16\" r=\"3\"/></svg>6ixmusic</a><a href=\"/movies\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"2\" width=\"20\" height=\"20\" rx=\"2.18\"/><path d=\"M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5\"/></svg>6ixflix</a><a href=\"/search\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m21 21-4.3-4.3\"/></svg>search</a><a href=\"/apps\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2\" width=\"10\" height=\"20\" rx=\"2\"/><path d=\"M12 18h.01\"/></svg>apps</a><a href=\"/hw\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\"/><path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"/></svg>hw helper</a><a href=\"/emu\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"7\" width=\"20\" height=\"11\" rx=\"5\"/><path d=\"M7.5 10.5v4M5.5 12.5h4\"/><circle cx=\"16.5\" cy=\"11\" r=\".4\" fill=\"currentColor\"/><circle cx=\"18.5\" cy=\"14\" r=\".4\" fill=\"currentColor\"/></svg>emulator</a><a href=\"/news\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2\"/><path d=\"M18 14h-8\"/><path d=\"M15 18h-5\"/><path d=\"M10 6h8v4h-8V6Z\"/></svg>news</a><a href=\"/requests\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 17 6-6 4 4 8-8\"/><path d=\"M14 7h7v7\"/></svg>requests</a><a href=\"/people\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/></svg>people</a><a href=\"/confess\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 10h.01\"/><path d=\"M15 10h.01\"/><path d=\"M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z\"/></svg>confessions</a><a href=\"/forge\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"6\" y1=\"12\" x2=\"10\" y2=\"12\"/><line x1=\"8\" y1=\"10\" x2=\"8\" y2=\"14\"/><line x1=\"15\" y1=\"13\" x2=\"15.01\" y2=\"13\"/><line x1=\"18\" y1=\"11\" x2=\"18.01\" y2=\"11\"/><path d=\"M17.32 5H6.68a4 4 0 0 0-3.978 3.59C2.62 9.42 2 14.46 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.62-6.584-.685-7.258A4 4 0 0 0 17.32 5z\"/></svg>forge</a><a href=\"/tools\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1\"/><circle cx=\"16\" cy=\"6\" r=\"2\"/><circle cx=\"10\" cy=\"12\" r=\"2\"/><circle cx=\"18\" cy=\"18\" r=\"2\"/></svg>tools</a><a href=\"/space\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"3.2\" fill=\"currentColor\" stroke=\"none\"/><ellipse cx=\"12\" cy=\"12\" rx=\"10\" ry=\"4.2\" transform=\"rotate(-18 12 12)\"/></svg>space</a><a href=\"/download\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" y1=\"15\" x2=\"12\" y2=\"3\"/></svg>download</a><a href=\"/account\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg>account</a></div><div class=\"dm-sec\">ask six</div><form id=\"dmAsk\"><input id=\"dmQ\" type=\"text\" placeholder=\"ask six anything...\" autocomplete=\"off\"><button type=\"submit\">ask</button></form><div id=\"dmAns\" hidden></div><div class=\"dm-sec\">tab style</div><div class=\"sb-cloak\"><button onclick=\"cloakTab('google')\">google</button><button onclick=\"cloakTab('classroom')\">classroom</button><button onclick=\"cloakTab('docs')\">docs</button><button onclick=\"cloakTab('drive')\">drive</button><button onclick=\"cloakOpen()\">open in a tab</button><button type="button" data-clickoff onclick="gxClickoff()">clickoff: off</button></div><div class=\"dm-sec\">sky</div><div class=\"sb-cloak dm-sky\"><button type=\"button\" data-sky=\"nebula\" onclick=\"gxSetSky('nebula')\">nebula</button><button type=\"button\" data-sky=\"amber\" onclick=\"gxSetSky('amber')\">amber</button><button type=\"button\" data-sky=\"violet\" onclick=\"gxSetSky('violet')\">violet</button><button type=\"button\" data-sky=\"ice\" onclick=\"gxSetSky('ice')\">ice</button><button type=\"button\" data-sky=\"blood\" onclick=\"gxSetSky('blood')\">blood moon</button></div><div class=\"dm-sec\">personalize</div><div class=\"sb-cloak dm-pers\"><button type=\"button\" data-navm=\"bar\" onclick=\"gxSetNav('bar')\">top bar</button><button type=\"button\" data-navm=\"side\" onclick=\"gxSetNav('side')\">sidebar</button><button type=\"button\" data-accm=\"\" onclick=\"gxSetAcc('')\">accent: sky</button><button type=\"button\" data-accm=\"crimson\" onclick=\"gxSetAcc('crimson')\">crimson</button><button type=\"button\" data-accm=\"azure\" onclick=\"gxSetAcc('azure')\">azure</button><button type=\"button\" data-accm=\"toxic\" onclick=\"gxSetAcc('toxic')\">toxic</button><button type=\"button\" data-accm=\"gold\" onclick=\"gxSetAcc('gold')\">gold</button><button type=\"button\" data-accm=\"rose\" onclick=\"gxSetAcc('rose')\">rose</button><button type=\"button\" data-motion onclick=\"gxToggleMotion()\">animations: on</button><button type=\"button\" data-lights onclick=\"gxToggleLights()\">christmas lights: on</button><a href=\"/customize\" style=\"flex:1 1 100%;text-align:center;background:rgba(var(--acc),.18);border:1px solid rgba(var(--star),.4);color:#fff;border-radius:999px;padding:8px 11px;font-size:12.5px;font-weight:700;text-decoration:none\">make it urs \u2014 full builder</a></div></div></div></header><aside id=\"siderail\"><a class=\"rl-logo\" href=\"/home\">6ix<span>networks</span></a><nav class=\"rl\"><a href=\"/home\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg><span>home</span></a><a href=\"/gs\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg><span>games</span></a><a href=\"/chat\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg><span>6ixchat</span></a><a href=\"/ai\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg><span>six ai</span></a><a href=\"/yt\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"4\"/><path d=\"m10 9 5 3-5 3z\" fill=\"currentColor\" stroke=\"none\"/></svg><span>6ixtube</span></a><a href=\"/music\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18V5l12-2v13\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><circle cx=\"18\" cy=\"16\" r=\"3\"/></svg><span>6ixmusic</span></a><a href=\"/movies\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"2\" width=\"20\" height=\"20\" rx=\"2.18\"/><path d=\"M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5\"/></svg><span>6ixflix</span></a><a href=\"/search\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m21 21-4.3-4.3\"/></svg><span>search</span></a><a href=\"/apps\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2\" width=\"10\" height=\"20\" rx=\"2\"/><path d=\"M12 18h.01\"/></svg><span>apps</span></a><a href=\"/hw\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\"/><path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"/></svg><span>hw helper</span></a><a href=\"/emu\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"7\" width=\"20\" height=\"11\" rx=\"5\"/><path d=\"M7.5 10.5v4M5.5 12.5h4\"/><circle cx=\"16.5\" cy=\"11\" r=\".4\" fill=\"currentColor\"/><circle cx=\"18.5\" cy=\"14\" r=\".4\" fill=\"currentColor\"/></svg><span>emulator</span></a><a href=\"/news\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2\"/><path d=\"M18 14h-8\"/><path d=\"M15 18h-5\"/><path d=\"M10 6h8v4h-8V6Z\"/></svg><span>news</span></a><a href=\"/requests\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 17 6-6 4 4 8-8\"/><path d=\"M14 7h7v7\"/></svg><span>requests</span></a><a href=\"/people\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/></svg><span>people</span></a><a href=\"/confess\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 10h.01\"/><path d=\"M15 10h.01\"/><path d=\"M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z\"/></svg><span>confessions</span></a><a href=\"/forge\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"6\" y1=\"12\" x2=\"10\" y2=\"12\"/><line x1=\"8\" y1=\"10\" x2=\"8\" y2=\"14\"/><line x1=\"15\" y1=\"13\" x2=\"15.01\" y2=\"13\"/><line x1=\"18\" y1=\"11\" x2=\"18.01\" y2=\"11\"/><path d=\"M17.32 5H6.68a4 4 0 0 0-3.978 3.59C2.62 9.42 2 14.46 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.62-6.584-.685-7.258A4 4 0 0 0 17.32 5z\"/></svg><span>forge</span></a><a href=\"/tools\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1\"/><circle cx=\"16\" cy=\"6\" r=\"2\"/><circle cx=\"10\" cy=\"12\" r=\"2\"/><circle cx=\"18\" cy=\"18\" r=\"2\"/></svg><span>tools</span></a><a href=\"/space\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"3.2\" fill=\"currentColor\" stroke=\"none\"/><ellipse cx=\"12\" cy=\"12\" rx=\"10\" ry=\"4.2\" transform=\"rotate(-18 12 12)\"/></svg><span>space</span></a><a href=\"/download\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" y1=\"15\" x2=\"12\" y2=\"3\"/></svg><span>download</span></a></nav><div class=\"rl-foot\"><a href=\"/account\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg><span>account</span></a><button id=\"railMenu\" type=\"button\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1\"/><circle cx=\"16\" cy=\"6\" r=\"2\"/><circle cx=\"10\" cy=\"12\" r=\"2\"/><circle cx=\"18\" cy=\"18\" r=\"2\"/></svg><span>more</span></button></div></aside><div class=\"xlights xsite\" aria-hidden=\"true\"></div>${TABBAR_HTML}<div id=\"gxBar\" hidden><img id=\"gxArt\" alt=\"\"><div class=\"gxb-meta\"><b id=\"gxT\"></b><span id=\"gxA\"></span></div><div class=\"gxb-mid\"><div class=\"gxb-btns\"><button type=\"button\" class=\"gxb-btn\" id=\"gxShuf\" aria-label=\"shuffle\"><svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M16 3h5v5\"/><path d=\"M4 20 21 3\"/><path d=\"M21 16v5h-5\"/><path d=\"m15 15 6 6\"/><path d=\"M4 4l5 5\"/></svg></button><button type=\"button\" class=\"gxb-btn\" id=\"gxPrev\" aria-label=\"previous\"><svg width=\"21\" height=\"21\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M7 6h2.4v12H7zM19 6v12L9.8 12z\"/></svg></button><button type=\"button\" class=\"gxb-btn gxb-main\" id=\"gxPlay\" aria-label=\"play or pause\"><svg width=\"23\" height=\"23\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M8 5v14l11-7z\"/></svg></button><button type=\"button\" class=\"gxb-btn\" id=\"gxNext\" aria-label=\"next\"><svg width=\"21\" height=\"21\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M14.6 6H17v12h-2.4zM5 6v12l9.2-6z\"/></svg></button><button type=\"button\" class=\"gxb-btn\" id=\"gxRep\" aria-label=\"repeat\"><svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m17 2 4 4-4 4\"/><path d=\"M3 11v-1a4 4 0 0 1 4-4h14\"/><path d=\"m7 22-4-4 4-4\"/><path d=\"M21 13v1a4 4 0 0 1-4 4H3\"/></svg><span id=\"gxRepN\"></span></button></div><div class=\"gxb-prog\" id=\"gxProg\"><span id=\"gxCur\">0:00</span><div class=\"gxb-tr\"><div id=\"gxFill\"></div></div><span id=\"gxDur\">0:00</span></div></div><div class=\"gxb-end\"><button type=\"button\" class=\"gxb-btn\" id=\"gxLike\" aria-label=\"like\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z\"/></svg></button><button type=\"button\" class=\"gxb-btn\" id=\"gxDl\" aria-label=\"download mp3\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" y1=\"15\" x2=\"12\" y2=\"3\"/></svg></button><button type=\"button\" class=\"gxb-btn\" id=\"gxQB\" aria-label=\"queue\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h13\"/><path d=\"M4 12h13\"/><path d=\"M4 18h9\"/><path d=\"M18 15l5 3-5 3z\" fill=\"currentColor\" stroke=\"none\"/></svg></button><span class=\"gxb-volwrap\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M11 5 6 9H2v6h4l5 4V5z\"/><path d=\"M15.5 8.5a5 5 0 0 1 0 7\"/></svg><input type=\"range\" id=\"gxVolR\" min=\"0\" max=\"100\" value=\"85\"></span><button type=\"button\" class=\"gxb-btn\" id=\"gxClose\" aria-label=\"close player\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\"><path d=\"M18 6 6 18M6 6l12 12\"/></svg></button></div><audio id=\"gxAu\" preload=\"auto\"></audio></div><script>(function(){
+  if (window.gxMusic) return;
+  var bar = document.getElementById('gxBar'); if (!bar) return;
+  var au = document.getElementById('gxAu');
+  var el = function(id){ return document.getElementById(id); };
+  var Q = [], I = -1, shuf = false, rep = 0, seekPos = 0, lastSave = 0;
+  var icoPlay = '<path d="M8 5v14l11-7z"/>', icoPause = '<path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/>';
+  function fmt(s){ s = Math.max(0, Math.floor(s || 0)); var m = Math.floor(s / 60), r = s % 60; return m + ':' + (r < 10 ? '0' : '') + r; }
+  function cur(){ return (I >= 0 && Q[I]) ? Q[I] : null; }
+  function likedList(){ try { return JSON.parse(localStorage.getItem('gx_liked_v1') || '[]'); } catch (e) { return []; } }
+  function isLiked(id){ return likedList().some(function(x){ return x.id === id; }); }
+  function save(){ try { if (cur()) localStorage.setItem('gx_music_v1', JSON.stringify({ q: Q, i: I, pos: au.currentTime || 0, playing: !au.paused, shuf: shuf, rep: rep })); else localStorage.removeItem('gx_music_v1'); } catch (e) {} }
+  function fire(){ try { window.dispatchEvent(new CustomEvent('gxmusic', { detail: { id: cur() ? cur().id : '', playing: !au.paused && !!cur() } })); } catch (e) {} }
+  function paint(){
+    var t = cur(); if (!t) { bar.hidden = true; return; }
+    bar.hidden = false;
+    el('gxT').textContent = t.t || ''; el('gxA').textContent = t.a || '';
+    var art = el('gxArt'); if (t.img && art.getAttribute('src') !== t.img) art.src = t.img;
+    el('gxPlay').innerHTML = '<svg width="23" height="23" viewBox="0 0 24 24" fill="currentColor">' + (au.paused ? icoPlay : icoPause) + '</svg>';
+    el('gxShuf').classList.toggle('on', shuf);
+    el('gxRep').classList.toggle('on', rep > 0);
+    el('gxRepN').textContent = rep === 2 ? '1' : '';
+    el('gxLike').classList.toggle('on', isLiked(t.id));
+    if ('mediaSession' in navigator) { try { navigator.mediaSession.metadata = new MediaMetadata({ title: t.t || '', artist: t.a || '', artwork: t.img ? [{ src: t.img, sizes: '320x180' }] : [] }); } catch (e) {} }
+    fire();
+  }
+  function load(pos){
+    var t = cur(); if (!t) return;
+    au.src = '/yt/stream?v=' + encodeURIComponent(t.id) + '&kind=a';
+    seekPos = pos || 0;
+    paint();
+  }
+  function playAt(i, pos){
+    if (i < 0 || i >= Q.length) return;
+    I = i; load(pos);
+    var p = au.play(); if (p && p.catch) p.catch(function(){ paint(); });
+    save();
+  }
+  function next(manual){
+    if (!Q.length) return;
+    if (rep === 2 && !manual) { playAt(I, 0); return; }
+    var n;
+    if (shuf && Q.length > 1) { do { n = Math.floor(Math.random() * Q.length); } while (n === I); }
+    else n = I + 1;
+    if (n >= Q.length) { if (rep === 1 || manual) n = 0; else { au.pause(); save(); paint(); return; } }
+    playAt(n, 0);
+  }
+  window.gxMusic = {
+    play: function(list, i){ Q = list || []; playAt(i || 0, 0); },
+    toggle: function(){ if (!cur()) return; if (au.paused) { var p = au.play(); if (p && p.catch) p.catch(function(){}); } else au.pause(); },
+    next: function(){ next(true); },
+    prev: function(){ if (au.currentTime > 3) { au.currentTime = 0; return; } if (I > 0) playAt(I - 1, 0); },
+    state: function(){ return { queue: Q, idx: I, id: cur() ? cur().id : '', playing: !au.paused && !!cur(), pos: au.currentTime || 0 }; },
+    stop: function(){ au.pause(); Q = []; I = -1; au.removeAttribute('src'); try { au.load(); } catch (e) {} save(); paint(); }
+  };
+  el('gxPlay').addEventListener('click', function(){ window.gxMusic.toggle(); });
+  el('gxNext').addEventListener('click', function(){ next(true); });
+  el('gxPrev').addEventListener('click', function(){ window.gxMusic.prev(); });
+  el('gxShuf').addEventListener('click', function(){ shuf = !shuf; paint(); save(); });
+  el('gxRep').addEventListener('click', function(){ rep = (rep + 1) % 3; paint(); save(); });
+  el('gxClose').addEventListener('click', function(){ window.gxMusic.stop(); });
+  el('gxDl').addEventListener('click', function(){ var t = cur(); if (t) location.href = '/yt/stream?v=' + encodeURIComponent(t.id) + '&kind=a&dl=1'; });
+  el('gxQB').addEventListener('click', function(){ if (location.pathname === '/music') { location.hash = 'queue'; } else location.href = '/music#queue'; });
+  el('gxLike').addEventListener('click', function(){
+    var t = cur(); if (!t) return;
+    var L = likedList(), i = L.findIndex(function(x){ return x.id === t.id; });
+    if (i >= 0) L.splice(i, 1); else L.unshift({ id: t.id, t: t.t, a: t.a, len: t.len || 0, img: t.img || '' });
+    try { localStorage.setItem('gx_liked_v1', JSON.stringify(L)); } catch (e) {}
+    paint();
+  });
+  var volR = el('gxVolR');
+  try { var sv = parseFloat(localStorage.getItem('gx_vol')); if (!isNaN(sv)) { au.volume = sv; volR.value = Math.round(sv * 100); } else au.volume = 0.85; } catch (e) { au.volume = 0.85; }
+  volR.addEventListener('input', function(){ au.volume = volR.value / 100; try { localStorage.setItem('gx_vol', String(au.volume)); } catch (e) {} });
+  el('gxProg').addEventListener('click', function(e){
+    if (!au.duration) return;
+    var tr = this.querySelector('.gxb-tr'), r = tr.getBoundingClientRect();
+    au.currentTime = au.duration * Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+  });
+  au.addEventListener('loadedmetadata', function(){ if (seekPos > 0) { try { au.currentTime = seekPos; } catch (e) {} seekPos = 0; } el('gxDur').textContent = fmt(au.duration); save(); });
+  au.addEventListener('timeupdate', function(){
+    if (au.duration) el('gxFill').style.width = (au.currentTime / au.duration * 100) + '%';
+    el('gxCur').textContent = fmt(au.currentTime);
+    var now = Date.now(); if (now - lastSave > 4000) { lastSave = now; save(); }
+  });
+  au.addEventListener('play', paint);
+  au.addEventListener('pause', function(){ paint(); save(); });
+  au.addEventListener('ended', function(){ next(false); });
+  au.addEventListener('error', function(){ if (cur() && au.src) { var retry = au.src.indexOf('fresh=1') < 0; if (retry) { au.src = au.src + '&fresh=1'; var p = au.play(); if (p && p.catch) p.catch(function(){ paint(); }); } else paint(); } });
+  document.addEventListener('visibilitychange', function(){ if (document.hidden) save(); });
+  window.addEventListener('pagehide', save);
+  if ('mediaSession' in navigator) { try { navigator.mediaSession.setActionHandler('play', function(){ window.gxMusic.toggle(); }); navigator.mediaSession.setActionHandler('pause', function(){ au.pause(); }); navigator.mediaSession.setActionHandler('previoustrack', function(){ window.gxMusic.prev(); }); navigator.mediaSession.setActionHandler('nexttrack', function(){ next(true); }); } catch (e) {} }
+  try {
+    var st = JSON.parse(localStorage.getItem('gx_music_v1') || 'null');
+    if (st && st.q && st.q.length && st.i >= 0 && st.i < st.q.length) {
+      Q = st.q; I = st.i; shuf = !!st.shuf; rep = st.rep || 0;
+      load(st.pos || 0);
+      if (st.playing) { var p2 = au.play(); if (p2 && p2.catch) p2.catch(function(){ paint(); }); }
+    }
+  } catch (e) {}
+})();
+</script><script>
 (function(){ document.body.classList.add('has-tb'); var p = location.pathname; document.querySelectorAll('.tb-links a,.dm-grid a').forEach(function(a){ if (a.getAttribute('href') === p) a.classList.add('on'); });
 var mb = document.getElementById('menuBtn');
 if (mb) mb.addEventListener('click', function(e){ e.stopPropagation(); document.body.classList.toggle('menu-open'); });
@@ -9311,16 +9434,7 @@ function musDedupe(list, cap) {
 }
 async function musicPage(q) {
   q = String(q || '').slice(0, 100);
-  let tracks = [], cont = '', mode = 'feed';
-  if (q) {
-    const hit = await fetchYtSearchIt(q);
-    if (hit) { tracks = musNorm(hit.vids); cont = hit.cont || ''; }
-    mode = 'search';
-  } else {
-    const feed = await fetchYtFeed('music');
-    if (feed) { tracks = musNorm(feed.vids); cont = feed.cont || ''; }
-  }
-  tracks = musDedupe(tracks).slice(0, 30);
+  const tracks = [], cont = '', mode = q ? 'search' : 'feed';
   const chips = [['top hits', ''], ['pop', 'pop hits'], ['hip-hop', 'hip hop hits'], ['indie', 'indie hits'], ['rock', 'rock hits'], ['r&b', 'r&b hits'], ['latin', 'latin hits'], ['electronic', 'electronic hits'], ['k-pop', 'kpop hits'], ['chill', 'chill songs']];
   const chipHtml = chips.map(c => '<button type="button" class="mschip' + (q === c[1] || (!q && !c[1]) ? ' on' : '') + '" data-q="' + escHtml(c[1]) + '">' + c[0] + '</button>').join('');
   const rail = tracks.slice(0, 8).map((v, i) => '<div class="msq" data-i="' + i + '" role="button" tabindex="0"><span class="msqimg"><img loading="lazy" src="' + v.img + '" alt=""></span><span class="msqt">' + escHtml(v.t) + '</span><span class="msqa">' + escHtml(v.a) + '</span></div>').join('');
@@ -9330,16 +9444,16 @@ async function musicPage(q) {
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}
 body{display:block;padding:0}
-.mswrap{width:100%;box-sizing:border-box;max-width:1240px;margin:0 auto;padding:60px 16px 170px}
+.mswrap{width:100%;box-sizing:border-box;max-width:1340px;margin:0 auto;padding:60px 16px 170px}
 .mslayout{display:flex;gap:22px;align-items:flex-start}
-.mspanel{flex:0 0 248px;background:rgba(13,12,20,.78);border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:18px 16px;position:sticky;top:64px}
+.mspanel{flex:0 0 248px;background:rgba(13,12,20,.78);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:18px 16px;position:sticky;top:64px}
 .msbrand{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:800;color:#fff;margin-bottom:15px}
 .msbrand svg{color:rgb(var(--acc))}
-.mssearch{display:flex;align-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);border-radius:999px;padding:0 6px 0 14px}
+.mssearch{display:flex;align-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);border-radius:8px;padding:0 6px 0 14px}
 .mssearch input{flex:1;min-width:0;background:transparent;border:0;outline:none;color:#fff;font-size:14.5px;font-family:inherit;padding:10px 0}
 .mssearch button{background:transparent;border:0;color:#c9c4de;cursor:pointer;padding:6px;display:flex;box-shadow:none}
 .mstabs{display:flex;gap:6px;margin:16px 0 20px}
-.mstab{background:transparent;border:0;color:#b9b4cc;font-size:14px;font-weight:700;padding:8px 14px;border-radius:999px;cursor:pointer;font-family:inherit;box-shadow:none}
+.mstab{background:transparent;border:0;color:#b9b4cc;font-size:14px;font-weight:700;padding:8px 14px;border-radius:8px;cursor:pointer;font-family:inherit;box-shadow:none}
 .mstab.on{background:#fff;color:#0a0a0b}
 .msplhead{display:flex;align-items:center;justify-content:space-between;color:#8f8aa5;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
 .msplhead button{background:transparent;border:0;color:#c9c4de;font-size:19px;cursor:pointer;padding:2px 7px;box-shadow:none;line-height:1}
@@ -9360,10 +9474,10 @@ body{display:block;padding:0}
 .msqa{display:block;padding:1px 2px 0;font-size:12.5px;color:#9d97b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .msq.on .msqt{color:rgb(var(--acc))}
 .mschips{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 14px}
-.mschip{background:rgba(255,255,255,.07);border:0;color:#e6e2f2;border-radius:999px;padding:9px 16px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:none}
+.mschip{background:rgba(255,255,255,.07);border:0;color:#e6e2f2;border-radius:8px;padding:9px 16px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:none}
 .mschip.on{background:#fff;color:#0a0a0b}
 .msthead,.msrow{display:grid;grid-template-columns:26px 42px minmax(0,1fr) 200px 46px 30px;gap:13px;align-items:center;padding:8px 10px}
-.msthead{color:#8f8aa5;font-size:13px;border-bottom:1px solid rgba(255,255,255,.08);padding-top:2px;padding-bottom:8px}
+.msthead{color:#8f8aa5;font-size:13px;border-bottom:1px solid rgba(255,255,255,.08);padding-top:8px;padding-bottom:8px;position:sticky;top:60px;background:rgba(10,9,18,.94);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);z-index:6}
 .msthead .msalb{color:#8f8aa5}
 .msrow{border-radius:10px;cursor:pointer;position:relative}
 .msrow:hover{background:rgba(255,255,255,.055)}
@@ -9376,7 +9490,7 @@ body{display:block;padding:0}
 .msrow.onrow .msmeta b{color:rgb(var(--acc))}
 .msalb{color:#9d97b8;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mslen{color:#9d97b8;font-size:13.5px;text-align:right;font-variant-numeric:tabular-nums}
-.msadd{background:rgba(255,255,255,.08);border:0;color:#fff;width:26px;height:26px;border-radius:50%;font-size:16px;line-height:1;cursor:pointer;padding:0;opacity:0;box-shadow:none}
+.msadd{background:rgba(255,255,255,.08);border:0;color:#fff;width:26px;height:26px;border-radius:8px;font-size:16px;line-height:1;cursor:pointer;padding:0;opacity:0;box-shadow:none}
 .msrow:hover .msadd{opacity:1}
 .eq{display:inline-flex;gap:2.5px;align-items:flex-end;height:13px}
 .eq i{width:3px;border-radius:2px;background:rgb(var(--acc));animation:eqb .8s ease-in-out infinite}
@@ -9385,8 +9499,8 @@ body{display:block;padding:0}
 .mssk{height:58px;border-radius:10px;background:rgba(255,255,255,.05);animation:mspulse 1.2s ease-in-out infinite;margin-bottom:2px}
 @keyframes mspulse{0%,100%{opacity:.45}50%{opacity:.9}}
 .msempty{color:#9d97b8;font-size:14.5px;padding:16px 4px}
-.msmore{text-align:center;color:#9d97b8;font-size:13.5px;padding:16px 0 4px;min-height:22px}
-.mspill{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:400;width:min(700px,94vw);display:flex;align-items:center;gap:16px;background:rgba(16,14,26,.92);-webkit-backdrop-filter:blur(24px) saturate(1.5);backdrop-filter:blur(24px) saturate(1.5);border:1px solid rgba(255,255,255,.13);border-radius:999px;padding:10px 18px 12px;box-shadow:0 22px 55px rgba(0,0,0,.6)}
+.msskrow{height:57px;border-radius:8px;background:rgba(255,255,255,.05);margin-bottom:2px;animation:gxSk 1.15s ease-in-out infinite}@keyframes gxSk{0%,100%{opacity:.5}50%{opacity:1}}.msmore{text-align:center;color:#9d97b8;font-size:13.5px;padding:16px 0 4px;min-height:22px}
+.mspill{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:400;width:min(700px,94vw);display:flex;align-items:center;gap:16px;background:rgba(16,14,26,.92);-webkit-backdrop-filter:blur(24px) saturate(1.5);backdrop-filter:blur(24px) saturate(1.5);border:1px solid rgba(255,255,255,.13);border-radius:8px;padding:10px 18px 12px;box-shadow:0 22px 55px rgba(0,0,0,.6)}
 .mspbtns{display:flex;align-items:center;gap:9px;flex:none}
 .mspmid{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
 .msprow{display:flex;align-items:center;gap:11px;min-width:0}
@@ -9401,14 +9515,14 @@ body{display:block;padding:0}
 .msbtn{background:transparent;border:0;color:#c9c4de;width:33px;height:33px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex:none;box-shadow:none}
 .msbtn:hover{color:#fff}
 .msbtn.on{color:rgb(var(--acc))}
-.msbtn.main{background:#fff;color:#0a0a0b;width:40px;height:40px;border-radius:50%}
+.msbtn.main{background:#fff;color:#0a0a0b;width:40px;height:40px;border-radius:8px}
 .msbtn.main:hover{background:rgb(var(--acc));color:#fff}
 .msbtn.liked{color:#fb7185}
 .mspvol[hidden]{display:none}
-.mspvol{position:absolute;right:0;bottom:52px;background:rgba(16,14,26,.97);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:10px 14px;display:flex;align-items:center}
+.mspvol{position:absolute;right:0;bottom:52px;background:rgba(16,14,26,.97);border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:10px 14px;display:flex;align-items:center}
 input.msrange{-webkit-appearance:none;appearance:none;width:96px;height:4px;border-radius:99px;background:rgba(255,255,255,.18);outline:none;cursor:pointer;padding:0;border:0}
-input.msrange::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#fff;border:0}
-input.msrange::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#fff;border:0}
+input.msrange::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:8px;background:#fff;border:0}
+input.msrange::-moz-range-thumb{width:12px;height:12px;border-radius:8px;background:#fff;border:0}
 @media(max-width:900px){
 .mslayout{flex-direction:column}
 .mspanel{flex:none;width:100%;position:static;box-sizing:border-box}
@@ -9435,323 +9549,187 @@ input.msrange::-moz-range-thumb{width:12px;height:12px;border-radius:50%;backgro
 <main class="msmain">
 <h1 class="msh1" id="msH1">Browse</h1>
 <div id="msRailWrap"><h3 class="mssec" style="margin-top:0">featured rn</h3><div class="msrail" id="msRail">${rail}</div></div>
-<h3 class="mssec" id="msSecRow"><span id="msSecTitle" style="color:#f4f2ff;font-size:17px;margin:0">${mode === 'search' ? 'results' : 'top hits'}</span><span id="msCount">${tracks.length}</span></h3>
+<h3 class="mssec" id="msSecRow"><span id="msSecTitle" style="color:#f4f2ff;font-size:17px;margin:0">${mode === 'search' ? 'results' : 'top hits'}</span><span id="msCount"></span></h3>
 <div class="mschips" id="msChips">${chipHtml}</div>
 <div class="msthead"><span>#</span><span></span><span>Title</span><span class="msalb">Album</span><span style="text-align:right">len</span><span></span></div>
-<div id="msRows">${rows || '<p class="msempty">nothing came back — try another search</p>'}</div>
+<div id="msRows"><div class="msskrow"></div><div class="msskrow"></div><div class="msskrow"></div><div class="msskrow"></div><div class="msskrow"></div><div class="msskrow"></div></div>
 <div id="msSent"></div><div class="msmore" id="msMore"></div>
 </main>
 </div>
 </div>
-<div class="mspill" id="msBar" hidden>
-<div class="mspbtns">
-<button class="msbtn" id="msShuf" type="button" aria-label="shuffle"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="m15 15 6 6"/><path d="M4 4l5 5"/></svg></button>
-<button class="msbtn" id="msPrev" type="button" aria-label="previous"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M7 6h2.5v12H7zM19 6v12L9.5 12z"/></svg></button>
-<button class="msbtn main" id="msPlay" type="button" aria-label="play or pause"><svg id="msPlayIco" width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg></button>
-<button class="msbtn" id="msNext" type="button" aria-label="next"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M14.5 6H17v12h-2.5zM5 6v12l9.5-6z"/></svg></button>
-<button class="msbtn" id="msRep" type="button" aria-label="repeat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg></button>
-</div>
-<div class="mspmid">
-<div class="msprow"><img id="msArt" alt=""><div class="mspmeta"><b id="msT"></b><span id="msA"></span></div></div>
-<div class="mspprog" id="msProg"><div class="tr"><div class="mspfill" id="msFill"></div></div></div>
-</div>
-<div class="mspend">
-<button class="msbtn" id="msDl" type="button" aria-label="download mp3"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
-<button class="msbtn" id="msLike" type="button" aria-label="like"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></button>
-<button class="msbtn" id="msQueueBtn" type="button" aria-label="queue"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h13M3 12h13M3 18h9"/><path d="M17 15l5 3-5 3z" fill="currentColor" stroke="none"/></svg></button>
-<button class="msbtn" id="msVolBtn" type="button" aria-label="volume"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z" fill="currentColor" stroke="none"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.6 5.4a9 9 0 0 1 0 13.2"/></svg></button>
-<div class="mspvol" id="msVolPop" hidden><input class="msrange" id="msVolR" type="range" min="0" max="100" value="85"></div>
-</div>
-</div>
-<audio id="msAu" preload="auto"></audio>
+
 ${SIDEBAR_HTML}<script src="/ui.js"></script>
 <script>
 var TRACKS = ${JSON.stringify(tracks).replace(/</g, '\\u003c')};
 var INIT = ${JSON.stringify({ mode, q, cont }).replace(/</g, '\\u003c')};
-var au = document.getElementById('msAu'), bar = document.getElementById('msBar'), cur = -1, curId = '', shuf = false, rep = 0;
+var cur = -1, curId = '', DISPLAY = [];
 var rowsEl = document.getElementById('msRows'), railEl = document.getElementById('msRail'), railWrap = document.getElementById('msRailWrap'), moreEl = document.getElementById('msMore');
-var VIEW = 'browse', MODE = INIT.mode, MQ = INIT.q || '', MCONT = INIT.cont || '', loading = false, ended = !INIT.cont;
-var BROWSE = { tracks: TRACKS, cont: MCONT, ended: ended, mode: MODE, q: MQ };
+var VIEW = 'browse', MODE = INIT.mode, MQ = INIT.q || '', MCONT = INIT.cont || '', loading = false, ended = true;
+var BROWSE = { tracks: TRACKS, cont: '', ended: true, mode: MODE, q: MQ };
 var PLVIEW = -1;
 var icoPlay = '<path d="M8 5v14l11-7z"/>', icoPause = '<path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/>';
-var EQ = '<span class="eq"><i></i><i></i><i></i></span>';
-function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+var EQ = '<span class="mseq"><i></i><i></i><i></i></span>';
+function escA(s){ return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function fmt(s){ s = Math.max(0, Math.floor(s || 0)); var m = Math.floor(s / 60), r = s % 60; return m + ':' + (r < 10 ? '0' : '') + r; }
-function setIco(){ document.getElementById('msPlayIco').innerHTML = au.paused ? icoPlay : icoPause; }
-function lsGet(k, d){ try { var v = JSON.parse(localStorage.getItem(k) || 'null'); return v == null ? d : v; } catch (e) { return d; } }
-function lsSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
-function getLiked(){ return lsGet('gx_liked_v1', []); }
-function isLiked(id){ return getLiked().some(function(x){ return x.id === id; }); }
-function rowHtml(v, i, idx){
-  return '<div class="msrow" data-i="' + idx + '" role="button" tabindex="0"><span class="msnum">' + (i + 1) + '</span><img loading="lazy" src="' + esc(v.img) + '" alt=""><span class="msmeta"><b>' + esc(v.t) + '</b><span>' + esc(v.a) + '</span></span><span class="msalb">' + esc(v.a) + '</span><span class="mslen">' + (v.len ? fmt(v.len) : '') + '</span><button type="button" class="msadd" data-add="' + idx + '" aria-label="add to playlist">+</button></div>';
-}
-function markOn(){
-  document.querySelectorAll('[data-i]').forEach(function(el){
-    var on = +el.getAttribute('data-i') === cur;
-    el.classList.toggle('on', on);
-    if (el.classList.contains('msrow')) { el.classList.toggle('onrow', on); var n = el.querySelector('.msnum'); if (n) n.innerHTML = on ? EQ : String(+el.getAttribute('data-i') + 1); }
-  });
-  syncLike();
-}
-function syncLike(){
-  var b = document.getElementById('msLike');
-  var on = curId && isLiked(curId);
-  b.classList.toggle('liked', !!on);
-  b.querySelector('svg').setAttribute('fill', on ? '#fb7185' : 'none');
-}
-function playAt(i){
-  if (i < 0 || i >= TRACKS.length) return;
-  cur = i; var tr = TRACKS[i]; curId = tr.id;
-  document.getElementById('msT').textContent = tr.t;
-  document.getElementById('msA').textContent = tr.a;
-  document.getElementById('msArt').src = tr.img || ('https://i.ytimg.com/vi/' + tr.id + '/hqdefault.jpg');
-  bar.hidden = false;
-  au.src = '/yt/stream?v=' + encodeURIComponent(tr.id) + '&kind=a';
-  var pr = au.play(); if (pr && pr.catch) pr.catch(function(){});
-  markOn();
-  try {
-    if ('mediaSession' in navigator) {
-      navigator.mediaSession.metadata = new MediaMetadata({ title: tr.t, artist: tr.a, artwork: [{ src: 'https://i.ytimg.com/vi/' + tr.id + '/hqdefault.jpg', sizes: '480x360', type: 'image/jpeg' }] });
-      navigator.mediaSession.setActionHandler('previoustrack', function(){ step(-1); });
-      navigator.mediaSession.setActionHandler('nexttrack', function(){ step(1); });
-    }
-  } catch (e) {}
-}
-function step(d){
-  if (cur < 0) return;
-  if (shuf && TRACKS.length > 1) { var n = cur; while (n === cur) n = Math.floor(Math.random() * TRACKS.length); playAt(n); return; }
-  var n = cur + d;
-  if (n >= TRACKS.length) {
-    if (VIEW === 'browse' && !ended) { loadMore(function(){ if (cur + 1 < TRACKS.length) playAt(cur + 1); }); return; }
-    n = rep ? 0 : TRACKS.length - 1;
-  }
-  if (n < 0) n = 0;
-  playAt(n);
-}
-function renderRows(list, emptyMsg){
-  rowsEl.innerHTML = list.length ? list.map(function(v, i){ return rowHtml(v, i, i); }).join('') : '<p class="msempty">' + emptyMsg + '</p>';
-  document.getElementById('msCount').textContent = list.length || '';
-  markOn();
-}
-function renderQueue(){
-  var list = [];
-  rowsEl.innerHTML = '';
-  if (cur >= 0 && cur + 1 < TRACKS.length) {
-    var html = '';
-    for (var i = cur + 1; i < TRACKS.length; i++) html += rowHtml(TRACKS[i], i, i);
-    rowsEl.innerHTML = html;
-    document.getElementById('msCount').textContent = TRACKS.length - cur - 1;
-  } else {
-    rowsEl.innerHTML = '<p class="msempty">queue is empty — play something first</p>';
-    document.getElementById('msCount').textContent = '';
-  }
-  markOn();
-}
-function setView(v, plIdx){
-  VIEW = v; PLVIEW = (plIdx == null ? -1 : plIdx);
-  document.querySelectorAll('.mstab').forEach(function(t){ t.classList.toggle('on', t.getAttribute('data-view') === v); });
-  document.querySelectorAll('.msplitem').forEach(function(t, i){ t.classList.toggle('on', v === 'playlist' && i === PLVIEW); });
-  var chips = document.getElementById('msChips'), thead = document.querySelector('.msthead');
-  if (v === 'browse') {
-    TRACKS = BROWSE.tracks; MODE = BROWSE.mode; MQ = BROWSE.q; MCONT = BROWSE.cont; ended = BROWSE.ended;
-    document.getElementById('msH1').textContent = 'Browse';
-    document.getElementById('msSecTitle').textContent = MODE === 'search' ? 'results for "' + MQ + '"' : 'top hits';
-    railWrap.style.display = MODE === 'search' ? 'none' : '';
-    chips.style.display = ''; thead.style.display = '';
-    cur = curId ? TRACKS.findIndex(function(x){ return x.id === curId; }) : -1;
-    renderRows(TRACKS, 'nothing came back — try another search');
-    moreEl.textContent = ended ? '' : 'loading more as u scroll…';
-  } else if (v === 'liked') {
-    var lk = getLiked();
-    TRACKS = lk;
-    document.getElementById('msH1').textContent = 'Liked';
-    document.getElementById('msSecTitle').textContent = 'liked songs';
-    railWrap.style.display = 'none'; chips.style.display = 'none'; thead.style.display = '';
-    cur = curId ? TRACKS.findIndex(function(x){ return x.id === curId; }) : -1;
-    renderRows(TRACKS, 'nothing liked yet — tap the heart on a song');
-    moreEl.textContent = '';
-  } else if (v === 'queue') {
-    document.getElementById('msH1').textContent = 'Queue';
-    document.getElementById('msSecTitle').textContent = 'up next';
-    railWrap.style.display = 'none'; chips.style.display = 'none'; thead.style.display = '';
-    renderQueue();
-    moreEl.textContent = '';
-  } else if (v === 'playlist') {
-    var pls = lsGet('gx_pls_v1', []);
-    var pl = pls[PLVIEW];
-    TRACKS = pl ? pl.tracks : [];
-    document.getElementById('msH1').textContent = pl ? pl.name : 'Playlist';
-    document.getElementById('msSecTitle').textContent = 'playlist';
-    railWrap.style.display = 'none'; chips.style.display = 'none'; thead.style.display = '';
-    cur = curId ? TRACKS.findIndex(function(x){ return x.id === curId; }) : -1;
-    renderRows(TRACKS, 'no songs yet — hit the + on any song to add it here');
-    moreEl.textContent = '';
-  }
-  window.scrollTo(0, 0);
-}
 function musKeyC(t, a){
   var s = ' ' + String(t || '').toLowerCase() + ' ';
   s = s.replace(/\\[[^\\]]*\\]|\\([^)]*\\)/g, ' ');
   s = s.replace(/\\b(feat|ft)\\b\\.?/g, ' ');
   s = s.replace(/\\b(official|video|audio|lyric|lyrics|mv|hd|hq|4k|full|song|music|visualizer|remaster|remastered|version|explicit|clean|radio|edit|live|performance)\\b/g, ' ');
   s = s.replace(/[^a-z0-9 ]/g, ' ').replace(/\\s+/g, ' ').trim();
-  var au = String(a || '').toLowerCase().replace(/\\b(vevo|official|topic)\\b/g, ' ').replace(/[^a-z0-9 ]/g, ' ').replace(/\\s+/g, ' ').trim();
-  return s + '|' + au;
+  var au2 = String(a || '').toLowerCase().replace(/\\b(vevo|official|topic)\\b/g, ' ').replace(/[^a-z0-9 ]/g, ' ').replace(/\\s+/g, ' ').trim();
+  return s + '|' + au2;
+}function dedupeAppend(list, add){
+  var counts = {};
+  list.forEach(function(v){ var k = musKeyC(v.t, v.a); counts[k] = (counts[k] || 0) + 1; });
+  (add || []).forEach(function(v){ var k = musKeyC(v.t, v.a); counts[k] = (counts[k] || 0) + 1; if (counts[k] <= 2) list.push(v); });
 }
-function loadMore(done){
-  if (VIEW !== 'browse') { if (done) done(); return; }
-  if (loading || ended || !MCONT) { if (done) done(); return; }
-  loading = true;
-  var url = MODE === 'feed' ? '/api/ytmore?f=music&c=' + encodeURIComponent(MCONT) : '/api/ytmore?q=' + encodeURIComponent(MQ) + '&c=' + encodeURIComponent(MCONT);
-  fetch(url).then(function(r){ return r.json(); }).then(function(o){
-    loading = false;
-    if (o && o.ok && o.vids && o.vids.length) {
-      var seen = {}; TRACKS.forEach(function(v){ seen[v.id] = 1; });
-      var counts = {};
-      TRACKS.forEach(function(v){ var k = musKeyC(v.t, v.a); counts[k] = (counts[k] || 0) + 1; });
-      o.vids.filter(function(v){ if (!v || !v.id || seen[v.id]) return false; var k = musKeyC(v.t, v.a); counts[k] = (counts[k] || 0) + 1; return counts[k] <= 2; }).forEach(function(v){ rowsEl.insertAdjacentHTML('beforeend', rowHtml(v, TRACKS.length, TRACKS.length)); TRACKS.push(v); });
-      MCONT = o.cont || ''; ended = !o.cont;
-      BROWSE.cont = MCONT; BROWSE.ended = ended;
-      document.getElementById('msCount').textContent = TRACKS.length;
-      markOn();
-    } else ended = true;
-    moreEl.textContent = ended ? '' : 'loading more as u scroll…';
-    if (done) done();
-  }).catch(function(){ loading = false; if (done) done(); });
+function gxHost(){
+  try { if (window.top && window.top !== window && window.top.gxMusic) return window.top.gxMusic; } catch (e) {}
+  try { if (window.parent && window.parent !== window && window.parent.gxMusic) return window.parent.gxMusic; } catch (e) {}
+  return window.gxMusic || null;
 }
-var typeTimer = null, listSeq = 0;
-function setList(mode, q){
-  var my = ++listSeq;
-  MODE = mode; MQ = q || ''; MCONT = ''; ended = false;
-  BROWSE.mode = mode; BROWSE.q = MQ;
-  document.getElementById('msSecTitle').textContent = mode === 'feed' ? 'top hits' : 'results for "' + MQ + '"';
-  railWrap.style.display = mode === 'search' ? 'none' : '';
-  rowsEl.innerHTML = '<div class="mssk"></div><div class="mssk"></div><div class="mssk"></div><div class="mssk"></div><div class="mssk"></div><div class="mssk"></div>';
-  var url = mode === 'feed' ? '/api/mussearch?f=music' : '/api/mussearch?q=' + encodeURIComponent(MQ);
-  fetch(url).then(function(r){ return r.json(); }).then(function(o){
-    if (my !== listSeq) return;
-    MCONT = (o && o.cont) || ''; ended = !MCONT;
-    BROWSE.cont = MCONT; BROWSE.ended = ended; BROWSE.tracks = (o && o.vids) || [];
-    if (VIEW === 'browse') {
-      TRACKS = BROWSE.tracks;
-      cur = curId ? TRACKS.findIndex(function(x){ return x.id === curId; }) : -1;
-      renderRows(TRACKS, 'nothing came back — try another search');
-      if (mode === 'feed') renderRail();
-      moreEl.textContent = ended ? '' : 'loading more as u scroll…';
-    }
-    try { history.replaceState(null, '', mode === 'feed' ? '/music' : '/music?q=' + encodeURIComponent(MQ)); } catch (e) {}
-  }).catch(function(){ if (VIEW === 'browse') renderRows([], 'nothing came back — try another search'); });
+function hostState(){ var h = gxHost(); return h ? h.state() : { queue: [], idx: -1, id: '', playing: false }; }
+function likedList(){ try { return JSON.parse(localStorage.getItem('gx_liked_v1') || '[]'); } catch (e) { return []; } }
+function plsList(){ try { return JSON.parse(localStorage.getItem('gx_pls_v1') || '[]'); } catch (e) { return []; } }
+function plsSave(p){ try { localStorage.setItem('gx_pls_v1', JSON.stringify(p)); } catch (e) {} }
+function rowHtml(tr, i){
+  var on = tr.id === curId;
+  return '<div class="msrow' + (on ? ' on' : '') + '" data-i="' + i + '" role="button" tabindex="0"><span class="msn">' + (on ? EQ : (i + 1)) + '</span><img loading="lazy" src="' + tr.img + '" alt=""><span class="mst"><b>' + escA(tr.t) + '</b></span><span class="msal">' + escA(tr.a) + '</span><span class="msd">' + fmt(tr.len) + '</span><button type="button" class="msadd" data-add="' + i + '" aria-label="add to playlist"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>';
 }
-function renderRail(){
-  railEl.innerHTML = BROWSE.tracks.slice(0, 8).map(function(v, i){ return '<div class="msq" data-i="' + i + '" role="button" tabindex="0"><span class="msqimg"><img loading="lazy" src="' + esc(v.img) + '" alt=""></span><span class="msqt">' + esc(v.t) + '</span><span class="msqa">' + esc(v.a) + '</span></div>'; }).join('');
+function renderTracks(list){
+  DISPLAY = list;
+  document.getElementById('msCount').textContent = list.length || '';
+  rowsEl.innerHTML = list.length ? '<div class="msthead"><span>#</span><span>title</span><span>album</span><span style="text-align:right">time</span><span></span></div>' + list.map(rowHtml).join('') : '<p class="msempty">nothing here yet</p>';
+  moreEl.textContent = (VIEW === 'browse' && !ended) ? 'scroll for more…' : '';
+}
+function renderRail(list){
+  railEl.innerHTML = list.slice(0, 10).map(function(tr, i){ return '<div class="msq" data-i="' + i + '" role="button" tabindex="0"><span class="msqimg"><img loading="lazy" src="' + tr.img + '" alt=""></span><span class="msqt">' + escA(tr.t) + '</span><span class="msqa">' + escA(tr.a) + '</span></div>'; }).join('');
+}
+function renderPanel(){
+  var P = plsList();
+  document.getElementById('msPlList').innerHTML = P.length ? P.map(function(p, i){ return '<div class="msplitem' + (VIEW === 'playlist' && PLVIEW === i ? ' on' : '') + '" data-pl="' + i + '"><span>' + escA(p.name) + '</span><span class="mspln">' + p.tracks.length + '</span><button type="button" class="mspldel" data-pldel="' + i + '" aria-label="delete playlist"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>'; }).join('') : '<p class="mspl0">no playlists yet — make one, then tap + on any song</p>';
+  document.getElementById('msTabLikedN').textContent = likedList().length || '';
+}
+function setView(v){
+  VIEW = v;
+  document.querySelectorAll('.mstab').forEach(function(b){ b.classList.toggle('on', b.dataset.view === v); });
+  railWrap.hidden = !(v === 'browse' && MODE === 'feed');
+  document.getElementById('msChips').style.display = v === 'browse' ? '' : 'none';
+  if (v === 'browse') { document.getElementById('msSecTitle').textContent = MODE === 'search' ? 'results' : 'top hits'; TRACKS = BROWSE.tracks; renderTracks(TRACKS); }
+  else if (v === 'liked') { document.getElementById('msSecTitle').textContent = 'liked songs'; renderTracks(likedList()); }
+  else if (v === 'queue') { document.getElementById('msSecTitle').textContent = 'up next'; renderTracks(hostState().queue || []); }
+  renderPanel();
   markOn();
 }
-function renderPls(){
-  var pls = lsGet('gx_pls_v1', []);
-  var list = document.getElementById('msPlList');
-  document.getElementById('msPlEmpty').style.display = pls.length ? 'none' : '';
-  list.innerHTML = pls.map(function(pl, i){ return '<button type="button" class="msplitem' + (VIEW === 'playlist' && PLVIEW === i ? ' on' : '') + '" data-pl="' + i + '">' + esc(pl.name) + '<span style="margin-left:auto;color:#8f8aa5;font-size:12px">' + pl.tracks.length + '</span></button>'; }).join('');
+function openPlaylist(i){
+  var P = plsList(); if (!P[i]) return;
+  VIEW = 'playlist'; PLVIEW = i;
+  document.querySelectorAll('.mstab').forEach(function(b){ b.classList.remove('on'); });
+  railWrap.hidden = true; document.getElementById('msChips').style.display = 'none';
+  document.getElementById('msSecTitle').textContent = P[i].name;
+  renderTracks(P[i].tracks);
+  renderPanel(); markOn();
 }
-function addToPlaylist(tr, btn){
-  var pls = lsGet('gx_pls_v1', []);
-  if (!pls.length) { pls = [{ name: 'my playlist', tracks: [] }]; }
-  var ti = (VIEW === 'playlist' && PLVIEW >= 0) ? PLVIEW : 0;
-  if (!pls[ti].tracks.some(function(x){ return x.id === tr.id; })) pls[ti].tracks.push(tr);
-  lsSet('gx_pls_v1', pls);
-  renderPls();
-  if (btn) { var old = btn.textContent; btn.textContent = '✓'; setTimeout(function(){ btn.textContent = old; }, 900); }
-  if (VIEW === 'playlist') setView('playlist', PLVIEW);
-}
-document.addEventListener('click', function(e){
-  var add = e.target.closest ? e.target.closest('[data-add]') : null;
-  if (add) { var ai = +add.getAttribute('data-add'); if (TRACKS[ai]) addToPlaylist(TRACKS[ai], add); return; }
-  var el = e.target.closest ? e.target.closest('[data-i]') : null;
-  if (!el) return;
-  if (!rowsEl.contains(el) && !(railEl && railEl.contains(el))) return;
-  var i = +el.getAttribute('data-i');
-  if (VIEW === 'queue') { playAt(i); setView('queue'); return; }
-  if (i === cur) { if (au.paused) au.play(); else au.pause(); } else playAt(i);
-});
-document.querySelectorAll('.mstab').forEach(function(t){ t.addEventListener('click', function(){ setView(t.getAttribute('data-view')); }); });
-document.getElementById('msPlList').addEventListener('click', function(e){
-  var b = e.target.closest ? e.target.closest('[data-pl]') : null;
-  if (b) setView('playlist', +b.getAttribute('data-pl'));
-});
-document.getElementById('msPlAdd').addEventListener('click', function(){
-  var name = prompt('playlist name');
-  if (!name) return;
-  var pls = lsGet('gx_pls_v1', []);
-  pls.push({ name: String(name).slice(0, 40), tracks: [] });
-  lsSet('gx_pls_v1', pls);
-  renderPls();
-});
-document.getElementById('msForm').addEventListener('submit', function(e){
-  e.preventDefault();
-  var q = document.getElementById('msQ').value.trim();
-  if (VIEW !== 'browse') setView('browse');
-  if (q) setList('search', q); else setList('feed', '');
-  syncChips();
-});
-document.getElementById('msQ').addEventListener('input', function(){
-  var q = this.value.trim();
-  clearTimeout(typeTimer);
-  typeTimer = setTimeout(function(){
-    if (VIEW !== 'browse') setView('browse');
-    if (q) setList('search', q); else setList('feed', '');
-    syncChips();
-  }, 300);
-});
-document.getElementById('msChips').addEventListener('click', function(e){
-  var b = e.target.closest ? e.target.closest('.mschip') : null;
-  if (!b) return;
-  var q = b.getAttribute('data-q') || '';
-  if (VIEW !== 'browse') setView('browse');
-  if (q) { document.getElementById('msQ').value = q; setList('search', q); } else setList('feed', '');
-  syncChips();
-});
-function syncChips(){
-  document.querySelectorAll('.mschip').forEach(function(c){
-    var cq = c.getAttribute('data-q') || '';
-    c.classList.toggle('on', MODE === 'feed' ? !cq : cq === MQ);
+function markOn(){
+  var st = hostState(); curId = st.id || '';
+  var qi = -1;
+  DISPLAY.forEach(function(tr, i){ if (tr.id === curId) qi = i; });
+  cur = qi;
+  rowsEl.querySelectorAll('.msrow').forEach(function(r){
+    var i = +r.dataset.i, on = DISPLAY[i] && DISPLAY[i].id === curId;
+    r.classList.toggle('on', !!on);
+    r.classList.toggle('paused', !!on && !st.playing);
+    var n = r.querySelector('.msn');
+    if (n) n.innerHTML = on ? EQ : String(i + 1);
+  });
+  railEl.querySelectorAll('.msq').forEach(function(c){
+    var i = +c.dataset.i;
+    c.classList.toggle('on', !!(BROWSE.tracks[i] && BROWSE.tracks[i].id === curId));
   });
 }
-document.getElementById('msDl').addEventListener('click', function(){ if (curId) location.href = '/yt/stream?v=' + encodeURIComponent(curId) + '&kind=a&dl=1'; });
-document.getElementById('msLike').addEventListener('click', function(){
-  if (cur < 0 || !TRACKS[cur]) return;
-  var tr = TRACKS[cur];
-  var lk = getLiked();
-  if (isLiked(tr.id)) lk = lk.filter(function(x){ return x.id !== tr.id; });
-  else lk.unshift(tr);
-  lsSet('gx_liked_v1', lk);
-  syncLike();
-  if (VIEW === 'liked') setView('liked');
-});
-document.getElementById('msQueueBtn').addEventListener('click', function(){ setView('queue'); });
-document.getElementById('msVolBtn').addEventListener('click', function(){ var p = document.getElementById('msVolPop'); p.hidden = !p.hidden; });
-if ('IntersectionObserver' in window) {
-  var io = new IntersectionObserver(function(en){ if (en[0].isIntersecting) loadMore(); }, { rootMargin: '900px' });
-  io.observe(document.getElementById('msSent'));
+function playAt(i){
+  if (i < 0 || i >= DISPLAY.length) return;
+  var h = gxHost(); if (!h) return;
+  curId = DISPLAY[i].id;
+  h.play(DISPLAY, i);
+  markOn();
 }
-au.addEventListener('play', setIco); au.addEventListener('pause', setIco);
-au.addEventListener('ended', function(){ if (rep === 2) { au.currentTime = 0; au.play(); } else step(1); });
-var prog = document.getElementById('msProg'), fill = document.getElementById('msFill'), dragging = false;
-function seekEvt(e){ var r = prog.getBoundingClientRect(); var p = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); if (au.duration) au.currentTime = p * au.duration; fill.style.width = (p * 100) + '%'; }
-prog.addEventListener('pointerdown', function(e){ dragging = true; try { prog.setPointerCapture(e.pointerId); } catch (err) {} seekEvt(e); });
-prog.addEventListener('pointermove', function(e){ if (dragging) seekEvt(e); });
-prog.addEventListener('pointerup', function(){ dragging = false; });
-prog.addEventListener('pointercancel', function(){ dragging = false; });
-au.addEventListener('timeupdate', function(){ if (!dragging && au.duration) fill.style.width = (au.currentTime / au.duration * 100) + '%'; });
-document.getElementById('msPlay').addEventListener('click', function(){ if (cur < 0) { playAt(0); return; } if (au.paused) au.play(); else au.pause(); });
-document.getElementById('msNext').addEventListener('click', function(){ step(1); });
-document.getElementById('msPrev').addEventListener('click', function(){ if (au.currentTime > 3) { au.currentTime = 0; } else step(-1); });
-document.getElementById('msShuf').addEventListener('click', function(){ shuf = !shuf; this.classList.toggle('on', shuf); });
-document.getElementById('msRep').addEventListener('click', function(){ rep = (rep + 1) % 3; this.classList.toggle('on', rep > 0); });
-var volEl = document.getElementById('msVolR');
-function applyVol(){ au.volume = volEl.value / 100; volEl.style.background = 'linear-gradient(90deg,#fff ' + volEl.value + '%,rgba(255,255,255,.18) ' + volEl.value + '%)'; }
-volEl.addEventListener('input', applyVol);
-au.volume = 0.85; applyVol();
-renderPls();
-moreEl.textContent = ended ? '' : 'loading more as u scroll…';
+function setList(mode, q){
+  var seq = ++listSeq;
+  MODE = mode; MQ = q || ''; BROWSE.mode = mode; BROWSE.q = MQ;
+  loading = true; moreEl.textContent = 'loading…';
+  var url = mode === 'search' ? '/api/mussearch?q=' + encodeURIComponent(q) : '/api/mussearch?f=music';
+  fetch(url).then(function(r){ return r.json(); }).then(function(j){
+    if (seq !== listSeq) return;
+    loading = false;
+    if (!j || !j.ok) { moreEl.textContent = 'that flopped — tap the title to retry'; return; }
+    TRACKS = j.vids || []; BROWSE.tracks = TRACKS; MCONT = j.cont || ''; BROWSE.cont = MCONT;
+    ended = !MCONT; BROWSE.ended = ended;
+    if (VIEW === 'browse') { document.getElementById('msSecTitle').textContent = mode === 'search' ? 'results' : 'top hits'; renderTracks(TRACKS); railWrap.hidden = mode !== 'feed'; if (mode === 'feed') renderRail(TRACKS); }
+    markOn();
+  }).catch(function(){ if (seq === listSeq) { loading = false; moreEl.textContent = 'that flopped — tap the title to retry'; } });
+}
+var listSeq = 0;
+function loadMore(){
+  if (loading || ended || VIEW !== 'browse') return;
+  loading = true; moreEl.textContent = 'loading…';
+  var url = MODE === 'search' ? '/api/ytmore?q=' + encodeURIComponent(MQ) + '&c=' + encodeURIComponent(MCONT) : '/api/ytmore?f=music&c=' + encodeURIComponent(MCONT);
+  fetch(url).then(function(r){ return r.json(); }).then(function(j){
+    loading = false;
+    if (!j || !j.ok || !j.vids || !j.vids.length) { ended = true; BROWSE.ended = true; moreEl.textContent = ''; return; }
+    dedupeAppend(TRACKS, j.vids);
+    MCONT = j.cont || ''; BROWSE.cont = MCONT;
+    if (!MCONT) { ended = true; BROWSE.ended = true; }
+    if (VIEW === 'browse') renderTracks(TRACKS);
+    markOn();
+  }).catch(function(){ loading = false; });
+}
+rowsEl.addEventListener('click', function(e){
+  var add = e.target.closest('[data-add]');
+  if (add) {
+    e.stopPropagation();
+    var tr = DISPLAY[+add.dataset.add]; if (!tr) return;
+    var P = plsList();
+    if (!P.length) { alert('make a playlist first (left panel)'); return; }
+    var names = P.map(function(p, i){ return (i + 1) + '. ' + p.name; }).join('\\n');
+    var pick = prompt('add to which playlist?\\n' + names, '1');
+    var idx = parseInt(pick, 10) - 1;
+    if (idx >= 0 && idx < P.length) { if (!P[idx].tracks.some(function(x){ return x.id === tr.id; })) P[idx].tracks.push(tr); plsSave(P); renderPanel(); }
+    return;
+  }
+  var r = e.target.closest('.msrow'); if (r) playAt(+r.dataset.i);
+});
+railEl.addEventListener('click', function(e){ var c = e.target.closest('.msq'); if (c) { if (VIEW !== 'browse') setView('browse'); TRACKS = BROWSE.tracks; DISPLAY = TRACKS; playAt(+c.dataset.i); } });
+document.getElementById('msPanel').addEventListener('click', function(e){
+  var del = e.target.closest('[data-pldel]');
+  if (del) { e.stopPropagation(); var P = plsList(); P.splice(+del.dataset.pldel, 1); plsSave(P); if (VIEW === 'playlist') setView('browse'); else renderPanel(); return; }
+  var item = e.target.closest('[data-pl]'); if (item) openPlaylist(+item.dataset.pl);
+});
+document.getElementById('msNewPl').addEventListener('click', function(){
+  var name = prompt('playlist name'); if (!name) return;
+  var P = plsList(); P.push({ name: String(name).slice(0, 40), tracks: [] }); plsSave(P); renderPanel();
+});
+document.querySelectorAll('.mstab').forEach(function(b){ b.addEventListener('click', function(){ setView(b.dataset.view); }); });
+var typeTimer = null;
+var msQ = document.getElementById('msQ');
+function runSearch(){ var v = msQ.value.trim(); document.querySelectorAll('.mschip').forEach(function(c){ c.classList.remove('on'); }); if (VIEW !== 'browse') setView('browse'); setList(v ? 'search' : 'feed', v); }
+msQ.addEventListener('input', function(){ clearTimeout(typeTimer); typeTimer = setTimeout(runSearch, 300); });
+document.getElementById('msForm').addEventListener('submit', function(e){ e.preventDefault(); clearTimeout(typeTimer); runSearch(); });
+document.querySelectorAll('.mschip').forEach(function(c){ c.addEventListener('click', function(){ document.querySelectorAll('.mschip').forEach(function(x){ x.classList.remove('on'); }); c.classList.add('on'); msQ.value = ''; if (VIEW !== 'browse') setView('browse'); var q = c.dataset.q || ''; setList(q ? 'search' : 'feed', q); }); });
+document.getElementById('msSecRow').addEventListener('click', function(){ if (VIEW === 'browse' && !TRACKS.length && !loading) setList(MODE, MQ); });
+window.addEventListener('hashchange', function(){ if (location.hash === '#queue') setView('queue'); });
+var io = new IntersectionObserver(function(en){ if (en[0].isIntersecting) loadMore(); }, { rootMargin: '700px' });
+io.observe(moreEl);
+setInterval(function(){
+  markOn();
+  var st = hostState();
+  if (VIEW === 'browse' && st.queue === TRACKS && st.idx >= TRACKS.length - 2 && !ended && !loading) loadMore();
+}, 1200);
+if (INIT.q) msQ.value = INIT.q;
+TRACKS = []; BROWSE.tracks = TRACKS;
+setView(location.hash === '#queue' ? 'queue' : 'browse');
+setList(INIT.q ? 'search' : 'feed', INIT.q || '');
 </script>
 </body></html>`;
 }
