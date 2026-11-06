@@ -5315,7 +5315,7 @@ async function askSixLook(env, b64, mode, extra) {
   if (!task || !b64) return null;
   const prompt = task + (mode === 'answer' ? ' plain words only, exactly how a voice would say it out loud.' : ' answer in this voice: all lowercase, casual, straight-talking, funny when it fits, zero corporate tone. plain text, short lines, no markdown symbols.') + (extra ? ' extra context from the user: ' + extra : '');
   const url = String(b64).startsWith('data:') ? String(b64) : 'data:image/jpeg;base64,' + String(b64);
-  const g = await askGemini(null, [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: url } }] }], 1400, 'hw');
+  const g = await askGemini(null, [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: url } }] }], mode === 'answer' ? 220 : 1400, 'hw');
   return g ? stripActs(g).slice(0, 9000) : null;
 }
 async function askImageFallback(prompt) {
@@ -7886,9 +7886,9 @@ document.addEventListener('paste', function(ev){ var items=(ev.clipboardData||{}
 rmBtn.addEventListener('click', function(ev){ ev.stopPropagation(); setImg(''); });
 var shStream=null, shWatch=null;
 var vidEl=document.getElementById('hwVid'), shBox=document.getElementById('shareBox'), shStat=document.getElementById('shstat');
-function snapFrame(){
+function snapFrame(maxw){
   if(!vidEl || !vidEl.videoWidth) return false;
-  var sc=Math.min(1, 1280/Math.max(vidEl.videoWidth, vidEl.videoHeight));
+  var sc=Math.min(1, (maxw||1280)/Math.max(vidEl.videoWidth, vidEl.videoHeight));
   var cv=document.createElement('canvas'); cv.width=Math.round(vidEl.videoWidth*sc); cv.height=Math.round(vidEl.videoHeight*sc);
   cv.getContext('2d').drawImage(vidEl, 0, 0, cv.width, cv.height);
   setImg(cv.toDataURL('image/jpeg', 0.85).split(',')[1]||'');
@@ -7923,7 +7923,7 @@ function shareChrome(on){
   var lab=document.querySelector('label[for="editq"]'); if(lab) lab.style.display= on ? 'none' : '';
   var modes=document.querySelector('.hwmodes'); if(modes) modes.style.display= on ? 'none' : '';
 }
-var liveOn=false, liveTimer=null, liveBusy=false, liveCount=0, liveLastSig=null, liveCandSig=null, liveCandAt=0, liveAnsSig=null, liveAnsAt=0;
+var liveOn=false, liveTimer=null, liveBusy=false, liveCount=0, liveLastSig=null, liveCandSig=null, liveCandAt=0, liveAnsSig=null, liveAnsAt=0, liveStashB64='', liveStashSig=null, liveFailSig=null, liveFails=0;
 function frameSig(){
   if(!vidEl || !vidEl.videoWidth) return null;
   try {
@@ -7937,36 +7937,48 @@ function frameSig(){
 function sigDiff(a, b){ if(!a || !b) return 999; var s=0; for(var i=0;i<64;i++) s+=Math.abs(a[i]-b[i]); return s/64; }
 function speakAnswer(t){
   if(!window.speechSynthesis) return;
-  try { speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance(String(t).slice(0, 300)); u.rate=1.06; speechSynthesis.speak(u); } catch(e){}
+  try { speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance(String(t).slice(0, 300)); u.rate=1.12; speechSynthesis.speak(u); } catch(e){}
+}
+function noteLiveFail(sig){
+  liveAnsAt=Date.now();
+  if(liveFailSig && sigDiff(sig, liveFailSig) < 12) liveFails++; else { liveFailSig=sig; liveFails=1; }
+  if(liveFails >= 3){ liveAnsSig=sig; return false; }
+  liveAnsSig=null; return true;
 }
 function liveAnswer(sig){
-  if(!snapFrame()) return;
+  var useB64='';
+  if(liveStashSig && liveStashB64 && sigDiff(sig, liveStashSig) < 5) useB64=liveStashB64;
+  if(!useB64){ if(!snapFrame(1024)) return; useB64=imgB64; }
   liveBusy=true; liveAnsSig=sig; liveAnsAt=Date.now(); liveCount++;
   shStat.textContent='new question — six is on it…';
-  fetch('/ai/look', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ image: imgB64, mode: 'answer', text: '' }) }).then(function(r){ return r.json(); }).then(function(o){
+  fetch('/ai/look', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ image: useB64, mode: 'answer', text: '' }) }).then(function(r){ return r.json(); }).then(function(o){
     liveBusy=false;
     if(o && o.out){
-      var an=document.getElementById('shAnswer'); an.textContent=o.out; an.style.display='block';
-      outEl.innerHTML=fmtMd(o.out); outEl.dataset.raw=o.out; outEl.style.display='block'; emptyEl.style.display='none'; copyBtn.style.display='inline-flex';
+      liveFails=0; liveFailSig=null;
+      var clean=String(o.out).trim(); var low=clean.toLowerCase();
+      if(low.indexOf('the answer is ')===0) clean=clean.slice(14); else if(low.indexOf('answer: ')===0) clean=clean.slice(8); else if(low.indexOf('answer is ')===0) clean=clean.slice(11);
+      var an=document.getElementById('shAnswer'); an.textContent=clean; an.style.display='block';
+      outEl.innerHTML=fmtMd(clean); outEl.dataset.raw=clean; outEl.style.display='block'; emptyEl.style.display='none'; copyBtn.style.display='inline-flex';
       shStat.textContent='live beta ✦ six called it — flip to the next one when ur ready';
-      speakAnswer(o.out);
-    } else shStat.textContent='six couldnt read that one — hold it still n let him retry';
-  }).catch(function(){ liveBusy=false; shStat.textContent='six couldnt run that rn'; });
+      try { if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(clean).catch(function(){}); } catch(e){}
+      speakAnswer(clean);
+    } else { var again=noteLiveFail(sig); shStat.textContent= again ? 'six couldnt read that one — hold still, he retries on his own' : 'six couldnt read that one — hit snap now or do it for me if u need it'; }
+  }).catch(function(){ liveBusy=false; noteLiveFail(sig); shStat.textContent='six couldnt run that rn'; });
 }
 function liveTick(){
   if(!liveOn || !shStream || liveBusy) return;
   var sig=frameSig(); if(!sig) return;
-  if(!liveCandSig || sigDiff(sig, liveCandSig) > 5){ liveCandSig=sig; liveCandAt=Date.now(); return; }
-  if(Date.now()-liveCandAt < 2200) return;
-  if(liveAnsSig && sigDiff(sig, liveAnsSig) < 20) return;
-  if(Date.now()-liveAnsAt < 6000) return;
+  if(!liveCandSig || sigDiff(sig, liveCandSig) > 5){ liveCandSig=sig; liveCandAt=Date.now(); if(snapFrame(1024)){ liveStashB64=imgB64; liveStashSig=sig; } return; }
+  if(Date.now()-liveCandAt < 1200) return;
+  if(liveAnsSig && sigDiff(sig, liveAnsSig) < 12) return;
+  if(Date.now()-liveAnsAt < 4000) return;
   if(liveCount >= 40){ setLive(false); shStat.textContent='beta cap hit for this share — toggle live back on to keep going'; return; }
   liveAnswer(sig);
 }
 function setLive(on){
   var b=document.getElementById('blive'); if(!b) return;
   liveOn=on;
-  if(on){ b.classList.add('on'); liveCandSig=null; liveAnsSig=null; liveAnsAt=0; if(!liveTimer) liveTimer=setInterval(liveTick, 1800); shStat.textContent='live beta on ✦ flip to a question, hold still a sec, six says the answer out loud — no explaining'; }
+  if(on){ b.classList.add('on'); liveCandSig=null; liveAnsSig=null; liveAnsAt=0; if(!liveTimer) liveTimer=setInterval(liveTick, 850); shStat.textContent='live beta on ✦ flip to a question, hold still a sec, six says the answer out loud — no explaining'; }
   else { b.classList.remove('on'); if(liveTimer){ clearInterval(liveTimer); liveTimer=null; } try { speechSynthesis.cancel(); } catch(e){} }
 }
 function stopShare(){
@@ -8002,6 +8014,19 @@ document.getElementById('bauto').addEventListener('click', function(){
 });
 document.getElementById('bsum2').addEventListener('click', function(){ if(snapFrame()){ shLastHash=frameHash(); run('sum'); } });
 document.getElementById('bsimp2').addEventListener('click', function(){ if(snapFrame()){ shLastHash=frameHash(); run('simple'); } });
+var shStatSeen='', shStatAt=0, shAnsSeen='', shAnsAt=0;
+setInterval(function(){
+  var now=Date.now();
+  if(shStat){ var t=shStat.textContent; if(t!==shStatSeen){ shStatSeen=t; shStatAt=now; } else if(t && now-shStatAt>5000){ shStat.textContent=''; shStatSeen=''; } }
+  var an2=document.getElementById('shAnswer');
+  if(an2){ var a2=an2.textContent; if(a2!==shAnsSeen){ shAnsSeen=a2; shAnsAt=now; } else if(a2 && now-shAnsAt>15000){ an2.textContent=''; an2.style.display='none'; shAnsSeen=''; } }
+}, 1000);
+document.addEventListener('click', function(ev){
+  if(!shBox || shBox.style.display==='none') return;
+  if(ev.target===shBox || shBox.contains(ev.target)) return;
+  if(shStat) shStat.textContent='';
+  var an3=document.getElementById('shAnswer'); if(an3){ an3.textContent=''; an3.style.display='none'; }
+});
 document.getElementById('blive').addEventListener('click', function(){ setLive(!liveOn); });
 document.getElementById('bstop').addEventListener('click', stopShare);
 copyBtn.addEventListener('click', function(){
