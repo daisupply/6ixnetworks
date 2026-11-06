@@ -7749,6 +7749,13 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .hwlabel{display:block;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;opacity:.55;margin:14px 0 6px}
 #editq{width:100%;background:rgba(255,255,255,.04);color:#f4f4f5;border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:11px 12px;font-family:inherit;font-size:16px;box-sizing:border-box}
 .hwmodes{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
+#bshare{grid-column:1/-1}
+#shareBox{margin-top:12px;border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:10px;background:rgba(255,255,255,.03)}
+#hwVid{width:100%;border-radius:10px;display:block;background:#000;max-height:300px}
+.shrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.shbtn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);color:#f4f4f5;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.shbtn.on{background:#f4f4f5;color:#0a0a0b;border-color:#f4f4f5}
+#shstat{font-size:12.5px;opacity:.65;margin-top:8px;line-height:1.45}
 .mode{display:flex;flex-direction:column;align-items:flex-start;gap:3px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:12px 13px;cursor:pointer;font-family:inherit;color:#f4f4f5;text-align:left}
 .mode svg{color:#e4e4e7;margin-bottom:2px}
 .mode b{font-size:14.5px}
@@ -7794,7 +7801,9 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <button class="mode primary" id="bwrite" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><b>do it for me</b><span>a full draft, ready to make yours</span></button>
 <button class="mode" id="bsimple" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><b>explain it simple</b><span>broken down like ur five</span></button>
 <button class="mode" id="bedit" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/><path d="M1.5 14h5M9.5 8h5M17.5 16h5"/></svg><b>edit it</b><span>follows ur edit note above</span></button>
+<button class="mode" id="bshare" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg><b>share ur screen</b><span>six watches ur hw live — snap a frame n he reads it like a screenshot</span></button>
 </div>
+<div id="shareBox" style="display:none"><video id="hwVid" autoplay muted playsinline></video><div class="shrow"><button class="shbtn" id="bsnap" type="button">snap a frame</button><button class="shbtn" id="bwatch" type="button">watch</button><button class="shbtn" id="bstop" type="button">stop sharing</button></div><div id="shstat"></div></div>
 </section>
 <section class="hwcard">
 <div class="hwcard-h"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>six's answer<span id="stat" class="statpill">ready</span><button id="copy" type="button">copy the text</button></div>
@@ -7866,6 +7875,38 @@ dropEl.addEventListener('dragleave', function(){ dropEl.classList.remove('draggi
 dropEl.addEventListener('drop', function(ev){ ev.preventDefault(); dropEl.classList.remove('dragging'); var f=ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0]; handleFile(f); });
 document.addEventListener('paste', function(ev){ var items=(ev.clipboardData||{}).items||[]; for(var i=0;i<items.length;i++){ if(/^image\\//.test(items[i].type)){ handleFile(items[i].getAsFile()); break; } } });
 rmBtn.addEventListener('click', function(ev){ ev.stopPropagation(); setImg(''); });
+var shStream=null, shWatch=null;
+var vidEl=document.getElementById('hwVid'), shBox=document.getElementById('shareBox'), shStat=document.getElementById('shstat');
+function snapFrame(){
+  if(!vidEl || !vidEl.videoWidth) return false;
+  var sc=Math.min(1, 1280/Math.max(vidEl.videoWidth, vidEl.videoHeight));
+  var cv=document.createElement('canvas'); cv.width=Math.round(vidEl.videoWidth*sc); cv.height=Math.round(vidEl.videoHeight*sc);
+  cv.getContext('2d').drawImage(vidEl, 0, 0, cv.width, cv.height);
+  setImg(cv.toDataURL('image/jpeg', 0.85).split(',')[1]||'');
+  return true;
+}
+function stopShare(){
+  if(shWatch){ clearInterval(shWatch); shWatch=null; document.getElementById('bwatch').classList.remove('on'); }
+  if(shStream){ shStream.getTracks().forEach(function(t){ t.stop(); }); shStream=null; }
+  if(vidEl) vidEl.srcObject=null;
+  shBox.style.display='none';
+}
+document.getElementById('bshare').addEventListener('click', function(){
+  if(shStream){ stopShare(); return; }
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia){ statEl.textContent='screen share needs a desktop browser twin — on phone just drop a screenshot'; return; }
+  navigator.mediaDevices.getDisplayMedia({ video:true, audio:false }).then(function(st){
+    shStream=st; vidEl.srcObject=st; shBox.style.display='block';
+    st.getVideoTracks()[0].addEventListener('ended', stopShare);
+    shStat.textContent='ur sharing — six only sees frames u snap, nothing records';
+    setTimeout(function(){ if(snapFrame()) shStat.textContent='first frame grabbed \u2726 pick a mode up top — or hit watch n six keeps the frame fresh'; }, 700);
+  }).catch(function(){ statEl.textContent='share cancelled — no stress, screenshots still work'; });
+});
+document.getElementById('bsnap').addEventListener('click', function(){ if(snapFrame()) shStat.textContent='fresh frame attached \u2726 pick a mode'; });
+document.getElementById('bwatch').addEventListener('click', function(){
+  if(shWatch){ clearInterval(shWatch); shWatch=null; this.classList.remove('on'); shStat.textContent='watch off — snap manually when ur ready'; }
+  else { this.classList.add('on'); shStat.textContent='watching \u2726 six grabs a fresh frame every 15s — pick a mode anytime'; if(snapFrame()){} shWatch=setInterval(function(){ snapFrame(); }, 15000); }
+});
+document.getElementById('bstop').addEventListener('click', stopShare);
 copyBtn.addEventListener('click', function(){
   var done=function(){ statEl.textContent='copied ✦'; };
   var txt=outEl.dataset.raw || outEl.textContent;
