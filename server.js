@@ -1618,6 +1618,9 @@ body #siderail .rl a.on{background:#f4f4f5;color:#0a0a0b}
 /* ——— v344: send buttons join the white-pill family ——— */
 body #sendbtn{background:#f4f4f5!important;color:#0a0a0b!important}
 body #askbar button[type="submit"]{background:#f4f4f5!important;color:#0a0a0b!important}
+/* v348: sticky flix header parks flush — under the topbar on desktop, at the very top (over the lights zone, notch padded) on phones */
+body .wrap .mhead{top:50px}
+@media(max-width:820px){body .wrap .mhead{top:0}}
 
 
 
@@ -5809,9 +5812,24 @@ async function confReact(text) {
 function confShape() {
   const list = (confList || []).slice(0, 200);
   const day = newsDayStr();
+  const chi = (ts) => new Date(ts).toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
+  const score = (c) => (c.heat || 1) * 10 + Math.min(c.hot || 0, 20);
+  const byScore = (a, b) => score(b) - score(a) || b.ts - a.ts;
   let pin = null;
-  for (const c of list) {
-    if (c.heat >= 8 && new Date(c.ts).toLocaleDateString('en-CA', { timeZone: 'America/Chicago' }) === day && (!pin || c.heat > pin.heat)) pin = c;
+  const today = list.filter((c) => chi(c.ts) === day);
+  if (today.length) {
+    const best = today.slice().sort(byScore)[0];
+    if (best && ((best.heat || 1) >= 7 || today.length >= 4)) pin = best;
+  }
+  if (!pin) {
+    const recent = list.filter((c) => Date.now() - c.ts < 3 * 864e5).sort(byScore);
+    if (recent.length && (recent[0].heat || 1) >= 8) pin = recent[0];
+  }
+  if (!pin && list.length) {
+    const pool = list.slice(0, 25);
+    let h = 0; const seed = day + ':' + pool.length + ':' + (pool[0] ? pool[0].id : '');
+    for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+    pin = pool[h % pool.length];
   }
   return { ok: true, pin: pin ? pin.id : '', list: list.map(function (c) { return { id: c.id, t: c.t, r: c.r, heat: c.heat, hot: c.hot, ts: c.ts }; }) };
 }
