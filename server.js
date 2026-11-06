@@ -9987,6 +9987,76 @@ async function fetchInnertubeFile(vidId, fresh) {
 // music lane: resolve just the audio track (itPick's pair.a — the
 // best audio/mp4) and probe it like the video lanes do.
 const itAudioCache = new Map();
+const itMuxCache = new Map();
+async function ytResolveMuxed(vidId) {
+  const c = itMuxCache.get(vidId);
+  if (c && Date.now() - c.at < 5 * 60 * 1000) return c.hit;
+  const got = await Promise.allSettled(IT_CLIENTS.map(cl => itClientFile(cl, vidId)));
+  const byName = {};
+  got.forEach(g => { if (g.status === 'fulfilled' && g.value && g.value.muxed) byName[g.value.client] = g.value; });
+  for (const name of ['vr', 'android', 'tv', 'ios']) {
+    const cand = byName[name];
+    if (!cand) continue;
+    if (await ytProbe(cand.muxed.url, cand.ua)) {
+      const hit = { url: cand.muxed.url, ua: cand.ua, title: cand.title || '' };
+      itMuxCache.set(vidId, { at: Date.now(), hit });
+      if (itMuxCache.size > 60) itMuxCache.delete(itMuxCache.keys().next().value);
+      return hit;
+    }
+  }
+  return null;
+}
+const itBufCache = new Map();
+let itBufBytes = 0;
+const itJobCache = new Map();
+function ytAudioJob(vidId) {
+  const doneHit = itBufCache.get(vidId);
+  if (doneHit && Date.now() - doneHit.at < 600000) return { bufHit: doneHit };
+  let job = itJobCache.get(vidId);
+  if (job) return { job };
+  job = { parts: [], have: 0, total: null, done: false, err: false, title: '', waiters: [] };
+  itJobCache.set(vidId, job);
+  const wake = () => { const w = job.waiters.splice(0); w.forEach(f => f()); };
+  job.waitFor = (n) => new Promise(res => { const chk = () => { if (job.done || job.err || job.have >= n) res(); else job.waiters.push(chk); }; chk(); });
+  (async () => {
+    let ah = await ytResolveMuxed(vidId);
+    if (!ah) { job.err = true; job.done = true; wake(); itJobCache.delete(vidId); return; }
+    job.title = ah.title || '';
+    const CH = 524288;
+    try {
+      for (let guard = 0; guard < 80; guard++) {
+        let b = null, st = 0;
+        for (let att = 0; att < 3 && !b; att++) {
+          if (att > 0) { itMuxCache.delete(vidId); const nah = await ytResolveMuxed(vidId); if (nah) ah = nah; }
+          try {
+            const r = await fetch(ah.url, { headers: { 'user-agent': ah.ua, range: 'bytes=' + job.have + '-' + (job.have + CH - 1) }, signal: AbortSignal.timeout(30000) });
+            if (r.status === 206 || r.status === 200) {
+              const cr = r.headers.get('content-range') || '';
+              if (cr.indexOf('/') >= 0) job.total = parseInt(cr.split('/')[1], 10) || job.total;
+              b = Buffer.from(await r.arrayBuffer());
+              st = r.status;
+            }
+          } catch (e) {}
+        }
+        if (!b || !b.length) { if (!job.have) job.err = true; break; }
+        job.parts.push(b); job.have += b.length; wake();
+        if (st === 200) break;
+        if (job.total && job.have >= job.total) break;
+        if (b.length < CH && !job.total) break;
+      }
+    } catch (e) { if (!job.have) job.err = true; }
+    job.done = true; wake();
+    if (!job.err && job.have) {
+      const buf = Buffer.concat(job.parts);
+      const hit = { buf, title: ah.title, at: Date.now() };
+      itBufCache.set(vidId, hit);
+      itBufBytes += buf.length;
+      while (itBufBytes > 96 * 1024 * 1024 && itBufCache.size > 1) { const k = itBufCache.keys().next().value; itBufBytes -= itBufCache.get(k).buf.length; itBufCache.delete(k); }
+    }
+    itJobCache.delete(vidId);
+  })();
+  return { job };
+}
 async function ytResolveAudio(vidId) {
   const c = itAudioCache.get(vidId);
   if (c && Date.now() - c.at < 5 * 60 * 1000) return c.hit;
@@ -12852,7 +12922,7 @@ const server = http.createServer(async (req, res) => {
       // music: the audio track only, pulled from youtube and streamed
       // straight through — nothing saved. dl=1 converts to a real mp3
       // via ffmpeg when it's around, else sends the raw m4a.
-      const ah = await ytResolveAudio(vidId);
+      const ah = await ytResolveMuxed(vidId);
       if (!ah) { res.writeHead(502); return res.end('audio unavailable'); }
       if (wantDl) {
         const bin = await ffmpegBin();
@@ -12878,16 +12948,69 @@ const server = http.createServer(async (req, res) => {
           try { ff.kill('SIGKILL'); } catch { }
         }
       }
-      try {
-        const up = await fetch(ah.url, { headers: { 'user-agent': ah.ua, ...(range && !wantDl ? { range } : {}) }, signal: AbortSignal.timeout(20000) });
-        if (up.status !== 200 && up.status !== 206) { res.writeHead(502); return res.end('audio unavailable'); }
-        const hh = { 'cache-control': 'no-store', 'content-type': 'audio/mp4' };
-        for (const h of ['content-length', 'content-range', 'accept-ranges']) { const v = up.headers.get(h); if (v && !(h === 'content-length' && up.headers.get('content-encoding'))) hh[h] = v; }
-        if (wantDl) { const nm = String(ah.title || '').replace(/[^\w \-\.]/g, '').trim().slice(0, 80) || ('song-' + vidId); hh['content-disposition'] = 'attachment; filename="' + nm + '.m4a"'; }
-        res.writeHead(up.status, hh);
-        if (up.body) await new Promise(done => { try { pipeline(Readable.fromWeb(up.body), res, () => done()); } catch (e) { done(); } });
-        return;
-      } catch { res.writeHead(502); return res.end('audio unavailable'); }
+      const gotJ = ytAudioJob(vidId);
+      let buf = null, songTitle = '';
+      if (gotJ.bufHit) { buf = gotJ.bufHit.buf; songTitle = gotJ.bufHit.title || ''; }
+      else {
+        const job = gotJ.job;
+        await job.waitFor(1);
+        if (job.err || !job.have) { res.writeHead(502); return res.end('audio unavailable'); }
+        if (!job.total) await job.waitFor(Number.MAX_SAFE_INTEGER);
+        songTitle = job.title || '';
+        if (!job.total) {
+          buf = Buffer.concat(job.parts);
+        } else {
+          const N = job.total;
+          const hhS = { 'cache-control': 'no-store', 'content-type': 'audio/mp4', 'accept-ranges': 'bytes' };
+          if (wantDl) { const nm = String(songTitle).replace(/[^\w \-\.]/g, '').trim().slice(0, 80) || ('song-' + vidId); hhS['content-disposition'] = 'attachment; filename="' + nm + '.m4a"'; }
+          let status = 200, start = 0, end = N - 1;
+          const mS = /^bytes=(\d*)-(\d*)$/.exec(range || '');
+          if (mS && !wantDl) {
+            if (mS[1] === '' && mS[2] !== '') { start = Math.max(0, N - (+mS[2])); }
+            else { start = +mS[1] || 0; if (mS[2]) end = Math.min(N - 1, +mS[2]); }
+            if (start > end || start >= N) { res.writeHead(416, { 'content-range': 'bytes */' + N }); return res.end(); }
+            status = 206;
+            hhS['content-range'] = 'bytes ' + start + '-' + end + '/' + N;
+          }
+          await job.waitFor(end + 1);
+          if (job.have <= start) { res.writeHead(502); return res.end('audio unavailable'); }
+          if (job.have - 1 < end) end = job.have - 1;
+          hhS['content-length'] = String(end - start + 1);
+          res.writeHead(status, hhS);
+          let closed = false;
+          res.on('close', () => { closed = true; });
+          let pos = start;
+          while (pos <= end && !closed) {
+            if (job.have <= pos) { if (job.done) break; await job.waitFor(pos + 1); continue; }
+            const upto = Math.min(job.have - 1, end);
+            const pieces = [];
+            let pOff = 0;
+            for (const part of job.parts) { const pEnd = pOff + part.length - 1; if (pEnd >= pos && pOff <= upto) pieces.push(part.subarray(Math.max(0, pos - pOff), Math.min(part.length, upto - pOff + 1))); pOff += part.length; }
+            const chunk = Buffer.concat(pieces);
+            if (!chunk.length) { if (job.done) break; await job.waitFor(pos + 1); continue; }
+            pos += chunk.length;
+            if (!res.write(chunk)) await new Promise(r => res.once('drain', r));
+          }
+          return res.end();
+        }
+      }
+      const N2 = buf.length;
+      const hh = { 'cache-control': 'no-store', 'content-type': 'audio/mp4', 'accept-ranges': 'bytes' };
+      if (wantDl) { const nm = String(songTitle).replace(/[^\w \-\.]/g, '').trim().slice(0, 80) || ('song-' + vidId); hh['content-disposition'] = 'attachment; filename="' + nm + '.m4a"'; }
+      let status2 = 200, start2 = 0, end2 = N2 - 1;
+      const m = /^bytes=(\d*)-(\d*)$/.exec(range || '');
+      if (m && !wantDl) {
+        if (m[1] === '' && m[2] !== '') { start2 = Math.max(0, N2 - (+m[2])); }
+        else { start2 = +m[1] || 0; if (m[2]) end2 = Math.min(N2 - 1, +m[2]); }
+        if (start2 > end2 || start2 >= N2) { res.writeHead(416, { 'content-range': 'bytes */' + N2 }); return res.end(); }
+        status2 = 206;
+        hh['content-range'] = 'bytes ' + start2 + '-' + end2 + '/' + N2;
+      }
+      hh['content-length'] = String(end2 - start2 + 1);
+      res.writeHead(status2, hh);
+      return res.end(buf.subarray(start2, end2 + 1));
+
+
     }
     if (kind === 'p') {
       // v270 downloader lanes: remux (ffmpeg merges the 720p video +
