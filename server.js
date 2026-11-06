@@ -13853,6 +13853,7 @@ self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
 `;
 process.on('unhandledRejection', (e) => { try { console.error('unhandledRejection:', (e && e.message) || e); } catch { } });
+process.on('uncaughtException', (e) => { try { console.error('uncaughtException:', (e && e.stack) || e); } catch { } });
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://localhost');
   if (u.pathname.length > 1 && u.pathname.endsWith('/') && !/^\/(uv|sj|px|browse|gproxy|wisp)/.test(u.pathname)) u.pathname = u.pathname.slice(0, -1);
