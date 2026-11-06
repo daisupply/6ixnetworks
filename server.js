@@ -824,6 +824,7 @@ body[data-motion=\"off\"] #stars.gx-home{display:block}
 #tabSheet a .meav{width:26px;height:26px;font-size:11px}
 @media(min-width:1100px){body[data-nav=\"side\"] #tbMe{display:none}}
 
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #gxBar{position:fixed;right:18px;bottom:18px;left:auto;top:auto;width:392px;max-width:calc(100vw - 24px);box-sizing:border-box;z-index:390;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:12px 14px;background:rgba(13,11,22,.97);border:1px solid rgba(255,255,255,.13);border-radius:16px;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 18px 50px rgba(0,0,0,.55);transition:box-shadow .2s ease}
 #gxBar[hidden]{display:none}
 #gxBar:not(.dragging){transition:left .22s ease,top .22s ease,right .22s ease,bottom .22s ease,box-shadow .2s ease}
@@ -1467,6 +1468,7 @@ const FONT_LINKS = '<link href="/fonts.css" rel="stylesheet">';
 const GX_THEME_BOOT = `(function(){function ld(k){try{return localStorage.getItem(k);}catch(e){return null;}}function rgb(h){if(!h||h.length!==7||h.charAt(0)!=='#')return null;var r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return(isNaN(r)||isNaN(g)||isNaN(b))?null:r+','+g+','+b;}function lite(h){var o='#';for(var i=0;i<3;i++){var v=parseInt(h.slice(1+i*2,3+i*2),16);v=Math.round(v+(255-v)*0.45);var s=v.toString(16);if(s.length<2)s='0'+s;o+=s;}return o;}var t=null;try{t=JSON.parse(ld('gx_theme_v1')||'null');}catch(e){}if(!t||typeof t!=='object')t={};var b=document.body;if(!b)return;var sky=t.sky||ld('gx_sky')||'nebula';b.setAttribute('data-sky',sky);if(t.font)b.setAttribute('data-font',t.font);if(t.radius)b.setAttribute('data-radius',t.radius);if(t.density)b.setAttribute('data-density',t.density);if(t.glow)b.setAttribute('data-glow',t.glow);if(t.glass)b.setAttribute('data-glass',t.glass);if(t.stars)b.setAttribute('data-stars',t.stars);var r1=rgb(t.accHex||'');if(r1){b.style.setProperty('--acc',r1);b.setAttribute('data-acc','custom');var r3=rgb(lite(t.accHex));if(r3){b.style.setProperty('--acc3',r3);b.style.setProperty('--star',r3);}}var r2=rgb(t.acc2Hex||'');if(r2)b.style.setProperty('--acc2',r2);if(t.bgHex&&t.bgHex.length===7&&t.bgHex.charAt(0)==='#'&&sky==='custom')b.style.setProperty('--gxbg',t.bgHex);window.__gxTheme=t;window.gxThemeSave=function(nt){try{localStorage.setItem('gx_theme_v1',JSON.stringify(nt));}catch(e){}window.__gxTheme=nt;};})();`;
 const STAR_CANVAS = "<script>" + GX_THEME_BOOT + "</script>"; // v294 theme boot: sky + full custom theme on every page
 const GALAXY_CSS = `
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .xlights{display:none;pointer-events:none}body[data-lights="on"] .xlights{display:block}.xlights svg{width:100%;height:100%;display:block;overflow:visible}.xlights.xsite{position:fixed !important;top:-14px !important;left:0 !important;right:0 !important;height:54px !important;z-index:3}body[data-nav="bar"] .xlights.xsite{top:36px !important}@media (max-width:1099px){.xlights.xsite{top:36px !important}}.xlights .xb{animation:xblink 1.8s linear infinite}.xlights .xg{animation:xglowp 2.6s ease-in-out infinite}@keyframes xblink{0%,52%{opacity:1}62%,100%{opacity:.15}}@keyframes xglowp{0%,100%{opacity:.65}50%{opacity:.12}}body[data-motion="off"] .xlights .xb,body[data-motion="off"] .xlights .xg{animation:none}@media (prefers-reduced-motion: reduce){.xlights .xb,.xlights .xg{animation:none}}
 *{box-sizing:border-box;margin:0}
 html{background:#030304}
@@ -9785,10 +9787,12 @@ function musTitle(t, a) {
 // six mode = a streamer, not youtube: no best-of, no compilations,
 // no full albums, no hour loops, nothing over 15 min pretending to
 // be a song. yt mode skips this filter entirely.
-const MUS_JUNK = /\b(best of|compilation|full album|greatest hits|mega ?mix|dj (set|mix)|nonstop|discography|anthology|super hits|all songs|complete collection|playlist|1 hour|2 hours|3 hours|4 hours|10 hours|one hour|two hours)\b/i;
+const MUS_JUNK = /\b(best of|compilation|full album|greatest hits|mega ?mix|dj (set|mix)|nonstop|discography|anthology|super hits|all songs|complete collection|playlist|1 hour|2 hours|3 hours|4 hours|10 hours|one hour|two hours|songs of the week|new songs of|top \d+|most streamed|most played|of the week|chart hits|countdown|hits radio|live radio|radio live)\b/i;
 const MUS_NOTSONG = /type\s*beat|\bbeats\b|\binstrumental\b|\bkaraoke\b|sped\s*up|\bslowed\b|nightcore|\b8d\b|bass\s*boosted|free\s*beat|\(beat\)/i;
+const MUS_JUNK_ARTIST = /\bradio\b|inmusic|\bcharts?\b|top hits/i;
 function musIsSong(rawT, len, rawA) {
   if (MUS_JUNK.test(String(rawT || ''))) return false;
+  if (MUS_JUNK_ARTIST.test(String(rawA || ''))) return false;
   if (MUS_NOTSONG.test(String(rawT || '') + ' ' + String(rawA || ''))) return false;
   if (len && +len > 900) return false;
   return true;
@@ -10082,12 +10086,18 @@ function rowHtml(tr, i){
   return '<div class="msrow' + (on ? ' on' : '') + '" data-i="' + i + '" role="button" tabindex="0"><span class="msn">' + (on ? EQ : (i + 1)) + '</span><img loading="lazy" src="' + tr.img + '" alt=""><span class="mst"><b>' + escA(tr.t) + '</b></span><span class="msal">' + escA(tr.a) + '</span><span class="msd">' + fmt(tr.len) + '</span><button type="button" class="msadd" data-add="' + i + '" aria-label="more options"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg></button></div>';
 }
 function renderTracks(list){
+  warmYt(list, 8);
   DISPLAY = list;
   document.getElementById('msCount').textContent = list.length || '';
   rowsEl.innerHTML = list.length ? '<div class="msthead"><span>#</span><span>title</span><span>album</span><span style="text-align:right">time</span><span></span></div>' + list.map(rowHtml).join('') : '<p class="msempty">nothing here yet</p>';
   moreEl.textContent = (VIEW === 'browse' && !ended) ? 'scroll for more…' : '';
 }
+var WARMED = {};
+function warmYt(list, n){
+  (list || []).slice(0, n || 8).forEach(function(tr){ if (!tr || !tr.id || tr.local || String(tr.id).indexOf('loc:') === 0) return; if (WARMED[tr.id] && Date.now() - WARMED[tr.id] < 600000) return; WARMED[tr.id] = Date.now(); try { fetch('/yt/warm?v=' + encodeURIComponent(tr.id), { keepalive: true }).catch(function(){}); } catch (e) {} });
+}
 function renderRail(list){
+  warmYt(list, 4);
   railEl.innerHTML = list.slice(0, 10).map(function(tr, i){ return '<div class="msq" data-i="' + i + '" role="button" tabindex="0"><span class="msqimg"><img loading="lazy" src="' + tr.img + '" alt=""></span><span class="msqt">' + escA(tr.t) + '</span><span class="msqa">' + escA(tr.a) + '</span></div>'; }).join('');
 }
 function renderPanel(){
@@ -10530,6 +10540,10 @@ function loadMore(){
     markOn();
   }).catch(function(){ loading = false; });
 }
+rowsEl.addEventListener('pointerdown', function(e){
+  var row = e.target.closest('.msrow'); if (!row) return;
+  var tr = DISPLAY[parseInt(row.getAttribute('data-i'), 10)]; if (tr) warmYt([tr], 1);
+});
 rowsEl.addEventListener('click', function(e){
   var add = e.target.closest('[data-add]');
   if (add) {
@@ -11558,7 +11572,8 @@ function shellPage(servers) {
 .lcard svg{color:#d9d9de!important}
 .lcard:hover{border-color:rgba(255,255,255,.22)!important;box-shadow:none!important}
 .card,.appRow{box-shadow:none!important}
-body[data-sky]{background-color:#060609;background-image:radial-gradient(1100px 700px at 50% -10%,rgba(167,139,250,.07),rgba(0,0,0,0) 60%),radial-gradient(920px 640px at 88% 108%,rgba(167,139,250,.15),rgba(0,0,0,0) 62%),radial-gradient(780px 560px at 4% 96%,rgba(139,92,246,.13),rgba(0,0,0,0) 60%)}body[data-sky="nebula"]{background-color:#070518;background-image:radial-gradient(1000px 650px at 50% 28%,rgba(255,255,255,.05),rgba(10,8,32,0) 62%),radial-gradient(820px 620px at 84% 88%,rgba(37,80,235,.17),rgba(10,8,32,0) 60%)}:root{--acc:167,139,250;--acc2:139,92,246;--acc3:196,181,253;--star:221,214,254}#gxBar{position:fixed;right:18px;bottom:18px;left:auto;top:auto;width:392px;max-width:calc(100vw - 24px);box-sizing:border-box;z-index:390;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:12px 14px;background:rgba(13,11,22,.97);border:1px solid rgba(255,255,255,.13);border-radius:16px;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 18px 50px rgba(0,0,0,.55);transition:box-shadow .2s ease}
+body[data-sky]{background-color:#060609;background-image:radial-gradient(1100px 700px at 50% -10%,rgba(167,139,250,.07),rgba(0,0,0,0) 60%),radial-gradient(920px 640px at 88% 108%,rgba(167,139,250,.15),rgba(0,0,0,0) 62%),radial-gradient(780px 560px at 4% 96%,rgba(139,92,246,.13),rgba(0,0,0,0) 60%)}body[data-sky="nebula"]{background-color:#070518;background-image:radial-gradient(1000px 650px at 50% 28%,rgba(255,255,255,.05),rgba(10,8,32,0) 62%),radial-gradient(820px 620px at 84% 88%,rgba(37,80,235,.17),rgba(10,8,32,0) 60%)}:root{--acc:167,139,250;--acc2:139,92,246;--acc3:196,181,253;--star:221,214,254}html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+#gxBar{position:fixed;right:18px;bottom:18px;left:auto;top:auto;width:392px;max-width:calc(100vw - 24px);box-sizing:border-box;z-index:390;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:12px 14px;background:rgba(13,11,22,.97);border:1px solid rgba(255,255,255,.13);border-radius:16px;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 18px 50px rgba(0,0,0,.55);transition:box-shadow .2s ease}
 #gxBar[hidden]{display:none}
 #gxBar:not(.dragging){transition:left .22s ease,top .22s ease,right .22s ease,bottom .22s ease,box-shadow .2s ease}
 #gxArt{width:48px;height:48px;border-radius:8px;object-fit:cover;background:#000;flex:none;cursor:pointer;touch-action:none}
@@ -12869,7 +12884,7 @@ async function sixVerifySongs(vids) {
   if (todo.length) {
     const list = todo.slice(0, 30);
     try {
-      const prompt = 'u quality-check songs for 6ixmusic, a real streamer. these came from youtube and some are NOT real songs: type beats, instrumentals with no vocals, karaoke versions, sped up or slowed edits, nightcore, random fan covers, loops. judge every line hard: is it a real released song with the actual artist performing it? ALSO: the name after the dash is whoever UPLOADED it, which is often NOT the artist (lyric channels, reuploaders, label hubs). when the uploader clearly is not the performing artist, give the real artist in "fix". reply with ONLY this JSON, nothing else: {"bad":[<line numbers that are NOT real songs>],"fix":{"<line number>":"<real artist name>"}}. when genuinely unsure, keep it (do not list it).\n' + list.map((v, i) => (i + 1) + '. ' + v.t + ' — ' + v.a).join('\n');
+      const prompt = 'u quality-check songs for 6ixmusic, a real streamer. these came from youtube and some are NOT real songs: type beats, instrumentals with no vocals, karaoke versions, sped up or slowed edits, nightcore, random fan covers, loops. judge every line hard: is it a real released song with the actual artist performing it? compilations, weekly new-music roundups, top-N countdowns, radio livestreams and playlist videos are NOT individual songs — mark them bad too. ALSO: the name after the dash is whoever UPLOADED it, which is often NOT the artist (lyric channels, reuploaders, label hubs). when the uploader clearly is not the performing artist, give the real artist in "fix". reply with ONLY this JSON, nothing else: {"bad":[<line numbers that are NOT real songs>],"fix":{"<line number>":"<real artist name>"}}. when genuinely unsure, keep it (do not list it).\n' + list.map((v, i) => (i + 1) + '. ' + v.t + ' — ' + v.a).join('\n');
       const reply = await Promise.race([askSix([{ role: 'user', content: prompt }], SIX_SYSTEM), new Promise(res => setTimeout(() => res(''), 12000))]);
       const m = String(reply || '').match(/\{[\s\S]*?\}/);
       if (m) {
@@ -13397,7 +13412,7 @@ const server = http.createServer(async (req, res) => {
   // exempt and answers normally; real browsers never match the bot filter.
   if (req.method === 'GET' && u.pathname !== '/' && isBotReq(req)) {
     const p = u.pathname;
-    const skip = p === '/study' || p === '/privacy' || p === '/robots.txt' || p === '/sitemap.xml' || p === '/enter' || p === '/healthz' || p === '/ui.js' || p === '/cloak.js' || p === '/sw.js' || p === '/favicon.ico' || p.startsWith('/api') || p.startsWith('/auth') || p.startsWith('/go') || p.startsWith('/gproxy') || p.startsWith('/px/') || p.startsWith('/uv') || p.startsWith('/sj') || p.startsWith('/wisp') || p.startsWith('/baremux') || p.startsWith('/epoxy') || p.startsWith('/libcurl') || p.startsWith('/dl') || p.startsWith('/yt/stream') || p.startsWith('/icons/') || p === '/fonts.css' || p.startsWith('/font/');
+    const skip = p === '/study' || p === '/privacy' || p === '/robots.txt' || p === '/sitemap.xml' || p === '/enter' || p === '/healthz' || p === '/ui.js' || p === '/cloak.js' || p === '/sw.js' || p === '/favicon.ico' || p.startsWith('/api') || p.startsWith('/auth') || p.startsWith('/go') || p.startsWith('/gproxy') || p.startsWith('/px/') || p.startsWith('/uv') || p.startsWith('/sj') || p.startsWith('/wisp') || p.startsWith('/baremux') || p.startsWith('/epoxy') || p.startsWith('/libcurl') || p.startsWith('/dl') || p.startsWith('/yt/stream') || p.startsWith('/yt/warm') || p.startsWith('/icons/') || p === '/fonts.css' || p.startsWith('/font/');
     if (!skip) {
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
       return res.end(studyPage());
@@ -14348,6 +14363,11 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     const uvUrl = UV_OK() ? '/uv/service/' + uvEncodeUrl('https://www.youtube.com/watch?v=' + vidId) : null;
     return res.end(uvUrl ? ytWatchPage2(vidId, hit, phit, uvUrl, meta) : ytWatchPage(vidId, hit, phit));
+  }
+  if (u.pathname === '/yt/warm') {
+    const wv = (u.searchParams.get('v') || '').trim();
+    if (/^[\w-]{6,20}$/.test(wv)) { try { ytAudioJob(wv); } catch (e) {} }
+    res.writeHead(204); return res.end();
   }
   if (u.pathname === '/yt/stream') {
     const vidId = (u.searchParams.get('v') || '').trim();
