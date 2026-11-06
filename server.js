@@ -237,8 +237,23 @@ function getSetCookies(headers) {
   return single ? [single] : [];
 }
 
+const gxDnsCache = new Map();
+async function hostResolvesPrivate(host) {
+  try {
+    const h = String(host || '').toLowerCase().replace(/^\[|\]$/g, '');
+    if (!h) return false;
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(h) || h.indexOf(':') >= 0) return isPrivateHost(h);
+    const c = gxDnsCache.get(h);
+    if (c && Date.now() - c.at < 60000) return c.blocked;
+    let blocked = false;
+    try { const addrs = await require('dns').promises.lookup(h, { all: true }); blocked = addrs.some(a => isPrivateHost(a.address)); } catch (e) { blocked = false; }
+    if (gxDnsCache.size > 300) gxDnsCache.clear();
+    gxDnsCache.set(h, { at: Date.now(), blocked });
+    return blocked;
+  } catch (e) { return false; }
+}
 function isPrivateHost(hostname) {
-  const h = hostname.toLowerCase();
+  const h = String(hostname || '').toLowerCase().replace(/^\[|\]$/g, '');
   if (h === 'localhost' || h.endsWith('.local')) return true;
   if (h.indexOf(':') >= 0) {
     if (h === '::1' || h === '::' || h === '0:0:0:0:0:0:0:1') return true;
@@ -1580,6 +1595,29 @@ body .hwmodes .mode.primary{background:linear-gradient(120deg,rgb(var(--star)),r
 body .nchips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
 body .nchip{flex:none}
 }
+/* ——— v339 ELEGANCE: flat, calm, refract-grade (all widths) ——— */
+::selection{background:rgba(var(--star),.32)}
+html{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:99px;border:2px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-track{background:transparent}
+:focus-visible{outline:2px solid rgba(var(--star),.6);outline-offset:2px}
+body .wm,body .ytlogo,body .brand6,body .brand .blend,body .fg2title span,body .tb-logo span{background-image:linear-gradient(92deg,rgb(var(--star)),rgb(var(--acc3)) 45%,rgb(var(--acc2)) 80%,rgb(var(--star)))}
+body .wrap h1{background-image:linear-gradient(92deg,rgb(var(--star)),rgb(var(--acc3)) 45%,rgb(var(--acc2)) 80%,rgb(var(--star)));-webkit-background-clip:text;background-clip:text;color:transparent}
+body .wrap .sec-h{font-size:15px!important;font-weight:800;color:#fafafa;text-transform:none!important;letter-spacing:0!important}
+body .ythead p{display:none}
+body .ytsearch button{background:#f4f4f5;color:#0a0a0b}
+body .card{background:#121216;border-color:rgba(255,255,255,.08)}
+body #topbar{background:rgba(10,10,12,.82);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:none;border-bottom:1px solid rgba(255,255,255,.07)}
+body #siderail{background:rgba(10,10,12,.88);border-right:1px solid rgba(255,255,255,.06)}
+body .gbar{background:rgba(10,10,12,.82)!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+body .wrap .mhead{background:rgba(10,10,12,.85)}
+/* ——— v342: rail wordmark + white active pill ——— */
+body #siderail .rl-logo{background-image:linear-gradient(92deg,rgb(var(--star)),rgb(var(--acc3)) 45%,rgb(var(--acc2)) 80%,rgb(var(--star)))}
+body #siderail .rl a.on{background:#f4f4f5;color:#0a0a0b}
+/* ——— v344: send buttons join the white-pill family ——— */
+body #sendbtn{background:#f4f4f5!important;color:#0a0a0b!important}
+body #askbar button[type="submit"]{background:#f4f4f5!important;color:#0a0a0b!important}
 
 
 
@@ -2832,7 +2870,7 @@ function playPageUv(u, t) {
     return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#e4e4e7" href="/gs">back to games</a></body>';
   }
   const prox = '/uv/service/' + uvEncodeUrl(u);
-  const rawChip = rawGameHost(u) ? `<button onclick="document.cookie='gx_eng=raw; Path=/; Max-Age=31536000; SameSite=Lax'; location.reload();">direct</button>` : '';
+  const rawChip = '';
   const alt = proxied(u);
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
@@ -2851,7 +2889,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body c
 <script src="/uv-assets/baremux/index.js?e=68"></script>
 <script>
 var BOOTING=true;
-var PROX=${JSON.stringify(prox)};
+var PROX=${JSON.stringify(prox).replace(/</g, '\\u003c')};
 var gf=document.getElementById('gf'), stEl=document.getElementById('st');
 try{ var gu=new URLSearchParams(location.search).get('u'); if(gu){ var R=[]; try{ R=JSON.parse(localStorage.getItem('gx_recent'))||[]; }catch(e){} R=[gu].concat(R.filter(function(x){ return x!==gu; })).slice(0,12); localStorage.setItem('gx_recent', JSON.stringify(R)); } }catch(e){}
 var tries=0, alive=false;
@@ -2926,7 +2964,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body c
 <script src="/uv-assets/baremux/index.js?e=68"></script>
 <script>
 var BOOTING=true;
-var PROX=${JSON.stringify(prox)};
+var PROX=${JSON.stringify(prox).replace(/</g, '\\u003c')};
 var gf=document.getElementById('gf'), stEl=document.getElementById('st');
 try{ var gu=new URLSearchParams(location.search).get('u'); if(gu){ var R=[]; try{ R=JSON.parse(localStorage.getItem('gx_arecent'))||[]; }catch(e){} R=[gu].concat(R.filter(function(x){ return x!==gu; })).slice(0,12); localStorage.setItem('gx_arecent', JSON.stringify(R)); } }catch(e){}
 var tries=0, alive=false;
@@ -3011,7 +3049,7 @@ function playPageSj(u, t) {
     return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#e4e4e7" href="/gs">back to games</a></body>';
   }
   const prox = '/sj/service/' + sjEncodeUrl(u);
-  const rawChip = rawGameHost(u) ? `<button onclick="document.cookie='gx_eng=raw; Path=/; Max-Age=31536000; SameSite=Lax'; location.reload();">direct</button>` : '';
+  const rawChip = '';
   const alt = proxied(u);
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
@@ -3032,7 +3070,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body c
 <script>${SJ_INIT_JS}</script>
 <script>
 var BOOTING=true;
-var PROX=${JSON.stringify(prox)};
+var PROX=${JSON.stringify(prox).replace(/</g, '\\u003c')};
 var gf=document.getElementById('gf'), stEl=document.getElementById('st');
 try{ var gu=new URLSearchParams(location.search).get('u'); if(gu){ var R=[]; try{ R=JSON.parse(localStorage.getItem('gx_recent'))||[]; }catch(e){} R=[gu].concat(R.filter(function(x){ return x!==gu; })).slice(0,12); localStorage.setItem('gx_recent', JSON.stringify(R)); } }catch(e){}
 var tries=0, alive=false;
@@ -3100,7 +3138,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body c
 <script>${SJ_INIT_JS}</script>
 <script>
 var BOOTING=true;
-var PROX=${JSON.stringify(prox)};
+var PROX=${JSON.stringify(prox).replace(/</g, '\\u003c')};
 var gf=document.getElementById('gf'), stEl=document.getElementById('st');
 try{ var gu=new URLSearchParams(location.search).get('u'); if(gu){ var R=[]; try{ R=JSON.parse(localStorage.getItem('gx_arecent'))||[]; }catch(e){} R=[gu].concat(R.filter(function(x){ return x!==gu; })).slice(0,12); localStorage.setItem('gx_arecent', JSON.stringify(R)); } }catch(e){}
 var tries=0, alive=false;
@@ -3143,39 +3181,12 @@ gf.addEventListener('load', function(){ setTimeout(check, 4000); });
 </html>`;
 }
 
-const RAW_GAME_HOSTS = ['1v1.lol'];
-function rawGameHost(u){ return false; }
-function playPageRaw(u, t) {
-  if (!/^https:\/\//i.test(u || '')) {
-    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#e4e4e7" href="/gs">back to games</a></body>';
-  }
-  return `<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body class="playbody">${STAR_CANVAS}
-<div class="top"><a href="/gs">← games</a><span class="title">${escHtml(t || 'Game')}</span>
-<button class="on">direct</button>
-<button onclick="setEng('sj')">scramjet</button>
-<button onclick="setEng('uv')">uv</button>
-<button onclick="retry()">retry</button>
-<button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
-<button onclick="cloakTab('google')">cloak: google</button>
-<button onclick="cloakOpen()">cloaked tab</button></div>
-<iframe class="gameframe" id="gf" src="${escHtml(u)}" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
-<script src="/ui.js"></script>
-<script>
-try{ var gu=new URLSearchParams(location.search).get('u'); if(gu){ var R=[]; try{ R=JSON.parse(localStorage.getItem('gx_recent'))||[]; }catch(e){} R=[gu].concat(R.filter(function(x){ return x!==gu; })).slice(0,12); localStorage.setItem('gx_recent', JSON.stringify(R)); } }catch(e){}
-function setEng(v){ try{ localStorage.setItem('gx_engine', v); }catch(e){} document.cookie='gx_eng='+v+'; Path=/; Max-Age=31536000; SameSite=Lax'; location.reload(); }
-function retry(){ document.getElementById('gf').src=${JSON.stringify(u)}; }
-</script>
-</body></html>`;
-}
 function playPage(u, t) {
   if (!/^https:\/\//i.test(u || '')) {
     return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#e4e4e7" href="/gs">back to games</a></body>';
   }
   const prox = UV_OK() ? '/uv/service/' + uvEncodeUrl(u) : gproxied(u);
-  const rawChip = rawGameHost(u) ? `<button onclick="document.cookie='gx_eng=raw; Path=/; Max-Age=31536000; SameSite=Lax'; location.reload();">direct</button>` : '';
+  const rawChip = '';
   const alt = proxied(u);
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
@@ -3192,7 +3203,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body c
 <script src="/ui.js"></script>
 <script src="/stars.js?e=96"></script>
 <script>
-var PROX=${JSON.stringify(prox)}, ALT=${JSON.stringify(alt)}, stage=0;
+var PROX=${JSON.stringify(prox).replace(/</g, '\\u003c')}, ALT=${JSON.stringify(alt).replace(/</g, '\\u003c')}, stage=0;
 var gf=document.getElementById('gf'), stEl=document.getElementById('st');
 var MKEY='gx_mode_'+location.search;
 function saveMode(){ try{ localStorage.setItem(MKEY, stage===0 ? 'prox' : 'alt'); }catch(e){} }
@@ -3246,7 +3257,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body c
 <script src="/ui.js"></script>
 <script src="/stars.js?e=96"></script>
 <script>
-var PROX=${JSON.stringify(prox)}, ALT=${JSON.stringify(alt)}, stage=0;
+var PROX=${JSON.stringify(prox).replace(/</g, '\\u003c')}, ALT=${JSON.stringify(alt).replace(/</g, '\\u003c')}, stage=0;
 var gf=document.getElementById('gf'), stEl=document.getElementById('st');
 var MKEY='gx_mode_'+location.search;
 function saveMode(){ try{ localStorage.setItem(MKEY, stage===0 ? 'prox' : 'alt'); }catch(e){} }
@@ -7010,7 +7021,7 @@ ${SIDEBAR_HTML}
 <script src="/ui.js"></script>
 <script>
 var qs = new URLSearchParams(location.search);
-var tt = qs.get('tt') || '', ttl = qs.get('t') || 'watch', kind = qs.get('kind') === 'series' ? 'series' : 'movie', yr = qs.get('y') || '';
+var tt = qs.get('tt') || '', ttl = qs.get('t') || 'watch', kind = qs.get('kind') === 'series' ? 'series' : 'movie', yr = qs.get('y') || ''; var sInit = parseInt(qs.get('s') || '', 10), eInit = parseInt(qs.get('e') || '', 10); if (sInit >= 1) { var wS0 = document.getElementById('wS'); if (wS0) wS0.value = sInit; } if (eInit >= 1) { var wE0 = document.getElementById('wE'); if (wE0) wE0.value = eInit; }
 var srcMode = 0, route = 'direct'; // v242: direct is the default — it is the one route proven to PLAY on his phone (VD 404s in-player, tunnel spins on tuning in). the others stay as chips
 var LIB = ${JSON.stringify(LIB_MOVIES.map(function(m){ return { t: m.t, y: m.y, run: m.run, mb: m.mb, b: m.b, f: m.f, note: m.note || '', p: proxied('https://archive.org/services/img/' + m.id) }; }))};
 var libIx = qs.get('lib');
@@ -7025,10 +7036,10 @@ if(kind === 'series') document.getElementById('seRow').hidden = false;
 var SRCS = [
   { n: 'vidsrc', w: 1, m: function(x){ return 'https://vidsrc.to/embed/movie/' + x; }, t: function(x, s, e){ return 'https://vidsrc.to/embed/tv/' + x + '/' + s + '/' + e; } },
   { n: 'vidlink', m: function(x){ return 'https://vidlink.pro/movie/' + x; }, t: function(x, s, e){ return 'https://vidlink.pro/tv/' + x + '/' + s + '/' + e; } },
-  { n: 'videasy', m: function(x){ return 'https://player.videasy.to/movie/' + x; }, t: function(x, s, e){ return 'https://player.videasy.to/tv/' + x + '/' + s + '/' + e; } },
-  { n: 'vidfast', m: function(x){ return 'https://vidfast.vc/movie/' + x; }, t: function(x, s, e){ return 'https://vidfast.vc/tv/' + x + '/' + s + '/' + e; } },
-  { n: '2embed', m: function(x){ return 'https://www.2embed.cc/embed/' + x; }, t: function(x, s, e){ return 'https://www.2embed.cc/embedtv/' + x + '&s=' + s + '&e=' + e; } },
-  { n: 'autoembed', m: function(x){ return 'https://autoembed.me/movie/imdb/' + x; }, t: function(x, s, e){ return 'https://autoembed.me/tv/imdb/' + x + '/' + s + '/' + e; } },
+  { n: 'videasy', w: 1, m: function(x){ return 'https://player.videasy.to/movie/' + x; }, t: function(x, s, e){ return 'https://player.videasy.to/tv/' + x + '/' + s + '/' + e; } },
+  { n: 'vidfast', w: 1, m: function(x){ return 'https://vidfast.vc/movie/' + x; }, t: function(x, s, e){ return 'https://vidfast.vc/tv/' + x + '/' + s + '/' + e; } },
+  { n: '2embed', w: 1, m: function(x){ return 'https://www.2embed.cc/embed/' + x; }, t: function(x, s, e){ return 'https://www.2embed.cc/embedtv/' + x + '&s=' + s + '&e=' + e; } },
+  { n: 'autoembed', w: 1, m: function(x){ return 'https://autoembed.me/movie/imdb/' + x; }, t: function(x, s, e){ return 'https://autoembed.me/tv/imdb/' + x + '/' + s + '/' + e; } },
   { n: '111movies', m: function(x){ return 'https://111movies.com/movie/' + x; }, t: function(x, s, e){ return 'https://111movies.com/tv/' + x + '/' + s + '/' + e; } },
   { n: 'multiembed', m: function(x){ return 'https://multiembed.mov/?video_id=' + x + '&tmdb=0'; }, t: function(x, s, e){ return 'https://multiembed.mov/?video_id=' + x + '&tmdb=0&s=' + s + '&e=' + e; } }
 ];
@@ -7366,7 +7377,7 @@ function streamPlay(url, raw, mb, label){
 var segList = [], segKey = '';
 function armSkip(){
   if (!tt) return;
-  var isTv = kind === 'tv';
+  var isTv = kind === 'series';
   var sv = isTv ? ((document.getElementById('wS') || {}).value || 1) : 0;
   var ev = isTv ? ((document.getElementById('wE') || {}).value || 1) : 0;
   var key = tt + '|' + sv + 'x' + ev;
@@ -7478,7 +7489,7 @@ if(libM){
     ald.textContent = 'loading the movie…';
     var ap = avid.play(); if (ap && ap.catch) ap.catch(function(){ avid.muted = true; var aq = avid.play(); if (aq && aq.catch) aq.catch(function(){}); });
   }).catch(function(){ ald.textContent = 'six couldnt reach the vault — try again'; });
-} else if(ytId){ ytMode(); } else if(tt) { loadPlayer(); sixResolve(); loadMeta(); checkStream(); }
+} else if(ytId){ ytMode(); } else if(tt) { loadPlayer(); sixResolve(); loadMeta(); checkStream(); } else { var bml = document.getElementById('mvLoad'); if (bml) bml.innerHTML = '<div style="text-align:center;padding:34px 20px"><div style="font-size:17px;font-weight:800;margin-bottom:8px">nothing to watch yet</div><div style="color:#a49fb4;font-size:14px">pick a movie or show first</div><div style="margin-top:16px"><a href="/movies" style="color:#fff;font-weight:700;text-decoration:none">browse 6ixflix</a></div></div>'; }
 </script>
 <script>${NOTIF_JS}</script>
 </body></html>`;
@@ -9835,7 +9846,7 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
     res.writeHead(400, { 'content-type': 'text/plain' });
     return res.end('bad url');
   }
-  if (!/^https?:$/.test(target.protocol) || isPrivateHost(target.hostname)) {
+  if (!/^https?:$/.test(target.protocol) || isPrivateHost(target.hostname) || await hostResolvesPrivate(target.hostname)) {
     res.writeHead(403, { 'content-type': 'text/plain' });
     return res.end('that host is blocked');
   }
@@ -9856,7 +9867,7 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
   if (res.socket) { try { res.socket.setNoDelay(true); } catch { } }
   // collect request body (for proxied form posts)
   const chunks = [];
-  try { for await (const c of req) chunks.push(c); } catch { return; }
+  let bodyBytes = 0; try { for await (const c of req) { bodyBytes += c.length; if (bodyBytes <= 26214400) chunks.push(c); } } catch { return; } if (bodyBytes > 26214400) { res.writeHead(413, { 'content-type': 'text/plain' }); return res.end('request too large'); }
   const body = chunks.length ? Buffer.concat(chunks) : undefined;
 
   const accept = req.headers['accept'] || 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8';
@@ -11018,7 +11029,7 @@ document.getElementById('pasteGo').addEventListener('click', pasteGo);
 pIn.addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); pasteGo(); } });
 pIn.addEventListener('paste', function(){ setTimeout(pasteGo, 60); });
 /* infinite results — same endless paging as the games catalog */
-var MOREQ = ${JSON.stringify(query)}, MOREC = ${JSON.stringify(hit.cont || '')};
+var MOREQ = ${JSON.stringify(query).replace(/</g, '\\u003c')}, MOREC = ${JSON.stringify(hit.cont || '').replace(/</g, '\\u003c')};
 var grid2 = document.getElementById('ygrid'), moreEl2 = document.getElementById('ytmore'), moreBusy2 = false;
 function esc2(s){ return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function fmtLen2(s){ if (!s) return ''; var m = Math.floor(s / 60), h = Math.floor(m / 60), ss = ('0' + (s % 60)).slice(-2); return h ? (h + ':' + ('0' + (m % 60)).slice(-2) + ':' + ss) : (m + ':' + ss); }
@@ -11583,8 +11594,8 @@ document.addEventListener('pointerdown', function(e){
   if (id.length >= 6 && id.length <= 20) { try { fetch('/yt/warm?v=' + encodeURIComponent(id) + '&kind=v'); } catch (err) {} }
 }, true);
 var EMBED=document.getElementById('ytembed'), VID=document.getElementById('vid'), STAT=document.getElementById('ytstat'), PILL=document.getElementById('ytretry');
-var PROG=${JSON.stringify(progUrl)}, EMBEDSRC=${JSON.stringify(embedSrc)};
-var VIDID=${JSON.stringify(id)};
+var PROG=${JSON.stringify(progUrl).replace(/</g, '\\u003c')}, EMBEDSRC=${JSON.stringify(embedSrc).replace(/</g, '\\u003c')};
+var VIDID=${JSON.stringify(id).replace(/</g, '\\u003c')};
 var mode='stream', retries=0, embedWatch=null, eChecks=0;
 var walked = {}, stallTimer = null;
 function setStat(t){ if(STAT) STAT.textContent=t; }
@@ -11773,8 +11784,8 @@ document.addEventListener('pointerdown', function(e){
   if (id.length >= 6 && id.length <= 20) { try { fetch('/yt/warm?v=' + encodeURIComponent(id) + '&kind=v'); } catch (err) {} }
 }, true);
 var EMBED=document.getElementById('ytembed'), VID=document.getElementById('vid'), STAT=document.getElementById('ytstat'), PILL=document.getElementById('ytretry');
-var PROG=${JSON.stringify(progUrl)}, EMBEDSRC=${JSON.stringify(embedSrc)};
-var VIDID=${JSON.stringify(id)};
+var PROG=${JSON.stringify(progUrl).replace(/</g, '\\u003c')}, EMBEDSRC=${JSON.stringify(embedSrc).replace(/</g, '\\u003c')};
+var VIDID=${JSON.stringify(id).replace(/</g, '\\u003c')};
 var mode='stream', retries=0, embedWatch=null, eChecks=0;
 var walked = {}, stallTimer = null;
 function setStat(t){ if(STAT) STAT.textContent=t; }
@@ -11893,7 +11904,7 @@ VID.src=PROG; tryPlay();
 </script>
 <script src="/uv-assets/baremux/index.js?e=68"></script>
 <script>
-var UVF=document.getElementById('ytuv'), UVURL=${JSON.stringify(uvUrl)}, uvWatch=null, uvChecks=0, uvBooted=false;
+var UVF=document.getElementById('ytuv'), UVURL=${JSON.stringify(uvUrl).replace(/</g, '\\u003c')}, uvWatch=null, uvChecks=0, uvBooted=false;
 function stopWatch(){ if(uvWatch){ clearInterval(uvWatch); uvWatch=null; } }
 function startWatch(){
   stopWatch(); uvChecks=0;
@@ -12753,10 +12764,10 @@ async function cinemetaList(kind, q, genre, relMode, page) {
 const SRCS_PROBE = [
   { n: 'vidsrc', m: 'https://vidsrc.to/embed/movie/{id}', t: 'https://vidsrc.to/embed/tv/{id}/{s}/{e}' },
   { n: 'vidlink', m: 'https://vidlink.pro/movie/{id}', t: 'https://vidlink.pro/tv/{id}/{s}/{e}' },
-  { n: 'videasy', m: 'https://player.videasy.to/movie/{id}', t: 'https://player.videasy.to/tv/{id}/{s}/{e}' },
-  { n: 'vidfast', m: 'https://vidfast.vc/movie/{id}', t: 'https://vidfast.vc/tv/{id}/{s}/{e}' },
-  { n: '2embed', m: 'https://www.2embed.cc/embed/{id}', t: 'https://www.2embed.cc/embedtv/{id}&s={s}&e={e}' },
-  { n: 'autoembed', m: 'https://autoembed.me/movie/imdb/{id}', t: 'https://autoembed.me/tv/imdb/{id}/{s}/{e}' },
+  { n: 'videasy', w: 1, m: 'https://player.videasy.to/movie/{id}', t: 'https://player.videasy.to/tv/{id}/{s}/{e}' },
+  { n: 'vidfast', w: 1, m: 'https://vidfast.vc/movie/{id}', t: 'https://vidfast.vc/tv/{id}/{s}/{e}' },
+  { n: '2embed', w: 1, m: 'https://www.2embed.cc/embed/{id}', t: 'https://www.2embed.cc/embedtv/{id}&s={s}&e={e}' },
+  { n: 'autoembed', w: 1, m: 'https://autoembed.me/movie/imdb/{id}', t: 'https://autoembed.me/tv/imdb/{id}/{s}/{e}' },
   { n: '111movies', m: 'https://111movies.com/movie/{id}', t: 'https://111movies.com/tv/{id}/{s}/{e}' },
   { n: 'multiembed', m: 'https://multiembed.mov/?video_id={id}&tmdb=0', t: 'https://multiembed.mov/?video_id={id}&tmdb=0&s={s}&e={e}' }
 ];
@@ -14210,6 +14221,7 @@ const server = http.createServer(async (req, res) => {
   }
   if (u.pathname === '/api/resolve' && req.method === 'GET') {
     const rtt = String(u.searchParams.get('tt') || '').slice(0, 20);
+    if (!/^tt\d{6,}$/.test(rtt)) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ok: false, order: [], scores: {} })); }
     const rkind = u.searchParams.get('kind') === 'series' ? 'series' : 'movie';
     const rs = Math.max(1, parseInt(u.searchParams.get('s') || '1', 10) || 1);
     const re = Math.max(1, parseInt(u.searchParams.get('e') || '1', 10) || 1);
@@ -14226,6 +14238,7 @@ const server = http.createServer(async (req, res) => {
     const syr = String(u.searchParams.get('y') || '').slice(0, 9);
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-cache' });
     if (!stt) return res.end(JSON.stringify({ ok: false, providers: [] }));
+    if (!/^tt\d{6,}$/.test(stt)) return res.end(JSON.stringify({ ok: false, providers: [] }));
     try { return res.end(JSON.stringify(await streamResolve(stt, skind, ss, se, stitle, syr))); }
     catch { return res.end(JSON.stringify({ ok: false, providers: [] })); }
   }
@@ -14238,7 +14251,7 @@ const server = http.createServer(async (req, res) => {
       if (!globalThis.__introCache) globalThis.__introCache = new Map();
       const ckI = ttI + '|' + sI + 'x' + eI;
       const hitI = globalThis.__introCache.get(ckI);
-      if (hitI && Date.now() - hitI.at < 86400000) outI = hitI.v;
+      if (hitI && Date.now() - hitI.at < (hitI.ttl || 86400000)) outI = hitI.v;
       else {
         try {
           let apiI = 'https://api.theintrodb.org/v3/media?imdb_id=' + encodeURIComponent(ttI);
@@ -14256,7 +14269,7 @@ const server = http.createServer(async (req, res) => {
             outI = { ok: true, segments: segsI };
           }
         } catch (e) {}
-        globalThis.__introCache.set(ckI, { at: Date.now(), v: outI });
+        if (globalThis.__introCache.size > 400) globalThis.__introCache.clear(); globalThis.__introCache.set(ckI, { at: Date.now(), ttl: outI && outI.ok ? 86400000 : 300000, v: outI });
       }
     }
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-cache' });
@@ -14691,7 +14704,7 @@ const server = http.createServer(async (req, res) => {
     try { targetStr = b64urlDecode(u.searchParams.get('u') || ''); } catch {}
     let target = null;
     try { target = new URL(targetStr); } catch {}
-    if (!target || !/^https?:$/.test(target.protocol) || isPrivateHost(target.hostname)) { res.writeHead(400, { 'content-type': 'text/plain' }); return res.end('bad download link'); }
+    if (!target || !/^https?:$/.test(target.protocol) || isPrivateHost(target.hostname) || await hostResolvesPrivate(target.hostname)) { res.writeHead(400, { 'content-type': 'text/plain' }); return res.end('bad download link'); }
     let fname = 'download';
     try { fname = decodeURIComponent(target.pathname.split('/').pop() || 'download'); } catch {}
     fname = fname.replace(/[^\w.\- ]+/g, '_').slice(0, 120) || 'download';
@@ -14702,7 +14715,7 @@ const server = http.createServer(async (req, res) => {
         const r = await fetch(hop.toString(), { headers: { 'user-agent': BROWSER_UA, 'accept': '*/*' }, redirect: 'manual' });
         if (r.status >= 300 && r.status < 400 && r.headers.get('location')) {
           const nxt = new URL(r.headers.get('location'), hop);
-          if (!/^https?:$/.test(nxt.protocol) || isPrivateHost(nxt.hostname)) { res.writeHead(400, { 'content-type': 'text/plain' }); return res.end('bad download link'); }
+          if (!/^https?:$/.test(nxt.protocol) || isPrivateHost(nxt.hostname) || await hostResolvesPrivate(nxt.hostname)) { res.writeHead(400, { 'content-type': 'text/plain' }); return res.end('bad download link'); }
           hop = nxt; continue;
         }
         upstream = r; break;
@@ -14715,7 +14728,7 @@ const server = http.createServer(async (req, res) => {
     const dh = { 'content-type': upstream.headers.get('content-type') || 'application/octet-stream', 'content-disposition': 'attachment; filename="' + fname + '"' };
     if (dlen && !upstream.headers.get('content-encoding')) dh['content-length'] = dlen;
     res.writeHead(200, dh);
-    if (upstream.body) { const reader = upstream.body.getReader(); try { while (true) { const { done, value } = await reader.read(); if (done) break; res.write(Buffer.from(value)); } } catch { } }
+    if (upstream.body) { const reader = upstream.body.getReader(); let sentB = 0; try { while (true) { const { done, value } = await reader.read(); if (done) break; sentB += value.length; if (sentB > 2e9) { try { await reader.cancel(); } catch {} break; } res.write(Buffer.from(value)); } } catch { } }
     return res.end();
   }
   if (u.pathname === '/api/games') {
@@ -14789,7 +14802,7 @@ const server = http.createServer(async (req, res) => {
     return res.end(JSON.stringify({ ok: true, total: arr.length, people: arr.slice(0, 100).map((p) => ({ name: p.name, disp: p.disp, av: p.av, hue: p.hue, status: p.status, online: p.online, seen: p.seen, friends: p.friends })), log }));
   }
   if (u.pathname.startsWith('/api/user/') && req.method === 'GET') {
-    const nm = decodeURIComponent(u.pathname.slice('/api/user/'.length)).toLowerCase();
+    let nm = ''; try { nm = decodeURIComponent(u.pathname.slice('/api/user/'.length)).toLowerCase(); } catch (e) { nm = ''; }
     const rec = ACCOUNTS.get(nm);
     res.writeHead(200, { 'content-type': 'application/json' });
     if (!rec) return res.end(JSON.stringify({ ok: false }));
@@ -14812,8 +14825,7 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/play') {
     const gu2 = u.searchParams.get('u') || '';
     const pengM = ((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv)/) || [])[1]);
-    const peng = (pengM === 'raw' && !rawGameHost(gu2)) ? 'sj' : (pengM || (rawGameHost(gu2) ? 'raw' : 'sj'));
-    if (gu2 && peng === 'raw') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageRaw(gu2, u.searchParams.get('t') || 'Game')); }
+    const peng = pengM || 'sj';
     if (gu2 && peng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' }); return res.end(playPageSj(gu2, u.searchParams.get('t') || 'Game')); }
     if (UV_OK() && gu2) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageUv(gu2, u.searchParams.get('t') || 'Game')); }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
@@ -14825,7 +14837,7 @@ const server = http.createServer(async (req, res) => {
     const ytN = nu ? ytMirror(nu) : null; if (ytN) { res.writeHead(302, { location: ytN }); return res.end(); }
     if (nu && isVdHost(nu)) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(appPlayPage(nu, nt, '/news', 'news')); }
     const nck = String(req.headers.cookie || '');
-    const neng = nck.includes('gx_eng=uv') ? 'uv' : 'sj';
+    const neng = (/(?:^|;\s*)gx_eng=(sj|uv)/.exec(nck) || [])[1] || 'sj';
     if (nu && neng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' }); return res.end(appPlayPageSj(nu, nt, '/news', 'news')); }
     if (UV_OK() && nu) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(appPlayPageUv(nu, nt, '/news', 'news')); }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
