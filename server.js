@@ -7809,7 +7809,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <button class="mode" id="bedit" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/><path d="M1.5 14h5M9.5 8h5M17.5 16h5"/></svg><b>edit it</b><span>follows ur edit note above</span></button>
 <button class="mode" id="bshare" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg><b>share ur screen</b><span>six watches ur hw live — snap a frame n he reads it like a screenshot</span></button>
 </div>
-<div id="shareBox" style="display:none"><div id="shlive"><span class="shdot"></span>sharing ur screen</div><video id="hwVid" autoplay muted playsinline></video><div class="shrow"><button class="shbtn primary" id="bdoit" type="button">do it for me</button><button class="shbtn" id="bsnap" type="button">snap now</button><button class="shbtn on" id="bauto" type="button">auto</button><button class="shbtn" id="bstop" type="button">stop sharing</button></div><div id="shstat"></div></div>
+<div id="shareBox" style="display:none"><div id="shlive"><span class="shdot"></span>sharing ur screen</div><video id="hwVid" autoplay muted playsinline></video><div class="shrow"><button class="shbtn primary" id="bdoit" type="button">do it for me</button><button class="shbtn" id="bsnap" type="button">snap now</button><button class="shbtn on" id="bauto" type="button">auto</button><button class="shbtn" id="bstop" type="button">stop sharing</button></div><div class="shrow"><button class="shbtn" id="bsum2" type="button">summarize</button><button class="shbtn" id="bsimp2" type="button">explain simple</button></div><div id="shstat"></div></div>
 </section>
 <section class="hwcard">
 <div class="hwcard-h"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>six's answer<span id="stat" class="statpill">ready</span><button id="copy" type="button">copy the text</button></div>
@@ -7914,11 +7914,18 @@ function setAuto(on){
   if(on){ b.classList.add('on'); if(!shAuto) shAuto=setInterval(autoTick, 5000); }
   else { b.classList.remove('on'); if(shAuto){ clearInterval(shAuto); shAuto=null; } }
 }
+function shareChrome(on){
+  var ids=['drop','doc','editq'];
+  for(var i=0;i<ids.length;i++){ var el=document.getElementById(ids[i]); if(el) el.style.display= on ? 'none' : ''; }
+  var lab=document.querySelector('label[for="editq"]'); if(lab) lab.style.display= on ? 'none' : '';
+  var modes=document.querySelector('.hwmodes'); if(modes) modes.style.display= on ? 'none' : '';
+}
 function stopShare(){
   if(shAuto){ clearInterval(shAuto); shAuto=null; }
   if(shStream){ shStream.getTracks().forEach(function(t){ t.stop(); }); shStream=null; }
   if(vidEl) vidEl.srcObject=null;
   shBox.style.display='none'; shBox.classList.remove('live');
+  shareChrome(false);
 }
 document.getElementById('bshare').addEventListener('click', function(){
   if(shStream){ stopShare(); return; }
@@ -7928,7 +7935,9 @@ document.getElementById('bshare').addEventListener('click', function(){
     st.getVideoTracks()[0].addEventListener('ended', stopShare);
     shStat.textContent='ur sharing — six only sees frames from this panel, nothing records';
     setAuto(true);
+    shareChrome(true);
     snapWhenReady(0);
+    if(shBox.scrollIntoView) shBox.scrollIntoView({ block:'start' });
   }).catch(function(){ statEl.textContent='share cancelled — no stress, screenshots still work'; });
 });
 document.getElementById('bsnap').addEventListener('click', function(){ if(snapFrame()){ shLastHash=frameHash(); shStat.textContent='fresh frame attached \u2726 pick a mode — or just hit do it for me'; } });
@@ -7941,6 +7950,8 @@ document.getElementById('bauto').addEventListener('click', function(){
   var on=!this.classList.contains('on'); setAuto(on);
   shStat.textContent= on ? 'auto on \u2726 six re-snaps when ur screen changes' : 'auto off — snap manually when ur ready';
 });
+document.getElementById('bsum2').addEventListener('click', function(){ if(snapFrame()){ shLastHash=frameHash(); run('sum'); } });
+document.getElementById('bsimp2').addEventListener('click', function(){ if(snapFrame()){ shLastHash=frameHash(); run('simple'); } });
 document.getElementById('bstop').addEventListener('click', stopShare);
 copyBtn.addEventListener('click', function(){
   var done=function(){ statEl.textContent='copied ✦'; };
