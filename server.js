@@ -846,11 +846,18 @@ body[data-motion=\"off\"] #stars.gx-home{display:block}
 #gxLike.on svg{fill:#ff5d7a}
 .gxb-volwrap{display:flex;align-items:center;gap:6px;color:#cfc9ea;padding:0 2px}
 #gxVolR{width:112px;flex:none;accent-color:rgb(var(--acc));cursor:pointer}
-#gxBar.float{bottom:auto;right:auto;width:min(560px,94vw);border-radius:14px;border:1px solid rgba(255,255,255,.16);box-shadow:0 24px 60px rgba(0,0,0,.55)}
+#gxBar{transition:box-shadow .2s ease}
+#gxBar:not(.dragging){transition:left .22s ease,top .22s ease,width .22s ease,box-shadow .2s ease}
+.gxb-meta{flex:0 1 225px}
+.gxb-btns{flex-shrink:0}
+.gxb-prog span{flex-shrink:0}
+@media (max-width:1180px){.gxb-volwrap{display:none}#gxDl{display:none}}
+@media (max-width:980px){#gxQB{display:none}.gxb-meta{flex-basis:150px}}
+#gxBar.float{bottom:auto;right:auto;box-sizing:border-box;width:min(560px,94vw);border-radius:14px;border:1px solid rgba(255,255,255,.16);box-shadow:0 24px 60px rgba(0,0,0,.55)}
 #gxArt,.gxb-meta{touch-action:none}
 #gxBar.dragging{opacity:.97}
 @media (max-width:820px){#gxBar.float{width:94vw}}
-@media (max-width:820px){#gxBar{bottom:0;padding:8px 10px calc(8px + env(safe-area-inset-bottom));gap:9px}#gxArt{width:44px;height:44px}.gxb-meta{width:auto;flex:1}.gxb-prog{display:flex;position:absolute;left:0;right:0;top:-6px;height:16px;align-items:center;padding:0 12px;gap:8px}.gxb-prog span{font-size:10px}.gxb-volwrap{display:none}#gxDl,#gxQB{display:none}.gxb-btns{gap:1px}.gxb-btn{width:34px;height:34px}.gxb-main{width:40px;height:40px}}
+@media (max-width:820px){#gxBar{bottom:0;flex-wrap:wrap;gap:6px 10px;padding:8px 12px calc(8px + env(safe-area-inset-bottom))}#gxArt{width:44px;height:44px}.gxb-meta{width:auto;flex:1 1 0;min-width:0}.gxb-mid{order:5;flex:0 0 100%;gap:4px}.gxb-prog{position:static;height:auto;padding:0;gap:8px}.gxb-prog span{font-size:10.5px}.gxb-volwrap{display:none}#gxDl,#gxQB{display:none}.gxb-btns{gap:2px}.gxb-btn{width:36px;height:36px}.gxb-main{width:42px;height:42px}}
 button{border-radius:8px!important}
 #tabbar{border-radius:16px!important;transition:transform .28s ease,opacity .28s ease}
 body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
@@ -1230,7 +1237,7 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
   document.addEventListener('keydown', prime, true);
   window.addEventListener('message', function(e){ if (e && e.data && e.data.sixPrime) prime(); });
   var dragMoved = false;
-  function applyBarPos(){ try { var bp = JSON.parse(localStorage.getItem('gx_barpos_v1') || 'null'); if (bp && typeof bp.x === 'number') { bar.classList.add('float'); bar.style.left = Math.max(0, Math.min(bp.x, window.innerWidth - 120)) + 'px'; bar.style.top = Math.max(0, Math.min(bp.y, window.innerHeight - 70)) + 'px'; } } catch (e) {} }
+  function applyBarPos(){ try { var bp = JSON.parse(localStorage.getItem('gx_barpos_v1') || 'null'); if (bp && typeof bp.x === 'number') { bar.classList.add('float'); bar.style.left = Math.max(0, Math.min(bp.x, Math.max(0, window.innerWidth - (bar.offsetWidth || 300)))) + 'px'; bar.style.top = Math.max(0, Math.min(bp.y, Math.max(0, window.innerHeight - (bar.offsetHeight || 70)))) + 'px'; } } catch (e) {} }
   function dockBar(){ bar.classList.remove('float'); bar.style.left = ''; bar.style.top = ''; try { localStorage.removeItem('gx_barpos_v1'); } catch (e) {} }
   var dg = null;
   bar.addEventListener('pointerdown', function(e){
@@ -1243,7 +1250,7 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
     if (!dg) return;
     var dx = e.clientX - dg.x, dy = e.clientY - dg.y;
     if (!dg.moved && Math.abs(dx) + Math.abs(dy) > 7) { dg.moved = true; dragMoved = true; if (!bar.classList.contains('float')) { bar.classList.add('float'); bar.style.left = dg.l + 'px'; bar.style.top = dg.t + 'px'; } bar.classList.add('dragging'); }
-    if (dg.moved) { bar.style.left = Math.max(0, Math.min(dg.l + dx, window.innerWidth - 100)) + 'px'; bar.style.top = Math.max(0, Math.min(dg.t + dy, window.innerHeight - 60)) + 'px'; }
+    if (dg.moved) { var bw = bar.offsetWidth || 300, bh = bar.offsetHeight || 70; bar.style.left = Math.max(0, Math.min(dg.l + dx, Math.max(0, window.innerWidth - bw))) + 'px'; bar.style.top = Math.max(0, Math.min(dg.t + dy, Math.max(0, window.innerHeight - bh))) + 'px'; }
   });
   bar.addEventListener('pointerup', function(){
     if (!dg) return;
@@ -11453,11 +11460,18 @@ body[data-sky]{background-color:#060609;background-image:radial-gradient(1100px 
 #gxLike.on svg{fill:#ff5d7a}
 .gxb-volwrap{display:flex;align-items:center;gap:6px;color:#cfc9ea;padding:0 2px}
 #gxVolR{width:112px;flex:none;accent-color:rgb(var(--acc));cursor:pointer}
-#gxBar.float{bottom:auto;right:auto;width:min(560px,94vw);border-radius:14px;border:1px solid rgba(255,255,255,.16);box-shadow:0 24px 60px rgba(0,0,0,.55)}
+#gxBar{transition:box-shadow .2s ease}
+#gxBar:not(.dragging){transition:left .22s ease,top .22s ease,width .22s ease,box-shadow .2s ease}
+.gxb-meta{flex:0 1 225px}
+.gxb-btns{flex-shrink:0}
+.gxb-prog span{flex-shrink:0}
+@media (max-width:1180px){.gxb-volwrap{display:none}#gxDl{display:none}}
+@media (max-width:980px){#gxQB{display:none}.gxb-meta{flex-basis:150px}}
+#gxBar.float{bottom:auto;right:auto;box-sizing:border-box;width:min(560px,94vw);border-radius:14px;border:1px solid rgba(255,255,255,.16);box-shadow:0 24px 60px rgba(0,0,0,.55)}
 #gxArt,.gxb-meta{touch-action:none}
 #gxBar.dragging{opacity:.97}
 @media (max-width:820px){#gxBar.float{width:94vw}}
-@media (max-width:820px){#gxBar{bottom:0;padding:8px 10px calc(8px + env(safe-area-inset-bottom));gap:9px}#gxArt{width:44px;height:44px}.gxb-meta{width:auto;flex:1}.gxb-prog{display:flex;position:absolute;left:0;right:0;top:-6px;height:16px;align-items:center;padding:0 12px;gap:8px}.gxb-prog span{font-size:10px}.gxb-volwrap{display:none}#gxDl,#gxQB{display:none}.gxb-btns{gap:1px}.gxb-btn{width:34px;height:34px}.gxb-main{width:40px;height:40px}}
+@media (max-width:820px){#gxBar{bottom:0;flex-wrap:wrap;gap:6px 10px;padding:8px 12px calc(8px + env(safe-area-inset-bottom))}#gxArt{width:44px;height:44px}.gxb-meta{width:auto;flex:1 1 0;min-width:0}.gxb-mid{order:5;flex:0 0 100%;gap:4px}.gxb-prog{position:static;height:auto;padding:0;gap:8px}.gxb-prog span{font-size:10.5px}.gxb-volwrap{display:none}#gxDl,#gxQB{display:none}.gxb-btns{gap:2px}.gxb-btn{width:36px;height:36px}.gxb-main{width:42px;height:42px}}
 #gxBar{font-family:Inter,system-ui,sans-serif;z-index:60}
 </style></head><body>${STAR_CANVAS}
 <iframe id="f" allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone" allowfullscreen></iframe>
@@ -11836,7 +11850,7 @@ body[data-sky]{background-color:#060609;background-image:radial-gradient(1100px 
   document.addEventListener('keydown', prime, true);
   window.addEventListener('message', function(e){ if (e && e.data && e.data.sixPrime) prime(); });
   var dragMoved = false;
-  function applyBarPos(){ try { var bp = JSON.parse(localStorage.getItem('gx_barpos_v1') || 'null'); if (bp && typeof bp.x === 'number') { bar.classList.add('float'); bar.style.left = Math.max(0, Math.min(bp.x, window.innerWidth - 120)) + 'px'; bar.style.top = Math.max(0, Math.min(bp.y, window.innerHeight - 70)) + 'px'; } } catch (e) {} }
+  function applyBarPos(){ try { var bp = JSON.parse(localStorage.getItem('gx_barpos_v1') || 'null'); if (bp && typeof bp.x === 'number') { bar.classList.add('float'); bar.style.left = Math.max(0, Math.min(bp.x, Math.max(0, window.innerWidth - (bar.offsetWidth || 300)))) + 'px'; bar.style.top = Math.max(0, Math.min(bp.y, Math.max(0, window.innerHeight - (bar.offsetHeight || 70)))) + 'px'; } } catch (e) {} }
   function dockBar(){ bar.classList.remove('float'); bar.style.left = ''; bar.style.top = ''; try { localStorage.removeItem('gx_barpos_v1'); } catch (e) {} }
   var dg = null;
   bar.addEventListener('pointerdown', function(e){
@@ -11849,7 +11863,7 @@ body[data-sky]{background-color:#060609;background-image:radial-gradient(1100px 
     if (!dg) return;
     var dx = e.clientX - dg.x, dy = e.clientY - dg.y;
     if (!dg.moved && Math.abs(dx) + Math.abs(dy) > 7) { dg.moved = true; dragMoved = true; if (!bar.classList.contains('float')) { bar.classList.add('float'); bar.style.left = dg.l + 'px'; bar.style.top = dg.t + 'px'; } bar.classList.add('dragging'); }
-    if (dg.moved) { bar.style.left = Math.max(0, Math.min(dg.l + dx, window.innerWidth - 100)) + 'px'; bar.style.top = Math.max(0, Math.min(dg.t + dy, window.innerHeight - 60)) + 'px'; }
+    if (dg.moved) { var bw = bar.offsetWidth || 300, bh = bar.offsetHeight || 70; bar.style.left = Math.max(0, Math.min(dg.l + dx, Math.max(0, window.innerWidth - bw))) + 'px'; bar.style.top = Math.max(0, Math.min(dg.t + dy, Math.max(0, window.innerHeight - bh))) + 'px'; }
   });
   bar.addEventListener('pointerup', function(){
     if (!dg) return;
