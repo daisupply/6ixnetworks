@@ -10033,7 +10033,9 @@ input.msrange::-moz-range-thumb{width:12px;height:12px;border-radius:8px;backgro
 <main class="msmain">
 <h1 class="msh1" id="msH1">Browse</h1>
 <div id="msHero" hidden></div>
+<div id="msAlbHero" hidden></div>
 <div id="msRailWrap"><h3 class="mssec" style="margin-top:0">featured rn</h3><div class="msrail" id="msRail">${rail}</div></div>
+<div id="msAlbWrap" hidden><h3 class="mssec">albums for u</h3><div class="msrail" id="msAlbRail"></div></div>
 <h3 class="mssec" id="msSecRow"><span id="msSecTitle" style="color:#f4f2ff;font-size:17px;margin:0">${mode === 'search' ? 'results' : 'top hits'}</span><span id="msCount"></span></h3>
 <div class="mschips" id="msChips">${chipHtml}</div>
 <div class="msthead"><span>#</span><span></span><span>Title</span><span class="msalb">Album</span><span style="text-align:right">len</span><span></span></div>
@@ -10118,6 +10120,9 @@ function setView(v){
   VIEW = v;
   document.querySelectorAll('.mstab').forEach(function(b){ b.classList.toggle('on', b.dataset.view === v); });
   railWrap.hidden = !(v === 'browse' && MODE === 'feed');
+  document.getElementById('msAlbWrap').hidden = !(v === 'browse' && MODE === 'feed') || !ALBS.length;
+  document.getElementById('msAlbHero').hidden = v !== 'album';
+  if (v === 'browse') loadAlbums();
   document.getElementById('msChips').style.display = v === 'browse' ? '' : 'none';
   var hero = document.getElementById('msHero');
   var titles = { browse: 'Browse', foryou: 'For You', liked: 'Liked Songs', queue: 'Queue', local: 'Local Files' };
@@ -10530,6 +10535,46 @@ document.getElementById('msbSave').addEventListener('click', function(){
   toast('brain updated — six works off this now');
   if (VIEW === 'foryou') loadForYou(true);
 });
+var ALBS = [], ALBOPEN = null, albLoaded = false;
+function albArtists(){
+  try { var t = JSON.parse(localStorage.getItem('gx_taste_v1') || 'null'); var ks = t ? Object.keys(t.artists || {}).filter(function(a){ return t.artists[a] > 0; }).sort(function(x, y){ return t.artists[y] - t.artists[x]; }).slice(0, 3) : []; if (ks.length) return ks; } catch (e) {}
+  var seen = {}, out = [];
+  (BROWSE.tracks || []).forEach(function(tr){ if (tr.a && !seen[tr.a]) { seen[tr.a] = 1; out.push(tr.a); } });
+  return out.slice(0, 3);
+}
+function loadAlbums(){
+  if (albLoaded) return; albLoaded = true;
+  fetch('/api/albums', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ artists: albArtists() }) }).then(function(r){ return r.json(); }).then(function(j){
+    ALBS = (j && j.albums) || [];
+    var el = document.getElementById('msAlbRail');
+    el.innerHTML = ALBS.map(function(al, i){ return '<div class="msq" data-alb="' + i + '" role="button" tabindex="0"><span class="msqimg"><img loading="lazy" src="' + escA(al.img) + '" alt=""></span><span class="msqt">' + escA(al.t) + '</span><span class="msqa">' + escA(al.a) + (al.year ? ' \u2022 ' + escA(al.year) : '') + '</span></div>'; }).join('');
+    document.getElementById('msAlbWrap').hidden = !(VIEW === 'browse' && MODE === 'feed') || !ALBS.length;
+    el.querySelectorAll('[data-alb]').forEach(function(c){ c.addEventListener('click', function(){ openAlbum(ALBS[parseInt(c.getAttribute('data-alb'), 10)]); }); });
+  }).catch(function(){});
+}
+function openAlbum(al){
+  if (!al) return;
+  toast('opening ' + al.t + '...');
+  fetch('/api/album?id=' + encodeURIComponent(al.bid) + '&a=' + encodeURIComponent(al.a || '') + '&t=' + encodeURIComponent(al.t || '')).then(function(r){ return r.json(); }).then(function(j){
+    var d = (j && j.album) || null;
+    if (!d || !d.tracks || !d.tracks.length) { toast('album wouldnt load'); return; }
+    ALBOPEN = d;
+    VIEW = 'album';
+    document.querySelectorAll('.mstab').forEach(function(b){ b.classList.remove('on'); });
+    railWrap.hidden = true;
+    document.getElementById('msAlbWrap').hidden = true;
+    document.getElementById('msHero').hidden = true;
+    var H = document.getElementById('msAlbHero');
+    H.hidden = false;
+    H.innerHTML = '<div style="display:flex;gap:16px;align-items:center;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;margin-bottom:14px"><img src="' + escA(d.img || al.img) + '" style="width:92px;height:92px;border-radius:10px;object-fit:cover" alt=""><div style="min-width:0"><div style="font-size:11px;letter-spacing:.14em;color:#9d97b8;font-weight:800">ALBUM</div><h2 style="margin:2px 0 4px;font-size:22px;color:#fff">' + escA(d.t || al.t) + '</h2><div style="color:#9d97b8;font-size:13px">' + escA(d.a || al.a) + ' \u2022 ' + d.tracks.length + ' songs</div><div style="margin-top:10px;display:flex;gap:8px"><button type="button" id="msAlbPlay" style="background:#fff;color:#0a0a0b;padding:9px 18px">play</button><button type="button" id="msAlbShuf" style="background:rgba(255,255,255,.09);color:#fff;padding:9px 18px">shuffle</button></div></div></div>';
+    document.getElementById('msSecTitle').textContent = d.t || al.t;
+    DISPLAY = d.tracks; TRACKS = d.tracks;
+    renderTracks(DISPLAY);
+    document.getElementById('msAlbPlay').addEventListener('click', function(){ var h = gxHost(); if (h) h.play(DISPLAY, 0); });
+    document.getElementById('msAlbShuf').addEventListener('click', function(){ var h = gxHost(); if (!h) return; var sh = DISPLAY.slice(); for (var i = sh.length - 1; i > 0; i--) { var k = Math.floor(Math.random() * (i + 1)); var tmp = sh[i]; sh[i] = sh[k]; sh[k] = tmp; } h.play(sh, 0); });
+    window.scrollTo(0, 0);
+  }).catch(function(){ toast('album wouldnt load'); });
+}
 var listSeq = 0;
 function loadMore(){
   if (loading || ended || VIEW !== 'browse') return;
@@ -12960,6 +13005,79 @@ async function buildForYou(p) {
   return out;
 }
 
+
+const MUSAPI_KEY = 'AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30';
+const albCache = new Map();
+async function ytMusic(path, body) {
+  const r = await fetch('https://music.youtube.com/youtubei/v1/' + path + '?key=' + MUSAPI_KEY + '&prettyPrint=false', { method: 'POST', headers: { 'content-type': 'application/json', 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36', origin: 'https://music.youtube.com', referer: 'https://music.youtube.com/' }, body: JSON.stringify({ context: { client: { clientName: 'WEB_REMIX', clientVersion: '1.20241127.01.00', hl: 'en', gl: 'US' } }, ...body }), signal: AbortSignal.timeout(12000) });
+  if (!r.ok) return null;
+  return r.json();
+}
+function musRunsText(col) { try { return (col.musicResponsiveListItemFlexColumnRenderer.text.runs || []).map(x => x.text).join(''); } catch (e) { return ''; } }
+async function fetchAlbumsFor(artist) {
+  const ck = 'alb:' + artist.toLowerCase();
+  const c = albCache.get(ck);
+  if (c && Date.now() - c.at < 1200000) return c.list;
+  let list = [];
+  try {
+    const j = await ytMusic('search', { query: artist, params: 'EgIQBg%3D%3D' });
+    const secs = (j && j.contents && j.contents.tabbedSearchResultsRenderer && j.contents.tabbedSearchResultsRenderer.tabs && j.contents.tabbedSearchResultsRenderer.tabs[0] && j.contents.tabbedSearchResultsRenderer.tabs[0].tabRenderer && j.contents.tabbedSearchResultsRenderer.tabs[0].tabRenderer.content && j.contents.tabbedSearchResultsRenderer.tabs[0].tabRenderer.content.sectionListRenderer && j.contents.tabbedSearchResultsRenderer.tabs[0].tabRenderer.content.sectionListRenderer.contents) || [];
+    for (const s of secs) {
+      const items = (s.musicShelfRenderer && s.musicShelfRenderer.contents) || (s.itemSectionRenderer && s.itemSectionRenderer.contents) || [];
+      for (const it of items) {
+        const r = it.musicResponsiveListItemRenderer; if (!r) continue;
+        const bid = r.navigationEndpoint && r.navigationEndpoint.browseEndpoint && r.navigationEndpoint.browseEndpoint.browseId; if (!bid) continue;
+        const cols = r.flexColumns || [];
+        const t = cols[0] ? musRunsText(cols[0]) : '';
+        const meta = cols[1] ? musRunsText(cols[1]) : '';
+        const parts = meta.split('\u2022').map(x => x.trim());
+        const thumbs = (r.thumbnail && r.thumbnail.musicThumbnailRenderer && r.thumbnail.musicThumbnailRenderer.thumbnail && r.thumbnail.musicThumbnailRenderer.thumbnail.thumbnails) || [];
+        let img = thumbs.length ? thumbs[thumbs.length - 1].url : '';
+        img = img.replace(/w\d+-h\d+/, 'w540-h540');
+        if (t) list.push({ bid, t, a: parts[1] || artist, year: parts[2] || '', img: proxied(img) });
+        if (list.length >= 6) break;
+      }
+      if (list.length >= 6) break;
+    }
+  } catch (e) {}
+  albCache.set(ck, { at: Date.now(), list });
+  return list;
+}
+async function fetchAlbumTracks(bid, hintA, hintT) {
+  const ck = 'albt:' + bid;
+  const c = albCache.get(ck);
+  if (c && Date.now() - c.at < 1200000) return c.data;
+  const data = { t: '', a: '', img: '', tracks: [] };
+  try {
+    const j = await ytMusic('browse', { browseId: bid });
+    const hdr = (j && j.header && j.header.musicDetailHeaderRenderer) || null;
+    if (hdr) {
+      data.t = ((hdr.title && hdr.title.runs) || []).map(x => x.text).join('');
+      data.a = ((hdr.subtitle && hdr.subtitle.runs) || []).map(x => x.text).join('').split('\u2022').map(x => x.trim())[1] || '';
+      const thumbs = (hdr.thumbnail && hdr.thumbnail.croppedSquareThumbnailRenderer && hdr.thumbnail.croppedSquareThumbnailRenderer.thumbnail && hdr.thumbnail.croppedSquareThumbnailRenderer.thumbnail.thumbnails) || [];
+      if (thumbs.length) data.img = proxied(thumbs[thumbs.length - 1].url.replace(/w\d+-h\d+/, 'w540-h540'));
+    }
+    if (!data.a) data.a = hintA || '';
+    if (!data.t) data.t = hintT || '';
+    const secs = (j && j.contents && j.contents.twoColumnBrowseResultsRenderer && j.contents.twoColumnBrowseResultsRenderer.secondaryContents && j.contents.twoColumnBrowseResultsRenderer.secondaryContents.sectionListRenderer && j.contents.twoColumnBrowseResultsRenderer.secondaryContents.sectionListRenderer.contents) || [];
+    for (const s of secs) {
+      const items = (s.musicShelfRenderer && s.musicShelfRenderer.contents) || [];
+      for (const it of items) {
+        const r = it.musicResponsiveListItemRenderer; if (!r) continue;
+        const vid = r.playlistItemData && r.playlistItemData.videoId; if (!vid) continue;
+        const cols = r.flexColumns || [];
+        const t = cols[0] ? musRunsText(cols[0]) : '';
+        const fc = (r.fixedColumns || [])[0];
+        const durTxt = fc ? ((fc.musicResponsiveListItemFixedColumnRenderer.text.runs || []).map(x => x.text).join('')) : '';
+        const mp = durTxt.split(':').map(x => parseInt(x, 10) || 0);
+        const len = mp.length === 2 ? mp[0] * 60 + mp[1] : (mp.length === 3 ? mp[0] * 3600 + mp[1] * 60 + mp[2] : 0);
+        if (t) data.tracks.push({ id: vid, t: musTitle(t, data.a), a: data.a, len, img: proxied('https://i.ytimg.com/vi/' + vid + '/hqdefault.jpg') });
+      }
+    }
+  } catch (e) {}
+  albCache.set(ck, { at: Date.now(), data });
+  return data;
+}
 async function buildAiPlaylist(b) {
   b = (b && typeof b === 'object') ? b : {};
   const artists = (Array.isArray(b.artists) ? b.artists : String(b.artists || '').split(',')).map(x => fyCleanStr(x, 60)).filter(Boolean).slice(0, 6);
@@ -14308,6 +14426,27 @@ const server = http.createServer(async (req, res) => {
     const feed = await fetchYtFeed(u.searchParams.get('f') || 'trending');
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(JSON.stringify({ ok: !!feed, vids: feed ? feed.vids : [], cont: feed ? feed.cont : '' }));
+  }
+  if (u.pathname === '/api/albums' && req.method === 'POST') {
+    let body = ''; req.on('data', c => { body += c; if (body.length > 20000) req.destroy(); });
+    req.on('end', async () => {
+      let artists = [];
+      try { const b = JSON.parse(body || '{}'); artists = (Array.isArray(b.artists) ? b.artists : []).map(x => fyCleanStr(x, 60)).filter(Boolean).slice(0, 3); } catch (e) {}
+      if (!artists.length) artists = ['Drake', 'LUCKI', 'Bruno Mars'];
+      let out = [];
+      for (const a of artists) { const l = await fetchAlbumsFor(a); out = out.concat(l); }
+      const seen = new Set(); out = out.filter(x => { if (seen.has(x.bid)) return false; seen.add(x.bid); return true; }).slice(0, 12);
+      res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+      res.end(JSON.stringify({ ok: true, albums: out }));
+    });
+    return;
+  }
+  if (u.pathname === '/api/album') {
+    const bid = (u.searchParams.get('id') || '').trim();
+    if (!/^[A-Za-z0-9_-]{6,40}$/.test(bid)) { res.writeHead(400, { 'content-type': 'application/json' }); return res.end('{"ok":false}'); }
+    const data = await fetchAlbumTracks(bid, fyCleanStr(u.searchParams.get('a') || '', 60), fyCleanStr(u.searchParams.get('t') || '', 120));
+    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+    return res.end(JSON.stringify({ ok: true, album: data }));
   }
   if (u.pathname === '/api/aiplaylist' && req.method === 'POST') {
     let plout = { ok: false, name: '', vids: [] };
