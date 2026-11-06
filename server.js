@@ -2185,6 +2185,7 @@ function loadMore(){
       if (d.firstChild) grid.appendChild(d.firstChild);
     });
     moreEl.textContent = moreC[f0] ? '' : "that's everything youtube is giving us here — try another category";
+    pokeMore();
   }).catch(function(){ moreBusy = false; moreEl.textContent = 'more videos hiccuped — keep scrolling to retry'; });
 }
 document.addEventListener('pointerdown', function(e){
@@ -2195,8 +2196,9 @@ document.addEventListener('pointerdown', function(e){
   var id = vi >= 0 ? href.slice(vi + 2).split('&')[0] : '';
   if (id.length >= 6 && id.length <= 20) { try { fetch('/yt/warm?v=' + encodeURIComponent(id) + '&kind=v'); } catch (err) {} }
 }, true);
-function pokeMore(){ var s = document.getElementById('ytsent'); if (!s) return; var r = s.getBoundingClientRect(); if (r.top < window.innerHeight + 800) loadMore(); }
-if ('IntersectionObserver' in window) { var io = new IntersectionObserver(function(es){ if (es[0].isIntersecting) loadMore(); }, { rootMargin: '800px' }); io.observe(document.getElementById('ytsent')); }
+function pokeMore(){ var s = document.getElementById('ytsent'); if (!s) return; var r = s.getBoundingClientRect(); if (r.top < window.innerHeight + 1400) loadMore(); }
+if ('IntersectionObserver' in window) { var io = new IntersectionObserver(function(es){ if (es[0].isIntersecting) loadMore(); }, { rootMargin: '1400px' }); io.observe(document.getElementById('ytsent')); }
+setInterval(function(){ pokeMore(); }, 1000);
 /* paste a link, stream it */
 var pIn = document.getElementById('pasteIn'), pBox = document.getElementById('pasteBox');
 function pasteGo(){
@@ -10839,9 +10841,11 @@ function loadMore2(){
       if (d.firstChild) grid2.appendChild(d.firstChild);
     });
     moreEl2.textContent = MOREC ? '' : "that's everything youtube is giving us for this search";
+    var s3 = document.getElementById('ytsent'); if (s3 && s3.getBoundingClientRect().top < window.innerHeight + 1400) loadMore2();
   }).catch(function(){ moreBusy2 = false; moreEl2.textContent = 'more videos hiccuped — keep scrolling to retry'; });
 }
-if ('IntersectionObserver' in window) { var io2 = new IntersectionObserver(function(es){ if (es[0].isIntersecting) loadMore2(); }, { rootMargin: '800px' }); io2.observe(document.getElementById('ytsent')); }
+if ('IntersectionObserver' in window) { var io2 = new IntersectionObserver(function(es){ if (es[0].isIntersecting) loadMore2(); }, { rootMargin: '1400px' }); io2.observe(document.getElementById('ytsent')); }
+setInterval(function(){ var s2 = document.getElementById('ytsent'); if (s2 && s2.getBoundingClientRect().top < window.innerHeight + 1400) loadMore2(); }, 1000);
 })();
 </script>
 <script>${NOTIF_JS}</script>
@@ -10865,6 +10869,7 @@ async function handleYtSearch(req, res, q) {
   const query = (q || '').trim();
   if (!query) { res.writeHead(302, { location: '/yt' }); return res.end(); }
   const itHit = await fetchYtSearchIt(query);
+  if (itHit && itHit.cont) { fetchYtSearchIt(query, itHit.cont).catch(() => {}); }
   if (itHit) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(ytSearchPage(query, itHit)); }
   const pipedHit = await fetchPipedSearch(query);
   if (pipedHit) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(ytSearchPage(query, pipedHit)); }
@@ -11202,6 +11207,22 @@ async function fetchYtFeed(f) {
   const cont = findItCont(j);
   ytFeedCache.set(f, { at: Date.now(), vids, cont });
   return { vids, cont };
+}
+const feedMoreCache = new Map();
+async function fetchYtFeedMore(f, cont) {
+  const q = YT_FEEDS[f]; if (!q || !cont) return null;
+  const ck = f + '|' + cont;
+  const c = feedMoreCache.get(ck);
+  if (c && Date.now() - c.at < 300e3) return c.hit;
+  const j = await itCall('search', { query: q, continuation: String(cont) }, [IT_WEB, IT_CLIENTS[0], IT_CLIENTS[1]]);
+  if (!j) return null;
+  const out = [], seen = new Set(); collectItVideos(j, out, seen);
+  if (!out.length) return null;
+  const vids = out.slice(0, 24).map(v => ({ id: v.videoId, t: v.title, a: v.author, len: v.lengthSeconds, img: proxied('https://i.ytimg.com/vi/' + v.videoId + '/hqdefault.jpg') }));
+  const hit = { vids, cont: findItCont(j) };
+  feedMoreCache.set(ck, { at: Date.now(), hit });
+  if (feedMoreCache.size > 120) feedMoreCache.delete(feedMoreCache.keys().next().value);
+  return hit;
 }
 const ytSearchCache = new Map();
 async function fetchYtSearchIt(query, cont) {
@@ -14603,6 +14624,7 @@ const server = http.createServer(async (req, res) => {
   }
   if (u.pathname === '/api/ytfeed') {
     const feed = await fetchYtFeed(u.searchParams.get('f') || 'trending');
+    if (feed && feed.cont) { fetchYtFeedMore(u.searchParams.get('f') || 'trending', feed.cont).catch(() => {}); }
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(JSON.stringify({ ok: !!feed, vids: feed ? feed.vids : [], cont: feed ? feed.cont : '' }));
   }
@@ -14657,8 +14679,9 @@ const server = http.createServer(async (req, res) => {
     const mc = String(u.searchParams.get('c') || '').slice(0, 2400);
     let mout = { ok: false, vids: [], cont: '' };
     if (mq && mc) {
-      const hit = await fetchYtSearchIt(mq, mc);
-      if (hit) mout = { ok: true, vids: musNorm(hit.vids, u.searchParams.get('mode') !== 'yt'), cont: hit.cont || '' };
+      const hit = mf ? await fetchYtFeedMore(mf, mc) : await fetchYtSearchIt(mq, mc);
+      if (hit) mout = { ok: true, vids: musNorm(hit.vids, u.searchParams.get('mode') === 'six'), cont: hit.cont || '' };
+      if (mout.ok && mout.cont) { (mf ? fetchYtFeedMore(mf, mout.cont) : fetchYtSearchIt(mq, mout.cont)).catch(() => {}); }
     }
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(JSON.stringify(mout));
