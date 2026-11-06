@@ -1469,6 +1469,13 @@ const FONT_LINKS = '<link href="/fonts.css" rel="stylesheet">';
 const GX_THEME_BOOT = `(function(){function ld(k){try{return localStorage.getItem(k);}catch(e){return null;}}function rgb(h){if(!h||h.length!==7||h.charAt(0)!=='#')return null;var r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return(isNaN(r)||isNaN(g)||isNaN(b))?null:r+','+g+','+b;}function lite(h){var o='#';for(var i=0;i<3;i++){var v=parseInt(h.slice(1+i*2,3+i*2),16);v=Math.round(v+(255-v)*0.45);var s=v.toString(16);if(s.length<2)s='0'+s;o+=s;}return o;}var t=null;try{t=JSON.parse(ld('gx_theme_v1')||'null');}catch(e){}if(!t||typeof t!=='object')t={};var b=document.body;if(!b)return;var sky=t.sky||ld('gx_sky')||'nebula';b.setAttribute('data-sky',sky);if(t.font)b.setAttribute('data-font',t.font);if(t.radius)b.setAttribute('data-radius',t.radius);if(t.density)b.setAttribute('data-density',t.density);if(t.glow)b.setAttribute('data-glow',t.glow);if(t.glass)b.setAttribute('data-glass',t.glass);if(t.stars)b.setAttribute('data-stars',t.stars);var r1=rgb(t.accHex||'');if(r1){b.style.setProperty('--acc',r1);b.setAttribute('data-acc','custom');var r3=rgb(lite(t.accHex));if(r3){b.style.setProperty('--acc3',r3);b.style.setProperty('--star',r3);}}var r2=rgb(t.acc2Hex||'');if(r2)b.style.setProperty('--acc2',r2);if(t.bgHex&&t.bgHex.length===7&&t.bgHex.charAt(0)==='#'&&sky==='custom')b.style.setProperty('--gxbg',t.bgHex);window.__gxTheme=t;window.gxThemeSave=function(nt){try{localStorage.setItem('gx_theme_v1',JSON.stringify(nt));}catch(e){}window.__gxTheme=nt;};})();`;
 const STAR_CANVAS = "<script>" + GX_THEME_BOOT + "</script>"; // v294 theme boot: sky + full custom theme on every page
 const GALAXY_CSS = `
+@media (max-width:820px){
+#topbar{display:none!important}
+body{padding-top:0!important}
+#tabbar{left:0!important;right:0!important;bottom:0!important;border:0!important;border-radius:22px 22px 0 0!important;box-shadow:none!important;background:rgba(9,7,19,.88)!important;padding-bottom:calc(7px + env(safe-area-inset-bottom))!important}
+#tabbar::before{content:'';position:absolute;left:0;right:0;top:-24px;height:24px;background:linear-gradient(180deg,rgba(9,7,19,0),rgba(9,7,19,.88));pointer-events:none}
+}
+
 @media (pointer:coarse){input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea,select{font-size:16px!important}}
 
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
@@ -1573,7 +1580,7 @@ a{transition:color .15s ease}
 #tabSheet{display:none}
 @media (max-width:820px){
 #tabbar{display:flex;position:fixed;left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:50;background:rgba(22,22,27,.52);-webkit-backdrop-filter:blur(22px) saturate(1.7);backdrop-filter:blur(22px) saturate(1.7);border:1px solid rgba(255,255,255,.16);border-radius:28px;box-shadow:0 10px 34px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.15),inset 0 -1px 0 rgba(255,255,255,.05);padding:7px 6px;justify-content:space-around;align-items:stretch}
-@media (display-mode:standalone){#tabbar{left:0;right:0;bottom:0;border-radius:24px 24px 0 0;padding-bottom:calc(7px + env(safe-area-inset-bottom))}}
+
 #tabbar a,#tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:0;color:#c9c9d1;font-size:10px;font-weight:600;letter-spacing:.02em;text-decoration:none;padding:6px 0 4px;border-radius:19px;cursor:pointer;font-family:inherit}
 #tabbar a.on{color:#fff;background:rgba(var(--acc),.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 0 14px rgba(var(--acc),.18)}
 #tabbar a.on svg{color:#e4e4e7}
