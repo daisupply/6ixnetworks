@@ -947,6 +947,7 @@ button{border-radius:8px!important}
   function tasteBump(t, tr, dArt, dTrk){
     if (!tr) return;
     var a = String(tr.a || '').trim();
+    if (a && dArt > 0 && t.blocked && t.blocked[a.toLowerCase()]) dArt = 0;
     if (a && a !== 'your files') t.artists[a] = Math.max(-6, Math.min(60, (t.artists[a] || 0) + dArt));
     var rec = t.tracks[tr.id] || { t: tr.t || '', a: tr.a || '', n: 0 };
     rec.n += dTrk; rec.last = Date.now(); t.tracks[tr.id] = rec;
@@ -961,9 +962,14 @@ button{border-radius:8px!important}
   }
   function tastePlay(tr){
     var t = tasteDecay(tasteLoad());
+    t.openers = t.openers || {}; t.genres = t.genres || {}; t.blocked = t.blocked || {}; t.searches = t.searches || [];
     t.plays = (t.plays || 0) + 1;
+    var nowTs = Date.now();
+    var isOpener = !t.lastPlayAt || (nowTs - t.lastPlayAt > 18e5);
+    t.lastPlayAt = nowTs;
     var prevRec = t.tracks[tr.id];
     tasteBump(t, tr, 1, 1);
+    if (isOpener && tr.a && tr.a !== 'your files') { t.openers[tr.a] = (t.openers[tr.a] || 0) + 1; tasteBump(t, tr, 1, 0); }
     if (prevRec && prevRec.last && Date.now() - prevRec.last < 18e5) tasteBump(t, tr, 1, 1);
     t.recent = (t.recent || []).filter(function(x){ return x.id !== tr.id; });
     t.recent.unshift({ id: tr.id, t: tr.t || '', a: tr.a || '' });
@@ -982,11 +988,13 @@ button{border-radius:8px!important}
     var t = tasteLoad();
     var L = likedList();
     L.forEach(function(x){ var a = String(x.a || '').trim(); if (a && a !== 'your files') t.artists[a] = (t.artists[a] || 0) + 5; });
-    var arts = Object.keys(t.artists).filter(function(a){ return t.artists[a] > 0; }).sort(function(x, y){ return t.artists[y] - t.artists[x]; }).slice(0, 6);
+    var arts = Object.keys(t.artists).filter(function(a){ return t.artists[a] > 0 && !(t.blocked && t.blocked[a.toLowerCase()]); }).sort(function(x, y){ return t.artists[y] - t.artists[x]; }).slice(0, 6);
     var skip = Object.keys(t.artists).filter(function(a){ return t.artists[a] < 0; }).sort(function(x, y){ return t.artists[x] - t.artists[y]; }).slice(0, 6);
+    if (t.blocked) Object.keys(t.blocked).forEach(function(k){ if (skip.indexOf(k) < 0 && skip.length < 6) skip.push(k); });
+    var open = Object.keys(t.openers || {}).sort(function(x, y){ return (t.openers[y] || 0) - (t.openers[x] || 0); }).slice(0, 4);
     var tids = Object.keys(t.tracks).filter(function(id){ return id.indexOf('loc:') !== 0; }).sort(function(x, y){ return (t.tracks[y].n || 0) - (t.tracks[x].n || 0); }).slice(0, 8);
     var top = tids.map(function(id){ return { t: t.tracks[id].t || '', a: t.tracks[id].a || '', n: t.tracks[id].n || 0 }; }).filter(function(x){ return x.t; });
-    return { artists: arts, liked: L.slice(0, 8).map(function(x){ return { t: x.t || '', a: x.a || '' }; }), recent: (t.recent || []).slice(0, 8).map(function(x){ return { t: x.t || '', a: x.a || '' }; }), top: top, skip: skip, plays: t.plays || 0 };
+    return { artists: arts, liked: L.slice(0, 8).map(function(x){ return { t: x.t || '', a: x.a || '' }; }), recent: (t.recent || []).slice(0, 8).map(function(x){ return { t: x.t || '', a: x.a || '' }; }), top: top, skip: skip, plays: t.plays || 0, searches: (t.searches || []).slice(0, 6), open: open, genres: Object.keys(t.genres || {}).slice(0, 6) };
   }
   // ---------- the key: ur whole algorithm in one secret string ----------
   // aes-256-gcm via webcrypto. the key string carries its own secret,
@@ -1176,6 +1184,9 @@ button{border-radius:8px!important}
     enqueueNext: function(tr){ if (tr) { Q.splice(I + 1, 0, tr); ORD = null; if (shuf) buildOrd(); save(); } },
     taste: function(){ return tasteSummary(); },
     note: function(tr, dA, dT){ if (!tr) return; var t = tasteDecay(tasteLoad()); tasteBump(t, tr, dA || 0, dT || 0); tasteSave(t); },
+    brain: function(){ return tasteLoad(); },
+    setBrain: function(nt){ if (!nt || typeof nt !== 'object') return; var t = tasteLoad(); ['artists', 'tracks', 'openers', 'genres', 'blocked'].forEach(function(k){ if (nt[k] && typeof nt[k] === 'object') t[k] = nt[k]; }); if (Array.isArray(nt.recent)) t.recent = nt.recent.slice(0, 12); if (Array.isArray(nt.searches)) t.searches = nt.searches.slice(0, 20); tasteSave(t); },
+    noteSearch: function(q){ q = String(q || '').trim().slice(0, 80); if (!q) return; var t = tasteLoad(); t.searches = t.searches || []; if (t.searches[0] === q) return; t.searches = [q].concat(t.searches.filter(function(x){ return x !== q; })).slice(0, 20); tasteSave(t); },
     stop: function(){ wantPlay = false; au.pause(); Q = []; I = -1; au.removeAttribute('src'); try { au.load(); } catch (e) {} save(); paint(); }
   };
   el('gxPlay').addEventListener('click', function(){ window.gxMusic.toggle(); });
@@ -9789,7 +9800,13 @@ function musNorm(vids, strict) {
     const rawT = (v && (v.title || v.t)) || ''; const rawA = (v && (v.author || v.a)) || '';
     const len = (v && (v.lengthSeconds || v.len)) || 0;
     if (strict !== false && !musIsSong(rawT, len, rawA)) continue;
-    out.push({ id, t: strict === false ? rawT : musTitle(rawT, rawA), a: strict === false ? rawA : musArtist(rawA), len, img: proxied('https://i.ytimg.com/vi/' + id + '/hqdefault.jpg') });
+    let tt = rawT, aa = rawA;
+    if (strict !== false) {
+      tt = musTitle(rawT, rawA); aa = musArtist(rawA);
+      const dm = tt.match(/^(.{2,60}?) - (.+)$/);
+      if (dm && dm[1].trim().toLowerCase() !== aa.toLowerCase()) { aa = dm[1].trim(); tt = dm[2].trim(); }
+    }
+    out.push({ id, t: tt, a: aa, len, img: proxied('https://i.ytimg.com/vi/' + id + '/hqdefault.jpg') });
   }
   return out;
 }
@@ -9853,6 +9870,21 @@ body{display:block;padding:0}
 .mschip{background:rgba(255,255,255,.07);border:0;color:#e6e2f2;border-radius:8px;padding:9px 16px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:none}
 .mschip.on{background:#fff;color:#0a0a0b}
 .msthead,.msrow{display:grid;grid-template-columns:26px 42px minmax(0,1fr) 200px 46px 30px;gap:13px;align-items:center;padding:8px 10px}
+.mst{min-width:0}
+.mst b{display:block;font-size:14.5px;font-weight:600;color:#f1eefc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msal{color:#9d97b8;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.msd{color:#9d97b8;font-size:13px;text-align:right;font-variant-numeric:tabular-nums}
+@media (max-width:820px){
+.msthead{display:none}
+.msrow{grid-template-columns:22px 40px minmax(0,1fr) 30px;grid-template-areas:'num img title btn' 'num img artist dur';column-gap:10px;row-gap:1px;padding:7px 8px}
+.msrow .msn{grid-area:num}
+.msrow img{grid-area:img;width:40px;height:40px}
+.msrow .mst{grid-area:title}
+.msrow .mst b{font-size:14px}
+.msrow .msal{grid-area:artist;font-size:12px}
+.msrow .msd{grid-area:dur;font-size:11.5px}
+.msrow .msadd{grid-area:btn;opacity:.9}
+}
 .msthead{color:#8f8aa5;font-size:13px;border-bottom:1px solid rgba(255,255,255,.08);padding-top:8px;padding-bottom:8px;position:sticky;top:60px;background:rgba(10,9,18,.94);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);z-index:6}
 .msthead .msalb{color:#8f8aa5}
 .msrow{border-radius:10px;cursor:pointer;position:relative}
@@ -9920,6 +9952,15 @@ body{display:block;padding:0}
 #msToast{position:fixed;left:50%;transform:translateX(-50%);bottom:108px;z-index:680;background:#fff;color:#0a0a0b;font-size:13.5px;font-weight:700;border-radius:8px;padding:11px 18px;box-shadow:0 14px 40px rgba(0,0,0,.5)}
 #msToast[hidden]{display:none}
 @media(max-width:700px){#msHero{flex-direction:column;align-items:flex-start}.mshero-cov{width:118px;height:118px}}
+#msOnb,#msBrain{position:fixed;inset:0;z-index:700;background:rgba(4,3,10,.66);display:flex;align-items:center;justify-content:center;padding:18px}
+#msOnb[hidden],#msBrain[hidden]{display:none}
+#msBrain .msm-card{max-height:88vh;overflow:auto}
+.msbchips{display:flex;flex-wrap:wrap;gap:7px;margin:4px 0 2px}
+.msbchip{display:inline-flex;gap:7px;align-items:center;background:rgba(255,255,255,.07);border-radius:99px;padding:7px 12px;font-size:12.5px;font-weight:700;color:#e6e2f2;cursor:pointer}
+.msbchip b{cursor:pointer;opacity:.75;font-weight:900}
+.msbchip.on{background:#fff;color:#0a0a0b}
+.msbnone{color:#8f8aa5;font-size:12.5px}
+.msbrow{color:#cfc9ea;font-size:13px;padding:3px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .msmode{display:flex;background:rgba(255,255,255,.06);border-radius:8px;padding:3px;gap:3px;margin:12px 0 4px}
 .msmode button{flex:1;background:transparent;border:0;color:#b9b4cc;font-size:12.5px;font-weight:800;padding:7px 4px;border-radius:6px;cursor:pointer;font-family:inherit;box-shadow:none}
 .msmode button.on{background:#fff;color:#0a0a0b}
@@ -9978,6 +10019,7 @@ input.msrange::-moz-range-thumb{width:12px;height:12px;border-radius:8px;backgro
 <div id="msPlList"></div>
 <p class="msplempty" id="msPlEmpty">Your playlists appear here</p>
 <button type="button" class="mspin" id="msAiPl"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>six, make me a playlist</button>
+<button type="button" class="mspin" id="msBrainBtn"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>six's brain on u</button>
 </aside>
 <main class="msmain">
 <h1 class="msh1" id="msH1">Browse</h1>
@@ -9995,6 +10037,8 @@ input.msrange::-moz-range-thumb{width:12px;height:12px;border-radius:8px;backgro
 <div id="msModal" hidden><div class="msm-card"><h3 id="msmTitle"></h3><input id="msmInput" type="text" autocomplete="off"><textarea id="msmArea" hidden readonly></textarea><p id="msmNote" hidden></p><div class="msm-btns"><button type="button" id="msmCopy" hidden>copy key</button><button type="button" id="msmCancel" class="mshb-ghost" style="background:rgba(255,255,255,.08);color:#e6e2f2">cancel</button><button type="button" id="msmOk" style="background:#fff;color:#0a0a0b">save</button></div></div></div>
 <div id="msDrop" hidden>drop ur songs<br><span style="font-size:14px;font-weight:600;color:#c9c4de">they save on this device only — nothing touches the server</span></div>
 <div id="msToast" hidden></div>
+<div id="msOnb" hidden><div class="msm-card"><h3>what kinda music u into?</h3><p class="msmodehint">tap what ur on — six starts ur for you from this, then learns from what u actually play, finish n search. skip n he just runs trending till he figures u out.</p><div id="msobChips" class="msbchips"></div><label class="msmk-l">artists u fw (optional)</label><input id="msobArtists" type="text" placeholder="lucki, drake, clara la san" autocomplete="off"><div class="msm-btns"><button type="button" id="msobSkip" style="background:rgba(255,255,255,.08);color:#e6e2f2">skip — just trending</button><button type="button" id="msobGo" style="background:#fff;color:#0a0a0b">build my for you</button></div></div></div>
+<div id="msBrain" hidden><div class="msm-card"><h3>six's brain on u</h3><p class="msmodehint">everything six thinks u fw — from what u play, finish, search n reach for first. if hes wrong, fix it here n he works off this.</p><div class="msmk-l">artists he thinks u fw</div><div id="msbArtists" class="msbchips"></div><div style="display:flex;gap:8px;margin-top:8px"><input id="msbAddA" type="text" placeholder="add an artist" autocomplete="off" style="flex:1"><button type="button" id="msbAddBtn" style="background:rgba(255,255,255,.1);color:#fff;padding:0 14px;border-radius:8px">add</button></div><div class="msmk-l">genres</div><div id="msbGenres" class="msbchips"></div><div class="msmk-l">artists u reach for first</div><div id="msbOpen"></div><div class="msmk-l">songs u finish on repeat</div><div id="msbTop"></div><div class="msmk-l">artists u skip fast</div><div id="msbSkip"></div><div class="msmk-l">what u search</div><div id="msbSearch"></div><div class="msm-btns"><button type="button" id="msbCancel" style="background:rgba(255,255,255,.08);color:#e6e2f2">cancel</button><button type="button" id="msbSave" style="background:#fff;color:#0a0a0b">save n rebuild</button></div></div></div>
 <div id="msMaker" hidden><div class="msm-card"><h3 id="msmkTitle">six playlist maker</h3><label class="msmk-l">artists</label><input id="msmkArtists" type="text" placeholder="lucki, drake, clara la san" autocomplete="off"><label class="msmk-l">type of songs</label><input id="msmkType" type="text" placeholder="night drive, rage, sad hours, gym" autocomplete="off"><div class="msmode" id="msmkStyle"><button type="button" data-s="specific" class="on">specific</button><button type="button" data-s="discovery">discovery</button></div><p class="msmodehint" id="msmkHint">specific — six adds exactly what u asked for, period. nothing extra.</p><div class="msm-btns"><button type="button" id="msmkCancel" style="background:rgba(255,255,255,.08);color:#e6e2f2">cancel</button><button type="button" id="msmkGo" style="background:#fff;color:#0a0a0b">make it</button></div></div></div>
 
 ${SIDEBAR_HTML}<script src="/ui.js"></script>
@@ -10110,6 +10154,7 @@ function setList(mode, q){
   var seq = ++listSeq;
   MODE = mode; MQ = q || ''; BROWSE.mode = mode; BROWSE.q = MQ;
   loading = true; moreEl.textContent = 'loading…';
+  if (mode === 'search' && q) { var hh = gxHost(); if (hh && hh.noteSearch) hh.noteSearch(q); }
   var ck = 'list:' + MUSMODE + ':' + mode + ':' + MQ;
   var cached = musCacheGet(ck);
   if (cached && cached.vids && cached.vids.length && VIEW === 'browse') {
@@ -10347,6 +10392,7 @@ document.getElementById('msMode').addEventListener('click', function(e){
   toast(MUSMODE === 'six' ? 'six mode — songs only' : 'yt mode — everything');
 });
 paintMode();
+maybeOnboard();
 var MKSTYLE = 'specific';
 document.getElementById('msmkStyle').addEventListener('click', function(e){
   var b = e.target.closest('[data-s]'); if (!b) return;
@@ -10390,6 +10436,84 @@ document.getElementById('msmkGo').addEventListener('click', function(){
     openPlaylist(P.length - 1);
     toast('six made it — ' + j.vids.length + ' songs');
   }).catch(function(){ toast('that flopped — try again'); });
+});
+var GENRES = ['hip hop', 'rage', 'r&b', 'sad hours', 'night drive', 'pop', 'rock', 'phonk', 'chill', 'gym', 'old school', 'underground'];
+(function(){
+  var box = document.getElementById('msobChips');
+  GENRES.forEach(function(g){ var s = document.createElement('span'); s.className = 'msbchip'; s.textContent = g; s.addEventListener('click', function(){ s.classList.toggle('on'); }); box.appendChild(s); });
+})();
+function obClose(flag){ try { localStorage.setItem('gx_onboard_v1', flag); } catch (e) {} document.getElementById('msOnb').hidden = true; }
+document.getElementById('msobSkip').addEventListener('click', function(){ obClose('skip'); toast('aight — trending till six learns u'); });
+document.getElementById('msobGo').addEventListener('click', function(){
+  var gs = []; document.querySelectorAll('#msobChips .msbchip.on').forEach(function(c){ gs.push(c.textContent); });
+  var ans = document.getElementById('msobArtists').value.split(',').map(function(x){ return x.trim(); }).filter(Boolean).slice(0, 6);
+  if (!gs.length && !ans.length) { toast('pick something or skip'); return; }
+  var h = gxHost(); var t = (h && h.brain) ? h.brain() : {};
+  t.artists = t.artists || {}; t.genres = t.genres || {};
+  gs.forEach(function(g){ t.genres[g] = 1; });
+  ans.forEach(function(a){ t.artists[a] = (t.artists[a] || 0) + 8; });
+  if (h && h.setBrain) h.setBrain(t);
+  obClose('1');
+  toast('six got it — building ur for you');
+  loadForYou(true);
+});
+function maybeOnboard(){
+  try {
+    if (localStorage.getItem('gx_onboard_v1')) return;
+    var t = JSON.parse(localStorage.getItem('gx_taste_v1') || 'null');
+    var L = JSON.parse(localStorage.getItem('gx_liked_v1') || '[]');
+    var has = (t && ((t.recent && t.recent.length) || Object.keys(t.artists || {}).length || Object.keys(t.genres || {}).length)) || (L && L.length);
+    if (has) { localStorage.setItem('gx_onboard_v1', 'auto'); return; }
+    setTimeout(function(){ document.getElementById('msOnb').hidden = false; }, 700);
+  } catch (e) {}
+}
+var BRAINW = null;
+function brainChips(el, names, onRemove){
+  el.innerHTML = '';
+  names.forEach(function(n){ var s = document.createElement('span'); s.className = 'msbchip'; s.innerHTML = escA(n) + '<b>×</b>'; s.querySelector('b').addEventListener('click', function(){ onRemove(n); }); el.appendChild(s); });
+  if (!names.length) el.innerHTML = '<span class="msbnone">nothing yet</span>';
+}
+function brainList(el, rows){
+  el.innerHTML = rows.length ? rows.map(function(r){ return '<div class="msbrow">' + escA(r) + '</div>'; }).join('') : '<span class="msbnone">nothing yet</span>';
+}
+function renderBrain(){
+  var t = BRAINW; if (!t) return;
+  var arts = Object.keys(t.artists || {}).filter(function(a){ return (t.artists[a] || 0) > 0 && !(t.blocked && t.blocked[a.toLowerCase()]); }).sort(function(x, y){ return t.artists[y] - t.artists[x]; }).slice(0, 14);
+  brainChips(document.getElementById('msbArtists'), arts, function(n){
+    BRAINW.artists[n] = 0; BRAINW.blocked = BRAINW.blocked || {}; BRAINW.blocked[n.toLowerCase()] = 1; renderBrain();
+  });
+  var gb = document.getElementById('msbGenres'); gb.innerHTML = '';
+  GENRES.forEach(function(g){ var on = !!(t.genres && t.genres[g]); var s = document.createElement('span'); s.className = 'msbchip' + (on ? ' on' : ''); s.textContent = g; s.addEventListener('click', function(){ BRAINW.genres = BRAINW.genres || {}; if (BRAINW.genres[g]) delete BRAINW.genres[g]; else BRAINW.genres[g] = 1; renderBrain(); }); gb.appendChild(s); });
+  brainList(document.getElementById('msbOpen'), Object.keys(t.openers || {}).sort(function(x, y){ return (t.openers[y] || 0) - (t.openers[x] || 0); }).slice(0, 5));
+  var tids = Object.keys(t.tracks || {}).sort(function(x, y){ return (t.tracks[y].n || 0) - (t.tracks[x].n || 0); }).slice(0, 6);
+  brainList(document.getElementById('msbTop'), tids.map(function(id){ return (t.tracks[id].t || '') + ' — ' + (t.tracks[id].a || '') + ' (x' + (t.tracks[id].n || 0) + ')'; }));
+  var sk = Object.keys(t.artists || {}).filter(function(a){ return t.artists[a] < 0; });
+  if (t.blocked) Object.keys(t.blocked).forEach(function(k){ if (sk.indexOf(k) < 0) sk.push(k + ' (blocked)'); });
+  brainList(document.getElementById('msbSkip'), sk.slice(0, 8));
+  brainList(document.getElementById('msbSearch'), (t.searches || []).slice(0, 6));
+}
+function openBrain(){
+  var h = gxHost(); var t = (h && h.brain) ? h.brain() : null;
+  if (!t) { try { t = JSON.parse(localStorage.getItem('gx_taste_v1') || 'null'); } catch (e) {} }
+  BRAINW = JSON.parse(JSON.stringify(t || { artists: {}, tracks: {}, recent: [] }));
+  renderBrain();
+  document.getElementById('msBrain').hidden = false;
+}
+document.getElementById('msBrainBtn').addEventListener('click', openBrain);
+document.getElementById('msbCancel').addEventListener('click', function(){ document.getElementById('msBrain').hidden = true; });
+document.getElementById('msBrain').addEventListener('click', function(e){ if (e.target === this) this.hidden = true; });
+document.getElementById('msbAddBtn').addEventListener('click', function(){
+  var v = document.getElementById('msbAddA').value.trim(); if (!v || !BRAINW) return;
+  BRAINW.artists = BRAINW.artists || {}; BRAINW.artists[v] = (BRAINW.artists[v] || 0) + 8;
+  if (BRAINW.blocked) delete BRAINW.blocked[v.toLowerCase()];
+  document.getElementById('msbAddA').value = '';
+  renderBrain();
+});
+document.getElementById('msbSave').addEventListener('click', function(){
+  var h = gxHost(); if (h && h.setBrain && BRAINW) h.setBrain(BRAINW);
+  document.getElementById('msBrain').hidden = true;
+  toast('brain updated — six works off this now');
+  if (VIEW === 'foryou') loadForYou(true);
 });
 var listSeq = 0;
 function loadMore(){
@@ -11556,6 +11680,7 @@ body[data-sky]{background-color:#060609;background-image:radial-gradient(1100px 
   function tasteBump(t, tr, dArt, dTrk){
     if (!tr) return;
     var a = String(tr.a || '').trim();
+    if (a && dArt > 0 && t.blocked && t.blocked[a.toLowerCase()]) dArt = 0;
     if (a && a !== 'your files') t.artists[a] = Math.max(-6, Math.min(60, (t.artists[a] || 0) + dArt));
     var rec = t.tracks[tr.id] || { t: tr.t || '', a: tr.a || '', n: 0 };
     rec.n += dTrk; rec.last = Date.now(); t.tracks[tr.id] = rec;
@@ -11570,9 +11695,14 @@ body[data-sky]{background-color:#060609;background-image:radial-gradient(1100px 
   }
   function tastePlay(tr){
     var t = tasteDecay(tasteLoad());
+    t.openers = t.openers || {}; t.genres = t.genres || {}; t.blocked = t.blocked || {}; t.searches = t.searches || [];
     t.plays = (t.plays || 0) + 1;
+    var nowTs = Date.now();
+    var isOpener = !t.lastPlayAt || (nowTs - t.lastPlayAt > 18e5);
+    t.lastPlayAt = nowTs;
     var prevRec = t.tracks[tr.id];
     tasteBump(t, tr, 1, 1);
+    if (isOpener && tr.a && tr.a !== 'your files') { t.openers[tr.a] = (t.openers[tr.a] || 0) + 1; tasteBump(t, tr, 1, 0); }
     if (prevRec && prevRec.last && Date.now() - prevRec.last < 18e5) tasteBump(t, tr, 1, 1);
     t.recent = (t.recent || []).filter(function(x){ return x.id !== tr.id; });
     t.recent.unshift({ id: tr.id, t: tr.t || '', a: tr.a || '' });
@@ -11591,11 +11721,13 @@ body[data-sky]{background-color:#060609;background-image:radial-gradient(1100px 
     var t = tasteLoad();
     var L = likedList();
     L.forEach(function(x){ var a = String(x.a || '').trim(); if (a && a !== 'your files') t.artists[a] = (t.artists[a] || 0) + 5; });
-    var arts = Object.keys(t.artists).filter(function(a){ return t.artists[a] > 0; }).sort(function(x, y){ return t.artists[y] - t.artists[x]; }).slice(0, 6);
+    var arts = Object.keys(t.artists).filter(function(a){ return t.artists[a] > 0 && !(t.blocked && t.blocked[a.toLowerCase()]); }).sort(function(x, y){ return t.artists[y] - t.artists[x]; }).slice(0, 6);
     var skip = Object.keys(t.artists).filter(function(a){ return t.artists[a] < 0; }).sort(function(x, y){ return t.artists[x] - t.artists[y]; }).slice(0, 6);
+    if (t.blocked) Object.keys(t.blocked).forEach(function(k){ if (skip.indexOf(k) < 0 && skip.length < 6) skip.push(k); });
+    var open = Object.keys(t.openers || {}).sort(function(x, y){ return (t.openers[y] || 0) - (t.openers[x] || 0); }).slice(0, 4);
     var tids = Object.keys(t.tracks).filter(function(id){ return id.indexOf('loc:') !== 0; }).sort(function(x, y){ return (t.tracks[y].n || 0) - (t.tracks[x].n || 0); }).slice(0, 8);
     var top = tids.map(function(id){ return { t: t.tracks[id].t || '', a: t.tracks[id].a || '', n: t.tracks[id].n || 0 }; }).filter(function(x){ return x.t; });
-    return { artists: arts, liked: L.slice(0, 8).map(function(x){ return { t: x.t || '', a: x.a || '' }; }), recent: (t.recent || []).slice(0, 8).map(function(x){ return { t: x.t || '', a: x.a || '' }; }), top: top, skip: skip, plays: t.plays || 0 };
+    return { artists: arts, liked: L.slice(0, 8).map(function(x){ return { t: x.t || '', a: x.a || '' }; }), recent: (t.recent || []).slice(0, 8).map(function(x){ return { t: x.t || '', a: x.a || '' }; }), top: top, skip: skip, plays: t.plays || 0, searches: (t.searches || []).slice(0, 6), open: open, genres: Object.keys(t.genres || {}).slice(0, 6) };
   }
   // ---------- the key: ur whole algorithm in one secret string ----------
   // aes-256-gcm via webcrypto. the key string carries its own secret,
@@ -11785,6 +11917,9 @@ body[data-sky]{background-color:#060609;background-image:radial-gradient(1100px 
     enqueueNext: function(tr){ if (tr) { Q.splice(I + 1, 0, tr); ORD = null; if (shuf) buildOrd(); save(); } },
     taste: function(){ return tasteSummary(); },
     note: function(tr, dA, dT){ if (!tr) return; var t = tasteDecay(tasteLoad()); tasteBump(t, tr, dA || 0, dT || 0); tasteSave(t); },
+    brain: function(){ return tasteLoad(); },
+    setBrain: function(nt){ if (!nt || typeof nt !== 'object') return; var t = tasteLoad(); ['artists', 'tracks', 'openers', 'genres', 'blocked'].forEach(function(k){ if (nt[k] && typeof nt[k] === 'object') t[k] = nt[k]; }); if (Array.isArray(nt.recent)) t.recent = nt.recent.slice(0, 12); if (Array.isArray(nt.searches)) t.searches = nt.searches.slice(0, 20); tasteSave(t); },
+    noteSearch: function(q){ q = String(q || '').trim().slice(0, 80); if (!q) return; var t = tasteLoad(); t.searches = t.searches || []; if (t.searches[0] === q) return; t.searches = [q].concat(t.searches.filter(function(x){ return x !== q; })).slice(0, 20); tasteSave(t); },
     stop: function(){ wantPlay = false; au.pause(); Q = []; I = -1; au.removeAttribute('src'); try { au.load(); } catch (e) {} save(); paint(); }
   };
   el('gxPlay').addEventListener('click', function(){ window.gxMusic.toggle(); });
@@ -12711,13 +12846,18 @@ function fyShape(b) {
   const top = (Array.isArray(b.top) ? b.top : []).map(x => ({ t: fyCleanStr(x && x.t, 100), a: fyCleanStr(x && x.a, 60), n: Math.min(999, Math.max(0, parseInt(x && x.n, 10) || 0)) })).filter(x => x.t).slice(0, 8);
   const skip = (Array.isArray(b.skip) ? b.skip : []).map(x => fyCleanStr(x, 60)).filter(Boolean).slice(0, 6);
   const plays = Math.min(100000, Math.max(0, parseInt(b.plays, 10) || 0));
-  return { artists, liked: lite(b.liked), recent: lite(b.recent), top, skip, plays, mode: b.mode === 'yt' ? 'yt' : 'six' };
+  const searches = (Array.isArray(b.searches) ? b.searches : []).map(x => fyCleanStr(x, 80)).filter(Boolean).slice(0, 6);
+  const open = (Array.isArray(b.open) ? b.open : []).map(x => fyCleanStr(x, 60)).filter(Boolean).slice(0, 4);
+  const genres = (Array.isArray(b.genres) ? b.genres : []).map(x => fyCleanStr(x, 30)).filter(Boolean).slice(0, 6);
+  return { artists, liked: lite(b.liked), recent: lite(b.recent), top, skip, plays, searches, open, genres, mode: b.mode === 'yt' ? 'yt' : 'six' };
 }
 function fyFallbackQueries(p) {
   const qs = [];
   if (p.top && p.top.length) qs.push('songs like ' + p.top[0].t + ' ' + p.top[0].a);
   p.artists.forEach(a => { qs.push(a + ' songs'); });
   if (p.artists.length) qs.push(p.artists[0] + ' similar artists songs');
+  (p.open || []).forEach(a => { if (qs.length < 5) qs.push(a + ' songs'); });
+  (p.genres || []).forEach(g => { if (qs.length < 5) qs.push(g + ' songs'); });
   if (p.liked.length) qs.push(p.liked[0].a ? (p.liked[0].a + ' songs') : (p.liked[0].t + ' similar songs'));
   for (const s of FY_FRESH_QUERIES) { if (qs.length >= 5) break; if (!qs.includes(s)) qs.push(s); }
   return qs.slice(0, 5);
@@ -12729,19 +12869,20 @@ async function sixVerifySongs(vids) {
   if (todo.length) {
     const list = todo.slice(0, 30);
     try {
-      const prompt = 'u quality-check songs for 6ixmusic, a real streamer. these came from youtube and some are NOT real songs: type beats, instrumentals with no vocals, karaoke versions, sped up or slowed edits, nightcore, random fan covers, loops. judge every line hard: is it a real released song with the actual artist performing it? reply with ONLY this JSON, nothing else: {"bad":[<line numbers that are NOT real songs>]}. when genuinely unsure, keep it (do not list it).\n' + list.map((v, i) => (i + 1) + '. ' + v.t + ' — ' + v.a).join('\n');
+      const prompt = 'u quality-check songs for 6ixmusic, a real streamer. these came from youtube and some are NOT real songs: type beats, instrumentals with no vocals, karaoke versions, sped up or slowed edits, nightcore, random fan covers, loops. judge every line hard: is it a real released song with the actual artist performing it? ALSO: the name after the dash is whoever UPLOADED it, which is often NOT the artist (lyric channels, reuploaders, label hubs). when the uploader clearly is not the performing artist, give the real artist in "fix". reply with ONLY this JSON, nothing else: {"bad":[<line numbers that are NOT real songs>],"fix":{"<line number>":"<real artist name>"}}. when genuinely unsure, keep it (do not list it).\n' + list.map((v, i) => (i + 1) + '. ' + v.t + ' — ' + v.a).join('\n');
       const reply = await Promise.race([askSix([{ role: 'user', content: prompt }], SIX_SYSTEM), new Promise(res => setTimeout(() => res(''), 12000))]);
       const m = String(reply || '').match(/\{[\s\S]*?\}/);
       if (m) {
         const j = JSON.parse(m[0]);
         const bad = new Set((j.bad || []).map(n => parseInt(n, 10)));
+        const fixes = (j && typeof j.fix === 'object' && j.fix) ? j.fix : {};
         if (songVerdict.size > 800) songVerdict.clear();
-        list.forEach((v, i) => songVerdict.set(v.id, bad.has(i + 1) ? 0 : 1));
+        list.forEach((v, i) => { const fx = fixes[String(i + 1)] || fixes[i + 1]; if (bad.has(i + 1)) songVerdict.set(v.id, 0); else if (fx && String(fx).trim()) songVerdict.set(v.id, 'A:' + String(fx).trim().slice(0, 60)); else songVerdict.set(v.id, 1); });
         todo.slice(30).forEach(v => songVerdict.set(v.id, 1));
       }
     } catch {}
   }
-  return vids.filter(v => songVerdict.get(v.id) !== 0);
+  return vids.map(v => { const vd = songVerdict.get(v.id); if (typeof vd === 'string' && vd.indexOf('A:') === 0) v.a = vd.slice(2); return v; }).filter(v => songVerdict.get(v.id) !== 0);
 }
 
 async function buildForYou(p) {
@@ -12749,7 +12890,7 @@ async function buildForYou(p) {
   const c = forYouCache.get(key);
   if (c && Date.now() - c.at < 1800e3) return Object.assign({}, c.out, { cached: 1 });
   let queries = null, line = '', src = 'algo';
-  const hasTaste = !!(p.artists.length || p.liked.length || p.recent.length || (p.top && p.top.length));
+  const hasTaste = !!(p.artists.length || p.liked.length || p.recent.length || (p.top && p.top.length) || (p.searches && p.searches.length) || (p.genres && p.genres.length));
   if (!hasTaste) {
     // zero start: no seeding, no pretending. neutral charts while six learns.
     queries = FY_FRESH_QUERIES.slice();
@@ -12763,6 +12904,9 @@ async function buildForYou(p) {
         'recently played: ' + (p.recent.map(x => x.t + ' by ' + x.a).join('; ') || 'none yet') + '\n' +
         'songs they finish on repeat (heaviest signal — weight these most): ' + (p.top.map(x => x.t + ' by ' + x.a + ' (x' + x.n + ')').join('; ') || 'none yet') + '\n' +
         'artists they skip fast (NEVER suggest them or their soundalikes): ' + (p.skip.join(', ') || 'none') + '\n' +
+        'genres they are into: ' + (p.genres.join(', ') || 'unknown') + '\n' +
+        'artists they reach for FIRST when they open the app: ' + (p.open.join(', ') || 'unknown') + '\n' +
+        'what they search for: ' + (p.searches.join(' | ') || 'nothing yet') + '\n' +
         'reply with ONLY this JSON, nothing else, no markdown: {"queries":["<youtube music search phrase>"],"line":"<one short line in ur voice about this mix, lowercase, max 90 chars>"}\n' +
         'give 5 queries: at least one "songs like <their top finished song>", their top artists, similar artists they would love, and one curveball in the same world. search phrases only, no urls. real released songs only — no type beats, no instrumentals, no karaoke.';
       const reply = await Promise.race([
