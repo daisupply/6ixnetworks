@@ -3500,13 +3500,13 @@ body.frview .hcall{display:none}
 .main6 .mhead{display:flex;align-items:baseline;gap:8px}
 .main6 .mhead b{color:#fafafa;font-size:14px;font-weight:700;cursor:pointer}
 .main6 .msg.bot .mhead b{color:#e4e4e7}
-.main6 .mtime{font-size:11px;color:#63636b}
+.main6 .mtime{font-size:11px;color:#a8a3c7}
 .mtext{white-space:pre-wrap;line-height:1.5;font-size:14.5px;color:#e7e7ea}
 .mtext ul.mdlist{margin:4px 0;padding-left:18px}
 .mtext ul.mdlist li{margin:2px 0}
 .mtext code{background:rgba(255,255,255,.1);padding:1px 5px;border-radius:5px;font-size:.92em}
 .main6 .mbody img{max-width:min(420px,82vw);border-radius:12px;display:block;margin-top:6px}
-.main6 .sys{text-align:center;color:#63636b;font-size:12px;margin:12px 0}
+.main6 .sys{text-align:center;color:#a8a3c7;font-size:12px;margin:12px 0}
 #msgs:empty{display:flex;align-items:center;justify-content:center}
 #msgs:empty::after{content:'this room is quiet — say the first thing';color:#63636b;font-size:14px}
 /* ---------- composer ---------- */
