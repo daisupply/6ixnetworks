@@ -5309,10 +5309,11 @@ async function askSixLook(env, b64, mode, extra) {
     sum: 'look at this screenshot of homework or a document. read all the text in it carefully. summarize: what it is, what it is asking for, and the key points.',
     write: 'look at this screenshot of homework. read everything in it carefully, then DO the work: answer every question shown and complete the assignment exactly as asked, based on what is in the image.',
     simple: 'look at this screenshot of homework or a document. read all the text in it. explain what it means and exactly what has to be done, in the simplest words possible.',
-    edit: 'look at this screenshot of a document. read all of its text carefully. an edit instruction may be included as extra context - apply it (if there is none, just clean up and fix the text). return the FULL edited text only, no commentary.'
+    edit: 'look at this screenshot of a document. read all of its text carefully. an edit instruction may be included as extra context - apply it (if there is none, just clean up and fix the text). return the FULL edited text only, no commentary.',
+    answer: 'look at this screenshot of a homework question. read it carefully and reply with ONLY the final answer. no explanation, no working, no steps, no intro, no commentary. multiple choice: give the letter plus the answer words. math: just the result. fill-in: just the missing words. one short line only.'
   }[mode];
   if (!task || !b64) return null;
-  const prompt = task + ' answer in this voice: all lowercase, casual, straight-talking, funny when it fits, zero corporate tone. plain text, short lines, no markdown symbols.' + (extra ? ' extra context from the user: ' + extra : '');
+  const prompt = task + (mode === 'answer' ? ' plain words only, exactly how a voice would say it out loud.' : ' answer in this voice: all lowercase, casual, straight-talking, funny when it fits, zero corporate tone. plain text, short lines, no markdown symbols.') + (extra ? ' extra context from the user: ' + extra : '');
   const url = String(b64).startsWith('data:') ? String(b64) : 'data:image/jpeg;base64,' + String(b64);
   const g = await askGemini(null, [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: url } }] }], 1400, 'hw');
   return g ? stripActs(g).slice(0, 9000) : null;
@@ -7762,6 +7763,8 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .shdot{width:8px;height:8px;border-radius:50%;background:#f472b6;animation:shpulse 1.6s ease-in-out infinite}
 @keyframes shpulse{0%,100%{opacity:1}50%{opacity:.25}}
 .shbtn.primary{background:#f4f4f5;color:#0a0a0b;border-color:#f4f4f5}
+#shAnswer{display:none;font-size:21px;font-weight:800;line-height:1.35;margin-top:10px;color:#fff}
+#shAnswer::before{content:'six: ';color:rgb(var(--star))}
 .mode{display:flex;flex-direction:column;align-items:flex-start;gap:3px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:12px 13px;cursor:pointer;font-family:inherit;color:#f4f4f5;text-align:left}
 .mode svg{color:#e4e4e7;margin-bottom:2px}
 .mode b{font-size:14.5px}
@@ -7809,7 +7812,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <button class="mode" id="bedit" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/><path d="M1.5 14h5M9.5 8h5M17.5 16h5"/></svg><b>edit it</b><span>follows ur edit note above</span></button>
 <button class="mode" id="bshare" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg><b>share ur screen</b><span>six watches ur hw live — snap a frame n he reads it like a screenshot</span></button>
 </div>
-<div id="shareBox" style="display:none"><div id="shlive"><span class="shdot"></span>sharing ur screen</div><video id="hwVid" autoplay muted playsinline></video><div class="shrow"><button class="shbtn primary" id="bdoit" type="button">do it for me</button><button class="shbtn" id="bsnap" type="button">snap now</button><button class="shbtn on" id="bauto" type="button">auto</button><button class="shbtn" id="bstop" type="button">stop sharing</button></div><div class="shrow"><button class="shbtn" id="bsum2" type="button">summarize</button><button class="shbtn" id="bsimp2" type="button">explain simple</button></div><div id="shstat"></div></div>
+<div id="shareBox" style="display:none"><div id="shlive"><span class="shdot"></span>sharing ur screen</div><video id="hwVid" autoplay muted playsinline></video><div class="shrow"><button class="shbtn primary" id="bdoit" type="button">do it for me</button><button class="shbtn" id="bsnap" type="button">snap now</button><button class="shbtn on" id="bauto" type="button">auto</button><button class="shbtn" id="blive" type="button">live beta</button><button class="shbtn" id="bstop" type="button">stop sharing</button></div><div class="shrow"><button class="shbtn" id="bsum2" type="button">summarize</button><button class="shbtn" id="bsimp2" type="button">explain simple</button></div><div id="shstat"></div><div id="shAnswer"></div></div>
 </section>
 <section class="hwcard">
 <div class="hwcard-h"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>six's answer<span id="stat" class="statpill">ready</span><button id="copy" type="button">copy the text</button></div>
@@ -7920,10 +7923,57 @@ function shareChrome(on){
   var lab=document.querySelector('label[for="editq"]'); if(lab) lab.style.display= on ? 'none' : '';
   var modes=document.querySelector('.hwmodes'); if(modes) modes.style.display= on ? 'none' : '';
 }
+var liveOn=false, liveTimer=null, liveBusy=false, liveCount=0, liveLastSig=null, liveCandSig=null, liveCandAt=0, liveAnsSig=null, liveAnsAt=0;
+function frameSig(){
+  if(!vidEl || !vidEl.videoWidth) return null;
+  try {
+    var c8=document.createElement('canvas'); c8.width=8; c8.height=8;
+    var cx=c8.getContext('2d'); cx.drawImage(vidEl, 0, 0, 8, 8);
+    var d=cx.getImageData(0, 0, 8, 8).data, out=[];
+    for(var i=0;i<64;i++){ out.push(Math.round((d[i*4]+d[i*4+1]+d[i*4+2])/3)); }
+    return out;
+  } catch(e){ return null; }
+}
+function sigDiff(a, b){ if(!a || !b) return 999; var s=0; for(var i=0;i<64;i++) s+=Math.abs(a[i]-b[i]); return s/64; }
+function speakAnswer(t){
+  if(!window.speechSynthesis) return;
+  try { speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance(String(t).slice(0, 300)); u.rate=1.06; speechSynthesis.speak(u); } catch(e){}
+}
+function liveAnswer(sig){
+  if(!snapFrame()) return;
+  liveBusy=true; liveAnsSig=sig; liveAnsAt=Date.now(); liveCount++;
+  shStat.textContent='new question — six is on it…';
+  fetch('/ai/look', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ image: imgB64, mode: 'answer', text: '' }) }).then(function(r){ return r.json(); }).then(function(o){
+    liveBusy=false;
+    if(o && o.out){
+      var an=document.getElementById('shAnswer'); an.textContent=o.out; an.style.display='block';
+      outEl.innerHTML=fmtMd(o.out); outEl.dataset.raw=o.out; outEl.style.display='block'; emptyEl.style.display='none'; copyBtn.style.display='inline-flex';
+      shStat.textContent='live beta ✦ six called it — flip to the next one when ur ready';
+      speakAnswer(o.out);
+    } else shStat.textContent='six couldnt read that one — hold it still n let him retry';
+  }).catch(function(){ liveBusy=false; shStat.textContent='six couldnt run that rn'; });
+}
+function liveTick(){
+  if(!liveOn || !shStream || liveBusy) return;
+  var sig=frameSig(); if(!sig) return;
+  if(!liveCandSig || sigDiff(sig, liveCandSig) > 5){ liveCandSig=sig; liveCandAt=Date.now(); return; }
+  if(Date.now()-liveCandAt < 2200) return;
+  if(liveAnsSig && sigDiff(sig, liveAnsSig) < 20) return;
+  if(Date.now()-liveAnsAt < 6000) return;
+  if(liveCount >= 40){ setLive(false); shStat.textContent='beta cap hit for this share — toggle live back on to keep going'; return; }
+  liveAnswer(sig);
+}
+function setLive(on){
+  var b=document.getElementById('blive'); if(!b) return;
+  liveOn=on;
+  if(on){ b.classList.add('on'); liveCandSig=null; liveAnsSig=null; liveAnsAt=0; if(!liveTimer) liveTimer=setInterval(liveTick, 1800); shStat.textContent='live beta on ✦ flip to a question, hold still a sec, six says the answer out loud — no explaining'; }
+  else { b.classList.remove('on'); if(liveTimer){ clearInterval(liveTimer); liveTimer=null; } try { speechSynthesis.cancel(); } catch(e){} }
+}
 function stopShare(){
   if(shAuto){ clearInterval(shAuto); shAuto=null; }
   if(shStream){ shStream.getTracks().forEach(function(t){ t.stop(); }); shStream=null; }
   if(vidEl) vidEl.srcObject=null;
+  setLive(false);
   shBox.style.display='none'; shBox.classList.remove('live');
   shareChrome(false);
 }
@@ -7952,6 +8002,7 @@ document.getElementById('bauto').addEventListener('click', function(){
 });
 document.getElementById('bsum2').addEventListener('click', function(){ if(snapFrame()){ shLastHash=frameHash(); run('sum'); } });
 document.getElementById('bsimp2').addEventListener('click', function(){ if(snapFrame()){ shLastHash=frameHash(); run('simple'); } });
+document.getElementById('blive').addEventListener('click', function(){ setLive(!liveOn); });
 document.getElementById('bstop').addEventListener('click', stopShare);
 copyBtn.addEventListener('click', function(){
   var done=function(){ statEl.textContent='copied ✦'; };
