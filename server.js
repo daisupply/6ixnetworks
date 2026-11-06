@@ -980,7 +980,7 @@ button{border-radius:8px!important}
   window.gxLocal = gxLocal;
   // ---------- taste: the for-you profile (device only) ----------
   function tasteLoad(){ try { var t = JSON.parse(localStorage.getItem('gx_taste_v1') || 'null'); if (t && t.artists && t.tracks) return t; } catch (e) {} return { artists: {}, tracks: {}, recent: [], plays: 0 }; }
-  function tasteSave(t){ try { localStorage.setItem('gx_taste_v1', JSON.stringify(t)); } catch (e) {} if (window.gxFY) window.gxFY.bump(); }
+  function tasteSave(t){ t.upd = Date.now(); try { localStorage.setItem('gx_taste_v1', JSON.stringify(t)); } catch (e) {} if (window.gxFY) window.gxFY.bump(); }
   function tasteBump(t, tr, dArt, dTrk){
     if (!tr) return;
     var a = String(tr.a || '').trim();
@@ -10780,6 +10780,7 @@ var GENRES = ['hip hop', 'rage', 'r&b', 'sad hours', 'night drive', 'pop', 'rock
   GENRES.forEach(function(g){ var s = document.createElement('span'); s.className = 'msbchip'; s.textContent = g; s.addEventListener('click', function(){ s.classList.toggle('on'); }); box.appendChild(s); });
 })();
 function obClose(flag){ try { localStorage.setItem('gx_onboard_v1', flag); } catch (e) {} document.getElementById('msOnb').hidden = true; }
+document.getElementById('msOnb').addEventListener('click', function(e){ if (e.target === this) obClose('skip'); });
 document.getElementById('msobSkip').addEventListener('click', function(){ obClose('skip'); toast('aight — trending till six learns u'); });
 document.getElementById('msobGo').addEventListener('click', function(){
   var gs = []; document.querySelectorAll('#msobChips .msbchip.on').forEach(function(c){ gs.push(c.textContent); });
@@ -10794,14 +10795,47 @@ document.getElementById('msobGo').addEventListener('click', function(){
   toast('six got it — building ur for you');
   loadForYou(true);
 });
+var TASTE_SYNCED = null;
+function tasteSnap(){ try { return (localStorage.getItem('gx_taste_v1') || '') + '|' + (localStorage.getItem('gx_liked_v1') || ''); } catch (e) { return ''; } }
+function tastePushNow(){
+  try {
+    var t = JSON.parse(localStorage.getItem('gx_taste_v1') || 'null'); if (!t) return;
+    var L = []; try { L = JSON.parse(localStorage.getItem('gx_liked_v1') || '[]'); } catch (e) {}
+    var body = JSON.stringify({ taste: t, liked: L });
+    var sent = false;
+    if (navigator.sendBeacon) { try { sent = navigator.sendBeacon('/api/taste', new Blob([body], { type: 'application/json' })); } catch (e) {} }
+    if (!sent) fetch('/api/taste', { method: 'POST', headers: { 'content-type': 'application/json' }, body: body, keepalive: true }).catch(function(){});
+    TASTE_SYNCED = tasteSnap();
+  } catch (e) {}
+}
+(function tasteHydrate(){
+  fetch('/api/taste').then(function(r){ return r.json(); }).then(function(j){
+    if (!j || !j.ok) { TASTE_SYNCED = tasteSnap(); return; }
+    var lt = null; try { lt = JSON.parse(localStorage.getItem('gx_taste_v1') || 'null'); } catch (e) {}
+    var lu = (lt && lt.upd) || 0, su = (j.taste && j.taste.upd) || 0;
+    if (j.taste && (!lt || su > lu)) {
+      try { localStorage.setItem('gx_taste_v1', JSON.stringify(j.taste)); } catch (e) {}
+      if (Array.isArray(j.liked) && j.liked.length) { try { localStorage.setItem('gx_liked_v1', JSON.stringify(j.liked)); } catch (e) {} }
+      try { localStorage.setItem('gx_onboard_v1', 'auto'); } catch (e) {}
+      var ob = document.getElementById('msOnb'); if (ob) ob.hidden = true;
+      TASTE_SYNCED = tasteSnap();
+      if (VIEW === 'foryou') loadForYou(true);
+      return;
+    }
+    TASTE_SYNCED = j.taste ? (JSON.stringify(j.taste) + '|' + JSON.stringify(Array.isArray(j.liked) ? j.liked : [])) : '';
+    if (lt && tasteSnap() !== TASTE_SYNCED) tastePushNow(); else TASTE_SYNCED = tasteSnap();
+  }).catch(function(){ TASTE_SYNCED = tasteSnap(); });
+})();
+setInterval(function(){ if (TASTE_SYNCED !== null && tasteSnap() !== TASTE_SYNCED) tastePushNow(); }, 12000);
+window.addEventListener('pagehide', function(){ if (TASTE_SYNCED !== null && tasteSnap() !== TASTE_SYNCED) tastePushNow(); });
 function maybeOnboard(){
   try {
     if (localStorage.getItem('gx_onboard_v1')) return;
     var t = JSON.parse(localStorage.getItem('gx_taste_v1') || 'null');
     var L = JSON.parse(localStorage.getItem('gx_liked_v1') || '[]');
-    var has = (t && ((t.recent && t.recent.length) || Object.keys(t.artists || {}).length || Object.keys(t.genres || {}).length)) || (L && L.length);
+    var has = (t && ((t.recent && t.recent.length) || Object.keys(t.artists || {}).length || Object.keys(t.genres || {}).length)) || (L && L.length) || !!localStorage.getItem('gx_music_v1');
     if (has) { localStorage.setItem('gx_onboard_v1', 'auto'); return; }
-    setTimeout(function(){ document.getElementById('msOnb').hidden = false; }, 700);
+    setTimeout(function(){ try { if (localStorage.getItem('gx_onboard_v1')) return; } catch (e) {} document.getElementById('msOnb').hidden = false; }, 700);
   } catch (e) {}
 }
 var BRAINW = null;
@@ -12106,7 +12140,7 @@ html,body{overflow-x:clip}
   window.gxLocal = gxLocal;
   // ---------- taste: the for-you profile (device only) ----------
   function tasteLoad(){ try { var t = JSON.parse(localStorage.getItem('gx_taste_v1') || 'null'); if (t && t.artists && t.tracks) return t; } catch (e) {} return { artists: {}, tracks: {}, recent: [], plays: 0 }; }
-  function tasteSave(t){ try { localStorage.setItem('gx_taste_v1', JSON.stringify(t)); } catch (e) {} if (window.gxFY) window.gxFY.bump(); }
+  function tasteSave(t){ t.upd = Date.now(); try { localStorage.setItem('gx_taste_v1', JSON.stringify(t)); } catch (e) {} if (window.gxFY) window.gxFY.bump(); }
   function tasteBump(t, tr, dArt, dTrk){
     if (!tr) return;
     var a = String(tr.a || '').trim();
@@ -13584,6 +13618,25 @@ function chatIdentityNode(req, wantName) {
   return want;
 }
 function validAv(v) { if (v === '' || v === null || v === undefined) return ''; const s = String(v); return (/^data:image\/(png|jpeg|webp|gif);base64,[a-zA-Z0-9+/=]+$/.test(s) && s.length <= 140000) ? s : null; }
+function gxSanTaste(v) {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
+  const num = (x) => { const n = Number(x); return Number.isFinite(n) ? Math.max(-99999, Math.min(99999999, Math.round(n * 10) / 10)) : 0; };
+  const str = (x, n) => String(x == null ? '' : x).slice(0, n);
+  const mapNum = (o, cap) => { const out = {}; if (o && typeof o === 'object' && !Array.isArray(o)) { let i = 0; for (const k of Object.keys(o)) { if (i++ >= cap) break; out[str(k, 80)] = num(o[k]); } } return out; };
+  const artists = mapNum(v.artists, 250);
+  const tracks = {};
+  if (v.tracks && typeof v.tracks === 'object' && !Array.isArray(v.tracks)) { let i = 0; for (const k of Object.keys(v.tracks)) { if (i++ >= 300) break; const r = v.tracks[k] || {}; tracks[str(k, 24)] = { n: num(r.n), t: str(r.t, 120), a: str(r.a, 80), last: num(r.last) }; } }
+  const recent = Array.isArray(v.recent) ? v.recent.slice(0, 12).map((r) => ({ id: str(r && r.id, 24), t: str(r && r.t, 120), a: str(r && r.a, 80) })) : [];
+  const searches = Array.isArray(v.searches) ? v.searches.slice(0, 20).map((s) => str(s, 80)) : [];
+  const blocked = {};
+  if (v.blocked && typeof v.blocked === 'object' && !Array.isArray(v.blocked)) { let i = 0; for (const k of Object.keys(v.blocked)) { if (i++ >= 100) break; blocked[str(k, 80).toLowerCase()] = 1; } }
+  return { artists: artists, tracks: tracks, recent: recent, searches: searches, genres: mapNum(v.genres, 40), openers: mapNum(v.openers, 100), blocked: blocked, plays: num(v.plays), lastPlayAt: num(v.lastPlayAt), decayAt: num(v.decayAt), upd: num(v.upd) || Date.now() };
+}
+function gxSanLiked(v) {
+  if (!Array.isArray(v)) return null;
+  const str = (x, n) => String(x == null ? '' : x).slice(0, n);
+  return v.slice(0, 300).filter((r) => r && r.id).map((r) => ({ id: str(r.id, 24), t: str(r.t, 120), a: str(r.a, 80), th: str(r.th, 300) }));
+}
 function gxSanTheme(t) { if (!t || typeof t !== 'object') return null; const hex = (v) => (typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v)) ? v.toLowerCase() : ''; const en = (v, list) => list.includes(v) ? v : ''; return { sky: en(t.sky, ['nebula', 'amber', 'violet', 'ice', 'blood', 'custom', 'flat']) || 'nebula', accHex: hex(t.accHex), acc2Hex: hex(t.acc2Hex), bgHex: hex(t.bgHex), font: en(t.font, ['', 'inter', 'rounded', 'grot', 'mono']), radius: en(t.radius, ['', 'sharp', 'soft', 'round']), density: en(t.density, ['', 'cozy', 'compact']), glow: en(t.glow, ['', 'off', 'soft', 'full']), glass: en(t.glass, ['', 'solid', 'glass']), stars: en(t.stars, ['', 'off', 'low', 'high']), nav: en(t.nav, ['', 'bar', 'side']), motion: en(t.motion, ['', 'on', 'off']), lights: en(t.lights, ['', 'on', 'off']), upd: Date.now() }; }
 function validHue(v) { if (v === null || v === undefined || v === '') return null; const n = parseInt(v, 10); return (isFinite(n) && n >= 0 && n <= 359) ? n : null; }
 function chatProfileNode(req, wantName, wantHue) {
@@ -14318,6 +14371,21 @@ const server = http.createServer(async (req, res) => {
       const t = gxSanTheme(body && body.theme);
       if (t) { rec.theme = t; persistAcct(me.toLowerCase()); }
       res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ok: true, theme: t }));
+    }
+  }
+  if (u.pathname === '/api/taste') {
+    const me = voterUser(req);
+    const rec = me ? ACCOUNTS.get(me.toLowerCase()) : null;
+    if (!rec) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ok: false })); }
+    if (req.method === 'GET') { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ok: true, taste: (rec.taste && typeof rec.taste === 'object') ? rec.taste : null, liked: Array.isArray(rec.liked) ? rec.liked : null })); }
+    if (req.method === 'POST') {
+      const body = await readJsonBody(req).catch(() => null);
+      const t = gxSanTaste(body && body.taste);
+      const lk = gxSanLiked(body && body.liked);
+      if (t) rec.taste = t;
+      if (lk) rec.liked = lk;
+      if (t || lk) persistAcct(me.toLowerCase());
+      res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ok: true }));
     }
   }
   if (u.pathname === '/api/apks' && req.method === 'GET') {
