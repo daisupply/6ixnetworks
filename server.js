@@ -846,7 +846,11 @@ body[data-motion=\"off\"] #stars.gx-home{display:block}
 #gxLike.on svg{fill:#ff5d7a}
 .gxb-volwrap{display:flex;align-items:center;gap:6px;color:#cfc9ea;padding:0 2px}
 #gxVolR{width:112px;flex:none;accent-color:rgb(var(--acc));cursor:pointer}
-@media (max-width:820px){#gxBar{bottom:0;padding:8px 10px calc(8px + env(safe-area-inset-bottom));gap:9px}#gxArt{width:44px;height:44px}.gxb-meta{width:auto;flex:1}.gxb-prog{display:none}.gxb-volwrap{display:none}#gxShuf,#gxRep,#gxDl,#gxQB{display:none}.gxb-btns{gap:1px}.gxb-btn{width:34px;height:34px}.gxb-main{width:40px;height:40px}}
+#gxBar.float{bottom:auto;right:auto;width:min(560px,94vw);border-radius:14px;border:1px solid rgba(255,255,255,.16);box-shadow:0 24px 60px rgba(0,0,0,.55)}
+#gxArt,.gxb-meta{touch-action:none}
+#gxBar.dragging{opacity:.97}
+@media (max-width:820px){#gxBar.float{width:94vw}}
+@media (max-width:820px){#gxBar{bottom:0;padding:8px 10px calc(8px + env(safe-area-inset-bottom));gap:9px}#gxArt{width:44px;height:44px}.gxb-meta{width:auto;flex:1}.gxb-prog{display:flex;position:absolute;left:0;right:0;top:-6px;height:16px;align-items:center;padding:0 12px;gap:8px}.gxb-prog span{font-size:10px}.gxb-volwrap{display:none}#gxDl,#gxQB{display:none}.gxb-btns{gap:1px}.gxb-btn{width:34px;height:34px}.gxb-main{width:40px;height:40px}}
 button{border-radius:8px!important}
 #tabbar{border-radius:16px!important;transition:transform .28s ease,opacity .28s ease}
 body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
@@ -860,7 +864,7 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
   var FRAME = document.getElementById('f');
   var Q = [], I = -1, shuf = false, rep = 0, seekPos = 0, lastSave = 0, wantPlay = false;
   var icoPlay = '<path d="M8 5v14l11-7z"/>', icoPause = '<path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/>';
-  var objUrl = null, warmed = {}, playT0 = 0, deepDone = false;
+  var objUrl = null, warmed = {}, playT0 = 0, deepDone = false, deep2Done = false, lastT = 0;
   function fmt(s){ s = Math.max(0, Math.floor(s || 0)); var m = Math.floor(s / 60), r = s % 60; return m + ':' + (r < 10 ? '0' : '') + r; }
   function cur(){ return (I >= 0 && Q[I]) ? Q[I] : null; }
   function isLocal(t){ return !!t && (t.local === 1 || String(t.id || '').indexOf('loc:') === 0); }
@@ -946,10 +950,18 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
     var ids = Object.keys(t.tracks);
     if (ids.length > 90) { ids.sort(function(x, y){ return (t.tracks[x].last || 0) - (t.tracks[y].last || 0); }); ids.slice(0, ids.length - 90).forEach(function(k){ delete t.tracks[k]; }); }
   }
+  function tasteDecay(t){
+    var now = Date.now(); var last = t.decayAt || now; var days = (now - last) / 864e5;
+    if (days >= 1) { var f = Math.pow(0.92, Math.min(days, 14)); Object.keys(t.artists).forEach(function(a){ t.artists[a] = Math.round(t.artists[a] * f * 10) / 10; if (Math.abs(t.artists[a]) < 0.5) delete t.artists[a]; }); t.decayAt = now; }
+    else if (!t.decayAt) t.decayAt = now;
+    return t;
+  }
   function tastePlay(tr){
-    var t = tasteLoad();
+    var t = tasteDecay(tasteLoad());
     t.plays = (t.plays || 0) + 1;
+    var prevRec = t.tracks[tr.id];
     tasteBump(t, tr, 1, 1);
+    if (prevRec && prevRec.last && Date.now() - prevRec.last < 18e5) tasteBump(t, tr, 1, 1);
     t.recent = (t.recent || []).filter(function(x){ return x.id !== tr.id; });
     t.recent.unshift({ id: tr.id, t: tr.t || '', a: tr.a || '' });
     t.recent = t.recent.slice(0, 12);
@@ -957,7 +969,7 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
   }
   function tasteSkipCheck(prev, listened){
     if (!prev || listened >= 10) return;
-    var t = tasteLoad(); tasteBump(t, prev, -1, 0); tasteSave(t);
+    var t = tasteLoad(); tasteBump(t, prev, listened < 5 ? -2 : -1, 0); tasteSave(t);
   }
   function tasteDeep(){
     var tr = cur(); if (!tr) return;
@@ -968,7 +980,10 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
     var L = likedList();
     L.forEach(function(x){ var a = String(x.a || '').trim(); if (a && a !== 'your files') t.artists[a] = (t.artists[a] || 0) + 5; });
     var arts = Object.keys(t.artists).filter(function(a){ return t.artists[a] > 0; }).sort(function(x, y){ return t.artists[y] - t.artists[x]; }).slice(0, 6);
-    return { artists: arts, liked: L.slice(0, 8).map(function(x){ return { t: x.t || '', a: x.a || '' }; }), recent: (t.recent || []).slice(0, 8).map(function(x){ return { t: x.t || '', a: x.a || '' }; }) };
+    var skip = Object.keys(t.artists).filter(function(a){ return t.artists[a] < 0; }).sort(function(x, y){ return t.artists[x] - t.artists[y]; }).slice(0, 6);
+    var tids = Object.keys(t.tracks).filter(function(id){ return id.indexOf('loc:') !== 0; }).sort(function(x, y){ return (t.tracks[y].n || 0) - (t.tracks[x].n || 0); }).slice(0, 8);
+    var top = tids.map(function(id){ return { t: t.tracks[id].t || '', a: t.tracks[id].a || '', n: t.tracks[id].n || 0 }; }).filter(function(x){ return x.t; });
+    return { artists: arts, liked: L.slice(0, 8).map(function(x){ return { t: x.t || '', a: x.a || '' }; }), recent: (t.recent || []).slice(0, 8).map(function(x){ return { t: x.t || '', a: x.a || '' }; }), top: top, skip: skip, plays: t.plays || 0 };
   }
   // ---------- the key: ur whole algorithm in one secret string ----------
   // aes-256-gcm via webcrypto. the key string carries its own secret,
@@ -1071,6 +1086,7 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
     el('gxShuf').classList.toggle('on', shuf);
     el('gxRep').classList.toggle('on', rep > 0);
     el('gxRepN').textContent = rep === 2 ? '1' : '';
+    au.loop = (rep === 2);
     el('gxLike').classList.toggle('on', isLiked(t.id));
     if ('mediaSession' in navigator) { try { navigator.mediaSession.metadata = new MediaMetadata({ title: t.t || '', artist: t.a || '', artwork: t.img && t.img.indexOf('data:') !== 0 ? [{ src: t.img, sizes: '320x180' }] : [] }); } catch (e) {} }
     fire();
@@ -1100,8 +1116,18 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
     au.src = '/yt/stream?v=' + encodeURIComponent(t.id) + '&kind=a';
     paint();
   }
+  var ORD = null, ORDP = 0;
+  function buildOrd(){
+    ORD = null; ORDP = 0;
+    if (!shuf || Q.length < 2 || I < 0) return;
+    var rest = [];
+    for (var k = 0; k < Q.length; k++) if (k !== I) rest.push(k);
+    for (var i2 = rest.length - 1; i2 > 0; i2--) { var j2 = Math.floor(Math.random() * (i2 + 1)); var tmp2 = rest[i2]; rest[i2] = rest[j2]; rest[j2] = tmp2; }
+    ORD = [I].concat(rest); ORDP = 0;
+  }
   function nextIdx(){
     if (!Q.length) return -1;
+    if (shuf && ORD) return ORDP + 1 < ORD.length ? ORD[ORDP + 1] : (rep === 1 ? ORD[0] : -1);
     if (shuf && Q.length > 1) { var n; do { n = Math.floor(Math.random() * Q.length); } while (n === I); return n; }
     var n2 = I + 1;
     if (n2 >= Q.length) return rep === 1 ? 0 : -1;
@@ -1117,7 +1143,8 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
     if (i < 0 || i >= Q.length) return;
     var prev = cur(); var listened = playT0 ? (Date.now() - playT0) / 1000 : 999;
     if (prev && prev.id !== (Q[i] && Q[i].id)) tasteSkipCheck(prev, listened);
-    I = i; playT0 = Date.now(); deepDone = false;
+    I = i; playT0 = Date.now(); deepDone = false; deep2Done = false;
+    if (shuf && (!ORD || ORD[ORDP] !== i)) buildOrd();
     load(pos); wantPlay = true;
     if (!isLocal(cur())) { var p = au.play(); if (p && p.catch) p.catch(function(){ paint(); }); }
     tastePlay(cur());
@@ -1127,25 +1154,31 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
   function next(manual){
     if (!Q.length) return;
     if (rep === 2 && !manual) { playAt(I, 0); return; }
+    if (shuf && ORD) {
+      if (ORDP + 1 < ORD.length) { ORDP++; playAt(ORD[ORDP], 0); return; }
+      if (rep === 1 || manual) { ORDP = 0; playAt(ORD[0], 0); return; }
+      au.pause(); save(); paint(); return;
+    }
     var n = nextIdx();
     if (n < 0) { if (manual) n = 0; else { au.pause(); save(); paint(); return; } }
     playAt(n, 0);
   }
   window.gxMusic = {
-    play: function(list, i){ Q = list || []; playAt(i || 0, 0); },
+    play: function(list, i){ Q = list || []; ORD = null; ORDP = 0; playAt(i || 0, 0); },
     toggle: function(){ if (!cur()) return; if (au.paused) { wantPlay = true; var p = au.play(); if (p && p.catch) p.catch(function(){}); } else { wantPlay = false; au.pause(); } },
     next: function(){ next(true); },
-    prev: function(){ if (au.currentTime > 3) { au.currentTime = 0; return; } if (I > 0) playAt(I - 1, 0); },
-    state: function(){ return { queue: Q, idx: I, id: cur() ? cur().id : '', playing: !au.paused && !!cur(), pos: au.currentTime || 0 }; },
-    enqueue: function(tr){ if (tr) { Q.push(tr); save(); } },
-    enqueueNext: function(tr){ if (tr) { Q.splice(I + 1, 0, tr); save(); } },
+    prev: function(){ if (au.currentTime > 3) { au.currentTime = 0; return; } if (shuf && ORD && ORDP > 0) { ORDP--; playAt(ORD[ORDP], 0); return; } if (I > 0) playAt(I - 1, 0); },
+    state: function(){ return { queue: Q, idx: I, id: cur() ? cur().id : '', playing: !au.paused && !!cur(), pos: au.currentTime || 0, shuf: shuf, rep: rep }; },
+    enqueue: function(tr){ if (tr) { Q.push(tr); if (ORD) ORD.push(Q.length - 1); save(); } },
+    enqueueNext: function(tr){ if (tr) { Q.splice(I + 1, 0, tr); ORD = null; if (shuf) buildOrd(); save(); } },
     taste: function(){ return tasteSummary(); },
+    note: function(tr, dA, dT){ if (!tr) return; var t = tasteDecay(tasteLoad()); tasteBump(t, tr, dA || 0, dT || 0); tasteSave(t); },
     stop: function(){ wantPlay = false; au.pause(); Q = []; I = -1; au.removeAttribute('src'); try { au.load(); } catch (e) {} save(); paint(); }
   };
   el('gxPlay').addEventListener('click', function(){ window.gxMusic.toggle(); });
   el('gxNext').addEventListener('click', function(){ next(true); });
   el('gxPrev').addEventListener('click', function(){ window.gxMusic.prev(); });
-  el('gxShuf').addEventListener('click', function(){ shuf = !shuf; paint(); save(); });
+  el('gxShuf').addEventListener('click', function(){ shuf = !shuf; if (shuf) buildOrd(); else { ORD = null; ORDP = 0; } paint(); save(); });
   el('gxRep').addEventListener('click', function(){ rep = (rep + 1) % 3; paint(); save(); });
   el('gxClose').addEventListener('click', function(){ window.gxMusic.stop(); });
   el('gxDl').addEventListener('click', function(){
@@ -1154,9 +1187,9 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
     var a2 = document.createElement('a'); a2.href = '/yt/stream?v=' + encodeURIComponent(t.id) + '&kind=a&dl=1'; a2.download = ''; document.body.appendChild(a2); a2.click(); a2.remove();
   });
   el('gxQB').addEventListener('click', function(){ navMusic('#queue'); });
-  el('gxArt').addEventListener('click', function(){ navMusic(''); });
-  el('gxT').addEventListener('click', function(){ navMusic(''); });
-  el('gxA').addEventListener('click', function(){ navMusic(''); });
+  el('gxArt').addEventListener('click', function(){ if (dragMoved) return; navMusic(''); });
+  el('gxT').addEventListener('click', function(){ if (dragMoved) return; navMusic(''); });
+  el('gxA').addEventListener('click', function(){ if (dragMoved) return; navMusic(''); });
   el('gxLike').addEventListener('click', function(){
     var t = cur(); if (!t) return;
     var L = likedList(), i = L.findIndex(function(x){ return x.id === t.id; });
@@ -1171,13 +1204,17 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
   try { var sv = parseFloat(localStorage.getItem('gx_vol')); if (!isNaN(sv)) { au.volume = sv; volR.value = Math.round(sv * 100); } else au.volume = 0.85; } catch (e) { au.volume = 0.85; }
   volR.addEventListener('input', function(){ au.volume = volR.value / 100; try { localStorage.setItem('gx_vol', String(au.volume)); } catch (e) {} });
   el('gxProg').addEventListener('click', function(e){
-    if (!au.duration) return;
+    if (!au.duration || !isFinite(au.duration)) return;
     var tr = this.querySelector('.gxb-tr'), r = tr.getBoundingClientRect();
-    au.currentTime = au.duration * Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    var ratio = (e.clientX - r.left) / r.width;
+    if (!isFinite(ratio)) return;
+    au.currentTime = au.duration * Math.min(1, Math.max(0, ratio));
   });
   au.addEventListener('loadedmetadata', function(){ if (seekPos > 0) { try { au.currentTime = seekPos; } catch (e) {} seekPos = 0; } el('gxDur').textContent = fmt(au.duration); save(); });
   au.addEventListener('timeupdate', function(){
-    if (au.duration) { el('gxFill').style.width = (au.currentTime / au.duration * 100) + '%'; if (!deepDone && au.currentTime > 30 && au.currentTime / au.duration > 0.4) { deepDone = true; tasteDeep(); } if (au.currentTime / au.duration > 0.5) warmNext(); }
+    if (au.duration) { el('gxFill').style.width = (au.currentTime / au.duration * 100) + '%'; if (!deepDone && au.currentTime > 30 && au.currentTime / au.duration > 0.4) { deepDone = true; tasteDeep(); } if (!deep2Done && au.currentTime / au.duration > 0.85) { deep2Done = true; var c2 = cur(); if (c2) { var t4 = tasteLoad(); tasteBump(t4, c2, 1, 0); tasteSave(t4); } } if (au.currentTime / au.duration > 0.5) warmNext(); }
+    if (rep === 2 && au.duration && lastT > au.duration - 2 && au.currentTime < 2 && lastT - au.currentTime > 3) { var trw = cur(); if (trw) { var t6 = tasteLoad(); tasteBump(t6, trw, 2, 1); tasteSave(t6); } }
+    lastT = au.currentTime;
     el('gxCur').textContent = fmt(au.currentTime);
     var now = Date.now(); if (now - lastSave > 4000) { lastSave = now; save(); }
   });
@@ -1192,12 +1229,36 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
   document.addEventListener('pointerdown', prime, true);
   document.addEventListener('keydown', prime, true);
   window.addEventListener('message', function(e){ if (e && e.data && e.data.sixPrime) prime(); });
+  var dragMoved = false;
+  function applyBarPos(){ try { var bp = JSON.parse(localStorage.getItem('gx_barpos_v1') || 'null'); if (bp && typeof bp.x === 'number') { bar.classList.add('float'); bar.style.left = Math.max(0, Math.min(bp.x, window.innerWidth - 120)) + 'px'; bar.style.top = Math.max(0, Math.min(bp.y, window.innerHeight - 70)) + 'px'; } } catch (e) {} }
+  function dockBar(){ bar.classList.remove('float'); bar.style.left = ''; bar.style.top = ''; try { localStorage.removeItem('gx_barpos_v1'); } catch (e) {} }
+  var dg = null;
+  bar.addEventListener('pointerdown', function(e){
+    if (e.target.closest('button, input, .gxb-prog, a')) return;
+    dg = { x: e.clientX, y: e.clientY, moved: false, l: 0, t: 0 };
+    var r = bar.getBoundingClientRect(); dg.l = r.left; dg.t = r.top;
+    try { bar.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  bar.addEventListener('pointermove', function(e){
+    if (!dg) return;
+    var dx = e.clientX - dg.x, dy = e.clientY - dg.y;
+    if (!dg.moved && Math.abs(dx) + Math.abs(dy) > 7) { dg.moved = true; dragMoved = true; if (!bar.classList.contains('float')) { bar.classList.add('float'); bar.style.left = dg.l + 'px'; bar.style.top = dg.t + 'px'; } bar.classList.add('dragging'); }
+    if (dg.moved) { bar.style.left = Math.max(0, Math.min(dg.l + dx, window.innerWidth - 100)) + 'px'; bar.style.top = Math.max(0, Math.min(dg.t + dy, window.innerHeight - 60)) + 'px'; }
+  });
+  bar.addEventListener('pointerup', function(){
+    if (!dg) return;
+    if (dg.moved) { try { localStorage.setItem('gx_barpos_v1', JSON.stringify({ x: parseInt(bar.style.left, 10) || 0, y: parseInt(bar.style.top, 10) || 0 })); } catch (e) {} setTimeout(function(){ dragMoved = false; }, 60); }
+    dg = null; bar.classList.remove('dragging');
+  });
+  bar.addEventListener('dblclick', function(e){ if (e.target.closest('button, input, .gxb-prog')) return; dockBar(); });
+  applyBarPos();
   try {
     var st = JSON.parse(localStorage.getItem('gx_music_v1') || 'null');
     if (st && st.q && st.q.length && st.i >= 0 && st.i < st.q.length) {
       Q = st.q; I = st.i; shuf = !!st.shuf; rep = st.rep || 0;
       playT0 = Date.now();
       load(st.pos || 0);
+      if (shuf) buildOrd();
       if (st.playing) { wantPlay = true; if (!isLocal(cur())) { var p2 = au.play(); if (p2 && p2.catch) p2.catch(function(){ paint(); }); } }
     }
   } catch (e) {}
@@ -9683,9 +9744,49 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
 }
 
 
+const chartCache = { at: 0, out: null };
+async function fetchChartSongs() {
+  // browse in six mode = actual chart songs (spotify-style), not the
+  // youtube music feed. parallel song searches, cleaned + deduped.
+  if (chartCache.out && Date.now() - chartCache.at < 600e3) return chartCache.out;
+  const qs = ['top hits right now', 'viral songs right now', 'most streamed songs right now', 'new songs this week', 'pop hits right now', 'hip hop hits right now'];
+  const hits = await Promise.all(qs.map(q => fetchYtSearchIt(q).catch(() => null)));
+  const pools = hits.map(h => h ? h.vids : []);
+  const merged = [];
+  for (let r = 0; r < 6 && merged.length < 36; r++) for (const pool of pools) { if (pool[r] && merged.length < 36) merged.push(pool[r]); }
+  const out = { vids: merged, cont: '' };
+  if (merged.length) { chartCache.at = Date.now(); chartCache.out = out; }
+  return out;
+}
 function musDur(s) { s = Math.max(0, Math.floor(+s || 0)); var m = Math.floor(s / 60), r = s % 60; return m + ':' + (r < 10 ? '0' : '') + r; }
-function musNorm(vids) {
-  return (vids || []).map(v => { const id = (v && (v.videoId || v.id)) || ''; return { id, t: (v && (v.title || v.t)) || '', a: (v && (v.author || v.a)) || '', len: (v && (v.lengthSeconds || v.len)) || 0, img: id ? proxied('https://i.ytimg.com/vi/' + id + '/hqdefault.jpg') : '' }; }).filter(v => v.id);
+function musArtist(a) { return String(a || '').replace(/\s*-\s*topic\s*$/i, '').replace(/vevo\s*$/i, '').trim(); }
+function musTitle(t, a) {
+  let s = String(t || '');
+  s = s.replace(/\[[^\]]*\]/g, ' ');
+  s = s.replace(/\(([^)]*)\)/g, (m, g) => /official|audio|video|lyric|visual|hd|4k|remaster|explicit|clean|performance|session/i.test(g) ? ' ' : m);
+  const au = musArtist(a).toLowerCase();
+  if (au) { const pre = au + ' - '; if (s.toLowerCase().indexOf(pre) === 0) s = s.slice(pre.length); }
+  return s.replace(/\s+/g, ' ').trim() || String(t || '');
+}
+// six mode = a streamer, not youtube: no best-of, no compilations,
+// no full albums, no hour loops, nothing over 15 min pretending to
+// be a song. yt mode skips this filter entirely.
+const MUS_JUNK = /\b(best of|compilation|full album|greatest hits|mega ?mix|dj (set|mix)|nonstop|discography|anthology|super hits|all songs|complete collection|playlist|1 hour|2 hours|3 hours|4 hours|10 hours|one hour|two hours)\b/i;
+function musIsSong(rawT, len) {
+  if (MUS_JUNK.test(String(rawT || ''))) return false;
+  if (len && +len > 900) return false;
+  return true;
+}
+function musNorm(vids, strict) {
+  const out = [];
+  for (const v of (vids || [])) {
+    const id = (v && (v.videoId || v.id)) || ''; if (!id) continue;
+    const rawT = (v && (v.title || v.t)) || ''; const rawA = (v && (v.author || v.a)) || '';
+    const len = (v && (v.lengthSeconds || v.len)) || 0;
+    if (strict !== false && !musIsSong(rawT, len)) continue;
+    out.push({ id, t: strict === false ? rawT : musTitle(rawT, rawA), a: strict === false ? rawA : musArtist(rawA), len, img: proxied('https://i.ytimg.com/vi/' + id + '/hqdefault.jpg') });
+  }
+  return out;
 }
 // same-song key: strips the packaging (official video / lyrics /
 // brackets / feat.) so the same song uploaded 9 ways keys alike.
@@ -9814,6 +9915,13 @@ body{display:block;padding:0}
 #msToast{position:fixed;left:50%;transform:translateX(-50%);bottom:108px;z-index:680;background:#fff;color:#0a0a0b;font-size:13.5px;font-weight:700;border-radius:8px;padding:11px 18px;box-shadow:0 14px 40px rgba(0,0,0,.5)}
 #msToast[hidden]{display:none}
 @media(max-width:700px){#msHero{flex-direction:column;align-items:flex-start}.mshero-cov{width:118px;height:118px}}
+.msmode{display:flex;background:rgba(255,255,255,.06);border-radius:8px;padding:3px;gap:3px;margin:12px 0 4px}
+.msmode button{flex:1;background:transparent;border:0;color:#b9b4cc;font-size:12.5px;font-weight:800;padding:7px 4px;border-radius:6px;cursor:pointer;font-family:inherit;box-shadow:none}
+.msmode button.on{background:#fff;color:#0a0a0b}
+.msmodehint{color:#8f8aa5;font-size:12px;line-height:1.45;margin:0 0 8px}
+#msMaker{position:fixed;inset:0;z-index:700;background:rgba(4,3,10,.66);display:flex;align-items:center;justify-content:center;padding:18px}
+#msMaker[hidden]{display:none}
+.msmk-l{display:block;color:#9d97b8;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin:10px 0 5px}
 .mspill{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:400;width:min(700px,94vw);display:flex;align-items:center;gap:16px;background:rgba(16,14,26,.92);-webkit-backdrop-filter:blur(24px) saturate(1.5);backdrop-filter:blur(24px) saturate(1.5);border:1px solid rgba(255,255,255,.13);border-radius:8px;padding:10px 18px 12px;box-shadow:0 22px 55px rgba(0,0,0,.6)}
 .mspbtns{display:flex;align-items:center;gap:9px;flex:none}
 .mspmid{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
@@ -9856,6 +9964,7 @@ input.msrange::-moz-range-thumb{width:12px;height:12px;border-radius:8px;backgro
 <div class="msbrand"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>6ixmusic</div>
 <form class="mssearch" id="msForm" action="/music" method="get"><input name="q" id="msQ" type="text" placeholder="Search music" autocomplete="off" value="${escHtml(q)}"><button type="submit" aria-label="search"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button></form>
 <div class="mstabs"><button type="button" class="mstab on" data-view="browse">Browse</button><button type="button" class="mstab" data-view="liked">Liked</button><button type="button" class="mstab" data-view="queue">Queue</button></div>
+<div class="msmode" id="msMode"><button type="button" data-m="six">six mode</button><button type="button" data-m="yt">yt mode</button></div><p class="msmodehint" id="msModeHint"></p>
 <div class="mspin" id="msPinFY"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>for you</div>
 <div class="mspin" id="msPinLiked"><svg class="msheart" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>liked songs<span id="msLikedN"></span></div>
 <div class="mspin" id="msPinLocal"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>local files<span id="msLocalN"></span></div>
@@ -9863,6 +9972,7 @@ input.msrange::-moz-range-thumb{width:12px;height:12px;border-radius:8px;backgro
 <div class="msplhead"><span>Playlists</span><button type="button" id="msPlAdd" aria-label="new playlist">+</button></div>
 <div id="msPlList"></div>
 <p class="msplempty" id="msPlEmpty">Your playlists appear here</p>
+<button type="button" class="mspin" id="msAiPl"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>six, make me a playlist</button>
 </aside>
 <main class="msmain">
 <h1 class="msh1" id="msH1">Browse</h1>
@@ -9880,6 +9990,7 @@ input.msrange::-moz-range-thumb{width:12px;height:12px;border-radius:8px;backgro
 <div id="msModal" hidden><div class="msm-card"><h3 id="msmTitle"></h3><input id="msmInput" type="text" autocomplete="off"><textarea id="msmArea" hidden readonly></textarea><p id="msmNote" hidden></p><div class="msm-btns"><button type="button" id="msmCopy" hidden>copy key</button><button type="button" id="msmCancel" class="mshb-ghost" style="background:rgba(255,255,255,.08);color:#e6e2f2">cancel</button><button type="button" id="msmOk" style="background:#fff;color:#0a0a0b">save</button></div></div></div>
 <div id="msDrop" hidden>drop ur songs<br><span style="font-size:14px;font-weight:600;color:#c9c4de">they save on this device only — nothing touches the server</span></div>
 <div id="msToast" hidden></div>
+<div id="msMaker" hidden><div class="msm-card"><h3>six playlist maker</h3><label class="msmk-l">artists</label><input id="msmkArtists" type="text" placeholder="lucki, drake, clara la san" autocomplete="off"><label class="msmk-l">type of songs</label><input id="msmkType" type="text" placeholder="night drive, rage, sad hours, gym" autocomplete="off"><div class="msmode" id="msmkStyle"><button type="button" data-s="specific" class="on">specific</button><button type="button" data-s="discovery">discovery</button></div><p class="msmodehint" id="msmkHint">specific — six adds exactly what u asked for, period. nothing extra.</p><div class="msm-btns"><button type="button" id="msmkCancel" style="background:rgba(255,255,255,.08);color:#e6e2f2">cancel</button><button type="button" id="msmkGo" style="background:#fff;color:#0a0a0b">make it</button></div></div></div>
 
 ${SIDEBAR_HTML}<script src="/ui.js"></script>
 <script>
@@ -9994,7 +10105,7 @@ function setList(mode, q){
   var seq = ++listSeq;
   MODE = mode; MQ = q || ''; BROWSE.mode = mode; BROWSE.q = MQ;
   loading = true; moreEl.textContent = 'loading…';
-  var ck = 'list:' + mode + ':' + MQ;
+  var ck = 'list:' + MUSMODE + ':' + mode + ':' + MQ;
   var cached = musCacheGet(ck);
   if (cached && cached.vids && cached.vids.length && VIEW === 'browse') {
     TRACKS = cached.vids; BROWSE.tracks = TRACKS; MCONT = cached.cont || ''; BROWSE.cont = MCONT;
@@ -10004,7 +10115,7 @@ function setList(mode, q){
     moreEl.textContent = '';
     markOn();
   }
-  var url = mode === 'search' ? '/api/mussearch?q=' + encodeURIComponent(q) : '/api/mussearch?f=music';
+  var url = mode === 'search' ? '/api/mussearch?q=' + encodeURIComponent(q) + '&mode=' + MUSMODE : '/api/mussearch?f=music&mode=' + MUSMODE;
   fetch(url).then(function(r){ return r.json(); }).then(function(j){
     if (seq !== listSeq) return;
     loading = false;
@@ -10017,6 +10128,7 @@ function setList(mode, q){
   }).catch(function(){ if (seq === listSeq) { loading = false; if (!cached) moreEl.textContent = 'that flopped — tap the title to retry'; } });
 }
 var FY = { tracks: [], line: '', src: '' };
+var FYPLAYS = 0;
 var LOCAL = { tracks: [] };
 function musCacheAll(){ try { return JSON.parse(localStorage.getItem('gx_muscache_v1') || '{}'); } catch (e) { return {}; } }
 function musCacheGet(k){ var c = musCacheAll()[k]; if (!c || Date.now() - c.at > 21600e3) return null; return c; }
@@ -10050,7 +10162,7 @@ function playList(list, shuf){
 function renderFYHero(){
   var hero = document.getElementById('msHero');
   hero.hidden = false;
-  hero.innerHTML = heroHtml({ cover: coverHtml(FY.tracks, ICO_STAR), kick: 'six made this for u', title: 'For You', line: FY.line || 'six is cooking ur mix…', sub: (FY.tracks.length ? FY.tracks.length + ' songs' + durTotal(FY.tracks) : 'play some songs n watch this get smarter') + (FY.src ? ' · by six' : ''), btns: '<button type="button" class="mshb-play" data-act="play">play</button><button type="button" class="mshb-ghost" data-act="shuffle">shuffle</button><button type="button" class="mshb-ghost" data-act="refresh">new mix</button><button type="button" class="mshb-ghost" data-act="key">ur algorithm key</button>' });
+  hero.innerHTML = heroHtml({ cover: coverHtml(FY.tracks, ICO_STAR), kick: 'six made this for u', title: 'For You', line: FY.line || 'six is cooking ur mix…', sub: (FY.tracks.length ? FY.tracks.length + ' songs' + durTotal(FY.tracks) : 'play some songs n watch this get smarter') + (FY.src === 'fresh' ? ' · six starts at zero — he learns as u listen' : (FYPLAYS ? ' · six has clocked ' + FYPLAYS + ' of ur plays' : (FY.src ? ' · by six' : ''))), btns: '<button type="button" class="mshb-play" data-act="play">play</button><button type="button" class="mshb-ghost" data-act="shuffle">shuffle</button><button type="button" class="mshb-ghost" data-act="refresh">new mix</button><button type="button" class="mshb-ghost" data-act="key">ur algorithm key</button>' });
 }
 function renderLibHero(kind, list){
   var hero = document.getElementById('msHero');
@@ -10088,7 +10200,8 @@ function loadForYou(force){
   document.getElementById('msSecTitle').textContent = 'made for u';
   var h = gxHost();
   var tp = (h && h.taste) ? h.taste() : { artists: [], liked: [], recent: [] };
-  var ck = 'fy:' + tp.artists.join(',') + '|' + tp.liked.length + '|' + (tp.recent[0] ? tp.recent[0].t : '');
+  tp.mode = MUSMODE; FYPLAYS = tp.plays || 0;
+  var ck = 'fy:' + MUSMODE + ':' + tp.artists.join(',') + '|' + tp.liked.length + '|' + (tp.recent[0] ? tp.recent[0].t : '');
   if (!force) {
     var cached = musCacheGet(ck);
     if (cached && cached.vids && cached.vids.length) { FY = { tracks: cached.vids, line: cached.line || '', src: cached.src || '' }; renderTracks(FY.tracks); renderFYHero(); renderPanel(); markOn(); return; }
@@ -10163,6 +10276,7 @@ function openMenu(tr, i, x, y){
     var L2 = likedList(); var ix = L2.findIndex(function(v){ return v.id === tr.id; });
     if (ix >= 0) L2.splice(ix, 1); else L2.unshift({ id: tr.id, t: tr.t, a: tr.a, len: tr.len || 0, img: tr.img || '' });
     try { localStorage.setItem('gx_liked_v1', JSON.stringify(L2)); } catch (e) {}
+    if (h && h.note) h.note(tr, ix >= 0 ? -3 : 5, ix >= 0 ? 0 : 2);
     renderPanel(); if (VIEW === 'liked') setView('liked'); toast(ix >= 0 ? 'removed from liked' : 'liked');
   } });
   items.push({ sep: 1 });
@@ -10211,11 +10325,52 @@ function handleFyUrl(){
     F.importKey(key).then(function(ok){ if (ok) { toast('algorithm loaded from ur link'); FY.tracks = []; loadForYou(true); } });
   } catch (e) {}
 }
+var MUSMODE = 'six';
+try { MUSMODE = localStorage.getItem('gx_musmode_v1') === 'yt' ? 'yt' : 'six'; } catch (e) {}
+function paintMode(){
+  document.querySelectorAll('#msMode button').forEach(function(b){ b.classList.toggle('on', b.dataset.m === MUSMODE); });
+  document.getElementById('msModeHint').textContent = MUSMODE === 'six' ? 'spotify rules — clean songs only. no compilations, no best-of junk' : 'youtube rules — everything shows, mixes n all';
+}
+document.getElementById('msMode').addEventListener('click', function(e){
+  var b = e.target.closest('[data-m]'); if (!b || b.dataset.m === MUSMODE) return;
+  MUSMODE = b.dataset.m;
+  try { localStorage.setItem('gx_musmode_v1', MUSMODE); } catch (err) {}
+  paintMode();
+  if (VIEW === 'foryou') loadForYou(true);
+  else if (VIEW === 'browse') setList(MODE === 'search' ? 'search' : 'feed', MQ);
+  toast(MUSMODE === 'six' ? 'six mode — songs only' : 'yt mode — everything');
+});
+paintMode();
+var MKSTYLE = 'specific';
+document.getElementById('msmkStyle').addEventListener('click', function(e){
+  var b = e.target.closest('[data-s]'); if (!b) return;
+  MKSTYLE = b.dataset.s;
+  document.querySelectorAll('#msmkStyle button').forEach(function(x){ x.classList.toggle('on', x.dataset.s === MKSTYLE); });
+  document.getElementById('msmkHint').textContent = MKSTYLE === 'specific' ? 'specific — six adds exactly what u asked for, period. nothing extra.' : 'discovery — six runs with it: similar artists, adjacent sounds, hidden gems.';
+});
+document.getElementById('msAiPl').addEventListener('click', function(){ document.getElementById('msMaker').hidden = false; setTimeout(function(){ try { document.getElementById('msmkArtists').focus(); } catch (e) {} }, 30); });
+document.getElementById('msmkCancel').addEventListener('click', function(){ document.getElementById('msMaker').hidden = true; });
+document.getElementById('msMaker').addEventListener('click', function(e){ if (e.target === this) this.hidden = true; });
+document.getElementById('msmkGo').addEventListener('click', function(){
+  var artists = document.getElementById('msmkArtists').value.trim();
+  var type = document.getElementById('msmkType').value.trim();
+  if (!artists && !type) { toast('tell six an artist or a type first'); return; }
+  document.getElementById('msMaker').hidden = true;
+  toast('six is cooking ur playlist…');
+  fetch('/api/aiplaylist', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ artists: artists, type: type, style: MKSTYLE, mode: MUSMODE }) }).then(function(r){ return r.json(); }).then(function(j){
+    if (!j || !j.ok || !j.vids || !j.vids.length) { toast('six couldnt find enough for that — try wider'); return; }
+    var P = plsList();
+    P.push({ name: j.name || 'six mix', desc: MKSTYLE === 'specific' ? 'exactly what u asked six for' : 'six discovery — built off what u asked for', tracks: j.vids, created: Date.now() });
+    plsSave(P);
+    openPlaylist(P.length - 1);
+    toast('six made it — ' + j.vids.length + ' songs');
+  }).catch(function(){ toast('that flopped — try again'); });
+});
 var listSeq = 0;
 function loadMore(){
   if (loading || ended || VIEW !== 'browse') return;
   loading = true; moreEl.textContent = 'loading…';
-  var url = MODE === 'search' ? '/api/ytmore?q=' + encodeURIComponent(MQ) + '&c=' + encodeURIComponent(MCONT) : '/api/ytmore?f=music&c=' + encodeURIComponent(MCONT);
+  var url = MODE === 'search' ? '/api/ytmore?q=' + encodeURIComponent(MQ) + '&c=' + encodeURIComponent(MCONT) + '&mode=' + MUSMODE : '/api/ytmore?f=music&c=' + encodeURIComponent(MCONT) + '&mode=' + MUSMODE;
   fetch(url).then(function(r){ return r.json(); }).then(function(j){
     loading = false;
     if (!j || !j.ok || !j.vids || !j.vids.length) { ended = true; BROWSE.ended = true; moreEl.textContent = ''; return; }
@@ -10248,7 +10403,7 @@ document.getElementById('msPlAdd').addEventListener('click', function(){
     var P = plsList(); P.push({ name: String(name).slice(0, 40), desc: '', tracks: [], created: Date.now() }); plsSave(P); renderPanel(); toast('playlist made');
   } });
 });
-document.querySelectorAll('.mstab').forEach(function(b){ b.addEventListener('click', function(){ setView(b.dataset.view); }); });
+document.querySelectorAll('.mstab').forEach(function(b){ b.addEventListener('click', function(){ setView(b.dataset.view); if (b.dataset.view === 'browse' && !BROWSE.tracks.length && !loading) setList('feed', ''); }); });
 var typeTimer = null;
 var msQ = document.getElementById('msQ');
 function runSearch(){ var v = msQ.value.trim(); document.querySelectorAll('.mschip').forEach(function(c){ c.classList.remove('on'); }); if (VIEW !== 'browse') setView('browse'); setList(v ? 'search' : 'feed', v); }
@@ -11276,11 +11431,12 @@ body[data-sky]{background-color:#060609;background-image:radial-gradient(1100px 
 #gxLike.on svg{fill:#ff5d7a}
 .gxb-volwrap{display:flex;align-items:center;gap:6px;color:#cfc9ea;padding:0 2px}
 #gxVolR{width:112px;flex:none;accent-color:rgb(var(--acc));cursor:pointer}
-@media (max-width:820px){#gxBar{bottom:0;padding:8px 10px calc(8px + env(safe-area-inset-bottom));gap:9px}#gxArt{width:44px;height:44px}.gxb-meta{width:auto;flex:1}.gxb-prog{display:none}.gxb-volwrap{display:none}#gxShuf,#gxRep,#gxDl,#gxQB{display:none}.gxb-btns{gap:1px}.gxb-btn{width:34px;height:34px}.gxb-main{width:40px;height:40px}}
-button{border-radius:8px!important}
-#tabbar{border-radius:16px!important;transition:transform .28s ease,opacity .28s ease}
-body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
-#gxArt{cursor:pointer}#gxBar{font-family:Inter,system-ui,sans-serif;z-index:60}
+#gxBar.float{bottom:auto;right:auto;width:min(560px,94vw);border-radius:14px;border:1px solid rgba(255,255,255,.16);box-shadow:0 24px 60px rgba(0,0,0,.55)}
+#gxArt,.gxb-meta{touch-action:none}
+#gxBar.dragging{opacity:.97}
+@media (max-width:820px){#gxBar.float{width:94vw}}
+@media (max-width:820px){#gxBar{bottom:0;padding:8px 10px calc(8px + env(safe-area-inset-bottom));gap:9px}#gxArt{width:44px;height:44px}.gxb-meta{width:auto;flex:1}.gxb-prog{display:flex;position:absolute;left:0;right:0;top:-6px;height:16px;align-items:center;padding:0 12px;gap:8px}.gxb-prog span{font-size:10px}.gxb-volwrap{display:none}#gxDl,#gxQB{display:none}.gxb-btns{gap:1px}.gxb-btn{width:34px;height:34px}.gxb-main{width:40px;height:40px}}
+#gxBar{font-family:Inter,system-ui,sans-serif;z-index:60}
 </style></head><body>${STAR_CANVAS}
 <iframe id="f" allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone" allowfullscreen></iframe>
 <div id="gxBar" hidden><img id="gxArt" alt=""><div class="gxb-meta"><b id="gxT"></b><span id="gxA"></span></div><div class="gxb-mid"><div class="gxb-btns"><button type="button" class="gxb-btn" id="gxShuf" aria-label="shuffle"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="m15 15 6 6"/><path d="M4 4l5 5"/></svg></button><button type="button" class="gxb-btn" id="gxPrev" aria-label="previous"><svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M7 6h2.4v12H7zM19 6v12L9.8 12z"/></svg></button><button type="button" class="gxb-btn gxb-main" id="gxPlay" aria-label="play or pause"><svg width="23" height="23" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button><button type="button" class="gxb-btn" id="gxNext" aria-label="next"><svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M14.6 6H17v12h-2.4zM5 6v12l9.2-6z"/></svg></button><button type="button" class="gxb-btn" id="gxRep" aria-label="repeat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg><span id="gxRepN"></span></button></div><div class="gxb-prog" id="gxProg"><span id="gxCur">0:00</span><div class="gxb-tr"><div id="gxFill"></div></div><span id="gxDur">0:00</span></div></div><div class="gxb-end"><button type="button" class="gxb-btn" id="gxLike" aria-label="like"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></button><button type="button" class="gxb-btn" id="gxDl" aria-label="download mp3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button><button type="button" class="gxb-btn" id="gxQB" aria-label="queue"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h13"/><path d="M4 12h13"/><path d="M4 18h9"/><path d="M18 15l5 3-5 3z" fill="currentColor" stroke="none"/></svg></button><span class="gxb-volwrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg><input type="range" id="gxVolR" min="0" max="100" value="85"></span><button type="button" class="gxb-btn" id="gxClose" aria-label="close player"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div><audio id="gxAu" preload="auto"></audio></div><script>(function(){
@@ -11292,7 +11448,7 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
   var FRAME = document.getElementById('f');
   var Q = [], I = -1, shuf = false, rep = 0, seekPos = 0, lastSave = 0, wantPlay = false;
   var icoPlay = '<path d="M8 5v14l11-7z"/>', icoPause = '<path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/>';
-  var objUrl = null, warmed = {}, playT0 = 0, deepDone = false;
+  var objUrl = null, warmed = {}, playT0 = 0, deepDone = false, deep2Done = false, lastT = 0;
   function fmt(s){ s = Math.max(0, Math.floor(s || 0)); var m = Math.floor(s / 60), r = s % 60; return m + ':' + (r < 10 ? '0' : '') + r; }
   function cur(){ return (I >= 0 && Q[I]) ? Q[I] : null; }
   function isLocal(t){ return !!t && (t.local === 1 || String(t.id || '').indexOf('loc:') === 0); }
@@ -11378,10 +11534,18 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
     var ids = Object.keys(t.tracks);
     if (ids.length > 90) { ids.sort(function(x, y){ return (t.tracks[x].last || 0) - (t.tracks[y].last || 0); }); ids.slice(0, ids.length - 90).forEach(function(k){ delete t.tracks[k]; }); }
   }
+  function tasteDecay(t){
+    var now = Date.now(); var last = t.decayAt || now; var days = (now - last) / 864e5;
+    if (days >= 1) { var f = Math.pow(0.92, Math.min(days, 14)); Object.keys(t.artists).forEach(function(a){ t.artists[a] = Math.round(t.artists[a] * f * 10) / 10; if (Math.abs(t.artists[a]) < 0.5) delete t.artists[a]; }); t.decayAt = now; }
+    else if (!t.decayAt) t.decayAt = now;
+    return t;
+  }
   function tastePlay(tr){
-    var t = tasteLoad();
+    var t = tasteDecay(tasteLoad());
     t.plays = (t.plays || 0) + 1;
+    var prevRec = t.tracks[tr.id];
     tasteBump(t, tr, 1, 1);
+    if (prevRec && prevRec.last && Date.now() - prevRec.last < 18e5) tasteBump(t, tr, 1, 1);
     t.recent = (t.recent || []).filter(function(x){ return x.id !== tr.id; });
     t.recent.unshift({ id: tr.id, t: tr.t || '', a: tr.a || '' });
     t.recent = t.recent.slice(0, 12);
@@ -11389,7 +11553,7 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
   }
   function tasteSkipCheck(prev, listened){
     if (!prev || listened >= 10) return;
-    var t = tasteLoad(); tasteBump(t, prev, -1, 0); tasteSave(t);
+    var t = tasteLoad(); tasteBump(t, prev, listened < 5 ? -2 : -1, 0); tasteSave(t);
   }
   function tasteDeep(){
     var tr = cur(); if (!tr) return;
@@ -11400,7 +11564,10 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
     var L = likedList();
     L.forEach(function(x){ var a = String(x.a || '').trim(); if (a && a !== 'your files') t.artists[a] = (t.artists[a] || 0) + 5; });
     var arts = Object.keys(t.artists).filter(function(a){ return t.artists[a] > 0; }).sort(function(x, y){ return t.artists[y] - t.artists[x]; }).slice(0, 6);
-    return { artists: arts, liked: L.slice(0, 8).map(function(x){ return { t: x.t || '', a: x.a || '' }; }), recent: (t.recent || []).slice(0, 8).map(function(x){ return { t: x.t || '', a: x.a || '' }; }) };
+    var skip = Object.keys(t.artists).filter(function(a){ return t.artists[a] < 0; }).sort(function(x, y){ return t.artists[x] - t.artists[y]; }).slice(0, 6);
+    var tids = Object.keys(t.tracks).filter(function(id){ return id.indexOf('loc:') !== 0; }).sort(function(x, y){ return (t.tracks[y].n || 0) - (t.tracks[x].n || 0); }).slice(0, 8);
+    var top = tids.map(function(id){ return { t: t.tracks[id].t || '', a: t.tracks[id].a || '', n: t.tracks[id].n || 0 }; }).filter(function(x){ return x.t; });
+    return { artists: arts, liked: L.slice(0, 8).map(function(x){ return { t: x.t || '', a: x.a || '' }; }), recent: (t.recent || []).slice(0, 8).map(function(x){ return { t: x.t || '', a: x.a || '' }; }), top: top, skip: skip, plays: t.plays || 0 };
   }
   // ---------- the key: ur whole algorithm in one secret string ----------
   // aes-256-gcm via webcrypto. the key string carries its own secret,
@@ -11503,6 +11670,7 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
     el('gxShuf').classList.toggle('on', shuf);
     el('gxRep').classList.toggle('on', rep > 0);
     el('gxRepN').textContent = rep === 2 ? '1' : '';
+    au.loop = (rep === 2);
     el('gxLike').classList.toggle('on', isLiked(t.id));
     if ('mediaSession' in navigator) { try { navigator.mediaSession.metadata = new MediaMetadata({ title: t.t || '', artist: t.a || '', artwork: t.img && t.img.indexOf('data:') !== 0 ? [{ src: t.img, sizes: '320x180' }] : [] }); } catch (e) {} }
     fire();
@@ -11532,8 +11700,18 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
     au.src = '/yt/stream?v=' + encodeURIComponent(t.id) + '&kind=a';
     paint();
   }
+  var ORD = null, ORDP = 0;
+  function buildOrd(){
+    ORD = null; ORDP = 0;
+    if (!shuf || Q.length < 2 || I < 0) return;
+    var rest = [];
+    for (var k = 0; k < Q.length; k++) if (k !== I) rest.push(k);
+    for (var i2 = rest.length - 1; i2 > 0; i2--) { var j2 = Math.floor(Math.random() * (i2 + 1)); var tmp2 = rest[i2]; rest[i2] = rest[j2]; rest[j2] = tmp2; }
+    ORD = [I].concat(rest); ORDP = 0;
+  }
   function nextIdx(){
     if (!Q.length) return -1;
+    if (shuf && ORD) return ORDP + 1 < ORD.length ? ORD[ORDP + 1] : (rep === 1 ? ORD[0] : -1);
     if (shuf && Q.length > 1) { var n; do { n = Math.floor(Math.random() * Q.length); } while (n === I); return n; }
     var n2 = I + 1;
     if (n2 >= Q.length) return rep === 1 ? 0 : -1;
@@ -11549,7 +11727,8 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
     if (i < 0 || i >= Q.length) return;
     var prev = cur(); var listened = playT0 ? (Date.now() - playT0) / 1000 : 999;
     if (prev && prev.id !== (Q[i] && Q[i].id)) tasteSkipCheck(prev, listened);
-    I = i; playT0 = Date.now(); deepDone = false;
+    I = i; playT0 = Date.now(); deepDone = false; deep2Done = false;
+    if (shuf && (!ORD || ORD[ORDP] !== i)) buildOrd();
     load(pos); wantPlay = true;
     if (!isLocal(cur())) { var p = au.play(); if (p && p.catch) p.catch(function(){ paint(); }); }
     tastePlay(cur());
@@ -11559,25 +11738,31 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
   function next(manual){
     if (!Q.length) return;
     if (rep === 2 && !manual) { playAt(I, 0); return; }
+    if (shuf && ORD) {
+      if (ORDP + 1 < ORD.length) { ORDP++; playAt(ORD[ORDP], 0); return; }
+      if (rep === 1 || manual) { ORDP = 0; playAt(ORD[0], 0); return; }
+      au.pause(); save(); paint(); return;
+    }
     var n = nextIdx();
     if (n < 0) { if (manual) n = 0; else { au.pause(); save(); paint(); return; } }
     playAt(n, 0);
   }
   window.gxMusic = {
-    play: function(list, i){ Q = list || []; playAt(i || 0, 0); },
+    play: function(list, i){ Q = list || []; ORD = null; ORDP = 0; playAt(i || 0, 0); },
     toggle: function(){ if (!cur()) return; if (au.paused) { wantPlay = true; var p = au.play(); if (p && p.catch) p.catch(function(){}); } else { wantPlay = false; au.pause(); } },
     next: function(){ next(true); },
-    prev: function(){ if (au.currentTime > 3) { au.currentTime = 0; return; } if (I > 0) playAt(I - 1, 0); },
-    state: function(){ return { queue: Q, idx: I, id: cur() ? cur().id : '', playing: !au.paused && !!cur(), pos: au.currentTime || 0 }; },
-    enqueue: function(tr){ if (tr) { Q.push(tr); save(); } },
-    enqueueNext: function(tr){ if (tr) { Q.splice(I + 1, 0, tr); save(); } },
+    prev: function(){ if (au.currentTime > 3) { au.currentTime = 0; return; } if (shuf && ORD && ORDP > 0) { ORDP--; playAt(ORD[ORDP], 0); return; } if (I > 0) playAt(I - 1, 0); },
+    state: function(){ return { queue: Q, idx: I, id: cur() ? cur().id : '', playing: !au.paused && !!cur(), pos: au.currentTime || 0, shuf: shuf, rep: rep }; },
+    enqueue: function(tr){ if (tr) { Q.push(tr); if (ORD) ORD.push(Q.length - 1); save(); } },
+    enqueueNext: function(tr){ if (tr) { Q.splice(I + 1, 0, tr); ORD = null; if (shuf) buildOrd(); save(); } },
     taste: function(){ return tasteSummary(); },
+    note: function(tr, dA, dT){ if (!tr) return; var t = tasteDecay(tasteLoad()); tasteBump(t, tr, dA || 0, dT || 0); tasteSave(t); },
     stop: function(){ wantPlay = false; au.pause(); Q = []; I = -1; au.removeAttribute('src'); try { au.load(); } catch (e) {} save(); paint(); }
   };
   el('gxPlay').addEventListener('click', function(){ window.gxMusic.toggle(); });
   el('gxNext').addEventListener('click', function(){ next(true); });
   el('gxPrev').addEventListener('click', function(){ window.gxMusic.prev(); });
-  el('gxShuf').addEventListener('click', function(){ shuf = !shuf; paint(); save(); });
+  el('gxShuf').addEventListener('click', function(){ shuf = !shuf; if (shuf) buildOrd(); else { ORD = null; ORDP = 0; } paint(); save(); });
   el('gxRep').addEventListener('click', function(){ rep = (rep + 1) % 3; paint(); save(); });
   el('gxClose').addEventListener('click', function(){ window.gxMusic.stop(); });
   el('gxDl').addEventListener('click', function(){
@@ -11586,9 +11771,9 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
     var a2 = document.createElement('a'); a2.href = '/yt/stream?v=' + encodeURIComponent(t.id) + '&kind=a&dl=1'; a2.download = ''; document.body.appendChild(a2); a2.click(); a2.remove();
   });
   el('gxQB').addEventListener('click', function(){ navMusic('#queue'); });
-  el('gxArt').addEventListener('click', function(){ navMusic(''); });
-  el('gxT').addEventListener('click', function(){ navMusic(''); });
-  el('gxA').addEventListener('click', function(){ navMusic(''); });
+  el('gxArt').addEventListener('click', function(){ if (dragMoved) return; navMusic(''); });
+  el('gxT').addEventListener('click', function(){ if (dragMoved) return; navMusic(''); });
+  el('gxA').addEventListener('click', function(){ if (dragMoved) return; navMusic(''); });
   el('gxLike').addEventListener('click', function(){
     var t = cur(); if (!t) return;
     var L = likedList(), i = L.findIndex(function(x){ return x.id === t.id; });
@@ -11603,13 +11788,17 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
   try { var sv = parseFloat(localStorage.getItem('gx_vol')); if (!isNaN(sv)) { au.volume = sv; volR.value = Math.round(sv * 100); } else au.volume = 0.85; } catch (e) { au.volume = 0.85; }
   volR.addEventListener('input', function(){ au.volume = volR.value / 100; try { localStorage.setItem('gx_vol', String(au.volume)); } catch (e) {} });
   el('gxProg').addEventListener('click', function(e){
-    if (!au.duration) return;
+    if (!au.duration || !isFinite(au.duration)) return;
     var tr = this.querySelector('.gxb-tr'), r = tr.getBoundingClientRect();
-    au.currentTime = au.duration * Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    var ratio = (e.clientX - r.left) / r.width;
+    if (!isFinite(ratio)) return;
+    au.currentTime = au.duration * Math.min(1, Math.max(0, ratio));
   });
   au.addEventListener('loadedmetadata', function(){ if (seekPos > 0) { try { au.currentTime = seekPos; } catch (e) {} seekPos = 0; } el('gxDur').textContent = fmt(au.duration); save(); });
   au.addEventListener('timeupdate', function(){
-    if (au.duration) { el('gxFill').style.width = (au.currentTime / au.duration * 100) + '%'; if (!deepDone && au.currentTime > 30 && au.currentTime / au.duration > 0.4) { deepDone = true; tasteDeep(); } if (au.currentTime / au.duration > 0.5) warmNext(); }
+    if (au.duration) { el('gxFill').style.width = (au.currentTime / au.duration * 100) + '%'; if (!deepDone && au.currentTime > 30 && au.currentTime / au.duration > 0.4) { deepDone = true; tasteDeep(); } if (!deep2Done && au.currentTime / au.duration > 0.85) { deep2Done = true; var c2 = cur(); if (c2) { var t4 = tasteLoad(); tasteBump(t4, c2, 1, 0); tasteSave(t4); } } if (au.currentTime / au.duration > 0.5) warmNext(); }
+    if (rep === 2 && au.duration && lastT > au.duration - 2 && au.currentTime < 2 && lastT - au.currentTime > 3) { var trw = cur(); if (trw) { var t6 = tasteLoad(); tasteBump(t6, trw, 2, 1); tasteSave(t6); } }
+    lastT = au.currentTime;
     el('gxCur').textContent = fmt(au.currentTime);
     var now = Date.now(); if (now - lastSave > 4000) { lastSave = now; save(); }
   });
@@ -11624,12 +11813,36 @@ body.gx-hasbar #tabbar{transform:translateY(170%);opacity:0;pointer-events:none}
   document.addEventListener('pointerdown', prime, true);
   document.addEventListener('keydown', prime, true);
   window.addEventListener('message', function(e){ if (e && e.data && e.data.sixPrime) prime(); });
+  var dragMoved = false;
+  function applyBarPos(){ try { var bp = JSON.parse(localStorage.getItem('gx_barpos_v1') || 'null'); if (bp && typeof bp.x === 'number') { bar.classList.add('float'); bar.style.left = Math.max(0, Math.min(bp.x, window.innerWidth - 120)) + 'px'; bar.style.top = Math.max(0, Math.min(bp.y, window.innerHeight - 70)) + 'px'; } } catch (e) {} }
+  function dockBar(){ bar.classList.remove('float'); bar.style.left = ''; bar.style.top = ''; try { localStorage.removeItem('gx_barpos_v1'); } catch (e) {} }
+  var dg = null;
+  bar.addEventListener('pointerdown', function(e){
+    if (e.target.closest('button, input, .gxb-prog, a')) return;
+    dg = { x: e.clientX, y: e.clientY, moved: false, l: 0, t: 0 };
+    var r = bar.getBoundingClientRect(); dg.l = r.left; dg.t = r.top;
+    try { bar.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  bar.addEventListener('pointermove', function(e){
+    if (!dg) return;
+    var dx = e.clientX - dg.x, dy = e.clientY - dg.y;
+    if (!dg.moved && Math.abs(dx) + Math.abs(dy) > 7) { dg.moved = true; dragMoved = true; if (!bar.classList.contains('float')) { bar.classList.add('float'); bar.style.left = dg.l + 'px'; bar.style.top = dg.t + 'px'; } bar.classList.add('dragging'); }
+    if (dg.moved) { bar.style.left = Math.max(0, Math.min(dg.l + dx, window.innerWidth - 100)) + 'px'; bar.style.top = Math.max(0, Math.min(dg.t + dy, window.innerHeight - 60)) + 'px'; }
+  });
+  bar.addEventListener('pointerup', function(){
+    if (!dg) return;
+    if (dg.moved) { try { localStorage.setItem('gx_barpos_v1', JSON.stringify({ x: parseInt(bar.style.left, 10) || 0, y: parseInt(bar.style.top, 10) || 0 })); } catch (e) {} setTimeout(function(){ dragMoved = false; }, 60); }
+    dg = null; bar.classList.remove('dragging');
+  });
+  bar.addEventListener('dblclick', function(e){ if (e.target.closest('button, input, .gxb-prog')) return; dockBar(); });
+  applyBarPos();
   try {
     var st = JSON.parse(localStorage.getItem('gx_music_v1') || 'null');
     if (st && st.q && st.q.length && st.i >= 0 && st.i < st.q.length) {
       Q = st.q; I = st.i; shuf = !!st.shuf; rep = st.rep || 0;
       playT0 = Date.now();
       load(st.pos || 0);
+      if (shuf) buildOrd();
       if (st.playing) { wantPlay = true; if (!isLocal(cur())) { var p2 = au.play(); if (p2 && p2.catch) p2.catch(function(){ paint(); }); } }
     }
   } catch (e) {}
@@ -12453,25 +12666,32 @@ async function sixDailyPick() {
 // recent plays) and posts the summary here. six (gemini, page lane)
 // turns it into search queries + a one-line blurb; the server runs
 // those searches in parallel (cached), merges + dedupes them into
-// one personal feed. no taste yet = six seeds it with his own taste.
+// one personal feed. no taste yet = ZERO — a neutral charts mix.
+// six never seeds anybody with anyone else's taste; he learns each
+// listener from scratch, from how they actually listen.
 // results cached per taste-hash for 30 min so repeat loads are
 // instant and six is not re-asked for the same profile.
 const forYouCache = new Map();
-const FY_SEED_QUERIES = ['lucki songs', 'clara la san songs', 'd4vd songs', 'xaviersobased songs', 'drake classic songs', 'frank ocean songs'];
+const FY_FRESH_QUERIES = ['top hits right now', 'viral songs right now', 'most streamed songs right now', 'new music right now'];
+const FY_FRESH_LINES = ['clean slate — i know nothing about u yet. press play n i start learning', 'brand new brain. every song u play teaches me ur taste', 'zero assumptions about u. play something n watch me figure u out'];
 const FY_LINES = ['made this one for u twin — six', 'ur taste, my brain. thats the whole algorithm', 'cooked this mix off what u actually play — six', 'spotify could never. heres ur mix'];
 function fyCleanStr(v, n) { return String(v == null ? '' : v).replace(/[\r\n\t]+/g, ' ').trim().slice(0, n || 80); }
 function fyShape(b) {
   b = (b && typeof b === 'object') ? b : {};
   const artists = (Array.isArray(b.artists) ? b.artists : []).map(x => fyCleanStr(x, 60)).filter(Boolean).slice(0, 6);
   const lite = (arr) => (Array.isArray(arr) ? arr : []).map(x => ({ t: fyCleanStr(x && x.t, 100), a: fyCleanStr(x && x.a, 60) })).filter(x => x.t).slice(0, 8);
-  return { artists, liked: lite(b.liked), recent: lite(b.recent) };
+  const top = (Array.isArray(b.top) ? b.top : []).map(x => ({ t: fyCleanStr(x && x.t, 100), a: fyCleanStr(x && x.a, 60), n: Math.min(999, Math.max(0, parseInt(x && x.n, 10) || 0)) })).filter(x => x.t).slice(0, 8);
+  const skip = (Array.isArray(b.skip) ? b.skip : []).map(x => fyCleanStr(x, 60)).filter(Boolean).slice(0, 6);
+  const plays = Math.min(100000, Math.max(0, parseInt(b.plays, 10) || 0));
+  return { artists, liked: lite(b.liked), recent: lite(b.recent), top, skip, plays, mode: b.mode === 'yt' ? 'yt' : 'six' };
 }
 function fyFallbackQueries(p) {
   const qs = [];
+  if (p.top && p.top.length) qs.push('songs like ' + p.top[0].t + ' ' + p.top[0].a);
   p.artists.forEach(a => { qs.push(a + ' songs'); });
   if (p.artists.length) qs.push(p.artists[0] + ' similar artists songs');
   if (p.liked.length) qs.push(p.liked[0].a ? (p.liked[0].a + ' songs') : (p.liked[0].t + ' similar songs'));
-  for (const s of FY_SEED_QUERIES) { if (qs.length >= 5) break; if (!qs.includes(s)) qs.push(s); }
+  for (const s of FY_FRESH_QUERIES) { if (qs.length >= 5) break; if (!qs.includes(s)) qs.push(s); }
   return qs.slice(0, 5);
 }
 async function buildForYou(p) {
@@ -12479,15 +12699,22 @@ async function buildForYou(p) {
   const c = forYouCache.get(key);
   if (c && Date.now() - c.at < 1800e3) return Object.assign({}, c.out, { cached: 1 });
   let queries = null, line = '', src = 'algo';
-  const hasTaste = !!(p.artists.length || p.liked.length || p.recent.length);
-  if (hasTaste) {
+  const hasTaste = !!(p.artists.length || p.liked.length || p.recent.length || (p.top && p.top.length));
+  if (!hasTaste) {
+    // zero start: no seeding, no pretending. neutral charts while six learns.
+    queries = FY_FRESH_QUERIES.slice();
+    line = FY_FRESH_LINES[sixHash('fyfresh:' + key) % FY_FRESH_LINES.length];
+    src = 'fresh';
+  } else {
     try {
       const prompt = 'u run 6ixmusic now — the for-you feed is urs, like spotify but its u. this listener\'s taste profile:\n' +
         'top artists: ' + (p.artists.join(', ') || 'none yet') + '\n' +
         'liked songs: ' + (p.liked.map(x => x.t + ' by ' + x.a).join('; ') || 'none yet') + '\n' +
         'recently played: ' + (p.recent.map(x => x.t + ' by ' + x.a).join('; ') || 'none yet') + '\n' +
+        'songs they finish on repeat (heaviest signal — weight these most): ' + (p.top.map(x => x.t + ' by ' + x.a + ' (x' + x.n + ')').join('; ') || 'none yet') + '\n' +
+        'artists they skip fast (NEVER suggest them or their soundalikes): ' + (p.skip.join(', ') || 'none') + '\n' +
         'reply with ONLY this JSON, nothing else, no markdown: {"queries":["<youtube music search phrase>"],"line":"<one short line in ur voice about this mix, lowercase, max 90 chars>"}\n' +
-        'give 5 queries: a mix of their artists\' best songs, similar artists they would love, and one curveball in the same world. search phrases only, no urls.';
+        'give 5 queries: at least one "songs like <their top finished song>", their top artists, similar artists they would love, and one curveball in the same world. search phrases only, no urls.';
       const reply = await Promise.race([
         askSix([{ role: 'user', content: prompt }], SIX_SYSTEM),
         new Promise(res => setTimeout(() => res(''), 12000))
@@ -12505,7 +12732,7 @@ async function buildForYou(p) {
   if (!queries) queries = fyFallbackQueries(p);
   if (!line) line = FY_LINES[sixHash('fyline:' + key) % FY_LINES.length];
   const hits = await Promise.all(queries.slice(0, 4).map(q => fetchYtSearchIt(q).catch(() => null)));
-  const pools = hits.map(h => h ? musNorm(h.vids) : []);
+  const pools = hits.map(h => h ? musNorm(h.vids, p.mode !== 'yt') : []);
   const merged = [];
   for (let r = 0; r < 8 && merged.length < 30; r++) {
     for (const pool of pools) { if (pool[r] && merged.length < 30) merged.push(pool[r]); }
@@ -12514,6 +12741,46 @@ async function buildForYou(p) {
   const out = { ok: !!vids.length, vids, line, src, queries };
   if (vids.length) { forYouCache.set(key, { at: Date.now(), out }); if (forYouCache.size > 60) forYouCache.delete(forYouCache.keys().next().value); }
   return out;
+}
+
+async function buildAiPlaylist(b) {
+  b = (b && typeof b === 'object') ? b : {};
+  const artists = (Array.isArray(b.artists) ? b.artists : String(b.artists || '').split(',')).map(x => fyCleanStr(x, 60)).filter(Boolean).slice(0, 6);
+  const type = fyCleanStr(b.type || b.prompt || '', 120);
+  const style = b.style === 'discovery' ? 'discovery' : 'specific';
+  const strict = b.mode !== 'yt';
+  let name = '', queries = [];
+  if (style === 'specific') {
+    // exactly what they asked for. period. no additions, no soundalikes.
+    queries = artists.map(a => a + ' songs');
+    if (type) queries.push(type + ' songs');
+    name = (artists.join(', ') || type || 'my mix').slice(0, 40);
+  } else {
+    try {
+      const prompt = 'u are six, building a DISCOVERY playlist. the listener asked for artists: ' + (artists.join(', ') || 'none') + ' — and this type of songs: ' + (type || 'none') + '. go WIDER than the ask: similar artists, adjacent sounds, hidden gems in the same world. reply with ONLY this JSON, nothing else: {"name":"<short playlist name, lowercase>","queries":["<youtube music search phrase>"]} — give exactly 6 search phrases.';
+      const reply = await Promise.race([askSix([{ role: 'user', content: prompt }], SIX_SYSTEM), new Promise(res => setTimeout(() => res(''), 12000))]);
+      const m = String(reply || '').match(/\{[\s\S]*?\}/);
+      if (m) { const j = JSON.parse(m[0]); if (j && Array.isArray(j.queries)) { queries = j.queries.map(x => fyCleanStr(x, 80)).filter(Boolean).slice(0, 6); name = fyCleanStr(j.name, 40); } }
+    } catch {}
+    if (queries.length < 3) { queries = artists.map(a => a + ' similar artists songs'); if (type) queries.push(type + ' similar songs', type + ' songs'); if (!name) name = ((artists[0] || type || 'discovery') + ' + more like it').slice(0, 40); }
+  }
+  if (!queries.length) return { ok: false, name: '', vids: [], style };
+  const hits = await Promise.all(queries.slice(0, 6).map(q => fetchYtSearchIt(q).catch(() => null)));
+  const pools = hits.map(h => h ? musNorm(h.vids, strict) : []);
+  let merged = [];
+  if (style === 'specific') {
+    pools.forEach((pool, pi) => {
+      if (artists.length && pi < artists.length) {
+        const w = artists[pi].toLowerCase();
+        pool = pool.filter(v => { const va = String(v.a || '').toLowerCase(); return va && (va.indexOf(w) >= 0 || w.indexOf(va) >= 0); });
+      }
+      merged = merged.concat(pool);
+    });
+  } else {
+    for (let r = 0; r < 6 && merged.length < 30; r++) for (const pool of pools) { if (pool[r] && merged.length < 30) merged.push(pool[r]); }
+  }
+  const vids = musDedupe(merged, 1).slice(0, 24);
+  return { ok: !!vids.length, name: name || 'six made this', vids, style };
 }
 
 function voterKeyFor(req) {
@@ -13821,6 +14088,12 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(JSON.stringify({ ok: !!feed, vids: feed ? feed.vids : [], cont: feed ? feed.cont : '' }));
   }
+  if (u.pathname === '/api/aiplaylist' && req.method === 'POST') {
+    let plout = { ok: false, name: '', vids: [] };
+    try { const b = await readJsonBody(req); plout = await buildAiPlaylist(b); } catch (e) {}
+    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-cache' });
+    return res.end(JSON.stringify(plout));
+  }
   if (u.pathname === '/api/foryou' && req.method === 'POST') {
     let fout = { ok: false, vids: [], line: '', src: 'algo' };
     try { const b = await readJsonBody(req); fout = await buildForYou(fyShape(b)); } catch (e) {}
@@ -13832,8 +14105,9 @@ const server = http.createServer(async (req, res) => {
     const mf2 = String(u.searchParams.get('f') || '');
     let mo2 = { ok: false, vids: [], cont: '' };
     try {
-      const hit2 = mf2 ? await fetchYtFeed(mf2) : (mq2 ? await fetchYtSearchIt(mq2) : null);
-      if (hit2) mo2 = { ok: true, vids: musDedupe(musNorm(hit2.vids)), cont: hit2.cont || '' };
+      const strict2 = u.searchParams.get('mode') !== 'yt';
+      const hit2 = (mf2 === 'music' && strict2) ? await fetchChartSongs() : (mf2 ? await fetchYtFeed(mf2) : (mq2 ? await fetchYtSearchIt(mq2) : null));
+      if (hit2) mo2 = { ok: true, vids: musDedupe(musNorm(hit2.vids, strict2)), cont: hit2.cont || '' };
     } catch (e) {}
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(JSON.stringify(mo2));
@@ -13845,7 +14119,7 @@ const server = http.createServer(async (req, res) => {
     let mout = { ok: false, vids: [], cont: '' };
     if (mq && mc) {
       const hit = await fetchYtSearchIt(mq, mc);
-      if (hit) mout = { ok: true, vids: hit.vids.map(v => ({ id: v.videoId, t: v.title, a: v.author, len: v.lengthSeconds, img: proxied('https://i.ytimg.com/vi/' + v.videoId + '/hqdefault.jpg') })), cont: hit.cont || '' };
+      if (hit) mout = { ok: true, vids: musNorm(hit.vids, u.searchParams.get('mode') !== 'yt'), cont: hit.cont || '' };
     }
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(JSON.stringify(mout));
