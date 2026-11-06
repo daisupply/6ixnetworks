@@ -1709,6 +1709,10 @@ function isStaticAsset(target, ct) {
 // default, with a one-tap direct mode for games whose code fights it.
 const GM_FEED = 'https://rss.gamemonetize.com/rssfeed.php?format=json&category=All&type=html5&amount=9000';
 const FAMOBI_FEED = 'https://api.famobi.com/feed';
+const EXTRA_GAMES = [
+  { t: 'CloverPit', u: 'https://genizymath.github.io/iframe/716-fix3.html', img: '', c: 'Arcade', w: 960, h: 540 },
+  { t: 'Dice a Million', u: 'https://wasm.rip/files/diceAmillion/diceamillion.html', img: '', c: 'Arcade', w: 960, h: 540 },
+];
 const FALLBACK_GAMES = [
   { t: 'Nutty Rush Kart', u: 'https://html5.gamemonetize.co/jo8widlpg0usj47eix91m74q1jzvon00/', img: 'https://img.gamemonetize.com/jo8widlpg0usj47eix91m74q1jzvon00/512x384.jpg', c: 'Racing', w: 800, h: 600 },
   { t: '2048', u: 'https://play2048.co/', img: '', c: 'Puzzles', w: 800, h: 600 },
@@ -1717,7 +1721,7 @@ const FALLBACK_GAMES = [
   { t: 'Slow Roads', u: 'https://slowroads.io/', img: '', c: 'Racing', w: 800, h: 600 },
 ];
 let gamesCache = { at: 0, list: null };
-const POP_KEYS = ['slope','moto x3m','basketball superstars','8 ball billiards classic','8 ball pool 2d','defly.io','drift dudes','gun spin','chess classic','solitaire legend','mahjong world','smarty bubbles 2','garden match 3d','fireboy and watergirl online','cookie clicker : clicker games','wordle 2.0','geometry dash 3d','snake vs ai','doodle jump 4','western sniper','sniper hero: urban strike','dead city: zombie survival','fps block strike dust2','modern strike shooting game','drag racing club','drift cup racing','endless truck','words of wonders','word search classic','jigsaw puzzle deluxe','thief puzzle','om nom bubbles','bubble tower 3d','temple blocks','train 2048','giant 2048','3d basketball','euro penalty cup 2021','penalty superstar','zombie barrage','racing cars','truck trials','element blocks','snowball champions','3d chess','sniper shooter 3d','slam dunk basketball','penalty shootout: multi league'];
+const POP_KEYS = ['cloverpit','dice a million','slope','moto x3m','basketball superstars','8 ball billiards classic','8 ball pool 2d','defly.io','drift dudes','gun spin','chess classic','solitaire legend','mahjong world','smarty bubbles 2','garden match 3d','fireboy and watergirl online','cookie clicker : clicker games','wordle 2.0','geometry dash 3d','snake vs ai','doodle jump 4','western sniper','sniper hero: urban strike','dead city: zombie survival','fps block strike dust2','modern strike shooting game','drag racing club','drift cup racing','endless truck','words of wonders','word search classic','jigsaw puzzle deluxe','thief puzzle','om nom bubbles','bubble tower 3d','temple blocks','train 2048','giant 2048','3d basketball','euro penalty cup 2021','penalty superstar','zombie barrage','racing cars','truck trials','element blocks','snowball champions','3d chess','sniper shooter 3d','slam dunk basketball','penalty shootout: multi league'];
 function normT(t) { return String(t || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
 function pinPopular(list) {
   const used = new Set(); const head = [];
@@ -1744,6 +1748,8 @@ async function loadGames() {
     seenT.add(tk);
     list.push({ t: String(t).replace(/&amp;/g, '&').replace(/&#0?39;/g, '\'').replace(/&quot;/g, '"').slice(0, 80), u, img: img || '', c: c || 'Arcade', w: w || 800, h: h || 600 });
   }
+  // hand-added games first (requests + direct asks) — feeds can't shadow them
+  for (const g of EXTRA_GAMES) push(g.t, g.u, g.img, g.c, g.w, g.h);
   // famobi first: the small curated catalog — every game, quality up front
   try {
     const r = await fetch(FAMOBI_FEED, { headers: { 'user-agent': BROWSER_UA, 'accept': 'application/json' } });
