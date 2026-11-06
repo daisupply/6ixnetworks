@@ -7756,6 +7756,12 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .shbtn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);color:#f4f4f5;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
 .shbtn.on{background:#f4f4f5;color:#0a0a0b;border-color:#f4f4f5}
 #shstat{font-size:12.5px;opacity:.65;margin-top:8px;line-height:1.45}
+#shareBox.live{border-color:rgba(var(--acc),.55)}
+#hwVid{object-fit:contain;min-height:120px}
+#shlive{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#f0abfc;margin-bottom:8px}
+.shdot{width:8px;height:8px;border-radius:50%;background:#f472b6;animation:shpulse 1.6s ease-in-out infinite}
+@keyframes shpulse{0%,100%{opacity:1}50%{opacity:.25}}
+.shbtn.primary{background:#f4f4f5;color:#0a0a0b;border-color:#f4f4f5}
 .mode{display:flex;flex-direction:column;align-items:flex-start;gap:3px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:12px 13px;cursor:pointer;font-family:inherit;color:#f4f4f5;text-align:left}
 .mode svg{color:#e4e4e7;margin-bottom:2px}
 .mode b{font-size:14.5px}
@@ -7803,7 +7809,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <button class="mode" id="bedit" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/><path d="M1.5 14h5M9.5 8h5M17.5 16h5"/></svg><b>edit it</b><span>follows ur edit note above</span></button>
 <button class="mode" id="bshare" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg><b>share ur screen</b><span>six watches ur hw live — snap a frame n he reads it like a screenshot</span></button>
 </div>
-<div id="shareBox" style="display:none"><video id="hwVid" autoplay muted playsinline></video><div class="shrow"><button class="shbtn" id="bsnap" type="button">snap a frame</button><button class="shbtn" id="bwatch" type="button">watch</button><button class="shbtn" id="bstop" type="button">stop sharing</button></div><div id="shstat"></div></div>
+<div id="shareBox" style="display:none"><div id="shlive"><span class="shdot"></span>sharing ur screen</div><video id="hwVid" autoplay muted playsinline></video><div class="shrow"><button class="shbtn primary" id="bdoit" type="button">do it for me</button><button class="shbtn" id="bsnap" type="button">snap now</button><button class="shbtn on" id="bauto" type="button">auto</button><button class="shbtn" id="bstop" type="button">stop sharing</button></div><div id="shstat"></div></div>
 </section>
 <section class="hwcard">
 <div class="hwcard-h"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>six's answer<span id="stat" class="statpill">ready</span><button id="copy" type="button">copy the text</button></div>
@@ -7885,26 +7891,55 @@ function snapFrame(){
   setImg(cv.toDataURL('image/jpeg', 0.85).split(',')[1]||'');
   return true;
 }
+var shAuto=null, shLastHash=-1;
+function frameHash(){
+  if(!vidEl || !vidEl.videoWidth) return -1;
+  try {
+    var c8=document.createElement('canvas'); c8.width=8; c8.height=8;
+    var cx=c8.getContext('2d'); cx.drawImage(vidEl, 0, 0, 8, 8);
+    var d=cx.getImageData(0, 0, 8, 8).data, s=0;
+    for(var i=0;i<d.length;i+=7) s+=d[i];
+    return s;
+  } catch(e){ return -1; }
+}
+function snapWhenReady(tries){
+  if(!shStream) return;
+  if(snapFrame()){ shLastHash=frameHash(); shStat.textContent='frame grabbed the second u shared \u2726 hit do it for me or pick a mode'; return; }
+  if((tries||0) < 24) setTimeout(function(){ snapWhenReady((tries||0)+1); }, 150);
+  else shStat.textContent='couldnt grab a frame — hit snap now when ur hw is up';
+}
+function autoTick(){ var h=frameHash(); if(h >= 0 && h !== shLastHash){ if(snapFrame()) shLastHash=frameHash(); } }
+function setAuto(on){
+  var b=document.getElementById('bauto'); if(!b) return;
+  if(on){ b.classList.add('on'); if(!shAuto) shAuto=setInterval(autoTick, 5000); }
+  else { b.classList.remove('on'); if(shAuto){ clearInterval(shAuto); shAuto=null; } }
+}
 function stopShare(){
-  if(shWatch){ clearInterval(shWatch); shWatch=null; document.getElementById('bwatch').classList.remove('on'); }
+  if(shAuto){ clearInterval(shAuto); shAuto=null; }
   if(shStream){ shStream.getTracks().forEach(function(t){ t.stop(); }); shStream=null; }
   if(vidEl) vidEl.srcObject=null;
-  shBox.style.display='none';
+  shBox.style.display='none'; shBox.classList.remove('live');
 }
 document.getElementById('bshare').addEventListener('click', function(){
   if(shStream){ stopShare(); return; }
   if(!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia){ statEl.textContent='screen share needs a desktop browser twin — on phone just drop a screenshot'; return; }
   navigator.mediaDevices.getDisplayMedia({ video:true, audio:false }).then(function(st){
-    shStream=st; vidEl.srcObject=st; shBox.style.display='block';
+    shStream=st; vidEl.srcObject=st; shBox.style.display='block'; shBox.classList.add('live');
     st.getVideoTracks()[0].addEventListener('ended', stopShare);
-    shStat.textContent='ur sharing — six only sees frames u snap, nothing records';
-    setTimeout(function(){ if(snapFrame()) shStat.textContent='first frame grabbed \u2726 pick a mode up top — or hit watch n six keeps the frame fresh'; }, 700);
+    shStat.textContent='ur sharing — six only sees frames from this panel, nothing records';
+    setAuto(true);
+    snapWhenReady(0);
   }).catch(function(){ statEl.textContent='share cancelled — no stress, screenshots still work'; });
 });
-document.getElementById('bsnap').addEventListener('click', function(){ if(snapFrame()) shStat.textContent='fresh frame attached \u2726 pick a mode'; });
-document.getElementById('bwatch').addEventListener('click', function(){
-  if(shWatch){ clearInterval(shWatch); shWatch=null; this.classList.remove('on'); shStat.textContent='watch off — snap manually when ur ready'; }
-  else { this.classList.add('on'); shStat.textContent='watching \u2726 six grabs a fresh frame every 15s — pick a mode anytime'; if(snapFrame()){} shWatch=setInterval(function(){ snapFrame(); }, 15000); }
+document.getElementById('bsnap').addEventListener('click', function(){ if(snapFrame()){ shLastHash=frameHash(); shStat.textContent='fresh frame attached \u2726 pick a mode — or just hit do it for me'; } });
+document.getElementById('bdoit').addEventListener('click', function(){
+  if(!shStream) return;
+  if(snapFrame()){ shLastHash=frameHash(); run('write'); }
+  else statEl.textContent='no frame yet twin — give the share a sec n try again';
+});
+document.getElementById('bauto').addEventListener('click', function(){
+  var on=!this.classList.contains('on'); setAuto(on);
+  shStat.textContent= on ? 'auto on \u2726 six re-snaps when ur screen changes' : 'auto off — snap manually when ur ready';
 });
 document.getElementById('bstop').addEventListener('click', stopShare);
 copyBtn.addEventListener('click', function(){
@@ -12103,7 +12138,7 @@ html,body{overflow-x:clip}
 @media (max-width:820px){#gxBar{left:12px;right:12px;width:auto;bottom:calc(74px + env(safe-area-inset-bottom))}}
 #gxBar{font-family:Inter,system-ui,sans-serif;z-index:60}
 </style></head><body>${STAR_CANVAS}
-<iframe id="f" allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone" allowfullscreen></iframe>
+<iframe id="f" allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone; display-capture" allowfullscreen></iframe>
 <div id="gxBar" hidden><img id="gxArt" alt=""><div class="gxb-meta"><b id="gxT"></b><span id="gxA"></span></div><div class="gxb-mid"><div class="gxb-btns"><button type="button" class="gxb-btn" id="gxShuf" aria-label="shuffle"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="m15 15 6 6"/><path d="M4 4l5 5"/></svg></button><button type="button" class="gxb-btn" id="gxPrev" aria-label="previous"><svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M7 6h2.4v12H7zM19 6v12L9.8 12z"/></svg></button><button type="button" class="gxb-btn gxb-main" id="gxPlay" aria-label="play or pause"><svg width="23" height="23" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button><button type="button" class="gxb-btn" id="gxNext" aria-label="next"><svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M14.6 6H17v12h-2.4zM5 6v12l9.2-6z"/></svg></button><button type="button" class="gxb-btn" id="gxRep" aria-label="repeat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg><span id="gxRepN"></span></button></div><div class="gxb-prog" id="gxProg"><span id="gxCur">0:00</span><div class="gxb-tr"><div id="gxFill"></div></div><span id="gxDur">0:00</span></div></div><div class="gxb-end"><button type="button" class="gxb-btn" id="gxLike" aria-label="like"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></button><button type="button" class="gxb-btn" id="gxDl" aria-label="download mp3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button><button type="button" class="gxb-btn" id="gxQB" aria-label="queue"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h13"/><path d="M4 12h13"/><path d="M4 18h9"/><path d="M18 15l5 3-5 3z" fill="currentColor" stroke="none"/></svg></button><span class="gxb-volwrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg><input type="range" id="gxVolR" min="0" max="100" value="85"></span><button type="button" class="gxb-btn" id="gxClose" aria-label="close player"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div><audio id="gxAu" preload="auto"></audio></div><script>(function(){
   if (window.gxMusic) return;
   if (window.top !== window) { try { if (window.top.gxMusic) return; } catch (e) {} }
