@@ -1554,6 +1554,9 @@ body{padding-top:env(safe-area-inset-top)!important;box-sizing:border-box}
 .wrap .back{margin-top:env(safe-area-inset-top)}
 .wrap .mhead{padding-top:calc(8px + env(safe-area-inset-top))}
 #sb{padding-top:calc(20px + env(safe-area-inset-top))!important}
+.launch>a.lcard{align-items:center!important;justify-content:center!important;text-align:center!important;gap:8px;min-height:106px;padding:14px 4px 12px}
+.launch>a.lcard>b{margin-left:auto;margin-right:auto;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px}
+.launch>a.lcard.lit{border-color:rgba(var(--star),.9)!important;box-shadow:0 0 0 2px rgba(var(--star),.55),0 0 26px rgba(var(--star),.35)}
 }
 
 
@@ -9363,7 +9366,83 @@ function maybeGenRoasts() {
     if (got.mild.length || got.mean.length || got.feral.length) roastAi = got;
   }).catch(() => { roastBusy = false; });
 }
-function homeServed() { return HOME.replace(/<p class="splash">[^<]*<\/p>/, '<p class="splash">' + splashPick() + '</p>'); }
+const HOME_FUN = `<style>
+.wm{cursor:pointer}
+.splash{cursor:pointer}
+.wm.pop{animation:wmPop .45s cubic-bezier(.2,.9,.3,1.4)}
+.splash.pop{animation:wmPop .45s cubic-bezier(.2,.9,.3,1.4)}
+@keyframes wmPop{0%{transform:scale(1)}35%{transform:scale(1.06) rotate(-1.2deg)}70%{transform:scale(.98)}100%{transform:scale(1)}}
+.gxburst{position:fixed;z-index:400;pointer-events:none;font-weight:900;line-height:1}
+</style><script>
+(function(){
+  if (!window.matchMedia || !matchMedia('(max-width:820px)').matches) return;
+  var LINES = ["six's house — wipe ur feet","still up. obviously","ur teacher thinks this is a study site","the bell cant save u","homework? never met her","six picked today's games. blame him","100% more six than yesterday","built in a bedroom. runs like a company","ur principal cant stand us","welcome back twin","six is three drinks in. decisions pending","six owes his cousin $40 since 2019","banned from two bars n a church picnic","the tab at murphys is a personality trait now"];
+  function burst(x, y){
+    var chars = ['✦','✦','✧','·'];
+    var cols = ['#a78bfa','#fbbf24','#7dd3fc','#f472b6','#a3e635'];
+    for (var i = 0; i < 9; i++) {
+      var s = document.createElement('span'); s.className = 'gxburst'; s.textContent = chars[i % chars.length];
+      s.style.left = x + 'px'; s.style.top = y + 'px'; s.style.fontSize = (10 + Math.random() * 12) + 'px'; s.style.color = cols[i % cols.length];
+      document.body.appendChild(s);
+      var ang = Math.random() * 6.283, dist = 34 + Math.random() * 52;
+      var dx = Math.cos(ang) * dist - 6, dy = Math.sin(ang) * dist - 34, rot = Math.random() * 160 - 80;
+      (function(el, ddx, ddy, rr){
+        el.animate([
+          { transform: 'translate(-50%,-50%) scale(.6)', opacity: 1 },
+          { transform: 'translate(' + ddx + 'px,' + ddy + 'px) scale(1.15) rotate(' + rr + 'deg)', opacity: 0 }
+        ], { duration: 620 + Math.random() * 320, easing: 'cubic-bezier(.2,.8,.3,1)' }).onfinish = function(){ el.remove(); };
+      })(s, dx, dy, rot);
+    }
+  }
+  var sp = document.querySelector('.splash');
+  var wm = document.querySelector('.wm');
+  function shuffleLine(el){
+    if (!sp) return;
+    var cur = sp.textContent, next = cur, guard = 0;
+    while (next === cur && guard++ < 8) next = LINES[Math.floor(Math.random() * LINES.length)];
+    sp.textContent = next;
+    [sp, wm].forEach(function(n){ if (n) { n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop'); } });
+    var r = (el || sp).getBoundingClientRect();
+    burst(r.left + r.width / 2, r.top + r.height / 2);
+  }
+  if (sp) sp.addEventListener('click', function(){ shuffleLine(sp); });
+  if (wm) wm.addEventListener('click', function(){ shuffleLine(wm); });
+  var launch = document.querySelector('.launch');
+  var spinning = false;
+  function spin(d){
+    if (spinning) return;
+    var cards = [...launch.querySelectorAll('.lcard')].filter(function(c){ return c !== d; });
+    if (!cards.length) return;
+    spinning = true;
+    var steps = 13 + Math.floor(Math.random() * 5), i = 0, last = null;
+    var winner = cards[Math.floor(Math.random() * cards.length)];
+    (function tick(){
+      if (last) last.classList.remove('lit');
+      var cur2 = cards[Math.floor(Math.random() * cards.length)];
+      if (i === steps - 1) cur2 = winner;
+      cur2.classList.add('lit'); last = cur2;
+      i++;
+      if (i < steps) { setTimeout(tick, 55 + i * i * 3.2); return; }
+      var r = winner.getBoundingClientRect();
+      burst(r.left + r.width / 2, r.top + r.height / 2);
+      setTimeout(function(){ location.href = winner.getAttribute('href'); }, 340);
+    })();
+  }
+  if (launch) {
+    var d = document.createElement('a');
+    d.className = 'lcard'; d.href = '#'; d.id = 'gxDice';
+    d.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M4 20L21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg><b>surprise me</b>';
+    launch.appendChild(d);
+    window.addEventListener('click', function(e){
+      var t = e.target && e.target.closest ? e.target.closest('#gxDice') : null;
+      if (!t) return;
+      e.preventDefault(); e.stopPropagation();
+      spin(d);
+    }, true);
+  }
+})();
+</script>`;
+function homeServed() { return HOME.replace('</body>', HOME_FUN + '</body>').replace(/<p class="splash">[^<]*<\/p>/, '<p class="splash">' + splashPick() + '</p>'); }
 const HOME = `<!DOCTYPE html>
 <html lang="en">
 <head>
