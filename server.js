@@ -7923,7 +7923,7 @@ function shareChrome(on){
   var lab=document.querySelector('label[for="editq"]'); if(lab) lab.style.display= on ? 'none' : '';
   var modes=document.querySelector('.hwmodes'); if(modes) modes.style.display= on ? 'none' : '';
 }
-var liveOn=false, liveTimer=null, liveBusy=false, liveCount=0, liveLastSig=null, liveCandSig=null, liveCandAt=0, liveAnsSig=null, liveAnsAt=0, liveStashB64='', liveStashSig=null, liveFailSig=null, liveFails=0;
+var liveOn=false, liveTimer=null, liveBusy=false, liveCount=0, liveLastSig=null, liveCandSig=null, liveCandAt=0, liveAnsSig=null, liveAnsAt=0, liveStashB64='', liveStashSig=null, liveFailSig=null, liveFails=0, liveHist=[], speakTok=0, lastSpoke='', lastSpokeAt=0;
 function frameSig(){
   if(!vidEl || !vidEl.videoWidth) return null;
   try {
@@ -7937,7 +7937,21 @@ function frameSig(){
 function sigDiff(a, b){ if(!a || !b) return 999; var s=0; for(var i=0;i<64;i++) s+=Math.abs(a[i]-b[i]); return s/64; }
 function speakAnswer(t){
   if(!window.speechSynthesis) return;
-  try { speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance(String(t).slice(0, 300)); u.rate=1.12; speechSynthesis.speak(u); } catch(e){}
+  var now=Date.now();
+  if(t && t===lastSpoke && now-lastSpokeAt < 4000) return;
+  lastSpoke=t; lastSpokeAt=now;
+  try {
+    speechSynthesis.cancel();
+    var tok=++speakTok;
+    setTimeout(function(){
+      if(tok!==speakTok) return;
+      try {
+        var u=new SpeechSynthesisUtterance(String(t).slice(0, 300)); u.rate=1.12;
+        var vs=speechSynthesis.getVoices(); for(var i=0;i<vs.length;i++){ if(vs[i].localService){ u.voice=vs[i]; break; } }
+        speechSynthesis.speak(u);
+      } catch(e){}
+    }, 90);
+  } catch(e){}
 }
 function noteLiveFail(sig){
   liveAnsAt=Date.now();
@@ -7954,7 +7968,7 @@ function liveAnswer(sig){
   fetch('/ai/look', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ image: useB64, mode: 'answer', text: '' }) }).then(function(r){ return r.json(); }).then(function(o){
     liveBusy=false;
     if(o && o.out){
-      liveFails=0; liveFailSig=null;
+      liveFails=0; liveFailSig=null; liveHist.push(sig); if(liveHist.length > 6) liveHist.shift();
       var clean=String(o.out).trim(); var low=clean.toLowerCase();
       if(low.indexOf('the answer is ')===0) clean=clean.slice(14); else if(low.indexOf('answer: ')===0) clean=clean.slice(8); else if(low.indexOf('answer is ')===0) clean=clean.slice(11);
       var an=document.getElementById('shAnswer'); an.textContent=clean; an.style.display='block';
@@ -7971,6 +7985,7 @@ function liveTick(){
   if(!liveCandSig || sigDiff(sig, liveCandSig) > 5){ liveCandSig=sig; liveCandAt=Date.now(); if(snapFrame(1024)){ liveStashB64=imgB64; liveStashSig=sig; } return; }
   if(Date.now()-liveCandAt < 1200) return;
   if(liveAnsSig && sigDiff(sig, liveAnsSig) < 12) return;
+  for(var hi=0; hi<liveHist.length; hi++){ if(sigDiff(sig, liveHist[hi]) < 12) return; }
   if(Date.now()-liveAnsAt < 4000) return;
   if(liveCount >= 40){ setLive(false); shStat.textContent='beta cap hit for this share — toggle live back on to keep going'; return; }
   liveAnswer(sig);
@@ -7979,7 +7994,7 @@ function setLive(on){
   var b=document.getElementById('blive'); if(!b) return;
   liveOn=on;
   if(on){ b.classList.add('on'); liveCandSig=null; liveAnsSig=null; liveAnsAt=0; if(!liveTimer) liveTimer=setInterval(liveTick, 850); shStat.textContent='live beta on ✦ flip to a question, hold still a sec, six says the answer out loud — no explaining'; }
-  else { b.classList.remove('on'); if(liveTimer){ clearInterval(liveTimer); liveTimer=null; } try { speechSynthesis.cancel(); } catch(e){} }
+  else { b.classList.remove('on'); if(liveTimer){ clearInterval(liveTimer); liveTimer=null; } speakTok++; try { speechSynthesis.cancel(); } catch(e){} }
 }
 function stopShare(){
   if(shAuto){ clearInterval(shAuto); shAuto=null; }
