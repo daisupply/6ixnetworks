@@ -9772,8 +9772,10 @@ function musTitle(t, a) {
 // no full albums, no hour loops, nothing over 15 min pretending to
 // be a song. yt mode skips this filter entirely.
 const MUS_JUNK = /\b(best of|compilation|full album|greatest hits|mega ?mix|dj (set|mix)|nonstop|discography|anthology|super hits|all songs|complete collection|playlist|1 hour|2 hours|3 hours|4 hours|10 hours|one hour|two hours)\b/i;
-function musIsSong(rawT, len) {
+const MUS_NOTSONG = /type\s*beat|\bbeats\b|\binstrumental\b|\bkaraoke\b|sped\s*up|\bslowed\b|nightcore|\b8d\b|bass\s*boosted|free\s*beat|\(beat\)/i;
+function musIsSong(rawT, len, rawA) {
   if (MUS_JUNK.test(String(rawT || ''))) return false;
+  if (MUS_NOTSONG.test(String(rawT || '') + ' ' + String(rawA || ''))) return false;
   if (len && +len > 900) return false;
   return true;
 }
@@ -9783,7 +9785,7 @@ function musNorm(vids, strict) {
     const id = (v && (v.videoId || v.id)) || ''; if (!id) continue;
     const rawT = (v && (v.title || v.t)) || ''; const rawA = (v && (v.author || v.a)) || '';
     const len = (v && (v.lengthSeconds || v.len)) || 0;
-    if (strict !== false && !musIsSong(rawT, len)) continue;
+    if (strict !== false && !musIsSong(rawT, len, rawA)) continue;
     out.push({ id, t: strict === false ? rawT : musTitle(rawT, rawA), a: strict === false ? rawA : musArtist(rawA), len, img: proxied('https://i.ytimg.com/vi/' + id + '/hqdefault.jpg') });
   }
   return out;
@@ -9990,7 +9992,7 @@ input.msrange::-moz-range-thumb{width:12px;height:12px;border-radius:8px;backgro
 <div id="msModal" hidden><div class="msm-card"><h3 id="msmTitle"></h3><input id="msmInput" type="text" autocomplete="off"><textarea id="msmArea" hidden readonly></textarea><p id="msmNote" hidden></p><div class="msm-btns"><button type="button" id="msmCopy" hidden>copy key</button><button type="button" id="msmCancel" class="mshb-ghost" style="background:rgba(255,255,255,.08);color:#e6e2f2">cancel</button><button type="button" id="msmOk" style="background:#fff;color:#0a0a0b">save</button></div></div></div>
 <div id="msDrop" hidden>drop ur songs<br><span style="font-size:14px;font-weight:600;color:#c9c4de">they save on this device only — nothing touches the server</span></div>
 <div id="msToast" hidden></div>
-<div id="msMaker" hidden><div class="msm-card"><h3>six playlist maker</h3><label class="msmk-l">artists</label><input id="msmkArtists" type="text" placeholder="lucki, drake, clara la san" autocomplete="off"><label class="msmk-l">type of songs</label><input id="msmkType" type="text" placeholder="night drive, rage, sad hours, gym" autocomplete="off"><div class="msmode" id="msmkStyle"><button type="button" data-s="specific" class="on">specific</button><button type="button" data-s="discovery">discovery</button></div><p class="msmodehint" id="msmkHint">specific — six adds exactly what u asked for, period. nothing extra.</p><div class="msm-btns"><button type="button" id="msmkCancel" style="background:rgba(255,255,255,.08);color:#e6e2f2">cancel</button><button type="button" id="msmkGo" style="background:#fff;color:#0a0a0b">make it</button></div></div></div>
+<div id="msMaker" hidden><div class="msm-card"><h3 id="msmkTitle">six playlist maker</h3><label class="msmk-l">artists</label><input id="msmkArtists" type="text" placeholder="lucki, drake, clara la san" autocomplete="off"><label class="msmk-l">type of songs</label><input id="msmkType" type="text" placeholder="night drive, rage, sad hours, gym" autocomplete="off"><div class="msmode" id="msmkStyle"><button type="button" data-s="specific" class="on">specific</button><button type="button" data-s="discovery">discovery</button></div><p class="msmodehint" id="msmkHint">specific — six adds exactly what u asked for, period. nothing extra.</p><div class="msm-btns"><button type="button" id="msmkCancel" style="background:rgba(255,255,255,.08);color:#e6e2f2">cancel</button><button type="button" id="msmkGo" style="background:#fff;color:#0a0a0b">make it</button></div></div></div>
 
 ${SIDEBAR_HTML}<script src="/ui.js"></script>
 <script>
@@ -10173,7 +10175,7 @@ function renderLibHero(kind, list){
 function renderPlHero(p){
   var hero = document.getElementById('msHero');
   hero.hidden = false;
-  hero.innerHTML = heroHtml({ cover: coverHtml(p.tracks, ICO_STAR), kick: 'playlist', title: p.name, line: p.desc || '', sub: p.tracks.length + ' songs' + durTotal(p.tracks), btns: '<button type="button" class="mshb-play" data-act="play">play</button><button type="button" class="mshb-ghost" data-act="shuffle">shuffle</button><button type="button" class="mshb-ghost" data-act="rename">rename</button><button type="button" class="mshb-ghost" data-act="delpl">delete</button>' });
+  hero.innerHTML = heroHtml({ cover: coverHtml(p.tracks, ICO_STAR), kick: 'playlist', title: p.name, line: p.desc || '', sub: p.tracks.length + ' songs' + durTotal(p.tracks), btns: '<button type="button" class="mshb-play" data-act="play">play</button><button type="button" class="mshb-ghost" data-act="shuffle">shuffle</button><button type="button" class="mshb-ghost" data-act="addsix">add with six</button><button type="button" class="mshb-ghost" data-act="rename">rename</button><button type="button" class="mshb-ghost" data-act="delpl">delete</button>' });
 }
 document.getElementById('msHero').addEventListener('click', function(e){
   var b = e.target.closest('[data-act]'); if (!b) return;
@@ -10190,6 +10192,7 @@ document.getElementById('msHero').addEventListener('click', function(e){
   else if (act === 'delpl' && VIEW === 'playlist') {
     var P3 = plsList(); P3.splice(PLVIEW, 1); plsSave(P3); PLVIEW = -1; setView('foryou'); if (!FY.tracks.length) loadForYou(false); toast('playlist deleted');
   }
+  else if (act === 'addsix' && VIEW === 'playlist') openMaker(PLVIEW);
 });
 function loadForYou(force){
   VIEW = 'foryou';
@@ -10348,7 +10351,15 @@ document.getElementById('msmkStyle').addEventListener('click', function(e){
   document.querySelectorAll('#msmkStyle button').forEach(function(x){ x.classList.toggle('on', x.dataset.s === MKSTYLE); });
   document.getElementById('msmkHint').textContent = MKSTYLE === 'specific' ? 'specific — six adds exactly what u asked for, period. nothing extra.' : 'discovery — six runs with it: similar artists, adjacent sounds, hidden gems.';
 });
-document.getElementById('msAiPl').addEventListener('click', function(){ document.getElementById('msMaker').hidden = false; setTimeout(function(){ try { document.getElementById('msmkArtists').focus(); } catch (e) {} }, 30); });
+var PLTARGET = -1;
+function openMaker(idx){
+  PLTARGET = (typeof idx === 'number' && idx >= 0) ? idx : -1;
+  if (PLTARGET >= 0) { var Pm = plsList(); document.getElementById('msmkTitle').textContent = 'add to "' + (Pm[PLTARGET] ? Pm[PLTARGET].name : 'playlist') + '"'; document.getElementById('msmkGo').textContent = 'add songs'; }
+  else { document.getElementById('msmkTitle').textContent = 'six playlist maker'; document.getElementById('msmkGo').textContent = 'make it'; }
+  document.getElementById('msMaker').hidden = false;
+  setTimeout(function(){ try { document.getElementById('msmkArtists').focus(); } catch (e) {} }, 30);
+}
+document.getElementById('msAiPl').addEventListener('click', function(){ openMaker(-1); });
 document.getElementById('msmkCancel').addEventListener('click', function(){ document.getElementById('msMaker').hidden = true; });
 document.getElementById('msMaker').addEventListener('click', function(e){ if (e.target === this) this.hidden = true; });
 document.getElementById('msmkGo').addEventListener('click', function(){
@@ -10356,10 +10367,21 @@ document.getElementById('msmkGo').addEventListener('click', function(){
   var type = document.getElementById('msmkType').value.trim();
   if (!artists && !type) { toast('tell six an artist or a type first'); return; }
   document.getElementById('msMaker').hidden = true;
-  toast('six is cooking ur playlist…');
+  toast(PLTARGET >= 0 ? 'six is finding more songs…' : 'six is cooking ur playlist…');
   fetch('/api/aiplaylist', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ artists: artists, type: type, style: MKSTYLE, mode: MUSMODE }) }).then(function(r){ return r.json(); }).then(function(j){
     if (!j || !j.ok || !j.vids || !j.vids.length) { toast('six couldnt find enough for that — try wider'); return; }
     var P = plsList();
+    if (PLTARGET >= 0 && P[PLTARGET]) {
+      var have = {}; P[PLTARGET].tracks.forEach(function(x){ have[x.id] = 1; });
+      var add = j.vids.filter(function(x){ return !have[x.id]; });
+      if (!add.length) { toast('six found those — theyre all already in there'); return; }
+      P[PLTARGET].tracks = P[PLTARGET].tracks.concat(add);
+      plsSave(P);
+      var ti = PLTARGET; PLTARGET = -1;
+      openPlaylist(ti);
+      toast('six added ' + add.length + ' songs');
+      return;
+    }
     P.push({ name: j.name || 'six mix', desc: MKSTYLE === 'specific' ? 'exactly what u asked six for' : 'six discovery — built off what u asked for', tracks: j.vids, created: Date.now() });
     plsSave(P);
     openPlaylist(P.length - 1);
@@ -12694,6 +12716,28 @@ function fyFallbackQueries(p) {
   for (const s of FY_FRESH_QUERIES) { if (qs.length >= 5) break; if (!qs.includes(s)) qs.push(s); }
   return qs.slice(0, 5);
 }
+const songVerdict = new Map();
+async function sixVerifySongs(vids) {
+  if (!vids || !vids.length) return vids;
+  const todo = vids.filter(v => !songVerdict.has(v.id));
+  if (todo.length) {
+    const list = todo.slice(0, 30);
+    try {
+      const prompt = 'u quality-check songs for 6ixmusic, a real streamer. these came from youtube and some are NOT real songs: type beats, instrumentals with no vocals, karaoke versions, sped up or slowed edits, nightcore, random fan covers, loops. judge every line hard: is it a real released song with the actual artist performing it? reply with ONLY this JSON, nothing else: {"bad":[<line numbers that are NOT real songs>]}. when genuinely unsure, keep it (do not list it).\n' + list.map((v, i) => (i + 1) + '. ' + v.t + ' — ' + v.a).join('\n');
+      const reply = await Promise.race([askSix([{ role: 'user', content: prompt }], SIX_SYSTEM), new Promise(res => setTimeout(() => res(''), 12000))]);
+      const m = String(reply || '').match(/\{[\s\S]*?\}/);
+      if (m) {
+        const j = JSON.parse(m[0]);
+        const bad = new Set((j.bad || []).map(n => parseInt(n, 10)));
+        if (songVerdict.size > 800) songVerdict.clear();
+        list.forEach((v, i) => songVerdict.set(v.id, bad.has(i + 1) ? 0 : 1));
+        todo.slice(30).forEach(v => songVerdict.set(v.id, 1));
+      }
+    } catch {}
+  }
+  return vids.filter(v => songVerdict.get(v.id) !== 0);
+}
+
 async function buildForYou(p) {
   const key = 'fy:' + sixHash(JSON.stringify(p));
   const c = forYouCache.get(key);
@@ -12714,7 +12758,7 @@ async function buildForYou(p) {
         'songs they finish on repeat (heaviest signal — weight these most): ' + (p.top.map(x => x.t + ' by ' + x.a + ' (x' + x.n + ')').join('; ') || 'none yet') + '\n' +
         'artists they skip fast (NEVER suggest them or their soundalikes): ' + (p.skip.join(', ') || 'none') + '\n' +
         'reply with ONLY this JSON, nothing else, no markdown: {"queries":["<youtube music search phrase>"],"line":"<one short line in ur voice about this mix, lowercase, max 90 chars>"}\n' +
-        'give 5 queries: at least one "songs like <their top finished song>", their top artists, similar artists they would love, and one curveball in the same world. search phrases only, no urls.';
+        'give 5 queries: at least one "songs like <their top finished song>", their top artists, similar artists they would love, and one curveball in the same world. search phrases only, no urls. real released songs only — no type beats, no instrumentals, no karaoke.';
       const reply = await Promise.race([
         askSix([{ role: 'user', content: prompt }], SIX_SYSTEM),
         new Promise(res => setTimeout(() => res(''), 12000))
@@ -12737,7 +12781,9 @@ async function buildForYou(p) {
   for (let r = 0; r < 8 && merged.length < 30; r++) {
     for (const pool of pools) { if (pool[r] && merged.length < 30) merged.push(pool[r]); }
   }
-  const vids = musDedupe(merged, 1).slice(0, 30);
+  let vids = musDedupe(merged, 1);
+  if (p.mode !== 'yt') vids = await sixVerifySongs(vids);
+  vids = vids.slice(0, 30);
   const out = { ok: !!vids.length, vids, line, src, queries };
   if (vids.length) { forYouCache.set(key, { at: Date.now(), out }); if (forYouCache.size > 60) forYouCache.delete(forYouCache.keys().next().value); }
   return out;
@@ -12757,7 +12803,7 @@ async function buildAiPlaylist(b) {
     name = (artists.join(', ') || type || 'my mix').slice(0, 40);
   } else {
     try {
-      const prompt = 'u are six, building a DISCOVERY playlist. the listener asked for artists: ' + (artists.join(', ') || 'none') + ' — and this type of songs: ' + (type || 'none') + '. go WIDER than the ask: similar artists, adjacent sounds, hidden gems in the same world. reply with ONLY this JSON, nothing else: {"name":"<short playlist name, lowercase>","queries":["<youtube music search phrase>"]} — give exactly 6 search phrases.';
+      const prompt = 'u are six, building a DISCOVERY playlist. the listener asked for artists: ' + (artists.join(', ') || 'none') + ' — and this type of songs: ' + (type || 'none') + '. go WIDER than the ask: similar artists, adjacent sounds, hidden gems in the same world. reply with ONLY this JSON, nothing else: {"name":"<short playlist name, lowercase>","queries":["<youtube music search phrase>"]} — give exactly 6 search phrases, all landing on real released songs (no type beats, no instrumentals, no karaoke).';
       const reply = await Promise.race([askSix([{ role: 'user', content: prompt }], SIX_SYSTEM), new Promise(res => setTimeout(() => res(''), 12000))]);
       const m = String(reply || '').match(/\{[\s\S]*?\}/);
       if (m) { const j = JSON.parse(m[0]); if (j && Array.isArray(j.queries)) { queries = j.queries.map(x => fyCleanStr(x, 80)).filter(Boolean).slice(0, 6); name = fyCleanStr(j.name, 40); } }
@@ -12779,7 +12825,9 @@ async function buildAiPlaylist(b) {
   } else {
     for (let r = 0; r < 6 && merged.length < 30; r++) for (const pool of pools) { if (pool[r] && merged.length < 30) merged.push(pool[r]); }
   }
-  const vids = musDedupe(merged, 1).slice(0, 24);
+  let vids = musDedupe(merged, 1);
+  if (strict) vids = await sixVerifySongs(vids);
+  vids = vids.slice(0, 24);
   return { ok: !!vids.length, name: name || 'six made this', vids, style };
 }
 
