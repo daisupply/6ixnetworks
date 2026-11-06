@@ -9276,22 +9276,26 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
 
 
 function musDur(s) { s = Math.max(0, Math.floor(+s || 0)); var m = Math.floor(s / 60), r = s % 60; return m + ':' + (r < 10 ? '0' : '') + r; }
+function musNorm(vids) {
+  return (vids || []).map(v => { const id = (v && (v.videoId || v.id)) || ''; return { id, t: (v && (v.title || v.t)) || '', a: (v && (v.author || v.a)) || '', len: (v && (v.lengthSeconds || v.len)) || 0, img: id ? proxied('https://i.ytimg.com/vi/' + id + '/hqdefault.jpg') : '' }; }).filter(v => v.id);
+}
 async function musicPage(q) {
   q = String(q || '').slice(0, 100);
-  let vids = [], title = 'top music rn';
+  let tracks = [], title = 'top music rn', cont = '', mode = 'feed';
   if (q) {
     const hit = await fetchYtSearchIt(q);
-    if (hit) vids = hit.vids;
+    if (hit) { tracks = musNorm(hit.vids); cont = hit.cont || ''; }
     title = 'results for "' + q + '"';
+    mode = 'search';
   } else {
     const feed = await fetchYtFeed('music');
-    if (feed) vids = feed.vids;
+    if (feed) { tracks = musNorm(feed.vids); cont = feed.cont || ''; }
   }
-  const tracks = vids.map(v => ({ id: (v && (v.videoId || v.id)) || '', t: (v && (v.title || v.t)) || '', a: (v && (v.author || v.a)) || '', len: (v && (v.lengthSeconds || v.len)) || 0 })).filter(v => v.id).slice(0, 30);
+  tracks = tracks.slice(0, 30);
   const chips = [['top music', ''], ['rap', 'rap hits'], ['r&b', 'r&b songs'], ['phonk', 'phonk'], ['lofi', 'lofi beats'], ['indie', 'indie songs'], ['sad', 'sad songs']];
-  const chipHtml = chips.map(c => '<a class="mschip' + (q === c[1] || (!q && !c[1]) ? ' on' : '') + '" href="/music' + (c[1] ? '?q=' + encodeURIComponent(c[1]) : '') + '">' + c[0] + '</a>').join('');
-  const hero = !q ? '<div class="mshero">' + tracks.slice(0, 6).map((v, i) => '<button type="button" class="msq" data-i="' + i + '"><span class="msqimg"><img loading="lazy" src="' + proxied('https://i.ytimg.com/vi/' + v.id + '/hqdefault.jpg') + '" alt=""></span><span class="msqt">' + escHtml(v.t) + '</span><span class="msqa">' + escHtml(v.a) + '</span></button>').join('') + '</div>' : '';
-  const rows = tracks.map((v, i) => '<button type="button" class="msrow" data-i="' + i + '"><span class="msnum">' + (i + 1) + '</span><img loading="lazy" src="' + proxied('https://i.ytimg.com/vi/' + v.id + '/hqdefault.jpg') + '" alt=""><span class="msmeta"><b>' + escHtml(v.t) + '</b><span>' + escHtml(v.a) + '</span></span><span class="mslen">' + (v.len ? musDur(v.len) : '') + '</span></button>').join('');
+  const chipHtml = chips.map(c => '<button type="button" class="mschip' + (q === c[1] || (!q && !c[1]) ? ' on' : '') + '" data-q="' + escHtml(c[1]) + '">' + c[0] + '</button>').join('');
+  const hero = '<div class="mshero" id="msHero"' + (q ? ' style="display:none"' : '') + '>' + tracks.slice(0, 6).map((v, i) => '<button type="button" class="msq" data-i="' + i + '"><span class="msqimg"><img loading="lazy" src="' + v.img + '" alt=""></span><span class="msqt">' + escHtml(v.t) + '</span><span class="msqa">' + escHtml(v.a) + '</span></button>').join('') + '</div>';
+  const rows = tracks.map((v, i) => '<button type="button" class="msrow" data-i="' + i + '"><span class="msnum">' + (i + 1) + '</span><img loading="lazy" src="' + v.img + '" alt=""><span class="msmeta"><b>' + escHtml(v.t) + '</b><span>' + escHtml(v.a) + '</span></span><span class="mslen">' + (v.len ? musDur(v.len) : '') + '</span></button>').join('');
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
@@ -9304,7 +9308,7 @@ body{display:block;padding:0}
 .mssearch input{flex:1;min-width:0;background:transparent;border:0;outline:none;color:#fff;font-size:16px;font-family:inherit}
 .mssearch button{background:linear-gradient(120deg,rgb(var(--acc)),rgb(var(--acc2)));color:#fff;border:0;border-radius:999px;padding:9px 18px;font-weight:700;cursor:pointer;font-family:inherit}
 .mschips{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 6px}
-.mschip{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#d8d4ea;border-radius:999px;padding:8px 15px;font-size:13.5px;font-weight:700;text-decoration:none}
+.mschip{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#d8d4ea;border-radius:999px;padding:8px 15px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:none}
 .mschip.on{background:#fff;color:#0a0a0b;border-color:#fff}
 .msh{font-size:21px;font-weight:800;margin:24px 2px 12px;color:#f4f2ff}
 .msh span{color:rgb(var(--star))}
@@ -9318,7 +9322,7 @@ body{display:block;padding:0}
 .msqa{display:block;padding:2px 12px 11px;font-size:12.5px;color:#9d97b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .msq.on .msqt{color:rgb(var(--acc))}
 .msrows{display:flex;flex-direction:column}
-.msrow{display:flex;align-items:center;gap:13px;width:100%;text-align:left;background:transparent;border:0;border-radius:10px;padding:8px 10px;cursor:pointer;font-family:inherit;transition:background .12s ease}
+.msrow{display:flex;align-items:center;gap:13px;width:100%;text-align:left;background:transparent;border:0;border-radius:10px;padding:8px 10px;cursor:pointer;font-family:inherit;transition:background .12s ease;box-shadow:none}
 .msrow:hover{background:rgba(255,255,255,.06)}
 .msrow img{width:48px;height:48px;border-radius:7px;object-fit:cover;flex:none;background:#000}
 .msnum{width:22px;text-align:center;color:#9d97b8;font-size:14px;font-weight:600;flex:none}
@@ -9331,7 +9335,10 @@ body{display:block;padding:0}
 .eq i{width:3px;border-radius:2px;background:rgb(var(--acc));animation:eqb .8s ease-in-out infinite}
 .eq i:nth-child(2){animation-delay:.25s}.eq i:nth-child(3){animation-delay:.5s}
 @keyframes eqb{0%,100%{height:5px}50%{height:14px}}
+.mssk{height:64px;border-radius:10px;background:rgba(255,255,255,.05);animation:mspulse 1.2s ease-in-out infinite;margin-bottom:2px}
+@keyframes mspulse{0%,100%{opacity:.45}50%{opacity:.9}}
 .msempty{color:#9d97b8;font-size:14.5px;padding:14px 2px}
+.msmore{text-align:center;color:#9d97b8;font-size:13.5px;padding:16px 0 4px;min-height:22px}
 .msbar{position:fixed;left:0;right:0;bottom:0;z-index:400;background:rgba(10,9,18,.94);-webkit-backdrop-filter:blur(24px) saturate(1.4);backdrop-filter:blur(24px) saturate(1.4);border-top:1px solid rgba(255,255,255,.1);padding:10px 18px calc(10px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:18px}
 .msbar .msleft{display:flex;align-items:center;gap:12px;width:30%;min-width:0}
 .msbar .msleft img{width:56px;height:56px;border-radius:8px;object-fit:cover;flex:none;background:#000}
@@ -9361,12 +9368,13 @@ input.msrange::-moz-range-thumb{width:12px;height:12px;border-radius:50%;backgro
 <div class="mswrap">
 <div class="mshead">
 <div class="mslogo">6ixmusic</div>
-<form class="mssearch" action="/music" method="get"><input name="q" type="text" placeholder="search a song or artist" autocomplete="off" value="${escHtml(q)}"><button type="submit">search</button></form>
+<form class="mssearch" id="msForm" action="/music" method="get"><input name="q" id="msQ" type="text" placeholder="search a song or artist" autocomplete="off" value="${escHtml(q)}"><button type="submit">search</button></form>
 </div>
-<div class="mschips">${chipHtml}</div>
+<div class="mschips" id="msChips">${chipHtml}</div>
 ${hero}
-<h2 class="msh"><span>✦</span> ${escHtml(title)}</h2>
+<h2 class="msh"><span>✦</span> <span id="msTitle" style="color:#f4f2ff">${escHtml(title)}</span></h2>
 <div class="msrows" id="msRows">${rows || '<p class="msempty">nothing came back — try another search</p>'}</div>
+<div id="msSent"></div><div class="msmore" id="msMore"></div>
 </div>
 <div class="msbar" id="msBar" hidden>
 <div class="msleft"><img id="msArt" alt=""><div class="msmeta"><b id="msT"></b><span id="msA"></span></div></div>
@@ -9386,16 +9394,20 @@ ${hero}
 ${SIDEBAR_HTML}<script src="/ui.js"></script>
 <script>
 var TRACKS = ${JSON.stringify(tracks).replace(/</g, '\\u003c')};
-var au = document.getElementById('msAu'), bar = document.getElementById('msBar'), cur = -1, shuf = false, rep = 0, seeking = false;
-var items = Array.prototype.slice.call(document.querySelectorAll('[data-i]'));
+var INIT = ${JSON.stringify({ mode, q, cont }).replace(/</g, '\\u003c')};
+var au = document.getElementById('msAu'), bar = document.getElementById('msBar'), cur = -1, curId = '', shuf = false, rep = 0, seeking = false;
+var rowsEl = document.getElementById('msRows'), heroEl = document.getElementById('msHero'), moreEl = document.getElementById('msMore');
+var MODE = INIT.mode, MQ = INIT.q || '', MCONT = INIT.cont || '', loading = false, ended = !INIT.cont;
 var icoPlay = '<path d="M8 5v14l11-7z"/>', icoPause = '<path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/>';
 var EQ = '<span class="eq"><i></i><i></i><i></i></span>';
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 function accCol(){ var v = getComputedStyle(document.body).getPropertyValue('--acc').trim(); return v ? 'rgb(' + v + ')' : '#a78bfa'; }
 function fmt(s){ s = Math.max(0, Math.floor(s || 0)); var m = Math.floor(s / 60), r = s % 60; return m + ':' + (r < 10 ? '0' : '') + r; }
 function setIco(){ document.getElementById('msPlayIco').innerHTML = au.paused ? icoPlay : icoPause; }
 function paintRange(el, p){ el.style.background = 'linear-gradient(90deg,' + accCol() + ' ' + p + '%,rgba(255,255,255,.18) ' + p + '%)'; }
+function rowHtml(v, i){ return '<button type="button" class="msrow" data-i="' + i + '"><span class="msnum">' + (i + 1) + '</span><img loading="lazy" src="' + esc(v.img) + '" alt=""><span class="msmeta"><b>' + esc(v.t) + '</b><span>' + esc(v.a) + '</span></span><span class="mslen">' + (v.len ? fmt(v.len) : '') + '</span></button>'; }
 function markOn(){
-  items.forEach(function(el){
+  document.querySelectorAll('[data-i]').forEach(function(el){
     var on = +el.getAttribute('data-i') === cur;
     el.classList.toggle('on', on);
     if (el.classList.contains('msrow')) { var n = el.querySelector('.msnum'); if (n) n.innerHTML = on ? EQ : String(+el.getAttribute('data-i') + 1); }
@@ -9403,12 +9415,10 @@ function markOn(){
 }
 function playAt(i){
   if (i < 0 || i >= TRACKS.length) return;
-  cur = i; var tr = TRACKS[i];
+  cur = i; var tr = TRACKS[i]; curId = tr.id;
   document.getElementById('msT').textContent = tr.t;
   document.getElementById('msA').textContent = tr.a;
-  var artSrc = '';
-  items.forEach(function(el){ if (!artSrc && +el.getAttribute('data-i') === i) { var im = el.querySelector('img'); if (im) artSrc = im.getAttribute('src') || ''; } });
-  document.getElementById('msArt').src = artSrc || ('https://i.ytimg.com/vi/' + tr.id + '/hqdefault.jpg');
+  document.getElementById('msArt').src = tr.img || ('https://i.ytimg.com/vi/' + tr.id + '/hqdefault.jpg');
   bar.hidden = false;
   au.src = '/yt/stream?v=' + encodeURIComponent(tr.id);
   var pr = au.play(); if (pr && pr.catch) pr.catch(function(){});
@@ -9425,11 +9435,75 @@ function step(d){
   if (cur < 0) return;
   if (shuf && TRACKS.length > 1) { var n = cur; while (n === cur) n = Math.floor(Math.random() * TRACKS.length); playAt(n); return; }
   var n = cur + d;
-  if (n >= TRACKS.length) n = rep ? 0 : TRACKS.length - 1;
+  if (n >= TRACKS.length) { if (!ended) { loadMore(function(){ if (cur + 1 < TRACKS.length) playAt(cur + 1); }); return; } n = rep ? 0 : TRACKS.length - 1; }
   if (n < 0) n = 0;
   playAt(n);
 }
-items.forEach(function(el){ el.addEventListener('click', function(){ var i = +el.getAttribute('data-i'); if (i === cur) { if (au.paused) au.play(); else au.pause(); } else playAt(i); }); });
+document.addEventListener('click', function(e){
+  var el = e.target.closest ? e.target.closest('[data-i]') : null;
+  if (!el || !rowsEl.contains(el) && !(heroEl && heroEl.contains(el))) return;
+  var i = +el.getAttribute('data-i');
+  if (i === cur) { if (au.paused) au.play(); else au.pause(); } else playAt(i);
+});
+function renderList(vids){
+  TRACKS = vids;
+  rowsEl.innerHTML = TRACKS.length ? TRACKS.map(rowHtml).join('') : '<p class="msempty">nothing came back — try another search</p>';
+  if (heroEl) {
+    if (MODE === 'feed') { heroEl.style.display = ''; heroEl.innerHTML = TRACKS.slice(0, 6).map(function(v, i){ return '<button type="button" class="msq" data-i="' + i + '"><span class="msqimg"><img loading="lazy" src="' + esc(v.img) + '" alt=""></span><span class="msqt">' + esc(v.t) + '</span><span class="msqa">' + esc(v.a) + '</span></button>'; }).join(''); }
+    else heroEl.style.display = 'none';
+  }
+  cur = curId ? TRACKS.findIndex(function(v){ return v.id === curId; }) : -1;
+  markOn();
+  moreEl.textContent = ended ? '' : 'loading more as u scroll…';
+}
+function appendList(vids){
+  var seen = {}; TRACKS.forEach(function(v){ seen[v.id] = 1; });
+  var fresh = vids.filter(function(v){ return v && v.id && !seen[v.id]; });
+  fresh.forEach(function(v){ rowsEl.insertAdjacentHTML('beforeend', rowHtml(v, TRACKS.length)); TRACKS.push(v); });
+  markOn();
+}
+function loadMore(done){
+  if (loading || ended || !MCONT) { if (done) done(); return; }
+  loading = true;
+  var url = MODE === 'feed' ? '/api/ytmore?f=music&c=' + encodeURIComponent(MCONT) : '/api/ytmore?q=' + encodeURIComponent(MQ) + '&c=' + encodeURIComponent(MCONT);
+  fetch(url).then(function(r){ return r.json(); }).then(function(o){
+    loading = false;
+    if (o && o.ok && o.vids && o.vids.length) { appendList(o.vids); MCONT = o.cont || ''; ended = !o.cont; }
+    else ended = true;
+    moreEl.textContent = ended ? '' : 'loading more as u scroll…';
+    if (done) done();
+  }).catch(function(){ loading = false; if (done) done(); });
+}
+function setList(mode, q){
+  MODE = mode; MQ = q || ''; ended = false; MCONT = '';
+  document.getElementById('msTitle').textContent = mode === 'feed' ? 'top music rn' : 'results for "' + MQ + '"';
+  rowsEl.innerHTML = '<div class="mssk"></div><div class="mssk"></div><div class="mssk"></div><div class="mssk"></div><div class="mssk"></div><div class="mssk"></div>';
+  if (heroEl) heroEl.style.display = 'none';
+  var url = mode === 'feed' ? '/api/mussearch?f=music' : '/api/mussearch?q=' + encodeURIComponent(MQ);
+  fetch(url).then(function(r){ return r.json(); }).then(function(o){
+    MCONT = (o && o.cont) || ''; ended = !MCONT;
+    renderList((o && o.vids) || []);
+    try { history.replaceState(null, '', mode === 'feed' ? '/music' : '/music?q=' + encodeURIComponent(MQ)); } catch (e) {}
+  }).catch(function(){ renderList([]); });
+}
+document.getElementById('msForm').addEventListener('submit', function(e){ e.preventDefault(); var q = document.getElementById('msQ').value.trim(); if (q) setList('search', q); else setList('feed', ''); syncChips(); });
+document.getElementById('msChips').addEventListener('click', function(e){
+  var b = e.target.closest ? e.target.closest('.mschip') : null;
+  if (!b) return;
+  var q = b.getAttribute('data-q') || '';
+  if (q) { document.getElementById('msQ').value = q; setList('search', q); } else setList('feed', '');
+  syncChips();
+});
+function syncChips(){
+  document.querySelectorAll('.mschip').forEach(function(c){
+    var cq = c.getAttribute('data-q') || '';
+    c.classList.toggle('on', MODE === 'feed' ? !cq : cq === MQ);
+  });
+}
+if ('IntersectionObserver' in window) {
+  var io = new IntersectionObserver(function(en){ if (en[0].isIntersecting) loadMore(); }, { rootMargin: '900px' });
+  io.observe(document.getElementById('msSent'));
+}
 au.addEventListener('play', setIco); au.addEventListener('pause', setIco);
 au.addEventListener('ended', function(){ if (rep === 2) { au.currentTime = 0; au.play(); } else step(1); });
 au.addEventListener('loadedmetadata', function(){ document.getElementById('msTot').textContent = fmt(au.duration); });
@@ -9452,6 +9526,7 @@ var volEl = document.getElementById('msVolR');
 function applyVol(){ au.volume = volEl.value / 100; paintRange(volEl, volEl.value); }
 volEl.addEventListener('input', applyVol);
 au.volume = 0.85; paintRange(volEl, 85); paintRange(seekEl, 0);
+moreEl.textContent = ended ? '' : 'loading more as u scroll…';
 </script>
 </body></html>`;
 }
@@ -12530,6 +12605,17 @@ const server = http.createServer(async (req, res) => {
     const feed = await fetchYtFeed(u.searchParams.get('f') || 'trending');
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(JSON.stringify({ ok: !!feed, vids: feed ? feed.vids : [], cont: feed ? feed.cont : '' }));
+  }
+  if (u.pathname === '/api/mussearch') {
+    const mq2 = String(u.searchParams.get('q') || '').slice(0, 100);
+    const mf2 = String(u.searchParams.get('f') || '');
+    let mo2 = { ok: false, vids: [], cont: '' };
+    try {
+      const hit2 = mf2 ? await fetchYtFeed(mf2) : (mq2 ? await fetchYtSearchIt(mq2) : null);
+      if (hit2) mo2 = { ok: true, vids: musNorm(hit2.vids), cont: hit2.cont || '' };
+    } catch (e) {}
+    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-cache' });
+    return res.end(JSON.stringify(mo2));
   }
   if (u.pathname === '/api/ytmore') {
     const mf = String(u.searchParams.get('f') || '');
