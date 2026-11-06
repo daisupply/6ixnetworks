@@ -10342,7 +10342,27 @@ document.getElementById('msHero').addEventListener('click', function(e){
   }
   else if (act === 'addsix' && VIEW === 'playlist') openMaker(PLVIEW);
 });
+var FYPAGE = 0, FYLOADING = false, FYENDED = false;
+function loadMoreFY(){
+  if (FYLOADING || FYENDED || VIEW !== 'foryou') return;
+  FYLOADING = true; moreEl.textContent = 'digging deeper...';
+  var h = gxHost();
+  var tp = (h && h.taste) ? h.taste() : { artists: [], liked: [], recent: [] };
+  tp.mode = MUSMODE; tp.page = FYPAGE + 1; tp.seen = FY.tracks.map(function(v){ return v.id; }).slice(-300);
+  fetch('/api/foryou', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(tp) }).then(function(r){ return r.json(); }).then(function(j){
+    FYLOADING = false; moreEl.textContent = '';
+    if (!j || !j.ok || !j.vids || !j.vids.length) { FYENDED = true; return; }
+    var have = {};
+    FY.tracks.forEach(function(v){ have[v.id] = 1; });
+    var fresh = j.vids.filter(function(v){ return v && v.id && !have[v.id]; });
+    if (!fresh.length) { FYENDED = true; return; }
+    fresh.forEach(function(v){ FY.tracks.push(v); });
+    FYPAGE++;
+    if (VIEW === 'foryou') { renderTracks(FY.tracks); markOn(); }
+  }).catch(function(){ FYLOADING = false; moreEl.textContent = ''; });
+}
 function loadForYou(force){
+  FYPAGE = 0; FYENDED = false;
   VIEW = 'foryou';
   document.querySelectorAll('.mstab').forEach(function(b){ b.classList.remove('on'); });
   railWrap.hidden = true;
@@ -10657,6 +10677,7 @@ function openAlbum(al){
 }
 var listSeq = 0;
 function loadMore(){
+  if (VIEW === 'foryou') { loadMoreFY(); return; }
   if (loading || ended || VIEW !== 'browse') return;
   loading = true; moreEl.textContent = 'loading…';
   var url = MODE === 'search' ? '/api/ytmore?q=' + encodeURIComponent(MQ) + '&c=' + encodeURIComponent(MCONT) + '&mode=' + MUSMODE : '/api/ytmore?f=music&c=' + encodeURIComponent(MCONT) + '&mode=' + MUSMODE;
@@ -13021,7 +13042,7 @@ function fyShape(b) {
   const searches = (Array.isArray(b.searches) ? b.searches : []).map(x => fyCleanStr(x, 80)).filter(Boolean).slice(0, 6);
   const open = (Array.isArray(b.open) ? b.open : []).map(x => fyCleanStr(x, 60)).filter(Boolean).slice(0, 4);
   const genres = (Array.isArray(b.genres) ? b.genres : []).map(x => fyCleanStr(x, 30)).filter(Boolean).slice(0, 6);
-  return { artists, liked: lite(b.liked), recent: lite(b.recent), top, skip, plays, searches, open, genres, mode: b.mode === 'yt' ? 'yt' : 'six' };
+  return { artists, liked: lite(b.liked), recent: lite(b.recent), top, skip, plays, searches, open, genres, mode: b.mode === 'yt' ? 'yt' : 'six', seen: Array.isArray(b.seen) ? b.seen.filter(x => typeof x === 'string' && x.length <= 20).slice(0, 300) : [] };
 }
 function fyFallbackQueries(p) {
   const qs = [];
@@ -13057,19 +13078,28 @@ async function sixVerifySongs(vids) {
   return vids.map(v => { const vd = songVerdict.get(v.id); if (typeof vd === 'string' && vd.indexOf('A:') === 0) v.a = vd.slice(2); return v; }).filter(v => songVerdict.get(v.id) !== 0);
 }
 
+const GENRE_WHEEL = ['phonk', 'rage rap', 'pluggnb', 'alt r&b', 'neo soul', 'emo rap', 'cloud rap', 'jersey club', 'uk drill', 'afrobeats', 'dancehall', 'hyperpop', 'bedroom pop', 'shoegaze', 'indie rock', 'lofi hip hop', 'boom bap', '90s hip hop', '2000s r&b', 'melodic rap', 'underground rap', 'memphis phonk', 'detroit rap', 'west coast rap', 'latin trap', 'corridos tumbados', 'korean r&b', 'city pop', 'vaporwave', 'jazz rap', 'southern soul', 'gospel r&b', 'funk', 'house music', 'amapiano', 'grime', 'drift phonk', 'digicore', 'soul sample rap', 'uk garage', 'texas rap', 'chicago drill'];
+function fyLaneQueries(seedStr, page) {
+  const h = sixHash(seedStr + ':pg' + page);
+  const a = GENRE_WHEEL[(h + page * 5) % GENRE_WHEEL.length];
+  let b = GENRE_WHEEL[(h + page * 11 + 3) % GENRE_WHEEL.length];
+  if (b === a) b = GENRE_WHEEL[(h + page * 11 + 10) % GENRE_WHEEL.length];
+  return ['best ' + a + ' songs', b + ' hidden gems'];
+}
 function musArtistCap(list, cap) {
   const counts = {};
   return (list || []).filter(v => { const k = String(v.a || '').toLowerCase().trim(); if (!k) return true; counts[k] = (counts[k] || 0) + 1; return counts[k] <= cap; });
 }
-async function buildForYou(p) {
-  const key = 'fy:' + sixHash(JSON.stringify(p));
+async function buildForYou(p, page) {
+  page = page || 0;
+  const key = 'fy:' + sixHash(JSON.stringify(p)) + ':pg' + page;
   const c = forYouCache.get(key);
   if (c && Date.now() - c.at < 1800e3) return Object.assign({}, c.out, { cached: 1 });
   let queries = null, line = '', src = 'algo';
   const hasTaste = !!(p.artists.length || p.liked.length || p.recent.length || (p.top && p.top.length) || (p.searches && p.searches.length) || (p.genres && p.genres.length));
   if (!hasTaste) {
     // zero start: no seeding, no pretending. neutral charts while six learns.
-    queries = FY_FRESH_QUERIES.slice();
+    queries = FY_FRESH_QUERIES.slice(0, 2).concat(fyLaneQueries('fresh', page));
     line = FY_FRESH_LINES[sixHash('fyfresh:' + key) % FY_FRESH_LINES.length];
     src = 'fresh';
   } else {
@@ -13100,14 +13130,16 @@ async function buildForYou(p) {
     } catch {}
   }
   if (!queries) queries = fyFallbackQueries(p);
+  queries = queries.concat(fyLaneQueries(JSON.stringify(p.artists) + (p.top && p.top[0] ? p.top[0].t : ''), page));
   if (!line) line = FY_LINES[sixHash('fyline:' + key) % FY_LINES.length];
-  const hits = await Promise.all(queries.slice(0, 5).map(q => fetchYtSearchIt(q).catch(() => null)));
+  const hits = await Promise.all(queries.slice(0, 7).map(q => fetchYtSearchIt(q).catch(() => null)));
   const pools = hits.map(h => h ? musNorm(h.vids, p.mode !== 'yt') : []);
   const merged = [];
   for (let r = 0; r < 12 && merged.length < 44; r++) {
     for (const pool of pools) { if (pool[r] && merged.length < 44) merged.push(pool[r]); }
   }
   let vids = musDedupe(merged, 1);
+  if (p.seen && p.seen.length) { const seenSet = new Set(p.seen); vids = vids.filter(v => !seenSet.has(v.id)); }
   const reserve = vids;
   vids = musArtistCap(vids, 4);
   if (p.mode !== 'yt') vids = await sixVerifySongs(vids);
@@ -13205,7 +13237,8 @@ async function buildAiPlaylist(b) {
     name = (artists.join(', ') || type || 'my mix').slice(0, 40);
   } else {
     try {
-      const prompt = 'u are six, building a DISCOVERY playlist. the listener asked for artists: ' + (artists.join(', ') || 'none') + ' — and this type of songs: ' + (type || 'none') + '. go WIDER than the ask: similar artists, adjacent sounds, hidden gems in the same world. reply with ONLY this JSON, nothing else: {"name":"<short playlist name, lowercase>","queries":["<youtube music search phrase>"]} — give exactly 6 search phrases, all landing on real released songs (no type beats, no instrumentals, no karaoke). VARIETY IS THE POINT: at least 5 DIFFERENT artists across the 6 phrases, no artist in more than 2 phrases.';
+      const lanePick = GENRE_WHEEL[sixHash(artists.join(',') + '|' + type) % GENRE_WHEEL.length];
+      const prompt = 'u are six, building a DISCOVERY playlist. the listener asked for artists: ' + (artists.join(', ') || 'none') + ' — and this type of songs: ' + (type || 'none') + '. go WIDER than the ask: similar artists, adjacent sounds, hidden gems in the same world — and lean into ' + lanePick + ' energy for at least two picks. reply with ONLY this JSON, nothing else: {"name":"<short playlist name, lowercase>","queries":["<youtube music search phrase>"]} — give exactly 6 search phrases, all landing on real released songs (no type beats, no instrumentals, no karaoke). VARIETY IS THE POINT: at least 5 DIFFERENT artists across the 6 phrases, no artist in more than 2 phrases.';
       const reply = await Promise.race([askSix([{ role: 'user', content: prompt }], SIX_SYSTEM), new Promise(res => setTimeout(() => res(''), 12000))]);
       const m = String(reply || '').match(/\{[\s\S]*?\}/);
       if (m) { const j = JSON.parse(m[0]); if (j && Array.isArray(j.queries)) { queries = j.queries.map(x => fyCleanStr(x, 80)).filter(Boolean).slice(0, 6); name = fyCleanStr(j.name, 40); } }
@@ -14578,7 +14611,7 @@ const server = http.createServer(async (req, res) => {
   }
   if (u.pathname === '/api/foryou' && req.method === 'POST') {
     let fout = { ok: false, vids: [], line: '', src: 'algo' };
-    try { const b = await readJsonBody(req); fout = await buildForYou(fyShape(b)); } catch (e) {}
+    try { const b = await readJsonBody(req); const pg = Math.max(0, Math.min(50, parseInt(b && b.page, 10) || 0)); fout = await buildForYou(fyShape(b), pg); } catch (e) {}
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(JSON.stringify(fout));
   }
