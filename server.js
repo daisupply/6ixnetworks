@@ -1551,6 +1551,9 @@ body{padding-top:env(safe-area-inset-top)!important;box-sizing:border-box}
 @media (max-width:820px){
 .wrap .mhead{background:rgba(8,7,15,.96)!important}
 .mvcard .mt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3;min-height:2.6em}
+.wrap .back{margin-top:env(safe-area-inset-top)}
+.wrap .mhead{padding-top:calc(8px + env(safe-area-inset-top))}
+#sb{padding-top:calc(20px + env(safe-area-inset-top))!important}
 }
 
 
@@ -1666,7 +1669,7 @@ a{transition:color .15s ease}
 #tabbar a,#tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:0;color:#c9c9d1;font-size:10px;font-weight:600;letter-spacing:.02em;text-decoration:none;padding:6px 0 4px;border-radius:19px;cursor:pointer;font-family:inherit}
 #tabbar a.on{color:#fff;background:rgba(var(--acc),.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 0 14px rgba(var(--acc),.18)}
 #tabbar a.on svg{color:#e4e4e7}
-#tabSheet.open{display:block;position:fixed;left:10px;right:10px;bottom:calc(90px + env(safe-area-inset-bottom));max-height:calc(100dvh - 120px - env(safe-area-inset-bottom));overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;z-index:51;background:rgba(22,22,27,.6);-webkit-backdrop-filter:blur(22px) saturate(1.7);backdrop-filter:blur(22px) saturate(1.7);border:1px solid rgba(255,255,255,.16);border-radius:22px;box-shadow:0 10px 34px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.15);padding:10px}
+#tabSheet.open{display:block;position:fixed;left:10px;right:10px;bottom:calc(90px + env(safe-area-inset-bottom));max-height:calc(100dvh - 190px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;z-index:51;background:rgba(22,22,27,.6);-webkit-backdrop-filter:blur(22px) saturate(1.7);backdrop-filter:blur(22px) saturate(1.7);border:1px solid rgba(255,255,255,.16);border-radius:22px;box-shadow:0 10px 34px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.15);padding:10px}
 #tabSheet a{display:flex;align-items:center;gap:12px;padding:11px 10px;border-radius:14px;color:#f4f4f5;text-decoration:none;font-weight:600;font-size:14.5px}
 #tabSheet a.on{background:rgba(255,255,255,.1)}
 #tabSheet a svg{color:#c9c9d1;flex:none}
