@@ -1557,6 +1557,28 @@ body{padding-top:env(safe-area-inset-top)!important;box-sizing:border-box}
 .launch>a.lcard{align-items:center!important;justify-content:center!important;text-align:center!important;gap:8px;min-height:106px;padding:14px 4px 12px}
 .launch>a.lcard>b{margin-left:auto;margin-right:auto;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px}
 .launch>a.lcard.lit{border-color:rgba(var(--star),.9)!important;box-shadow:0 0 0 2px rgba(var(--star),.55),0 0 26px rgba(var(--star),.35)}
+/* ——— MOBILE REMODEL v337: one layout system for every page ——— */
+.wrap{padding-top:calc(54px + env(safe-area-inset-top))}
+.wrap h1{font-size:27px!important;line-height:1.12;letter-spacing:-.01em;background-image:linear-gradient(92deg,rgb(var(--star)),rgb(var(--acc3)) 45%,rgb(var(--acc2)) 80%,rgb(var(--star)));-webkit-background-clip:text;background-clip:text;color:transparent}
+.fg2title{font-size:26px!important}
+body .wm,body .ytlogo,body .brand6,body .brand .blend,body .fg2title span,body .tb-logo span{background-image:linear-gradient(92deg,rgb(var(--star)),rgb(var(--acc3)) 45%,rgb(var(--acc2)) 80%,rgb(var(--star)))}
+body .wrap [class*="chip"]{border-radius:999px!important}
+body .wrap .sec-h{font-size:15px!important;font-weight:800;color:#fafafa;text-transform:none!important;letter-spacing:0!important}
+body .wrap input[type="file"]{max-width:100%;font-size:13px}
+body .wrap select{border-radius:14px}
+body .ythead p{display:none}
+body .ytpaste{margin-top:10px}
+body .hwcard{background:rgba(16,14,24,.55);border-color:rgba(255,255,255,.1)}
+#msobSkip,#msobGo{white-space:nowrap;font-size:13.5px}
+body .ctl .mchip{border-radius:999px;padding:9px 16px;font-size:14px}
+/* v338 touch-ups: games app-bar, profile cards, hw primary, news chip rail */
+body .gbar{background:rgba(10,8,18,.78)!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+body .pmeta{color:#a49fb4!important}
+body .pbody{background:rgba(16,14,24,.55)}
+body .pbanner{background:linear-gradient(120deg,rgba(var(--star),.32),rgba(var(--acc3),.16))}
+body .hwmodes .mode.primary{background:linear-gradient(120deg,rgb(var(--star)),rgb(var(--acc3)));color:#0d0a18;border-color:transparent}
+body .nchips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+body .nchip{flex:none}
 }
 
 
@@ -3122,7 +3144,7 @@ gf.addEventListener('load', function(){ setTimeout(check, 4000); });
 }
 
 const RAW_GAME_HOSTS = ['1v1.lol'];
-function rawGameHost(u){ try { var h = new URL(u).hostname.toLowerCase(); return RAW_GAME_HOSTS.some(function(x){ return h === x || h.slice(-(x.length + 1)) === '.' + x; }); } catch (e) { return false; } }
+function rawGameHost(u){ return false; }
 function playPageRaw(u, t) {
   if (!/^https:\/\//i.test(u || '')) {
     return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#e4e4e7" href="/gs">back to games</a></body>';
@@ -14789,7 +14811,7 @@ const server = http.createServer(async (req, res) => {
   }
   if (u.pathname === '/play') {
     const gu2 = u.searchParams.get('u') || '';
-    const pengM = ((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv|raw)/) || [])[1]);
+    const pengM = ((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv)/) || [])[1]);
     const peng = (pengM === 'raw' && !rawGameHost(gu2)) ? 'sj' : (pengM || (rawGameHost(gu2) ? 'raw' : 'sj'));
     if (gu2 && peng === 'raw') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageRaw(gu2, u.searchParams.get('t') || 'Game')); }
     if (gu2 && peng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' }); return res.end(playPageSj(gu2, u.searchParams.get('t') || 'Game')); }
