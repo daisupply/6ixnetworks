@@ -43,7 +43,7 @@ function proxied(absUrl) {
 // v210: hosts that break inside the UV engine ride virtual direct
 // (the light relay) no matter where they're opened from — snapchat
 // first, per his ask. Matched by base domain (covers web./accounts.).
-const VD_HOSTS = ['snapchat.com', 'youtube.com', 'youtu.be'];
+const VD_HOSTS = ['snapchat.com'];
 function isVdHost(dest) {
   try {
     const u = new URL(dest);
@@ -54,6 +54,22 @@ function isVdHost(dest) {
     if ((h === 'now.gg' || h.endsWith('.now.gg')) && (/roblox/i.test(u.pathname) || u.pathname.startsWith('/apps/a/19900/'))) return true;
     return false;
   } catch { return false; }
+}
+function ytMirror(dest) {
+  try {
+    const u = new URL(dest);
+    const h = u.hostname.toLowerCase().replace(/^www\./, '');
+    if (h === 'youtu.be') { const id = u.pathname.split('/').filter(Boolean)[0]; return id ? '/yt/watch?v=' + encodeURIComponent(id) : '/yt'; }
+    if (h === 'youtube.com' || h.endsWith('.youtube.com')) {
+      const v = u.searchParams.get('v');
+      if (u.pathname === '/watch' && v) return '/yt/watch?v=' + encodeURIComponent(v);
+      const sh = u.pathname.match(/^\/shorts\/([\w-]{6,})/); if (sh) return '/yt/watch?v=' + encodeURIComponent(sh[1]);
+      const em = u.pathname.match(/^\/embed\/([\w-]{6,})/); if (em) return '/yt/watch?v=' + encodeURIComponent(em[1]);
+      if (u.pathname === '/results' && u.searchParams.get('search_query')) return '/yt/search?q=' + encodeURIComponent(u.searchParams.get('search_query'));
+      return '/yt';
+    }
+  } catch (e) { }
+  return null;
 }
 
 function gproxied(absUrl) {
@@ -2153,6 +2169,7 @@ function gxSjInit(){
     if ((await conn.getTransport()) !== '/libcurl/index.mjs?v=296') await conn.setTransport('/libcurl/index.mjs?v=296', [{ websocket: (window.GX_WISP || (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/wisp/') }]);
     var sj = new ($scramjetLoadController().ScramjetController)({ prefix: '/sj/service/', files: { wasm: '/sj-assets/scramjet.wasm.wasm', all: '/sj-assets/scramjet.all.js', sync: '/sj-assets/scramjet.sync.js' } });
     await sj.init();
+    try { if (!window.__gxSjKa) window.__gxSjKa = setInterval(function(){ try { navigator.serviceWorker.getRegistration('/sj/').then(function(r){ if (r && r.active) r.active.postMessage('keepalive'); }).catch(function(){}); } catch (e) {} }, 15000); } catch (e) {}
     return sj;
   })();
   __gxSj.catch(function(){ __gxSj = null; });
@@ -11357,7 +11374,7 @@ const server = http.createServer(async (req, res) => {
     return res.end(isBotReq(req) ? studyPage() : homeServed());
   }
   if (u.pathname === '/search') {
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' });
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(SEARCH);
   }  if (u.pathname === '/stars.js') {
     res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' });
@@ -11366,7 +11383,7 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/shell') {
     const servers = u.searchParams.has('ext') ? ['https://s.usareme.site/', 'https://sixsearch.deionmont1.workers.dev/'] : null;
     if (isBotReq(req)) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(studyPage()); }
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' });
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(shellPage(servers));
   }
     if (u.pathname === '/customize') {
@@ -12179,6 +12196,7 @@ const server = http.createServer(async (req, res) => {
     return res.end(playPage(gu2, u.searchParams.get('t') || 'Game'));
   }
   if (u.pathname === '/appplay') {
+    const ytA = u.searchParams.get('u') ? ytMirror(u.searchParams.get('u')) : null; if (ytA) { res.writeHead(302, { location: ytA }); return res.end(); }
     if (u.searchParams.get('u') && isVdHost(u.searchParams.get('u'))) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(appPlayPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App')); }
     const aeng = ((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv)/) || [])[1]) || 'sj';
     if (u.searchParams.get('u') && aeng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' }); return res.end(appPlayPageSj(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App')); }
@@ -12327,6 +12345,7 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/go') {
     const dest = normalizeInput(u.searchParams.get('q') || '');
     if (!dest) { res.writeHead(302, { location: '/home' }); return res.end(); }
+    const ytM = ytMirror(dest); if (ytM) { res.writeHead(302, { location: ytM }); return res.end(); }
     if (u.searchParams.get('classic') === '1') { res.writeHead(302, { location: proxied(dest) }); return res.end(); }
     if (isVdHost(dest)) { res.writeHead(302, { location: '/appplay?u=' + encodeURIComponent(dest) + '&t=' + encodeURIComponent(new URL(dest).hostname.replace(/^www\./, '')) }); return res.end(); }
     const engPick = (u.searchParams.get('eng') === 'uv' || u.searchParams.get('eng') === 'sj') ? u.searchParams.get('eng') : (((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv)/) || [])[1]) || 'sj');
@@ -12579,7 +12598,7 @@ function handleWsx(req, socket, head) {
   });
 }
 server.on('upgrade', (req, socket, head) => {
-  try { const p = new URL(req.url, 'http://x').pathname; if (SJ_WISP && p.startsWith('/wisp')) return SJ_WISP.routeRequest(req, socket, head); if (p === '/wsx') return handleWsx(req, socket, head); } catch (e) {}
+  try { const p = new URL(req.url, 'http://x').pathname; if (SJ_WISP && (p === '/wisp' || p === '/wisp/')) return SJ_WISP.routeRequest(req, socket, head); if (p === '/wsx') return handleWsx(req, socket, head); } catch (e) {}
   return chatUpgrade(req, socket, head);
 });
 server.keepAliveTimeout = 75000; server.headersTimeout = 80000;
