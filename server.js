@@ -6280,7 +6280,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <span class="lab">source</span>
 <span class="ddslot" id="srcSlot"></span><select id="srcSel" hidden></select>
 <span class="lab">route</span>
-<span class="ddslot" id="rtSlot"></span><select id="rtSel" hidden><option value="lite">virtual direct</option><option value="tunnel">tunnel</option><option value="direct" selected>direct</option></select>
+<span class="ddslot" id="rtSlot"></span><select id="rtSel" hidden><option value="lite">virtual direct</option><option value="tunnel">tunnel</option><option value="direct" selected>direct</option><option value="rh">ramhead</option></select>
 </div>
 <div class="ctl" id="libRow" hidden>
 <a class="mchip" id="dlBtn" href="#" style="text-decoration:none">download the whole movie</a>
@@ -6490,7 +6490,7 @@ function loadPlayer(){
   var fr = document.getElementById('mvFrame');
   setProv('via ' + (SRCS[srcMode] || SRCS[0]).n + ' · embed');
   syncSrcUI();
-  fr.src = route === 'tunnel' ? ('/go?q=' + encodeURIComponent(embedUrl())) : route === 'lite' ? ('/gproxy/' + b64url(embedUrl())) : embedUrl();
+  fr.src = route === 'tunnel' ? ('/go?q=' + encodeURIComponent(embedUrl())) : route === 'lite' ? ('/gproxy/' + b64url(embedUrl())) : route === 'rh' ? ('/rh?u=' + encodeURIComponent(embedUrl())) : embedUrl();
   armAuto();
 }
 var autoTimer = null;
@@ -11275,6 +11275,67 @@ try {
   console.log('scramjet engine ready');
 } catch (e) { console.log('scramjet unavailable:', e.message); }
 const SJ_OK = () => !!SJ_DIR;
+// ---------- rammerhead engine (v298 — movies-only 'rh' route) ----------
+// runs in-process on loopback in single-server mode (crossDomainPort null =
+// rammerhead's own one-port hack); our handler forwards its url space to it.
+// sessions are minted in-process by the /rh launcher; the browser never
+// touches rammerhead's own session endpoints.
+const RH_PORT = 18097;
+let RH = null;
+try {
+  const rhMod = require('rammerhead');
+  const rhLogger = new rhMod.RammerheadLogging({ logLevel: 'error', generatePrefix: (l) => '[rh] ' });
+  const rhProxy = new rhMod.RammerheadProxy({
+    logger: rhLogger,
+    bindingAddress: '127.0.0.1',
+    port: RH_PORT,
+    crossDomainPort: null,
+    disableLocalStorageSync: false,
+    jsCache: new rhMod.RammerheadJSMemCache(50 * 1024 * 1024),
+    getServerInfo: (req) => {
+      const host = String((req.headers && req.headers.host) || 'localhost');
+      let hostname = 'localhost', hport = 0;
+      try { const hu = new URL('http://' + host); hostname = hu.hostname; hport = Number(hu.port) || 0; } catch (e) { }
+      if (hport) return { hostname, port: hport, crossDomainPort: hport, protocol: 'http:' };
+      const xf = String((req.headers && req.headers['x-forwarded-proto']) || '').split(',')[0].trim();
+      return { hostname, port: 443, crossDomainPort: 443, protocol: xf === 'http' ? 'http:' : 'https:' };
+    }
+  });
+  const rhStore = new rhMod.RammerheadSessionMemoryStore({ logger: rhLogger, staleTimeout: 1000 * 60 * 30, maxToLive: 1000 * 60 * 60 * 4, cleanupInterval: 1000 * 60 * 5 });
+  rhStore.attachToProxy(rhProxy);
+  RH = {
+    store: rhStore,
+    mint() { const id = rhMod.generateId(); const sess = new rhMod.RammerheadSession(); rhStore.addSerializedSession(id, sess.serializeSession()); return id; }
+  };
+  console.log('rammerhead engine ready');
+} catch (e) { console.log('rammerhead unavailable:', e.message); }
+const RH_OK = () => !!RH;
+function rhIsPath(pth) {
+  return pth === '/rammerhead.js' || pth === '/syncLocalStorage' || pth === '/api/shuffleDict' || /^\/[a-f0-9]{32}(\/|$)/i.test(pth);
+}
+function rhForward(req, res) {
+  const up = http.request({ host: '127.0.0.1', port: RH_PORT, path: req.url, method: req.method, headers: req.headers }, (ur) => {
+    const hh = Object.assign({}, ur.headers);
+    delete hh['transfer-encoding']; delete hh['connection']; delete hh['keep-alive'];
+    res.writeHead(ur.statusCode || 502, hh);
+    ur.pipe(res);
+  });
+  up.on('error', () => { try { if (!res.headersSent) res.writeHead(502, { 'content-type': 'text/plain' }); res.end('rh route down'); } catch (e) { } });
+  up.setTimeout(90000, () => { try { up.destroy(); if (!res.headersSent) res.writeHead(504, { 'content-type': 'text/plain' }); res.end('rh route timed out'); } catch (e) { } });
+  req.pipe(up);
+}
+function rhUpgrade(req, socket, head) {
+  const up = require('net').connect(RH_PORT, '127.0.0.1', () => {
+    let raw = req.method + ' ' + req.url + ' HTTP/1.1\r\n';
+    for (let i = 0; i + 1 < req.rawHeaders.length; i += 2) raw += req.rawHeaders[i] + ': ' + req.rawHeaders[i + 1] + '\r\n';
+    raw += '\r\n';
+    up.write(raw);
+    if (head && head.length) up.write(head);
+    up.pipe(socket); socket.pipe(up);
+  });
+  up.on('error', () => { try { socket.destroy(); } catch (e) { } });
+  socket.on('error', () => { try { up.destroy(); } catch (e) { } });
+}
 const SJ_SW = `importScripts("/sj-assets/scramjet.all.js");
 const __sjSw = new ($scramjetLoadWorker().ScramjetServiceWorker)();
 async function __sjHandle(event) {
@@ -11373,6 +11434,7 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(isBotReq(req) ? studyPage() : homeServed());
   }
+  if (RH_OK() && rhIsPath(u.pathname)) return rhForward(req, res);
   if (u.pathname === '/search') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(SEARCH);
@@ -12342,6 +12404,20 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/yt/search') {
     return handleYtSearch(req, res, u.searchParams.get('q') || '');
   }
+  if (u.pathname === '/rh') {
+    const dest = u.searchParams.get('u') || '';
+    let okDest = false, destHost = '';
+    try { const du = new URL(dest); okDest = /^https?:$/.test(du.protocol); destHost = du.hostname; } catch (e) { }
+    if (!RH_OK() || !okDest || isPrivateHost(destHost)) { res.writeHead(302, { location: '/movies' }); return res.end(); }
+    let sid = ((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_rh=([a-f0-9]{32})/) || [])[1]) || '';
+    if (!sid || !RH.store.has(sid)) {
+      sid = RH.mint();
+      res.writeHead(302, { location: '/' + sid + '/' + dest, 'set-cookie': 'gx_rh=' + sid + '; Path=/' + cookieDomain(req) + '; Max-Age=14400; SameSite=Lax' });
+      return res.end();
+    }
+    res.writeHead(302, { location: '/' + sid + '/' + dest });
+    return res.end();
+  }
   if (u.pathname === '/go') {
     const dest = normalizeInput(u.searchParams.get('q') || '');
     if (!dest) { res.writeHead(302, { location: '/home' }); return res.end(); }
@@ -12598,7 +12674,7 @@ function handleWsx(req, socket, head) {
   });
 }
 server.on('upgrade', (req, socket, head) => {
-  try { const p = new URL(req.url, 'http://x').pathname; if (SJ_WISP && (p === '/wisp' || p === '/wisp/')) return SJ_WISP.routeRequest(req, socket, head); if (p === '/wsx') return handleWsx(req, socket, head); } catch (e) {}
+  try { const p = new URL(req.url, 'http://x').pathname; if (RH_OK() && rhIsPath(p)) return rhUpgrade(req, socket, head); if (SJ_WISP && (p === '/wisp' || p === '/wisp/')) return SJ_WISP.routeRequest(req, socket, head); if (p === '/wsx') return handleWsx(req, socket, head); } catch (e) {}
   return chatUpgrade(req, socket, head);
 });
 server.keepAliveTimeout = 75000; server.headersTimeout = 80000;
