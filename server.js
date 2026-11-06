@@ -371,6 +371,15 @@ function rewritePlaylist(text, baseUrl, gameMode) {
 // favicon), or opens the whole page inside an about:blank tab whose tab
 // itself says Google — the classic cloak.
 const CLOAK_JS = `
+(function(){
+  try {
+    var pcid = localStorage.getItem('gx_cid') || '';
+    if (!pcid) { pcid = 'c' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('gx_cid', pcid); }
+    function gxPing(){ if (document.hidden) return; fetch('/api/online?cid=' + encodeURIComponent(pcid)).catch(function(){}); }
+    gxPing(); setInterval(gxPing, 30000);
+    document.addEventListener('visibilitychange', function(){ if (!document.hidden) gxPing(); });
+  } catch (e) {}
+})();
 function cloakTab(kind){
   var presets={
     google:{t:'Google',i:'https://www.google.com/favicon.ico'},
@@ -866,6 +875,15 @@ button{border-radius:8px!important}
   if (window.top !== window) { try { if (window.top.gxMusic) return; } catch (e) {} }
   var bar = document.getElementById('gxBar'); if (!bar) return;
   (function(){ var vv = window.visualViewport; if (!vv) return; function upd(){ var a = document.activeElement; var foc = a && /^(INPUT|TEXTAREA)$/.test(a.tagName); if (foc) document.documentElement.style.setProperty('--gx-vh', vv.height + 'px'); else document.documentElement.style.removeProperty('--gx-vh'); } vv.addEventListener('resize', upd); document.addEventListener('focusin', function(){ setTimeout(upd, 80); }); document.addEventListener('focusout', function(){ setTimeout(upd, 80); }); })();
+  (function(){
+  try {
+    var pcid = localStorage.getItem('gx_cid') || '';
+    if (!pcid) { pcid = 'c' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('gx_cid', pcid); }
+    function gxPing(){ if (document.hidden) return; fetch('/api/online?cid=' + encodeURIComponent(pcid)).catch(function(){}); }
+    gxPing(); setInterval(gxPing, 30000);
+    document.addEventListener('visibilitychange', function(){ if (!document.hidden) gxPing(); });
+  } catch (e) {}
+})();
   var au = document.getElementById('gxAu');
   var el = function(id){ return document.getElementById(id); };
   var FRAME = document.getElementById('f');
@@ -2856,9 +2874,10 @@ gf.addEventListener('load', function(){ setTimeout(check, 4000); });
 </html>`;
 }
 
-function appPlayPageUv(u, t) {
+function appPlayPageUv(u, t, backHref, backLabel) {
+  const bk = backHref || '/apps', bl = backLabel || 'apps';
   if (!/^https:\/\//i.test(u || '')) {
-    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad app link — <a style="color:#e4e4e7" href="/apps">back to apps</a></body>';
+    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad link — <a style="color:#e4e4e7" href="' + bk + '">back to ' + bl + '</a></body>';
   }
   const prox = '/uv/service/' + uvEncodeUrl(u);
   const alt = proxied(u);
@@ -2866,7 +2885,7 @@ function appPlayPageUv(u, t) {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body class="playbody">${STAR_CANVAS}
-<div class="top"><a href="/apps">← apps</a><span class="title">${escHtml(t || 'App')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
+<div class="top"><a href="${bk}">← ${bl}</a><span class="title">${escHtml(t || 'App')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
 <button class="on" onclick="useNet()">network</button> ${ENG_HTML}
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
@@ -3027,9 +3046,10 @@ gf.addEventListener('load', function(){ setTimeout(check, 4000); });
 <script>window.onGxEng=function(){ location.reload(); };</script><script>${ENG_JS}</script></body>
 </html>`;
 }
-function appPlayPageSj(u, t) {
+function appPlayPageSj(u, t, backHref, backLabel) {
+  const bk = backHref || '/apps', bl = backLabel || 'apps';
   if (!/^https:\/\//i.test(u || '')) {
-    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad app link — <a style="color:#e4e4e7" href="/apps">back to apps</a></body>';
+    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad link — <a style="color:#e4e4e7" href="' + bk + '">back to ' + bl + '</a></body>';
   }
   const prox = '/sj/service/' + sjEncodeUrl(u);
   const alt = proxied(u);
@@ -3037,7 +3057,7 @@ function appPlayPageSj(u, t) {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body class="playbody">${STAR_CANVAS}
-<div class="top"><a href="/apps">← apps</a><span class="title">${escHtml(t || 'App')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
+<div class="top"><a href="${bk}">← ${bl}</a><span class="title">${escHtml(t || 'App')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
 <button class="on" onclick="useNet()">network</button> ${ENG_HTML}
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
@@ -3176,9 +3196,10 @@ arm();
 </html>`;
 }
 
-function appPlayPage(u, t) {
+function appPlayPage(u, t, backHref, backLabel) {
+  const bk = backHref || '/apps', bl = backLabel || 'apps';
   if (!/^https:\/\//i.test(u || '')) {
-    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad app link — <a style="color:#e4e4e7" href="/apps">back to apps</a></body>';
+    return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad link — <a style="color:#e4e4e7" href="' + bk + '">back to ' + bl + '</a></body>';
   }
   const prox = gproxied(u);
   const alt = proxied(u);
@@ -3186,7 +3207,7 @@ function appPlayPage(u, t) {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body class="playbody">${STAR_CANVAS}
-<div class="top"><a href="/apps">← apps</a><span class="title">${escHtml(t || 'App')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
+<div class="top"><a href="${bk}">← ${bl}</a><span class="title">${escHtml(t || 'App')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
 <button class="on" onclick="useNet()">network</button> ${ENG_HTML}
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
@@ -5816,7 +5837,7 @@ function renderFeed(){
   document.getElementById('newsEmpty').hidden = list.length > 0;
   feed.innerHTML = pageItems.map(function (a) {
     var pic = a.img ? '<img loading="lazy" src="' + esc(a.img) + '" alt="">' : '';
-    return '<a class="ncard" href="/go?q=' + encodeURIComponent(a.u) + '">' + pic + '<div class="ntx"><div class="nt">' + esc(a.t) + '</div>' + (a.d ? '<div class="nd">' + esc(a.d) + '</div>' : '') + '<div class="nm"><b>' + esc(a.s) + '</b> · ' + esc(a.c) + ' · ' + ago(a.ts) + '</div></div></a>';
+    return '<a class="ncard" href="/newsplay?u=' + encodeURIComponent(a.u) + '&t=' + encodeURIComponent(a.t) + '">' + pic + '<div class="ntx"><div class="nt">' + esc(a.t) + '</div>' + (a.d ? '<div class="nd">' + esc(a.d) + '</div>' : '') + '<div class="nm"><b>' + esc(a.s) + '</b> · ' + esc(a.c) + ' · ' + ago(a.ts) + '</div></div></a>';
   }).join('');
   renderPager(list.length);
 }
@@ -11809,6 +11830,15 @@ html,body{overflow-x:clip}
   if (window.top !== window) { try { if (window.top.gxMusic) return; } catch (e) {} }
   var bar = document.getElementById('gxBar'); if (!bar) return;
   (function(){ var vv = window.visualViewport; if (!vv) return; function upd(){ var a = document.activeElement; var foc = a && /^(INPUT|TEXTAREA)$/.test(a.tagName); if (foc) document.documentElement.style.setProperty('--gx-vh', vv.height + 'px'); else document.documentElement.style.removeProperty('--gx-vh'); } vv.addEventListener('resize', upd); document.addEventListener('focusin', function(){ setTimeout(upd, 80); }); document.addEventListener('focusout', function(){ setTimeout(upd, 80); }); })();
+  (function(){
+  try {
+    var pcid = localStorage.getItem('gx_cid') || '';
+    if (!pcid) { pcid = 'c' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('gx_cid', pcid); }
+    function gxPing(){ if (document.hidden) return; fetch('/api/online?cid=' + encodeURIComponent(pcid)).catch(function(){}); }
+    gxPing(); setInterval(gxPing, 30000);
+    document.addEventListener('visibilitychange', function(){ if (!document.hidden) gxPing(); });
+  } catch (e) {}
+})();
   var au = document.getElementById('gxAu');
   var el = function(id){ return document.getElementById(id); };
   var FRAME = document.getElementById('f');
@@ -14612,6 +14642,18 @@ const server = http.createServer(async (req, res) => {
     if (UV_OK() && gu2) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageUv(gu2, u.searchParams.get('t') || 'Game')); }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(playPage(gu2, u.searchParams.get('t') || 'Game'));
+  }
+  if (u.pathname === '/newsplay') {
+    const nu = u.searchParams.get('u') || '';
+    const nt = u.searchParams.get('t') || 'News';
+    const ytN = nu ? ytMirror(nu) : null; if (ytN) { res.writeHead(302, { location: ytN }); return res.end(); }
+    if (nu && isVdHost(nu)) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(appPlayPage(nu, nt, '/news', 'news')); }
+    const nck = String(req.headers.cookie || '');
+    const neng = nck.includes('gx_eng=uv') ? 'uv' : 'sj';
+    if (nu && neng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' }); return res.end(appPlayPageSj(nu, nt, '/news', 'news')); }
+    if (UV_OK() && nu) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(appPlayPageUv(nu, nt, '/news', 'news')); }
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
+    return res.end(appPlayPage(nu, nt, '/news', 'news'));
   }
   if (u.pathname === '/appplay') {
     const ytA = u.searchParams.get('u') ? ytMirror(u.searchParams.get('u')) : null; if (ytA) { res.writeHead(302, { location: ytA }); return res.end(); }
