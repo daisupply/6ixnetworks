@@ -3163,53 +3163,70 @@ function bloxPage() {
     ['Natural Disaster Survival', '189707'], ['Flee the Facility', '893973440'], ['Work at a Pizza Place', '192800'],
     ['Break In 2', '13864661000'], ['SCP Roleplay', '5193314219'], ['Hypershot', '17516596118'], ['Bladebrawl', '15903557752']
   ];
+  const hues = [265, 205, 150, 18, 330, 28, 190, 275, 45, 350];
+  const ini = (n) => n.split(' ').filter((w) => /[a-z0-9]/i.test(w.charAt(0))).slice(0, 2).map((w) => w.charAt(0).toUpperCase()).join('');
   const start = (id) => 'https://play.roblox.com/games/start?placeId=' + id;
-  const cards = picks.map((p) => '<a class="bxg" href="/play?u=' + encodeURIComponent(start(p[1])) + '&t=' + encodeURIComponent(p[0]) + '"><b>' + escHtml(p[0]) + '</b><span>place ' + p[1] + '</span></a>').join('');
-  const hub = '/play?u=' + encodeURIComponent('https://play.roblox.com/WebClient/Launcher') + '&t=' + encodeURIComponent('6ixblox hub');
+  const cards = picks.map((p, i) => '<a class="bxg" href="/play?u=' + encodeURIComponent(start(p[1])) + '&bk=blox&t=' + encodeURIComponent(p[0]) + '"><span class="bgtile" style="background:linear-gradient(135deg,hsl(' + hues[i] + ' 85% 58%),hsl(' + (hues[i] + 45) + ' 90% 42%))"><span class="bgini">' + ini(p[0]) + '</span></span><span class="bgname">' + escHtml(p[0]) + '</span><span class="bgmeta">place ' + p[1] + '<span class="bgarr">play</span></span></a>').join('');
+  const hub = '/play?u=' + encodeURIComponent('https://play.roblox.com/WebClient/Launcher') + '&bk=blox&t=' + encodeURIComponent('6ixblox hub');
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
-.sub{color:#9d99ad;margin:2px 0 16px;max-width:720px}
-.bxcard{background:#0d0b1a;border:1px solid rgba(var(--star),.16);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px;width:100%;max-width:720px;box-sizing:border-box}
-.bxcard input{background:#0a0918;border:1px solid rgba(var(--star),.18);border-radius:12px;padding:12px 14px;color:#f4f4f5;font-family:inherit;font-size:16px;width:100%;box-sizing:border-box}
-.bxcard button{background:linear-gradient(120deg,rgb(var(--star)),rgb(var(--acc3)));color:#0d0a18;border:0;border-radius:12px;padding:12px;font-weight:800;font-family:inherit;font-size:15px;cursor:pointer}
-.bxmsg{font-size:13.5px;color:rgb(var(--star));min-height:18px}
-.bxhub{display:flex;align-items:center;gap:12px;width:100%;max-width:720px;box-sizing:border-box;margin-top:14px;background:#0d0b1a;border:1px solid rgba(var(--star),.16);border-radius:18px;padding:15px 16px;text-decoration:none;color:#f4f4f5}
-.bxhub b{font-size:15.5px}
+.bxhero{position:relative;width:100%;max-width:760px;padding:26px 2px 4px}
+.bxhero:before{content:'';position:absolute;inset:-30px -60px auto;height:230px;background:radial-gradient(closest-side,rgba(var(--acc),.20),transparent);pointer-events:none}
+.bxmark{display:flex;align-items:center;gap:15px}
+.bxmark svg{flex:none;filter:drop-shadow(0 8px 22px rgba(var(--acc),.45))}
+.bxhero h1{font-size:42px;margin:0;letter-spacing:-.03em}
+.bxeyebrow{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.14em;color:rgb(var(--star));border:1px solid rgba(var(--star),.35);background:rgba(var(--acc),.10);border-radius:999px;padding:5px 11px;margin-bottom:12px;text-transform:uppercase}
+.bxsub{color:#b6b1c6;margin:10px 0 0;font-size:15px;max-width:560px}
+.bxcard{position:relative;width:100%;max-width:760px;box-sizing:border-box;margin-top:20px;background:linear-gradient(#12101f,#12101f) padding-box,linear-gradient(120deg,rgba(var(--star),.55),rgba(var(--acc),.15),rgba(var(--acc3),.5)) border-box;border:1px solid transparent;border-radius:20px;padding:16px;box-shadow:0 18px 44px rgba(0,0,0,.42)}
+.bxcard label{display:block;font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#9d99ad;margin-bottom:9px}
+.bxrow{display:flex;gap:9px}
+.bxrow input{flex:1;min-width:0;background:#0a0918;border:1px solid rgba(var(--star),.20);border-radius:13px;padding:13px 15px;color:#f4f4f5;font-family:inherit;font-size:16px}
+.bxrow input:focus{outline:none;border-color:rgba(var(--star),.55)}
+.bxrow button{flex:none;background:linear-gradient(120deg,rgb(var(--star)),rgb(var(--acc3)));color:#0d0a18;border:0;border-radius:13px;padding:13px 22px;font-weight:800;font-family:inherit;font-size:15px;cursor:pointer}
+.bxmsg{font-size:13.5px;color:#fda4af;min-height:18px;margin-top:9px}
+.bxhub{display:flex;align-items:center;gap:14px;width:100%;max-width:760px;box-sizing:border-box;margin-top:14px;background:#0d0b1a;border:1px solid rgba(var(--star),.16);border-radius:20px;padding:16px 18px;text-decoration:none;color:#f4f4f5;transition:transform .15s,border-color .15s}
+.bxhub:hover{transform:translateY(-2px);border-color:rgba(var(--star),.45)}
+.bxhub b{font-size:16px}
 .bxhub span{display:block;font-size:12.5px;color:#9d99ad;margin-top:2px}
-.bxhub .arr{margin-left:auto;color:rgb(var(--star));font-weight:800;font-size:18px}
-.sec-h{font-size:13px;font-weight:800;letter-spacing:.06em;color:#9d99ad;text-transform:uppercase;margin:22px 0 10px}
-.bxgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:10px;width:100%;max-width:720px}
-.bxg{background:#0d0b1a;border:1px solid rgba(var(--star),.13);border-radius:16px;padding:14px;text-decoration:none;color:#f4f4f5;display:flex;flex-direction:column;gap:3px}
-.bxg b{font-size:15px}
-.bxg span{font-size:12px;color:#9d99ad}
-.bxnote{color:#77717f;font-size:12.5px;margin-top:20px;max-width:720px}
+.bxhub .open{margin-left:auto;flex:none;background:rgba(var(--acc),.16);border:1px solid rgba(var(--star),.4);color:#fff;border-radius:999px;padding:8px 16px;font-weight:800;font-size:13px}
+.sec-h{font-size:12.5px;font-weight:800;letter-spacing:.09em;color:#9d99ad;text-transform:uppercase;margin:26px 0 12px;width:100%;max-width:760px}
+.bxgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:11px;width:100%;max-width:760px}
+.bxg{background:#0d0b1a;border:1px solid rgba(var(--star),.13);border-radius:18px;padding:11px;text-decoration:none;color:#f4f4f5;display:flex;flex-direction:column;gap:9px;transition:transform .15s,border-color .15s}
+.bxg:hover{transform:translateY(-3px);border-color:rgba(var(--star),.45)}
+.bgtile{display:flex;align-items:center;justify-content:center;height:74px;border-radius:12px}
+.bgini{font-size:27px;font-weight:900;letter-spacing:.02em;color:rgba(255,255,255,.94);text-shadow:0 2px 12px rgba(0,0,0,.35)}
+.bgname{font-weight:800;font-size:15px;line-height:1.25}
+.bgmeta{display:flex;align-items:center;font-size:12px;color:#9d99ad}
+.bgarr{margin-left:auto;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:rgb(var(--star));border:1px solid rgba(var(--star),.35);border-radius:999px;padding:3px 9px}
+.bxnote{width:100%;max-width:760px;box-sizing:border-box;margin-top:24px;font-size:12.5px;color:#9d99ad;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:13px;padding:11px 14px}
+@media (max-width:560px){.bxhero h1{font-size:34px}.bxgrid{grid-template-columns:repeat(2,1fr)}.bxmark{flex-direction:column;align-items:center;gap:10px;text-align:center}.bxhero{text-align:center}.bxsub{margin-left:auto;margin-right:auto}}
 </style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/gs">&larr; games</a>
-<h1>6ix<span>blox</span></h1>
-<p class="sub">the official roblox web player, thru the network — nothing stored here, everything streams live from roblox</p>
-<div class="bxcard">
-<input id="bxIn" type="text" placeholder="paste a roblox game link, or just a place id" autocomplete="off">
-<button type="button" id="bxGo">play it</button>
-<div id="bxMsg" class="bxmsg"></div>
+<div class="bxhero">
+<div class="bxmark"><svg width="52" height="40" viewBox="0 0 120 90" aria-hidden="true"><defs><linearGradient id="bxg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f0abfc"/><stop offset=".5" stop-color="#38bdf8"/><stop offset="1" stop-color="#34d399"/></linearGradient></defs><g transform="rotate(12 60 45)"><path fill="url(#bxg1)" fill-rule="evenodd" d="M37 22h46v46H37zM49.5 34.5h21v21h-21z"/></g></svg><div><span class="bxeyebrow">roblox web player · thru the network</span><h1>6ix<span>blox</span></h1></div></div>
+<p class="bxsub">real roblox in the browser — pick a game or drop a link. nothing stored here, it all streams live from roblox.</p>
 </div>
-<a class="bxhub" href="${hub}"><div><b>roblox hub</b><span>their own picker — curated games, search, id entry. boots right in the page</span></div><span class="arr">&rarr;</span></a>
+<div class="bxcard"><label for="bxIn">play by link or place id</label><div class="bxrow"><input id="bxIn" type="text" placeholder="roblox.com/games/… or 4924922222" autocomplete="off"><button type="button" id="bxGo">play</button></div><div id="bxMsg" class="bxmsg"></div></div>
+<a class="bxhub" href="${hub}"><svg width="42" height="32" viewBox="0 0 120 90" aria-hidden="true"><g transform="rotate(12 60 45)"><path fill="#e9e9ec" fill-rule="evenodd" d="M37 22h46v46H37zM49.5 34.5h21v21h-21z"/></g></svg><div><b>roblox hub</b><span>their own picker — curated games, search, id entry. spawns the game in a new tab</span></div><span class="open">open</span></a>
 <div class="sec-h">biggest rn</div>
 <div class="bxgrid">${cards}</div>
-<p class="bxnote">web play is still rolling out — games u own or can test load first, public games unlock as roblox flips them on</p>
+<p class="bxnote">web play is still in beta — games u own or can test load first, public games unlock as roblox rolls it out. chrome on pc/android works best; ios cant run it yet.</p>
 </div>${SIDEBAR_HTML}
 <script src="/ui.js"></script>
 <script>
 function bxDigits(s){ var d=''; for(var i=0;i<s.length;i++){ var c=s.charAt(i); if(c>='0'&&c<='9') d+=c; else if(d) break; } return d; }
 function bxExtract(v){ v=String(v||'').trim(); if(!v) return ''; var pi=v.indexOf('placeId='); if(pi>=0) return bxDigits(v.slice(pi+8)); var g=v.indexOf('/games/'); if(g>=0) return bxDigits(v.slice(g+7)); var all=v.length>=3; for(var i=0;i<v.length;i++){ var c=v.charAt(i); if(c<'0'||c>'9'){ all=false; break; } } return all? v : ''; }
-function bxPlay(){ var id=bxExtract(document.getElementById('bxIn').value); var m=document.getElementById('bxMsg'); if(!id){ m.textContent='that dont look like a game link or a place id'; return; } m.textContent=''; location.href='/play?u='+encodeURIComponent('https://play.roblox.com/games/start?placeId='+id)+'&t='+encodeURIComponent('roblox '+id); }
+function bxPlay(){ var id=bxExtract(document.getElementById('bxIn').value); var m=document.getElementById('bxMsg'); if(!id){ m.textContent='that dont look like a game link or a place id'; return; } m.textContent=''; location.href='/play?u='+encodeURIComponent('https://play.roblox.com/games/start?placeId='+id)+'&bk=blox&t='+encodeURIComponent('roblox '+id); }
 document.getElementById('bxGo').addEventListener('click', bxPlay);
 document.getElementById('bxIn').addEventListener('keydown', function(e){ if(e.key==='Enter') bxPlay(); });
 </script>
 </body></html>`;
 }
-function playPageUv(u, t) {
+
+function playPageUv(u, t, bk) {
+  const bkH = bk ? bk[0] : '/gs'; const bkL = bk ? bk[1] : 'games';
   if (!/^https:\/\//i.test(u || '')) {
     return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#e4e4e7" href="/gs">back to games</a></body>';
   }
@@ -3220,7 +3237,7 @@ function playPageUv(u, t) {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body class="playbody">${STAR_CANVAS}
-<div class="top"><a href="/gs">← games</a><span class="title">${escHtml(t || 'Game')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
+<div class="top"><a href="${bkH}">← ${bkL}</a><span class="title">${escHtml(t || 'Game')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
 <button class="on" onclick="useNet()">network</button> ${ENG_HTML}${rawChip}
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
@@ -3414,7 +3431,8 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body><div class="wrap" style="t
 </body>
 </html>`;
 }
-function playPageSj(u, t) {
+function playPageSj(u, t, bk) {
+  const bkH = bk ? bk[0] : '/gs'; const bkL = bk ? bk[1] : 'games';
   if (!/^https:\/\//i.test(u || '')) {
     return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#e4e4e7" href="/gs">back to games</a></body>';
   }
@@ -3425,7 +3443,7 @@ function playPageSj(u, t) {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body class="playbody">${STAR_CANVAS}
-<div class="top"><a href="/gs">← games</a><span class="title">${escHtml(t || 'Game')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
+<div class="top"><a href="${bkH}">← ${bkL}</a><span class="title">${escHtml(t || 'Game')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
 <button class="on" onclick="useNet()">network</button> ${ENG_HTML}${rawChip}
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
@@ -3577,7 +3595,8 @@ setInterval(hook, 900);
 </html>`;
 }
 
-function playPage(u, t) {
+function playPage(u, t, bk) {
+  const bkH = bk ? bk[0] : '/gs'; const bkL = bk ? bk[1] : 'games';
   if (!/^https:\/\//i.test(u || '')) {
     return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#e4e4e7" href="/gs">back to games</a></body>';
   }
@@ -3588,7 +3607,7 @@ function playPage(u, t) {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body class="playbody">${STAR_CANVAS}
-<div class="top"><a href="/gs">← games</a><span class="title">${escHtml(t || 'Game')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
+<div class="top"><a href="${bkH}">← ${bkL}</a><span class="title">${escHtml(t || 'Game')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
 <button class="on" onclick="useNet()">network</button> ${ENG_HTML}${rawChip}
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
@@ -16155,10 +16174,11 @@ const server = http.createServer(async (req, res) => {
     const gu2 = u.searchParams.get('u') || '';
     const pengM = ((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv)/) || [])[1]);
     const peng = pengM || 'sj';
-    if (gu2 && peng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' }); return res.end(playPageSj(gu2, u.searchParams.get('t') || 'Game')); }
-    if (UV_OK() && gu2) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageUv(gu2, u.searchParams.get('t') || 'Game')); }
+    const bkw = u.searchParams.get('bk') === 'blox' ? ['/blox', '6ixblox'] : null;
+    if (gu2 && peng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' }); return res.end(playPageSj(gu2, u.searchParams.get('t') || 'Game', bkw)); }
+    if (UV_OK() && gu2) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageUv(gu2, u.searchParams.get('t') || 'Game', bkw)); }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
-    return res.end(playPage(gu2, u.searchParams.get('t') || 'Game'));
+    return res.end(playPage(gu2, u.searchParams.get('t') || 'Game', bkw));
   }
   if (u.pathname === '/newsplay') {
     const nu = u.searchParams.get('u') || '';
