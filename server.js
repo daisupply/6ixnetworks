@@ -5950,6 +5950,15 @@ let chatBansLoaded = false;
 async function chatBansLoad() { if (chatBansLoaded) return; chatBansLoaded = true; try { const got = await storeCmd([['GET', 'cfg:chatbans']], 6000); if (got && got[0]) { const arr = JSON.parse(got[0]); if (Array.isArray(arr)) for (const u of arr) CHAT_BANS.add(String(u).toLowerCase()); } } catch {} }
 function chatBansSave() { try { storeSet('cfg:chatbans', JSON.stringify([...CHAT_BANS])); } catch {} }
 function chatBanned(name) { return !!name && CHAT_BANS.has(String(name).toLowerCase()); }
+const IP_BANS = new Set();
+let ipBansLoaded = false;
+const LAST_IP = new Map();
+async function ipBansLoad() { if (ipBansLoaded) return; ipBansLoaded = true; try { const got = await storeCmd([['GET', 'cfg:ipbans']], 6000); if (got && got[0]) { const arr = JSON.parse(got[0]); if (Array.isArray(arr)) for (const ip of arr) IP_BANS.add(String(ip)); } } catch {} }
+function ipBansSave() { try { storeSet('cfg:ipbans', JSON.stringify([...IP_BANS])); } catch {} }
+function clientIp(req) { const h = req.headers || {}; const cf = h['cf-connecting-ip']; if (cf) return String(cf).trim(); const xff = h['x-forwarded-for']; if (xff) return String(xff).split(',')[0].trim(); return String((req.socket && req.socket.remoteAddress) || ''); }
+function ipBanned(req) { const ip = clientIp(req); return !!ip && IP_BANS.has(ip); }
+function noteUserIp(req) { try { const u = voterUser(req); if (u) { const ip = clientIp(req); if (ip) LAST_IP.set(String(u).toLowerCase(), ip); } } catch {} }
+
 function adminKillSessions(lower) { let n = 0; for (const [tok, s] of [...SESSIONS]) { if (s && String(s.name || '').toLowerCase() === lower) { SESSIONS.delete(tok); try { storeDel('sess:' + tok); } catch {} n++; } } return n; }
 const CHAT_MUTES = new Map();
 function chatMuteLeft(name) { const k = String(name || '').toLowerCase(); if (!k) return 0; const exp = CHAT_MUTES.get(k); if (!exp) return 0; const left = exp - Date.now(); if (left <= 0) { CHAT_MUTES.delete(k); return 0; } return left; }
@@ -6271,6 +6280,8 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <div class="acard"><div style="display:flex;gap:8px;flex-wrap:wrap"><input id="castText" class="ain" style="flex:1;min-width:200px" maxlength="300" placeholder="announcement text…"><select id="castRoom" class="ain"><option value="*">all public rooms</option></select><button type="button" class="admbtn" id="castSend">send</button></div></div>
 <h2 class="asec">users</h2>
 <div class="acard" id="adUsers"></div>
+<h2 class="asec">ip bans</h2>
+<div class="acard" id="adIps"></div>
 <h2 class="asec">game requests</h2>
 <div class="acard" id="adReqs"></div>
 </div>
@@ -6304,12 +6315,18 @@ function render(){
   }
   (S.users || []).forEach(function (u) {
     var banned = (S.bans || []).indexOf(String(u.name).toLowerCase()) >= 0;
-    uh += '<div class="arow"><span class="aname">@' + escA(u.name) + '</span>' + (u.disp ? '<span class="asub">' + escA(u.disp) + '</span>' : '') + '<span class="asub">joined ' + (u.created ? new Date(u.created).toLocaleDateString() : '?') + '</span>' + (banned ? '<span style="color:#fca5a5;font-size:12px;font-weight:700">BANNED</span>' : '');
+    uh += '<div class="arow"><span class="aname">@' + escA(u.name) + '</span>' + (u.disp ? '<span class="asub">' + escA(u.disp) + '</span>' : '') + '<span class="asub">joined ' + (u.created ? new Date(u.created).toLocaleDateString() : '?') + '</span>' + (u.ip ? '<span class="asub">ip ' + escA(u.ip) + '</span>' : '') + (banned ? '<span style="color:#fca5a5;font-size:12px;font-weight:700">BANNED</span>' : '');
     if (String(u.name).toLowerCase() === 'deion') uh += '<span class="asub">— thats u</span>';
-    else uh += btn('u-mute', 'mute', ' data-u="' + escA(u.name) + '"') + (banned ? btn('u-unban', 'unban', ' data-u="' + escA(u.name) + '"') : btn('u-ban', 'ban', ' data-u="' + escA(u.name) + '"', 'danger')) + btn('u-logout', 'log out', ' data-u="' + escA(u.name) + '"') + btn('u-del', 'delete acct', ' data-u="' + escA(u.name) + '"', 'danger');
+    else uh += btn('u-mute', 'mute', ' data-u="' + escA(u.name) + '"') + (banned ? btn('u-unban', 'unban', ' data-u="' + escA(u.name) + '"') : btn('u-ban', 'ban', ' data-u="' + escA(u.name) + '"', 'danger')) + btn('u-ipban', 'ip ban', ' data-u="' + escA(u.name) + '"', 'danger') + btn('u-logout', 'log out', ' data-u="' + escA(u.name) + '"') + btn('u-del', 'delete acct', ' data-u="' + escA(u.name) + '"', 'danger');
     uh += '</div>';
   });
   document.getElementById('adUsers').innerHTML = uh || '<div class="asub">no accounts</div>';
+  var ih = '';
+  (S.ipbans || []).forEach(function (ip) { ih += '<div class="arow"><span class="aname">' + escA(ip) + '</span>' + btn('ip-unban', 'unban', ' data-ip="' + escA(ip) + '"') + '</div>'; });
+  ih += '<div class="arow"><input id="ipIn" class="ain" style="padding:6px 12px;font-size:14px" placeholder="ban an ip directly"><button type="button" class="admbtn sm danger" id="ipAdd">ip ban</button></div>';
+  document.getElementById('adIps').innerHTML = ih;
+  var ia = document.getElementById('ipAdd');
+  if (ia) ia.addEventListener('click', function () { var v = document.getElementById('ipIn').value.trim(); if (!v) return; post('/api/admin/chat/ipban', { ip: v }).then(function (o) { note(o && o.ok ? 'ip banned: ' + v : 'nope: ' + ((o && o.err) || 'bad ip')); load(); }); });
   var qh = '';
   (S.reqs || []).forEach(function (r) {
     qh += '<div class="arow"><span class="aname">' + escA(r.name) + '</span><span class="asub">' + r.votes + ' votes · by ' + escA(r.by || 'anon') + '</span>' + btn('req-del', 'delete', ' data-id="' + escA(r.id) + '"', 'danger') + '</div>';
@@ -6324,7 +6341,7 @@ function load(){
 document.addEventListener('click', function (ev) {
   var b = ev.target && ev.target.closest ? ev.target.closest('[data-act]') : null;
   if (!b) return;
-  var act = b.getAttribute('data-act'), u = b.getAttribute('data-u'), room = b.getAttribute('data-room'), id = b.getAttribute('data-id');
+  var act = b.getAttribute('data-act'), u = b.getAttribute('data-u'), room = b.getAttribute('data-room'), id = b.getAttribute('data-id'), ip = b.getAttribute('data-ip');
   if (act === 'conf-clear') { if (!confirm('wipe ALL confessions?')) return; post('/api/admin/confess/clear').then(function () { note('confessions wiped'); confCount = 0; render(); }); }
   else if (act === 'room-clear') { if (!confirm('clear room ' + room + '?')) return; post('/api/admin/chat/clear', { room: room }).then(function () { note('cleared ' + room); load(); }); }
   else if (act === 'room-purge') { var un2 = prompt('delete ALL messages from who in ' + room + '?'); if (!un2) return; post('/api/admin/chat/purgeuser', { room: room, user: un2 }).then(function (o) { note('purged ' + ((o && o.removed) || 0) + ' msgs'); load(); }); }
@@ -6334,6 +6351,8 @@ document.addEventListener('click', function (ev) {
   else if (act === 'u-unban') { post('/api/admin/chat/unban', { user: u }).then(function () { note('unbanned ' + u); load(); }); }
   else if (act === 'u-logout') { post('/api/admin/user/logout', { user: u }).then(function (o) { note('logged out ' + ((o && o.killed) || 0) + ' session(s) for ' + u); load(); }); }
   else if (act === 'u-del') { if (!confirm('DELETE the account @' + u + '? this is permanent')) return; post('/api/admin/user/delete', { user: u }).then(function (o) { note(o && o.ok ? 'deleted ' + u : 'could not delete ' + u); load(); }); }
+  else if (act === 'u-ipban') { if (!confirm('IP BAN @' + u + '? this blocks their whole network from chat — anyone sharing their wifi gets blocked too')) return; post('/api/admin/chat/ipban', { user: u }).then(function (o) { note(o && o.ok ? 'ip banned: ' + o.ip : 'nope: ' + ((o && o.err) || 'unknown')); load(); }); }
+  else if (act === 'ip-unban') { post('/api/admin/chat/ipunban', { ip: ip }).then(function () { note('ip unbanned: ' + ip); load(); }); }
   else if (act === 'req-del') { post('/api/admin/req/del', { id: id }).then(function () { load(); }); }
   else if (act === 'req-clear') { if (!confirm('clear ALL game requests?')) return; post('/api/admin/req/clear').then(function () { note('requests cleared'); load(); }); }
 });
@@ -9603,6 +9622,28 @@ function bload(){
   try{ var v=JSON.parse(localStorage.getItem(BTKEY)); if(v && Array.isArray(v.tabs) && v.tabs.length){ btabs=v.tabs; bactive=Math.min(v.active||0, btabs.length-1); btabs.forEach(function(t){ bid=Math.max(bid, t.id||0); }); return; } }catch(e){}
   btabs=[{ id:++bid, raw:'', url:null, title:'new tab' }]; bactive=0;
 }
+function uvXorDecode(str){ try { var d = decodeURIComponent(str); var out = ''; for (var i = 0; i < d.length; i++) out += (i % 2) ? String.fromCharCode(d.charCodeAt(i) ^ 2) : d[i]; return out; } catch (e) { return ''; } }
+function gxDecodeFrameUrl(href){
+  try {
+    if (!href) return '';
+    var m = href.match(/\\/sj\\/service\\/(.+)$/);
+    if (m) { var d = ''; try { d = decodeURIComponent(m[1]); } catch (e) { d = m[1]; } return /^https?:\\/\\//i.test(d) ? d : ''; }
+    m = href.match(/\\/uv\\/service\\/(.+)$/);
+    if (m) { var x = uvXorDecode(m[1]); return /^https?:\\/\\//i.test(x) ? x : ''; }
+    if (href.indexOf('/go?') >= 0 || href.indexOf('/go%3F') >= 0) { var qm = href.match(/[?&]q=([^&]+)/); if (qm) { var q = ''; try { q = decodeURIComponent(qm[1]); } catch (e) {} return /^https?:\\/\\//i.test(q) ? q : ''; } }
+  } catch (e) {}
+  return '';
+}
+function syncTabUrl(tb, f){
+  if (!tb || !f) return false;
+  var href = '';
+  try { href = f.contentWindow.location.href; } catch (e) { return false; }
+  var real = gxDecodeFrameUrl(href);
+  if (!real || real === tb.raw) return false;
+  tb.raw = real;
+  tb.url = '/go?q=' + encodeURIComponent(real);
+  return true;
+}
 function renderBtabs(){
   var strip=bEl('tabstrip'); strip.innerHTML='';
   btabs.forEach(function(tb, ix){
@@ -9629,7 +9670,7 @@ function renderBtabs(){
       f.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen; gamepad; pointer-lock');
       f.setAttribute('allowfullscreen', '');
       f.src=tb.url;
-      f.addEventListener('load', function(){ var vv=stage.querySelector('[data-veil="'+tb.id+'"]'); if(vv) vv.remove(); try{ var t=f.contentWindow.document.title; if(t && t!=='Google' && t!=='Error'){ tb.title=t.slice(0,60); bsave(); renderBtabs(); } }catch(e){} });
+      f.addEventListener('load', function(){ var vv=stage.querySelector('[data-veil="'+tb.id+'"]'); if(vv) vv.remove(); try{ var t=f.contentWindow.document.title; if(t && t!=='Google' && t!=='Error'){ tb.title=t.slice(0,60); bsave(); renderBtabs(); } }catch(e){} var chg=false; try{ chg=syncTabUrl(tb, f); }catch(e){} if(chg){ bsave(); renderBtabs(); } });
       var vl=document.createElement('div'); vl.className='veil'; vl.setAttribute('data-veil', tb.id); vl.innerHTML='<div class="vx">✦</div><div>tunneling thru the network…</div>'; stage.appendChild(vl);
       setTimeout(function(){ var vv3=stage.querySelector('[data-veil="'+tb.id+'"]'); if(vv3) vv3.remove(); }, 6000);
       stage.appendChild(f);
@@ -9692,6 +9733,7 @@ function closeBtab(ix){
 }
 function engUrl(q){ return 'https://duckduckgo.com/?q='+encodeURIComponent(q); }
 function actFrame(){ var act=btabs[bactive]; if(!act) return null; return document.querySelector('#stage iframe[data-bid="'+act.id+'"]'); }
+setInterval(function(){ try { var act = btabs[bactive]; if (!act || !act.url || act.ai) return; var f = actFrame(); if (f && syncTabUrl(act, f)) { bsave(); renderBtabs(); } } catch (e) {} }, 1500);
 var nb=document.getElementById('nback'), nf=document.getElementById('nfwd'), nr=document.getElementById('nreload');
 if(nb) nb.addEventListener('click', function(){ var f=actFrame(); if(f){ try{ f.contentWindow.history.back(); }catch(e){} } });
 if(nf) nf.addEventListener('click', function(){ var f=actFrame(); if(f){ try{ f.contentWindow.history.forward(); }catch(e){} } });
@@ -14333,12 +14375,12 @@ function chatUpgrade(req, socket) {
   if (!key) { socket.destroy(); return; }
   const accept = crypto.createHash('sha1').update(key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64');
   socket.write('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ' + accept + '\r\n\r\n');
-  chatBansLoad();
+  chatBansLoad(); ipBansLoad(); noteUserIp(req);
   const roomName = cleanRoom(u.searchParams.get('room'));
   if (roomName.indexOf('dm-') === 0) { const me = voterUser(req); const peer = String(u.searchParams.get('peer') || '').toLowerCase(); if (!me || !peer || !areFriends(me.toLowerCase(), peer) || roomName !== dmRoomFor(me, peer)) { socket.destroy(); return; } }
   const name = cleanName(chatIdentityNode(req, u.searchParams.get('name')));
   const prof = chatProfileNode(req, u.searchParams.get('name'), u.searchParams.get('hue'));
-  if (chatBanned(voterUser(req)) || chatBanned(name)) { socket.destroy(); return; }
+  if (ipBanned(req) || chatBanned(voterUser(req)) || chatBanned(name)) { socket.destroy(); return; }
   const room = chatRoomOf(roomName);
   room.socks.add(socket);
   if (room.wipeTimer) { clearTimeout(room.wipeTimer); room.wipeTimer = null; }
@@ -14788,16 +14830,16 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/api/admin/state' && req.method === 'GET') {
     const adm = isAdminReq(req);
     if (!adm) { res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-cache' }); return res.end(JSON.stringify({ ok: true, admin: false })); }
-    await confAutoLoad(); await chatBansLoad();
+    await confAutoLoad(); await chatBansLoad(); await ipBansLoad();
     const roomsPub = []; let dmRooms = 0, privRooms = 0;
     for (const [rn, rm] of CHAT_ROOMS) { if (rn.startsWith('dm-')) dmRooms++; else if (rn.startsWith('p-')) privRooms++; else roomsPub.push({ name: rn, msgs: rm.msgs.length, online: rm.socks.size }); }
     roomsPub.sort((x, y) => y.online - x.online || y.msgs - x.msgs);
     let online = 0; const nowMs = Date.now(); for (const ts of onlineSeen.values()) if (nowMs - ts < 90000) online++;
-    const users = [...ACCOUNTS.values()].map(r => ({ name: r.name, disp: r.disp || '', created: r.created || 0 })).sort((x, y) => y.created - x.created).slice(0, 300);
+    const users = [...ACCOUNTS.values()].map(r => ({ name: r.name, disp: r.disp || '', created: r.created || 0, ip: LAST_IP.get(String(r.name).toLowerCase()) || '' })).sort((x, y) => y.created - x.created).slice(0, 300);
     const reqs = [...GAME_REQUESTS.values()].map(r => ({ id: r.id, name: r.name, by: r.by || '', votes: r.voters ? r.voters.size : 0, ts: r.ts || 0 })).sort((x, y) => y.votes - x.votes);
     const mutes = [...CHAT_MUTES.entries()].map(([user, exp]) => ({ user, left: Math.max(0, Math.round((exp - nowMs) / 60000)) })).filter(m => m.left > 0);
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-cache' });
-    return res.end(JSON.stringify({ ok: true, admin: true, confessAuto: confAuto.mins, mutes, bans: [...CHAT_BANS], rooms: roomsPub, dmRooms, privRooms, users, reqs, stats: { accounts: ACCOUNTS.size, sessions: SESSIONS.size, requests: GAME_REQUESTS.size, online } }));
+    return res.end(JSON.stringify({ ok: true, admin: true, confessAuto: confAuto.mins, mutes, bans: [...CHAT_BANS], ipbans: [...IP_BANS], rooms: roomsPub, dmRooms, privRooms, users, reqs, stats: { accounts: ACCOUNTS.size, sessions: SESSIONS.size, requests: GAME_REQUESTS.size, online } }));
   }
   if (u.pathname.startsWith('/api/admin/') && req.method === 'POST') {
     if (!isAdminReq(req)) { res.writeHead(403, { 'content-type': 'application/json' }); return res.end('{"ok":false,"error":"not admin"}'); }
@@ -14817,6 +14859,8 @@ const server = http.createServer(async (req, res) => {
     if (u.pathname === '/api/admin/chat/purgeuser') { const rn = cleanRoom(b.room); const un = String(b.user || '').toLowerCase(); const room = chatRoomOf(rn); const before = room.msgs.length; room.msgs = room.msgs.filter(m => String(m.name || '').toLowerCase() !== un); const removed = before - room.msgs.length; if (removed) { persistChatRoom(rn); chatBroadcast(room, { type: 'clear' }); chatBroadcast(room, { type: 'history', msgs: room.msgs.slice(-50).map(enrichMsgAv) }); } return done({ ok: true, removed }); }
     if (u.pathname === '/api/admin/user/logout') { const un = String(b.user || '').toLowerCase(); return done({ ok: true, killed: un ? adminKillSessions(un) : 0 }); }
     if (u.pathname === '/api/admin/user/delete') { const un = String(b.user || '').toLowerCase(); if (!un || ADMIN_USERS.has(un) || !ACCOUNTS.has(un)) return done({ ok: false }); ACCOUNTS.delete(un); try { storeDel('acct:' + un); } catch {} adminKillSessions(un); CHAT_BANS.delete(un); chatBansSave(); return done({ ok: true }); }
+    if (u.pathname === '/api/admin/chat/ipban') { await ipBansLoad(); const un = String(b.user || '').toLowerCase(); const ip = String(b.ip || (un ? LAST_IP.get(un) : '') || '').trim(); if (!ip) return done({ ok: false, err: 'no ip known for them yet — they show one after they chat or log in' }); if (ip === '127.0.0.1' || ip === '::1') return done({ ok: false, err: 'thats localhost, not a real visitor ip' }); if (ip === clientIp(req)) return done({ ok: false, err: 'thats YOUR ip rn — shared network? banning it would lock u out too' }); IP_BANS.add(ip); ipBansSave(); if (un) chatKickUser(un); return done({ ok: true, ip }); }
+    if (u.pathname === '/api/admin/chat/ipunban') { await ipBansLoad(); IP_BANS.delete(String(b.ip || '').trim()); ipBansSave(); return done(); }
     if (u.pathname === '/api/admin/req/del') { const rawId = b.id; const key = GAME_REQUESTS.has(rawId) ? rawId : (GAME_REQUESTS.has(+rawId) ? +rawId : String(rawId)); const had = GAME_REQUESTS.delete(key); if (had) { try { storeDel('greq:' + key); } catch {} } return done({ ok: had }); }
     if (u.pathname === '/api/admin/req/clear') { for (const id of [...GAME_REQUESTS.keys()]) { GAME_REQUESTS.delete(id); try { storeDel('greq:' + id); } catch {} } return done(); }
     res.writeHead(404, { 'content-type': 'application/json' }); return res.end('{"ok":false}');
@@ -15315,6 +15359,8 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/chat/send' && req.method === 'POST') {
     const b = await readJsonBody(req, 3000000);
     if (!dmAccess(req, cleanRoom(b.room), b.peer)) { res.writeHead(403, { 'content-type': 'application/json' }); return res.end('{"ok":false,"error":"dm locked"}'); }
+    noteUserIp(req);
+    if (ipBanned(req)) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end('{"ok":false,"error":"ip banned"}'); }
     if (chatBanned(voterUser(req)) || chatBanned(chatProfileNode(req, b.name, b.hue).name)) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end('{"ok":false,"error":"banned from chat"}'); }
     if (chatMuteLeft(voterUser(req)) > 0 || chatMuteLeft(chatProfileNode(req, b.name, b.hue).name) > 0) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end('{"ok":false,"error":"muted"}'); }
     const text = cleanText(b.text);
