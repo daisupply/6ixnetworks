@@ -12924,6 +12924,30 @@ function geminiLaneKeys(env, lane) {
   if (ix < 0) ix = 0;
   return [all[ix % all.length]];
 }
+const GEMINI_SAFETY_OFF = ['HARM_CATEGORY_HARASSMENT', 'HARM_CATEGORY_HATE_SPEECH', 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'HARM_CATEGORY_DANGEROUS_CONTENT'].map(category => ({ category, threshold: 'BLOCK_NONE' }));
+async function geminiNativeAttempt(model, key, messages, maxTokens, ms) {
+  const ctl = new AbortController();
+  const to = setTimeout(() => ctl.abort(), ms || 10000);
+  try {
+    const sysParts = [];
+    const contents = [];
+    for (const m of (messages || [])) {
+      const text = String((m && m.content) || '');
+      if (!text) continue;
+      if (m.role === 'system') sysParts.push({ text });
+      else contents.push({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text }] });
+    }
+    if (!contents.length) return '';
+    const body = { contents, generationConfig: { maxOutputTokens: maxTokens || 800, temperature: 1.1 }, safetySettings: GEMINI_SAFETY_OFF };
+    if (sysParts.length) body.systemInstruction = { parts: sysParts };
+    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent', { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify(body), signal: ctl.signal });
+    if (!r.ok) return '';
+    const j = await r.json().catch(() => null);
+    const cand = j && j.candidates && j.candidates[0];
+    const parts = (cand && cand.content && cand.content.parts) || [];
+    return parts.map(p => p.text || '').join('').trim();
+  } finally { clearTimeout(to); }
+}
 async function geminiAttempt(model, key, messages, maxTokens, ms, needComplete) {
   const ctl = new AbortController();
   const to = setTimeout(() => ctl.abort(), ms);
@@ -12937,7 +12961,13 @@ async function geminiAttempt(model, key, messages, maxTokens, ms, needComplete) 
     if (!r.ok) throw new Error('http ' + r.status);
     const j = await r.json().catch(() => null);
     const t = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
-    const out = String(t || '').trim();
+    let out = String(t || '').trim();
+    if (!out) {
+      // v364 rescue: an empty reply here is usually the model filter
+      // bouncing the answer, not a dead key — retry once on the native
+      // endpoint with the safety dials off before giving up on this model
+      try { out = await geminiNativeAttempt(model, key, messages, maxTokens, ms); } catch { out = ''; }
+    }
     if (!out) throw new Error('empty');
     // a win cut off mid-sentence is not a win: when the caller needs
     // a complete piece (six's takes + debriefs), a length-capped
@@ -13013,7 +13043,7 @@ async function askGeminiImage(env, prompt) {
           method: 'POST',
           signal: ictl.signal,
           headers: { 'content-type': 'application/json', 'x-goog-api-key': keys[kIdx] },
-          body: JSON.stringify(geminiImageNoModalities ? { contents: [{ parts: [{ text: String(prompt).slice(0, 500) }] }] } : { contents: [{ parts: [{ text: String(prompt).slice(0, 500) }] }], generationConfig: { responseModalities: ['TEXT', 'IMAGE'] } })
+          body: JSON.stringify(geminiImageNoModalities ? { contents: [{ parts: [{ text: String(prompt).slice(0, 500) }] }], safetySettings: GEMINI_SAFETY_OFF } : { contents: [{ parts: [{ text: String(prompt).slice(0, 500) }] }], generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }, safetySettings: GEMINI_SAFETY_OFF })
         }).finally(() => clearTimeout(ito));
         if (!r.ok) { const etxt = (await r.text().catch(() => '')).slice(0, 300); if (!geminiImageErrs[model]) geminiImageErrs[model] = 'key' + (kIdx + 1) + ' HTTP ' + r.status + ': ' + etxt.slice(0, 210).replace(/\s+/g, ' '); geminiImageLastErr = order.map(mo => geminiImageErrs[mo] ? mo + ' \u2192 ' + geminiImageErrs[mo] : null).filter(Boolean).join(' | ').slice(0, 1100); if (etxt.indexOf('responseModalities') >= 0 || etxt.indexOf('generationConfig') >= 0) geminiImageNoModalities = true; if (r.status === 400 && !geminiImageNoModalities) { geminiImageNoModalities = true; ki--; continue; } if (r.status === 404) break; continue; }
         const j = await r.json().catch(() => null);
