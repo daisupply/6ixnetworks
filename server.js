@@ -3790,7 +3790,7 @@ body[data-sky] .app6 .cr-item.on,body[data-sky] .app6 .cr-item.on:hover,body[dat
 <div id="frout" style="margin-top:10px"></div>
 </div>
 <div id="msgs"></div>
-<div id="admbar" hidden style="display:none;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 12px;border-top:1px solid rgba(240,171,252,.25);background:rgba(240,171,252,.05)"><span style="font-size:11.5px;font-weight:800;letter-spacing:.05em;color:#f0abfc">✦ ADMIN</span><button type="button" id="admClear" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">clear room</button><button type="button" id="admMute" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">mute user</button><button type="button" id="admUnmute" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">unmute</button><button type="button" id="admKick" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">kick user</button><span id="admMsg" style="font-size:12px;color:#8e8aa0"></span></div>
+<div id="admbar" hidden style="display:none;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 12px;border-top:1px solid rgba(240,171,252,.25);background:rgba(240,171,252,.05)"><span style="font-size:11.5px;font-weight:800;letter-spacing:.05em;color:#f0abfc">✦ ADMIN</span><button type="button" id="admClear" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">clear room</button><button type="button" id="admMute" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">mute user</button><button type="button" id="admUnmute" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">unmute</button><button type="button" id="admKick" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">kick user</button><button type="button" id="admPurge" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">purge user</button><a href="/admin" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center">full panel</a><span id="admMsg" style="font-size:12px;color:#8e8aa0"></span></div>
 <form class="bar" id="sendbar"><button type="button" id="attach" title="send an image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="vertical-align:-2px"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button><input type="text" id="text" placeholder="message…  (/ai asks six · /img draws · paste an image)" autocomplete="off" maxlength="500"><button type="submit" id="sendbtn" aria-label="send"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button></form>
 <input type="file" id="chatfile" accept="image/*" style="display:none">
 
@@ -4138,6 +4138,7 @@ function admInit(){
   var bc = document.getElementById('admClear'); if (bc) bc.addEventListener('click', function () { if (!confirm('clear this whole room?')) return; admPost('/api/admin/chat/clear', { room: room }).then(function () { msgsEl.innerHTML = ''; document.getElementById('admMsg').textContent = 'room cleared'; }).catch(function () {}); });
   var bm = document.getElementById('admMute'); if (bm) bm.addEventListener('click', function () { var un = prompt('mute who? (username)'); if (!un) return; var mins = parseInt(prompt('how many minutes?', '10') || '10', 10) || 10; admPost('/api/admin/chat/mute', { user: un, mins: mins }).then(function () { document.getElementById('admMsg').textContent = 'muted ' + un + ' for ' + mins + 'm'; }).catch(function () {}); });
   var bu = document.getElementById('admUnmute'); if (bu) bu.addEventListener('click', function () { var un = prompt('unmute who? (username)'); if (!un) return; admPost('/api/admin/chat/unmute', { user: un }).then(function () { document.getElementById('admMsg').textContent = 'unmuted ' + un; }).catch(function () {}); });
+  var bp = document.getElementById('admPurge'); if (bp) bp.addEventListener('click', function () { var un = prompt('delete ALL messages in this room from who?'); if (!un) return; admPost('/api/admin/chat/purgeuser', { room: room, user: un }).then(function (o) { document.getElementById('admMsg').textContent = 'purged ' + ((o && o.removed) || 0) + ' msgs — refresh to resync'; }).catch(function () {}); });
   var bk = document.getElementById('admKick'); if (bk) bk.addEventListener('click', function () { var un = prompt('kick who? (username)'); if (!un) return; admPost('/api/admin/chat/kick', { user: un }).then(function (o) { document.getElementById('admMsg').textContent = 'kicked ' + ((o && o.kicked) || 0) + ' session(s)'; }).catch(function () {}); });
 }
 admInit();
@@ -5944,6 +5945,12 @@ async function confAutoLoad() { if (confAutoLoaded) return; confAutoLoaded = tru
 function confAutoSave() { try { storeSet('cfg:confessauto', JSON.stringify(confAuto)); } catch {} }
 function confWipe() { confList = []; try { confPersist(); } catch {} }
 setInterval(async () => { try { await confAutoLoad(); if (confAuto.mins > 0) { await confLoad(); if (!confAuto.last) { confAuto.last = Date.now(); confAutoSave(); return; } if (Date.now() - confAuto.last >= confAuto.mins * 60000) { confWipe(); confAuto.last = Date.now(); confAutoSave(); } } } catch {} }, 60000);
+const CHAT_BANS = new Set();
+let chatBansLoaded = false;
+async function chatBansLoad() { if (chatBansLoaded) return; chatBansLoaded = true; try { const got = await storeCmd([['GET', 'cfg:chatbans']], 6000); if (got && got[0]) { const arr = JSON.parse(got[0]); if (Array.isArray(arr)) for (const u of arr) CHAT_BANS.add(String(u).toLowerCase()); } } catch {} }
+function chatBansSave() { try { storeSet('cfg:chatbans', JSON.stringify([...CHAT_BANS])); } catch {} }
+function chatBanned(name) { return !!name && CHAT_BANS.has(String(name).toLowerCase()); }
+function adminKillSessions(lower) { let n = 0; for (const [tok, s] of [...SESSIONS]) { if (s && String(s.name || '').toLowerCase() === lower) { SESSIONS.delete(tok); try { storeDel('sess:' + tok); } catch {} n++; } } return n; }
 const CHAT_MUTES = new Map();
 function chatMuteLeft(name) { const k = String(name || '').toLowerCase(); if (!k) return 0; const exp = CHAT_MUTES.get(k); if (!exp) return 0; const left = exp - Date.now(); if (left <= 0) { CHAT_MUTES.delete(k); return 0; } return left; }
 function chatDelMsg(roomName, id) { const room = chatRoomOf(roomName); const sid = String(id || '').slice(0, 24); const ix = room.msgs.findIndex(m => m.id === sid); if (ix < 0) return false; room.msgs.splice(ix, 1); persistChatRoom(roomName); chatBroadcast(room, { type: 'del', id: sid }); return true; }
@@ -6154,7 +6161,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <textarea id="cfText" maxlength="300" placeholder="drop ur confession…"></textarea>
 <div class="cfrow"><span class="cfcount" id="cfCount">0 / 280</span><span class="cfmsg" id="cfMsg"></span><button id="cfPost" type="submit">post</button></div>
 </form>
-<div id="cfAdm" hidden><span class="admt">✦ ADMIN</span><button class="admbtn danger" id="cfClear" type="button">clear all confessions</button><label style="font-size:13px;color:#b9b4c9">auto-clear <select id="cfAuto"><option value="0">off</option><option value="60">every hour</option><option value="1440">every day</option></select></label><span id="cfAdmMsg" style="font-size:12.5px;color:#8e8aa0"></span></div>
+<div id="cfAdm" hidden><span class="admt">✦ ADMIN</span><button class="admbtn danger" id="cfClear" type="button">clear all confessions</button><a class="admbtn" href="/admin" style="text-decoration:none">full panel</a><label style="font-size:13px;color:#b9b4c9">auto-clear <select id="cfAuto"><option value="0">off</option><option value="60">every hour</option><option value="1440">every day</option></select></label><span id="cfAdmMsg" style="font-size:12.5px;color:#8e8aa0"></span></div>
 <div id="cfFeed"></div>
 <p class="cfempty" id="cfEmpty" hidden>nothing yet</p>
 </div>
@@ -6226,6 +6233,116 @@ if (cfAutoSel) cfAutoSel.addEventListener('change', function () {
   fetch('/api/admin/confess/auto', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mins: parseInt(cfAutoSel.value, 10) || 0 }) }).then(function (r) { return r.json(); }).then(function (o) { document.getElementById('cfAdmMsg').textContent = (o && o.confessAuto) ? 'auto-clear on' : 'auto-clear off'; }).catch(function () {});
 });
 loadCf();
+</script>
+<script>${NOTIF_JS}</script>
+</body></html>`;
+}
+
+function adminPage() {
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+.nwrap{width:100%;max-width:860px;margin:0 auto;text-align:left}
+.nwrap h1{text-align:left;margin:2px 0 10px}
+.asec{font-size:16px;margin:24px 0 8px}
+.acard{background:rgba(13,11,26,.72);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:12px 16px}
+.arow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:9px 0;border-top:1px solid rgba(255,255,255,.07)}
+.arow:first-child{border-top:0}
+.aname{font-weight:700}
+.asub{color:#8e8aa0;font-size:12.5px}
+.admbtn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.admbtn.danger{border-color:rgba(248,113,113,.55);color:#fca5a5}
+.admbtn.sm{padding:4px 11px;font-size:12px}
+.ain{background:rgba(0,0,0,.35);color:#f4f4f5;border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:9px 14px;font-size:16px;font-family:inherit}
+</style></head>
+<body>${STAR_CANVAS}
+<div class="wrap">
+<div class="nwrap">
+<a class="back" href="/home">← 6ixNetworks</a>
+<h1>✦ admin</h1>
+<div id="adMsg" style="min-height:18px;color:#f0abfc;font-size:13.5px;margin:2px 0 4px"></div>
+<div id="adStats"></div>
+<h2 class="asec">confessions</h2>
+<div class="acard" id="adConf"></div>
+<h2 class="asec">chat rooms</h2>
+<div class="acard" id="adRooms"></div>
+<h2 class="asec">announcement</h2>
+<div class="acard"><div style="display:flex;gap:8px;flex-wrap:wrap"><input id="castText" class="ain" style="flex:1;min-width:200px" maxlength="300" placeholder="announcement text…"><select id="castRoom" class="ain"><option value="*">all public rooms</option></select><button type="button" class="admbtn" id="castSend">send</button></div></div>
+<h2 class="asec">users</h2>
+<div class="acard" id="adUsers"></div>
+<h2 class="asec">game requests</h2>
+<div class="acard" id="adReqs"></div>
+</div>
+${SIDEBAR_HTML}
+</div>
+<script src="/ui.js"></script>
+<script>
+var S = null, confCount = 0;
+function escA(s){ return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function post(p, b){ return fetch(p, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b || {}) }).then(function (r) { return r.json(); }); }
+function note(t){ var m = document.getElementById('adMsg'); if (m) m.textContent = t; }
+function btn(act, label, extra, cls){ return '<button type="button" class="admbtn sm' + (cls ? ' ' + cls : '') + '" data-act="' + act + '"' + (extra || '') + '>' + label + '</button>'; }
+function chip(k, v){ return '<span style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:8px 13px;font-size:13px"><b>' + (v == null ? 0 : v) + '</b> <span style="color:#8e8aa0">' + k + '</span></span>'; }
+function render(){
+  if (!S) return;
+  var st = S.stats || {};
+  document.getElementById('adStats').innerHTML = '<div style="display:flex;gap:8px;flex-wrap:wrap">' + chip('accounts', st.accounts) + chip('sessions', st.sessions) + chip('online now', st.online) + chip('game requests', st.requests) + chip('dm rooms', S.dmRooms) + chip('private rooms', S.privRooms) + '</div>';
+  document.getElementById('adConf').innerHTML = '<div class="arow"><span class="aname">' + confCount + ' on the wall</span>' + btn('conf-clear', 'clear all', '', 'danger') + '<label class="asub">auto-clear <select id="adAuto" class="ain" style="padding:5px 10px;font-size:13px"><option value="0">off</option><option value="60">every hour</option><option value="1440">every day</option></select></label>' + '<a class="admbtn sm" href="/confess" style="text-decoration:none">open page</a></div>';
+  var asel = document.getElementById('adAuto');
+  if (asel) { asel.value = String(S.confessAuto || 0); asel.addEventListener('change', function () { post('/api/admin/confess/auto', { mins: parseInt(asel.value, 10) || 0 }).then(function () { note('auto-clear updated'); }); }); }
+  var rh = '';
+  (S.rooms || []).forEach(function (r) {
+    rh += '<div class="arow"><span class="aname">' + escA(r.name) + '</span><span class="asub">' + r.msgs + ' msgs · ' + r.online + ' in</span>' + btn('room-clear', 'clear', ' data-room="' + escA(r.name) + '"', 'danger') + btn('room-purge', 'purge user', ' data-room="' + escA(r.name) + '"') + '</div>';
+  });
+  document.getElementById('adRooms').innerHTML = rh || '<div class="asub">no rooms yet</div>';
+  var cs = document.getElementById('castRoom');
+  if (cs) { var cur = cs.value; cs.innerHTML = '<option value="*">all public rooms</option>' + (S.rooms || []).map(function (r) { return '<option value="' + escA(r.name) + '">' + escA(r.name) + '</option>'; }).join(''); cs.value = cur || '*'; }
+  var uh = '';
+  if (S.mutes && S.mutes.length) {
+    uh += '<div class="arow"><span class="asub">muted now:</span>' + S.mutes.map(function (m) { return '<span style="font-size:12.5px">' + escA(m.user) + ' · ' + m.left + 'm</span>' + btn('u-unmute', 'unmute', ' data-u="' + escA(m.user) + '"'); }).join('') + '</div>';
+  }
+  (S.users || []).forEach(function (u) {
+    var banned = (S.bans || []).indexOf(String(u.name).toLowerCase()) >= 0;
+    uh += '<div class="arow"><span class="aname">@' + escA(u.name) + '</span>' + (u.disp ? '<span class="asub">' + escA(u.disp) + '</span>' : '') + '<span class="asub">joined ' + (u.created ? new Date(u.created).toLocaleDateString() : '?') + '</span>' + (banned ? '<span style="color:#fca5a5;font-size:12px;font-weight:700">BANNED</span>' : '');
+    if (String(u.name).toLowerCase() === 'deion') uh += '<span class="asub">— thats u</span>';
+    else uh += btn('u-mute', 'mute', ' data-u="' + escA(u.name) + '"') + (banned ? btn('u-unban', 'unban', ' data-u="' + escA(u.name) + '"') : btn('u-ban', 'ban', ' data-u="' + escA(u.name) + '"', 'danger')) + btn('u-logout', 'log out', ' data-u="' + escA(u.name) + '"') + btn('u-del', 'delete acct', ' data-u="' + escA(u.name) + '"', 'danger');
+    uh += '</div>';
+  });
+  document.getElementById('adUsers').innerHTML = uh || '<div class="asub">no accounts</div>';
+  var qh = '';
+  (S.reqs || []).forEach(function (r) {
+    qh += '<div class="arow"><span class="aname">' + escA(r.name) + '</span><span class="asub">' + r.votes + ' votes · by ' + escA(r.by || 'anon') + '</span>' + btn('req-del', 'delete', ' data-id="' + escA(r.id) + '"', 'danger') + '</div>';
+  });
+  if ((S.reqs || []).length) qh += '<div class="arow">' + btn('req-clear', 'clear all requests', '', 'danger') + '</div>';
+  document.getElementById('adReqs').innerHTML = qh || '<div class="asub">no requests</div>';
+}
+function load(){
+  fetch('/api/admin/state').then(function (r) { return r.json(); }).then(function (o) { S = o; render(); }).catch(function () {});
+  fetch('/api/confess').then(function (r) { return r.json(); }).then(function (o) { confCount = (o && o.list) ? o.list.length : 0; if (S) render(); }).catch(function () {});
+}
+document.addEventListener('click', function (ev) {
+  var b = ev.target && ev.target.closest ? ev.target.closest('[data-act]') : null;
+  if (!b) return;
+  var act = b.getAttribute('data-act'), u = b.getAttribute('data-u'), room = b.getAttribute('data-room'), id = b.getAttribute('data-id');
+  if (act === 'conf-clear') { if (!confirm('wipe ALL confessions?')) return; post('/api/admin/confess/clear').then(function () { note('confessions wiped'); confCount = 0; render(); }); }
+  else if (act === 'room-clear') { if (!confirm('clear room ' + room + '?')) return; post('/api/admin/chat/clear', { room: room }).then(function () { note('cleared ' + room); load(); }); }
+  else if (act === 'room-purge') { var un2 = prompt('delete ALL messages from who in ' + room + '?'); if (!un2) return; post('/api/admin/chat/purgeuser', { room: room, user: un2 }).then(function (o) { note('purged ' + ((o && o.removed) || 0) + ' msgs'); load(); }); }
+  else if (act === 'u-mute') { var mins = parseInt(prompt('mute @' + u + ' for how many minutes?', '10') || '10', 10) || 10; post('/api/admin/chat/mute', { user: u, mins: mins }).then(function () { note('muted ' + u + ' for ' + mins + 'm'); load(); }); }
+  else if (act === 'u-unmute') { post('/api/admin/chat/unmute', { user: u }).then(function () { note('unmuted ' + u); load(); }); }
+  else if (act === 'u-ban') { if (!confirm('BAN @' + u + ' from chat? they get kicked and cannot rejoin until unbanned')) return; post('/api/admin/chat/ban', { user: u }).then(function () { note('banned ' + u); load(); }); }
+  else if (act === 'u-unban') { post('/api/admin/chat/unban', { user: u }).then(function () { note('unbanned ' + u); load(); }); }
+  else if (act === 'u-logout') { post('/api/admin/user/logout', { user: u }).then(function (o) { note('logged out ' + ((o && o.killed) || 0) + ' session(s) for ' + u); load(); }); }
+  else if (act === 'u-del') { if (!confirm('DELETE the account @' + u + '? this is permanent')) return; post('/api/admin/user/delete', { user: u }).then(function (o) { note(o && o.ok ? 'deleted ' + u : 'could not delete ' + u); load(); }); }
+  else if (act === 'req-del') { post('/api/admin/req/del', { id: id }).then(function () { load(); }); }
+  else if (act === 'req-clear') { if (!confirm('clear ALL game requests?')) return; post('/api/admin/req/clear').then(function () { note('requests cleared'); load(); }); }
+});
+document.getElementById('castSend').addEventListener('click', function () {
+  var t = document.getElementById('castText').value.trim(); if (!t) return;
+  var room = document.getElementById('castRoom').value || '*';
+  post('/api/admin/chat/broadcast', { room: room, text: t }).then(function (o) { note('announced to ' + ((o && o.rooms) || 0) + ' room(s)'); document.getElementById('castText').value = ''; load(); });
+});
+load();
 </script>
 <script>${NOTIF_JS}</script>
 </body></html>`;
@@ -14207,10 +14324,12 @@ function chatUpgrade(req, socket) {
   if (!key) { socket.destroy(); return; }
   const accept = crypto.createHash('sha1').update(key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64');
   socket.write('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ' + accept + '\r\n\r\n');
+  chatBansLoad();
   const roomName = cleanRoom(u.searchParams.get('room'));
   if (roomName.indexOf('dm-') === 0) { const me = voterUser(req); const peer = String(u.searchParams.get('peer') || '').toLowerCase(); if (!me || !peer || !areFriends(me.toLowerCase(), peer) || roomName !== dmRoomFor(me, peer)) { socket.destroy(); return; } }
   const name = cleanName(chatIdentityNode(req, u.searchParams.get('name')));
   const prof = chatProfileNode(req, u.searchParams.get('name'), u.searchParams.get('hue'));
+  if (chatBanned(voterUser(req)) || chatBanned(name)) { socket.destroy(); return; }
   const room = chatRoomOf(roomName);
   room.socks.add(socket);
   if (room.wipeTimer) { clearTimeout(room.wipeTimer); room.wipeTimer = null; }
@@ -14444,7 +14563,13 @@ const server = http.createServer(async (req, res) => {
     if (isPhoneUa(req)) return res.end(homeServed());
     return res.end(shellPage(servers));
   }
-    if (u.pathname === '/customize') {
+    if (u.pathname === '/admin') {
+    if (!voterUser(req)) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(needAccountPage('admin')); }
+    if (!isAdminReq(req)) { res.writeHead(403, { 'content-type': 'text/html; charset=utf-8' }); return res.end('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Google</title></head><body style="background:#0a0a0b;color:#e4e4e7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">nope — admins only</body></html>'); }
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
+    return res.end(adminPage());
+  }
+  if (u.pathname === '/customize') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(customizePage());
   }
@@ -14653,9 +14778,17 @@ const server = http.createServer(async (req, res) => {
   }
   if (u.pathname === '/api/admin/state' && req.method === 'GET') {
     const adm = isAdminReq(req);
-    if (adm) await confAutoLoad();
+    if (!adm) { res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-cache' }); return res.end(JSON.stringify({ ok: true, admin: false })); }
+    await confAutoLoad(); await chatBansLoad();
+    const roomsPub = []; let dmRooms = 0, privRooms = 0;
+    for (const [rn, rm] of CHAT_ROOMS) { if (rn.startsWith('dm-')) dmRooms++; else if (rn.startsWith('p-')) privRooms++; else roomsPub.push({ name: rn, msgs: rm.msgs.length, online: rm.socks.size }); }
+    roomsPub.sort((x, y) => y.online - x.online || y.msgs - x.msgs);
+    let online = 0; const nowMs = Date.now(); for (const ts of onlineSeen.values()) if (nowMs - ts < 90000) online++;
+    const users = [...ACCOUNTS.values()].map(r => ({ name: r.name, disp: r.disp || '', created: r.created || 0 })).sort((x, y) => y.created - x.created).slice(0, 300);
+    const reqs = [...GAME_REQUESTS.values()].map(r => ({ id: r.id, name: r.name, by: r.by || '', votes: r.voters ? r.voters.size : 0, ts: r.ts || 0 })).sort((x, y) => y.votes - x.votes);
+    const mutes = [...CHAT_MUTES.entries()].map(([user, exp]) => ({ user, left: Math.max(0, Math.round((exp - nowMs) / 60000)) })).filter(m => m.left > 0);
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-cache' });
-    return res.end(JSON.stringify({ ok: true, admin: adm, confessAuto: confAuto.mins, mutes: [...CHAT_MUTES.keys()] }));
+    return res.end(JSON.stringify({ ok: true, admin: true, confessAuto: confAuto.mins, mutes, bans: [...CHAT_BANS], rooms: roomsPub, dmRooms, privRooms, users, reqs, stats: { accounts: ACCOUNTS.size, sessions: SESSIONS.size, requests: GAME_REQUESTS.size, online } }));
   }
   if (u.pathname.startsWith('/api/admin/') && req.method === 'POST') {
     if (!isAdminReq(req)) { res.writeHead(403, { 'content-type': 'application/json' }); return res.end('{"ok":false,"error":"not admin"}'); }
@@ -14669,6 +14802,14 @@ const server = http.createServer(async (req, res) => {
     if (u.pathname === '/api/admin/chat/mute') { const un = String(b.user || '').toLowerCase().replace(/[^a-z0-9_]/g, ''); const mins = Math.max(1, Math.min(1440, parseInt(b.mins, 10) || 10)); if (un) CHAT_MUTES.set(un, Date.now() + mins * 60000); return done({ ok: !!un }); }
     if (u.pathname === '/api/admin/chat/unmute') { CHAT_MUTES.delete(String(b.user || '').toLowerCase()); return done(); }
     if (u.pathname === '/api/admin/chat/kick') { const un = String(b.user || '').toLowerCase(); return done({ ok: true, kicked: un ? chatKickUser(un) : 0 }); }
+    if (u.pathname === '/api/admin/chat/ban') { const un = String(b.user || '').toLowerCase().replace(/[^a-z0-9_]/g, ''); if (un && !ADMIN_USERS.has(un)) { await chatBansLoad(); CHAT_BANS.add(un); chatBansSave(); chatKickUser(un); } return done({ ok: !!un && !ADMIN_USERS.has(un) }); }
+    if (u.pathname === '/api/admin/chat/unban') { const un = String(b.user || '').toLowerCase(); await chatBansLoad(); CHAT_BANS.delete(un); chatBansSave(); return done(); }
+    if (u.pathname === '/api/admin/chat/broadcast') { const text = cleanText(b.text); if (!text) return done({ ok: false }); const targets = b.room === '*' ? [...CHAT_ROOMS.keys()].filter(rn => !rn.startsWith('dm-') && !rn.startsWith('p-')) : [cleanRoom(b.room)]; for (const rn of targets) chatPost(rn, { name: 'deion', disp: '✦ admin', text, ts: Date.now(), bot: false }); return done({ ok: true, rooms: targets.length }); }
+    if (u.pathname === '/api/admin/chat/purgeuser') { const rn = cleanRoom(b.room); const un = String(b.user || '').toLowerCase(); const room = chatRoomOf(rn); const before = room.msgs.length; room.msgs = room.msgs.filter(m => String(m.name || '').toLowerCase() !== un); const removed = before - room.msgs.length; if (removed) { persistChatRoom(rn); chatBroadcast(room, { type: 'clear' }); chatBroadcast(room, { type: 'history', msgs: room.msgs.slice(-50).map(enrichMsgAv) }); } return done({ ok: true, removed }); }
+    if (u.pathname === '/api/admin/user/logout') { const un = String(b.user || '').toLowerCase(); return done({ ok: true, killed: un ? adminKillSessions(un) : 0 }); }
+    if (u.pathname === '/api/admin/user/delete') { const un = String(b.user || '').toLowerCase(); if (!un || ADMIN_USERS.has(un) || !ACCOUNTS.has(un)) return done({ ok: false }); ACCOUNTS.delete(un); try { storeDel('acct:' + un); } catch {} adminKillSessions(un); CHAT_BANS.delete(un); chatBansSave(); return done({ ok: true }); }
+    if (u.pathname === '/api/admin/req/del') { const id = String(b.id || ''); const had = GAME_REQUESTS.delete(id); if (had) { try { storeDel('greq:' + id); } catch {} } return done({ ok: had }); }
+    if (u.pathname === '/api/admin/req/clear') { for (const id of [...GAME_REQUESTS.keys()]) { GAME_REQUESTS.delete(id); try { storeDel('greq:' + id); } catch {} } return done(); }
     res.writeHead(404, { 'content-type': 'application/json' }); return res.end('{"ok":false}');
   }
   if (u.pathname === '/api/splash/next' && req.method === 'GET') {
@@ -15165,6 +15306,7 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/chat/send' && req.method === 'POST') {
     const b = await readJsonBody(req, 3000000);
     if (!dmAccess(req, cleanRoom(b.room), b.peer)) { res.writeHead(403, { 'content-type': 'application/json' }); return res.end('{"ok":false,"error":"dm locked"}'); }
+    if (chatBanned(voterUser(req)) || chatBanned(chatProfileNode(req, b.name, b.hue).name)) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end('{"ok":false,"error":"banned from chat"}'); }
     if (chatMuteLeft(voterUser(req)) > 0 || chatMuteLeft(chatProfileNode(req, b.name, b.hue).name) > 0) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end('{"ok":false,"error":"muted"}'); }
     const text = cleanText(b.text);
     let img = null;
