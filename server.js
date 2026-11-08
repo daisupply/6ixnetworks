@@ -2887,7 +2887,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>.card{position:relative}.fav{pos
 @media(hover:hover){ #grid .card{transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease} #grid .card:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(0,0,0,.45)} }
 @media(max-width:640px){ #feat img{height:160px} #feat .feat-t{font-size:18px} .pop{flex-basis:206px} .pop .rank{font-size:42px} #grid{grid-template-columns:repeat(2,1fr);gap:10px} #grid .gt{font-size:13px;padding:8px 10px 1px} #grid .gc{padding:0 10px 9px;font-size:11px} .gbar{padding:8px 6px 7px} .gbar .bar{gap:7px} #gq{padding:11px 14px} .gbar .chip{padding:8px 13px;font-size:13.5px} .pop .rank{font-size:36px} .pop .popcap{padding:24px 12px 9px 50px} #gq{flex:1 1 100%;width:100%} #gchips{padding-top:8px} #feat img{height:168px} #feat .feat-b{display:none} #feat .feat-t{font-size:17px} }
 </style></head><body>${STAR_CANVAS}<div class="wrap">
-<div id="gbarWrap"><div class="gbar" id="gbar"><div class="gtop"><div class="gname">games<span id="gcount">loading games…</span></div><div class="gutils"><a class="chip" href="/emu" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59C2.62 9.42 2 14.46 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.62-6.584-.685-7.258A4 4 0 0 0 17.32 5z"/></svg> emulator</a><a class="chip" href="/chat" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> chat</a><a class="chip" href="/ai" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> ai</a><a class="chip" href="/requests" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><path d="m3 17 6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg> requests</a><a class="chip" href="/forge" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='currentColor' aria-hidden='true'><path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z"/></svg> game forge</a></div></div>\n<div class="bar" style="margin:0"><input id="gq" type="text" placeholder="search 8,000+ games..." autocomplete="off">
+<div id="gbarWrap"><div class="gbar" id="gbar"><div class="gtop"><div class="gname">games<span id="gcount">loading games…</span></div><div class="gutils"><a class="chip" href="/blox" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg> 6ixblox</a><a class="chip" href="/emu" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59C2.62 9.42 2 14.46 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.62-6.584-.685-7.258A4 4 0 0 0 17.32 5z"/></svg> emulator</a><a class="chip" href="/chat" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> chat</a><a class="chip" href="/ai" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> ai</a><a class="chip" href="/requests" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><path d="m3 17 6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg> requests</a><a class="chip" href="/forge" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='currentColor' aria-hidden='true'><path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z"/></svg> game forge</a></div></div>\n<div class="bar" style="margin:0"><input id="gq" type="text" placeholder="search 8,000+ games..." autocomplete="off">
 <button class="chip" id="gfav" type="button">★ favorites</button><button class="chip" id="grec" type="button">recent</button><button class="chip" id="grand" type="button"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg> random</button></div>
 <div id="gchips"></div></div></div>
 
@@ -3157,6 +3157,58 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body><div class="wrap" style="t
 </html>`;
 }
 
+function bloxPage() {
+  const picks = [
+    ['Brookhaven RP', '4924922222'], ['Doors', '6516141723'], ['99 Nights in the Forest', '79546208627805'],
+    ['Natural Disaster Survival', '189707'], ['Flee the Facility', '893973440'], ['Work at a Pizza Place', '192800'],
+    ['Break In 2', '13864661000'], ['SCP Roleplay', '5193314219'], ['Hypershot', '17516596118'], ['Bladebrawl', '15903557752']
+  ];
+  const start = (id) => 'https://play.roblox.com/games/start?placeId=' + id;
+  const cards = picks.map((p) => '<a class="bxg" href="/play?u=' + encodeURIComponent(start(p[1])) + '&t=' + encodeURIComponent(p[0]) + '"><b>' + escHtml(p[0]) + '</b><span>place ' + p[1] + '</span></a>').join('');
+  const hub = '/play?u=' + encodeURIComponent('https://play.roblox.com/WebClient/Launcher') + '&t=' + encodeURIComponent('6ixblox hub');
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+.sub{color:#9d99ad;margin:2px 0 16px;max-width:720px}
+.bxcard{background:#0d0b1a;border:1px solid rgba(var(--star),.16);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px;width:100%;max-width:720px;box-sizing:border-box}
+.bxcard input{background:#0a0918;border:1px solid rgba(var(--star),.18);border-radius:12px;padding:12px 14px;color:#f4f4f5;font-family:inherit;font-size:16px;width:100%;box-sizing:border-box}
+.bxcard button{background:linear-gradient(120deg,rgb(var(--star)),rgb(var(--acc3)));color:#0d0a18;border:0;border-radius:12px;padding:12px;font-weight:800;font-family:inherit;font-size:15px;cursor:pointer}
+.bxmsg{font-size:13.5px;color:rgb(var(--star));min-height:18px}
+.bxhub{display:flex;align-items:center;gap:12px;width:100%;max-width:720px;box-sizing:border-box;margin-top:14px;background:#0d0b1a;border:1px solid rgba(var(--star),.16);border-radius:18px;padding:15px 16px;text-decoration:none;color:#f4f4f5}
+.bxhub b{font-size:15.5px}
+.bxhub span{display:block;font-size:12.5px;color:#9d99ad;margin-top:2px}
+.bxhub .arr{margin-left:auto;color:rgb(var(--star));font-weight:800;font-size:18px}
+.sec-h{font-size:13px;font-weight:800;letter-spacing:.06em;color:#9d99ad;text-transform:uppercase;margin:22px 0 10px}
+.bxgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:10px;width:100%;max-width:720px}
+.bxg{background:#0d0b1a;border:1px solid rgba(var(--star),.13);border-radius:16px;padding:14px;text-decoration:none;color:#f4f4f5;display:flex;flex-direction:column;gap:3px}
+.bxg b{font-size:15px}
+.bxg span{font-size:12px;color:#9d99ad}
+.bxnote{color:#77717f;font-size:12.5px;margin-top:20px;max-width:720px}
+</style></head><body>${STAR_CANVAS}<div class="wrap">
+<a class="back" href="/gs">&larr; games</a>
+<h1>6ix<span>blox</span></h1>
+<p class="sub">the official roblox web player, thru the network — nothing stored here, everything streams live from roblox</p>
+<div class="bxcard">
+<input id="bxIn" type="text" placeholder="paste a roblox game link, or just a place id" autocomplete="off">
+<button type="button" id="bxGo">play it</button>
+<div id="bxMsg" class="bxmsg"></div>
+</div>
+<a class="bxhub" href="${hub}"><div><b>roblox hub</b><span>their own picker — curated games, search, id entry. boots right in the page</span></div><span class="arr">&rarr;</span></a>
+<div class="sec-h">biggest rn</div>
+<div class="bxgrid">${cards}</div>
+<p class="bxnote">web play is still rolling out — games u own or can test load first, public games unlock as roblox flips them on</p>
+</div>${SIDEBAR_HTML}
+<script src="/ui.js"></script>
+<script>
+function bxDigits(s){ var d=''; for(var i=0;i<s.length;i++){ var c=s.charAt(i); if(c>='0'&&c<='9') d+=c; else if(d) break; } return d; }
+function bxExtract(v){ v=String(v||'').trim(); if(!v) return ''; var pi=v.indexOf('placeId='); if(pi>=0) return bxDigits(v.slice(pi+8)); var g=v.indexOf('/games/'); if(g>=0) return bxDigits(v.slice(g+7)); var all=v.length>=3; for(var i=0;i<v.length;i++){ var c=v.charAt(i); if(c<'0'||c>'9'){ all=false; break; } } return all? v : ''; }
+function bxPlay(){ var id=bxExtract(document.getElementById('bxIn').value); var m=document.getElementById('bxMsg'); if(!id){ m.textContent='that dont look like a game link or a place id'; return; } m.textContent=''; location.href='/play?u='+encodeURIComponent('https://play.roblox.com/games/start?placeId='+id)+'&t='+encodeURIComponent('roblox '+id); }
+document.getElementById('bxGo').addEventListener('click', bxPlay);
+document.getElementById('bxIn').addEventListener('keydown', function(e){ if(e.key==='Enter') bxPlay(); });
+</script>
+</body></html>`;
+}
 function playPageUv(u, t) {
   if (!/^https:\/\//i.test(u || '')) {
     return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#e4e4e7" href="/gs">back to games</a></body>';
@@ -16093,6 +16145,10 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname.startsWith('/u/') && u.pathname.length > 3 && req.method === 'GET') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(userPage());
+  }
+  if (u.pathname === '/blox') {
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
+    return res.end(bloxPage());
   }
   if (u.pathname === '/play') {
     const gu2 = u.searchParams.get('u') || '';
