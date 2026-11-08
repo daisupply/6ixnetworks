@@ -7783,6 +7783,10 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .rq .vote.on{background:rgba(var(--acc),.35);color:#fff;border-color:rgba(var(--star),.5)}
 .rq .vote b{font-size:15px}
 .empty{color:#9d99ad;text-align:center;padding:26px 0}
+.rqdel{flex:none;background:transparent;border:1px solid rgba(248,113,113,.45);color:#fca5a5;border-radius:12px;padding:7px 12px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
+#rqAdm{width:100%;max-width:720px;margin-top:18px;display:flex;gap:8px;align-items:center;background:rgba(240,171,252,.07);border:1px solid rgba(240,171,252,.35);border-radius:14px;padding:10px 12px;box-sizing:border-box}
+#rqAdm .admt{font-size:12px;font-weight:800;letter-spacing:.05em;color:#f0abfc}
+#rqClearAll{background:rgba(255,255,255,.06);border:1px solid rgba(248,113,113,.55);color:#fca5a5;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
 </style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/gs">← games</a>
 <h1>game <span>requests</span></h1>
@@ -7793,6 +7797,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <button type="submit">request it</button>
 <div id="rqMsg" class="rqmsg"></div>
 </form>
+<div id="rqAdm" hidden><span class="admt">✦ ADMIN</span><button type="button" id="rqClearAll">clear all requests</button></div>
 <div id="rqList"></div>
 ${SIDEBAR_HTML}
 </div>
@@ -7807,12 +7812,16 @@ function render(list){
     var meta=(r.byAv ? '<img class="byav" src="'+escT(r.byAv)+'" alt="">' : '')+'by '+escT(r.by)+' · '+ago(r.ts);
     var link=r.link ? ' · <a class="vlink" href="/go?q='+encodeURIComponent(r.link)+'" target="_blank" rel="noopener">link</a>' : '';
     var play=r.play ? '<a class="onsite" href="/play?u='+encodeURIComponent(r.play.u)+'&t='+encodeURIComponent(r.play.t)+'">already here — play it</a>' : '';
-    return '<div class="rq'+(ix<3?' top':'')+'"><div class="rank">'+(ix+1)+'</div><div class="mid"><div class="nm">'+escT(r.name)+'</div><div class="meta">'+meta+link+'</div>'+play+'</div><button type="button" class="vote'+(r.mine?' on':'')+'" data-vote="'+r.id+'"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 14 7-7 7 7"/></svg><b>'+r.votes+'</b></button></div>';
+    return '<div class="rq'+(ix<3?' top':'')+'"><div class="rank">'+(ix+1)+'</div><div class="mid"><div class="nm">'+escT(r.name)+'</div><div class="meta">'+meta+link+'</div>'+play+'</div>'+(window.__admRq ? '<button type="button" class="rqdel" data-del="'+r.id+'">delete</button>' : '')+'<button type="button" class="vote'+(r.mine?' on':'')+'" data-vote="'+r.id+'"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 14 7-7 7 7"/></svg><b>'+r.votes+'</b></button></div>';
   }).join('');
 }
 function load(){ fetch('/api/requests').then(function(r){ return r.json(); }).then(function(o){ render((o && o.list) || []); }).catch(function(){ rqList.innerHTML='<div class="empty">couldnt load requests rn</div>'; }); }
-rqList.addEventListener('click', function(ev){ var b=(ev.target && ev.target.closest) ? ev.target.closest('[data-vote]') : null; if(!b) return; b.disabled=true; fetch('/api/requests/vote', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ id: +b.getAttribute('data-vote') }) }).then(function(){ load(); }).catch(function(){ b.disabled=false; }); });
+rqList.addEventListener('click', function(ev){ var db=(ev.target && ev.target.closest) ? ev.target.closest('[data-del]') : null; if(db){ if(!confirm('delete this request?')) return; db.disabled=true; fetch('/api/admin/req/del', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ id: db.getAttribute('data-del') }) }).then(function(){ load(); }).catch(function(){ db.disabled=false; }); return; }
+var b=(ev.target && ev.target.closest) ? ev.target.closest('[data-vote]') : null; if(!b) return; b.disabled=true; fetch('/api/requests/vote', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ id: +b.getAttribute('data-vote') }) }).then(function(){ load(); }).catch(function(){ b.disabled=false; }); });
 document.getElementById('rqForm').addEventListener('submit', function(ev){ ev.preventDefault(); var name=document.getElementById('rqName').value.trim(); var link=document.getElementById('rqLink').value.trim(); var msg=document.getElementById('rqMsg'); if(name.length<2){ msg.textContent='name needs 2+ characters'; return; } msg.textContent='sending...'; fetch('/api/requests', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ name: name, link: link }) }).then(function(r){ return r.json(); }).then(function(o){ if(o && o.ok){ msg.textContent=o.dup ? 'already requested — ur vote got added to it' : 'request dropped — now get people to vote it up'; document.getElementById('rqName').value=''; document.getElementById('rqLink').value=''; load(); } else { msg.textContent=(o && o.err) || 'that didnt go thru'; } }).catch(function(){ msg.textContent='that didnt go thru — try again'; }); });
+fetch('/api/admin/state').then(function(r){ return r.json(); }).then(function(o){ if(o && o.admin){ window.__admRq=true; document.getElementById('rqAdm').hidden=false; load(); } }).catch(function(){});
+var rqc=document.getElementById('rqClearAll');
+if(rqc) rqc.addEventListener('click', function(){ if(!confirm('clear ALL game requests?')) return; fetch('/api/admin/req/clear', { method:'POST', headers:{ 'content-type':'application/json' }, body:'{}' }).then(function(){ load(); }).catch(function(){}); });
 load();
 </script>
 <script>${NOTIF_JS}</script>
@@ -14808,7 +14817,7 @@ const server = http.createServer(async (req, res) => {
     if (u.pathname === '/api/admin/chat/purgeuser') { const rn = cleanRoom(b.room); const un = String(b.user || '').toLowerCase(); const room = chatRoomOf(rn); const before = room.msgs.length; room.msgs = room.msgs.filter(m => String(m.name || '').toLowerCase() !== un); const removed = before - room.msgs.length; if (removed) { persistChatRoom(rn); chatBroadcast(room, { type: 'clear' }); chatBroadcast(room, { type: 'history', msgs: room.msgs.slice(-50).map(enrichMsgAv) }); } return done({ ok: true, removed }); }
     if (u.pathname === '/api/admin/user/logout') { const un = String(b.user || '').toLowerCase(); return done({ ok: true, killed: un ? adminKillSessions(un) : 0 }); }
     if (u.pathname === '/api/admin/user/delete') { const un = String(b.user || '').toLowerCase(); if (!un || ADMIN_USERS.has(un) || !ACCOUNTS.has(un)) return done({ ok: false }); ACCOUNTS.delete(un); try { storeDel('acct:' + un); } catch {} adminKillSessions(un); CHAT_BANS.delete(un); chatBansSave(); return done({ ok: true }); }
-    if (u.pathname === '/api/admin/req/del') { const id = String(b.id || ''); const had = GAME_REQUESTS.delete(id); if (had) { try { storeDel('greq:' + id); } catch {} } return done({ ok: had }); }
+    if (u.pathname === '/api/admin/req/del') { const rawId = b.id; const key = GAME_REQUESTS.has(rawId) ? rawId : (GAME_REQUESTS.has(+rawId) ? +rawId : String(rawId)); const had = GAME_REQUESTS.delete(key); if (had) { try { storeDel('greq:' + key); } catch {} } return done({ ok: had }); }
     if (u.pathname === '/api/admin/req/clear') { for (const id of [...GAME_REQUESTS.keys()]) { GAME_REQUESTS.delete(id); try { storeDel('greq:' + id); } catch {} } return done(); }
     res.writeHead(404, { 'content-type': 'application/json' }); return res.end('{"ok":false}');
   }
