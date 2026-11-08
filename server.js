@@ -4537,52 +4537,51 @@ function callPage() {
 <title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 body{display:block;padding:0}
-.callapp{display:flex;flex-direction:column;height:100vh;height:100dvh;background:#08080a;text-align:left}
-.vs-head{display:flex;align-items:center;gap:10px;padding:14px 18px;padding-top:max(14px, env(safe-area-inset-top));border-bottom:1px solid rgba(255,255,255,.09);background:#101012;flex:none;flex-wrap:wrap}
-.vs-brand{font-weight:800;font-size:16px}
-.vs-brand span{color:#e4e4e7}
-.vs-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#e4e4e7;border:1px solid rgba(227,154,45,.4);border-radius:999px;padding:3px 9px}
-.vs-timer{font-size:13px;opacity:.6;font-variant-numeric:tabular-nums}
-#vgrid{flex:1;min-height:0;overflow-y:auto;display:flex;flex-wrap:wrap;gap:14px;padding:18px;align-content:center;justify-content:center;align-items:center;max-width:1400px;width:100%;margin:0 auto;box-sizing:border-box}
-#vgrid .vtile{flex:none;display:grid;place-items:center}
-
-
-
-
-#vgrid .vtile.vvoice{width:168px;height:186px;aspect-ratio:auto!important;background:transparent!important;border-color:transparent!important;border-radius:16px!important}
-
-.vtile .vph{position:static!important;grid-area:1/1;z-index:2}
-.vtile>video{grid-area:1/1;width:100%!important;height:100%!important}
-.vtile>span{position:static!important;grid-area:1/1;align-self:end;justify-self:start;margin:0 0 7px 9px;z-index:2}
-.vtile.vvoice .vph{width:96px;height:96px;border-radius:50%;background:rgba(var(--acc),.15);border:2px solid rgba(var(--star),.45);font-size:38px!important}
-.vtile.vvoice>span{justify-self:center;margin:0 0 4px 0;font-size:13px!important}
-.vtile.vvoice.speaking .vph{border-color:#4ade80;box-shadow:0 0 0 4px rgba(74,222,128,.4)}
-
-
-.vtile{aspect-ratio:16/9!important;border-radius:16px!important;border:1px solid rgba(255,255,255,.12)!important;background:#17171a!important}
-.vtile.speaking{border-color:#4ade80!important;box-shadow:0 0 0 2px rgba(74,222,128,.45)}
-.vmem{transition:all .15s}
-.vmem.speaking{border-color:#4ade80!important;color:#bbf7d0;box-shadow:0 0 0 2px rgba(74,222,128,.45)}
+.callapp{display:flex;flex-direction:column;height:100vh;height:100dvh;background:#070709;text-align:left;position:relative;overflow:hidden}
+.callapp::before{content:'';position:absolute;inset:0;background:radial-gradient(900px 520px at 50% -12%,rgba(var(--acc),.17),transparent 62%),radial-gradient(760px 460px at 88% 112%,rgba(var(--acc2),.11),transparent 62%);pointer-events:none}
+.vs-head{position:relative;z-index:3;display:flex;align-items:center;gap:10px;padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));flex:none;flex-wrap:wrap}
+.vs-brand{font-weight:800;font-size:16px;letter-spacing:-.01em}
+.vs-brand span{opacity:.5;font-weight:700}
+#vstitle{font-weight:800;font-size:14.5px}
+#vcount{opacity:.6;font-size:12.5px;font-weight:600}
+.vs-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fcd9a0;border:1px solid rgba(227,154,45,.45);background:rgba(227,154,45,.1);border-radius:999px;padding:3px 9px}
+.vs-timer{font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);padding:6px 12px;border-radius:999px;color:#e4e4e7}
+.vicon{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#f4f4f5;display:inline-flex;align-items:center;justify-content:center;padding:0;flex:none;cursor:pointer}
+.vicon:hover{background:rgba(255,255,255,.15)}
+#vgrid{position:relative;z-index:2;flex:1;min-height:0;overflow-y:auto;display:flex;flex-wrap:wrap;gap:16px;padding:8px 22px 2px;align-content:center;justify-content:center;align-items:center;max-width:1440px;width:100%;margin:0 auto;box-sizing:border-box}
+.vtile{position:relative;border-radius:20px;overflow:hidden;background:#141416;border:1px solid rgba(255,255,255,.09);aspect-ratio:16/9;flex:none;transition:border-color .18s,box-shadow .18s}
+.vtile.speaking{border-color:rgba(74,222,128,.9)!important;box-shadow:0 0 0 2px rgba(74,222,128,.55),0 0 36px rgba(74,222,128,.16)}
+.vtile>video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.vtile .vph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:800;color:#e4e4e7}
+.vtile>span{position:absolute;left:10px;bottom:10px;z-index:2}
+#vgrid .vtile.vvoice{width:192px;height:212px;aspect-ratio:auto!important;background:transparent!important;border-color:transparent!important;border-radius:20px!important;overflow:visible;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;box-shadow:none}
+#vgrid .vtile.vvoice.speaking{box-shadow:none}
+.vtile.vvoice .vph{position:static!important;width:106px;height:106px;border-radius:50%;background:linear-gradient(140deg,rgba(var(--acc),.55),rgba(var(--acc2),.35));border:2px solid rgba(255,255,255,.25);font-size:41px!important;flex:none;transition:border-color .18s,box-shadow .18s}
+.vtile.vvoice>span{position:static!important;background:transparent!important;padding:0!important;font-size:14.5px!important;font-weight:700;text-shadow:none!important}
+.vtile.vvoice.speaking .vph{border-color:#4ade80;box-shadow:0 0 0 5px rgba(74,222,128,.35),0 0 44px rgba(74,222,128,.28)}
 #vgrid video:fullscreen{width:100%;height:100%;object-fit:cover;background:#000}
-#vmembers{justify-content:center;padding:0 18px 10px}
-#vstat{text-align:center;opacity:.78;font-size:13px;padding:2px 16px 10px}
-#vcontrols{justify-content:center;align-items:center;gap:9px;margin:0 auto 14px;background:rgba(16,16,18,.88);border:1px solid rgba(255,255,255,.11);border-radius:999px;padding:10px 14px;width:fit-content;max-width:94vw;flex-wrap:wrap}
-#vcontrols .chip{border-radius:999px}
-#vleave{background:rgba(220,38,38,.9)!important;color:#fff!important;border-color:transparent!important}
-.callfoot{display:flex;align-items:center;gap:10px;padding:10px 16px;padding-bottom:calc(10px + env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.08);background:#101012;flex:none;flex-wrap:wrap}
-.callfoot .cloakbar{margin:0}
-.vctl{width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#f4f4f5;display:inline-flex;align-items:center;justify-content:center;position:relative;padding:0;flex:none}
-.vctl:hover{background:rgba(255,255,255,.16)}
-.vctl.off{background:rgba(220,38,38,.88);border-color:transparent;color:#fff}
-.vctl.off::after{content:'';position:absolute;left:50%;top:50%;width:27px;height:2.5px;background:#fff;border-radius:2px;transform:translate(-50%,-50%) rotate(-45deg)}
+#vmembers{position:relative;z-index:2;justify-content:center;padding:4px 18px 0;gap:7px}
+.vmem{border-radius:999px!important;font-size:12.5px!important;transition:all .15s}
+.vmem.vme{border-color:rgba(var(--star),.55)!important}
+.vmem.speaking{border-color:#4ade80!important;color:#bbf7d0;box-shadow:0 0 0 2px rgba(74,222,128,.45)}
+#vstat{position:relative;z-index:2;text-align:center;color:#d4d4d8;opacity:.88;font-size:13.5px;padding:9px 16px 0}
+#vcontrols{position:relative;z-index:3;justify-content:center;align-items:center;gap:10px;margin:11px auto 13px;background:rgba(17,17,20,.85);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.11);border-radius:999px;padding:10px 12px;width:fit-content;max-width:94vw;flex-wrap:wrap;box-shadow:0 18px 42px rgba(0,0,0,.5)}
+#vcontrols .chip{border-radius:999px;padding:11px 16px;font-size:13.5px}
+.vctl{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.13);color:#f4f4f5;display:inline-flex;align-items:center;justify-content:center;position:relative;padding:0;flex:none;cursor:pointer;transition:background .15s,transform .15s}
+.vctl:hover{background:rgba(255,255,255,.17);transform:translateY(-1px)}
+.vctl.off{background:rgba(220,38,38,.92);border-color:transparent;color:#fff}
+.vctl.off::after{content:'';position:absolute;left:50%;top:50%;width:29px;height:2.5px;background:#fff;border-radius:2px;transform:translate(-50%,-50%) rotate(-45deg)}
 .vctl.on{background:rgba(var(--acc),.85);border-color:transparent;color:#fff}
-
-.callapp{position:relative}
-#joingate{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;background:rgba(8,8,10,.8)}
-#joinbtn{font-size:16px;padding:14px 28px;border-radius:999px}
+#vleave{width:66px;border-radius:999px;background:#dc2626!important;border-color:transparent!important;color:#fff!important}
+#vleave:hover{background:#ef4444!important}
+.callfoot{position:relative;z-index:2;display:flex;align-items:center;gap:10px;padding:7px 16px;padding-bottom:calc(7px + env(safe-area-inset-bottom));flex:none;flex-wrap:wrap}
+.callfoot .cloakbar{margin:0}
+#joingate{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;gap:16px;align-items:center;justify-content:center;background:rgba(5,5,7,.72);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+#joinbtn{font-size:16px;padding:15px 34px;border-radius:999px;font-weight:800}
+@media (max-width:640px){#vgrid .vtile.vvoice{width:152px;height:176px}.vtile.vvoice .vph{width:86px;height:86px;font-size:34px!important}.vctl{width:48px;height:48px}#vleave{width:60px}#vgrid{padding:6px 12px 2px;gap:12px}}
 </style></head><body>
 <div class="callapp">
-<div class="vs-head"><span class="vs-brand">6ix<span>Chat</span></span><span id="vstitle" style="font-weight:800;font-size:14px">call</span><span id="vcount" style="opacity:.65;font-size:12px"></span><span id="privbadge" class="vs-badge" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> private</span><span id="vtimer" class="vs-timer">00:00</span><button class="chip" id="vfs" type="button" style="margin-left:auto;padding:6px 12px">fullscreen</button></div>
+<div class="vs-head"><span class="vs-brand">6ix<span>Chat</span></span><span id="vstitle">call</span><span id="vcount"></span><span id="privbadge" class="vs-badge" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> private</span><span style="flex:1"></span><span id="vtimer" class="vs-timer">00:00</span><button class="vicon" id="vfs" type="button" aria-label="fullscreen"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button></div>
 <div id="vgrid"></div>
 <div id="joingate" style="display:none"><button class="btn" id="joinbtn" type="button">tap to join</button><div style="opacity:.65;font-size:13px;text-align:center;padding:0 30px">safari needs a tap before it hands over ur mic + camera</div></div>
 <div id="vmembers" style="display:none;gap:8px;flex-wrap:wrap;align-items:center"></div>
@@ -4696,10 +4695,10 @@ function ensureTile(pid){
   var self = pid === myPid;
   var nm = self ? 'you' : memberName(pid);
   t = document.createElement('div'); t.className = 'vtile vvoice'; t.setAttribute('data-tile', pid);
-  t.setAttribute('style', 'position:relative;border-radius:14px;overflow:hidden;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.25);aspect-ratio:1/1');
+  t.setAttribute('style', 'position:relative');
   var vid = document.createElement('video'); vid.autoplay = true; vid.setAttribute('playsinline', ''); vid.setAttribute('style', 'width:100%;height:100%;object-fit:cover;display:none' + (self ? ';transform:scaleX(-1)' : ''));
   var ph = document.createElement('div'); ph.className = 'vph'; ph.setAttribute('style', 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#e4e4e7'); ph.textContent = (memberName(pid) || 'a').slice(0, 1).toUpperCase();
-  var lb = document.createElement('span'); lb.setAttribute('style', 'position:absolute;left:8px;bottom:6px;font-size:12px;opacity:.9;text-shadow:0 1px 4px #000'); lb.textContent = nm;
+  var lb = document.createElement('span'); lb.setAttribute('style', 'position:absolute;left:10px;bottom:10px;font-size:12.5px;font-weight:600;background:rgba(0,0,0,.55);padding:4px 11px;border-radius:999px;color:#fff'); lb.textContent = nm;
   if(!self) vid.addEventListener('click', function(){ if(vid.requestFullscreen) vid.requestFullscreen().catch(function(){}); else if(vid.webkitEnterFullscreen) vid.webkitEnterFullscreen(); });
   t.appendChild(vid); t.appendChild(ph); t.appendChild(lb);
   vgridEl.appendChild(t); fitGrid();
@@ -4793,7 +4792,7 @@ function voiceList(members){
   vmembersEl.innerHTML = '';
   var others = 0;
   members.forEach(function(m){
-    var d = document.createElement('span'); d.className = 'chip vmem'; d.setAttribute('data-pid', m.pid); d.textContent = (m.pid === myPid ? '🎙 ' : '') + m.name;
+    var d = document.createElement('span'); d.className = 'chip vmem'; d.setAttribute('data-pid', m.pid); d.textContent = m.name; if (m.pid === myPid) d.classList.add('vme');
     vmembersEl.appendChild(d);
     if(m.pid !== myPid) others++;
   });
@@ -4865,7 +4864,7 @@ function flipCam(){
   }
   function flop(){
     camOn = false; paintCtl(); vflipBtn.style.display = 'none'; localTile();
-    vstatEl.textContent = 'flip didnt work on this browser — cam stopped, tap cam: off to turn it back on';
+    vstatEl.textContent = 'flip didnt work on this browser — cam stopped, tap the camera button to turn it back on';
   }
   var exact = videoCons(); exact.facingMode = { exact: facing };
   navigator.mediaDevices.getUserMedia({ video: exact }).then(got).catch(function(){ navigator.mediaDevices.getUserMedia({ video: videoCons() }).then(got).catch(flop); });
@@ -4888,9 +4887,9 @@ function sixTileShow(){
   if(!inVoice || !sixVoice) return;
   if(vgridEl.querySelector('[data-tile="sixbot"]')) return;
   var t=document.createElement('div'); t.className='vtile vvoice'; t.setAttribute('data-tile','sixbot');
-  t.setAttribute('style','position:relative;border-radius:14px;overflow:hidden;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.45);aspect-ratio:1/1');
+  t.setAttribute('style','position:relative');
   var ph=document.createElement('div'); ph.setAttribute('style','position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#fafafa'); ph.textContent='✦';
-  var lb=document.createElement('span'); lb.setAttribute('style','position:absolute;left:8px;bottom:6px;font-size:12px;opacity:.9;text-shadow:0 1px 4px #000'); lb.textContent='six ✦ ai';
+  var lb=document.createElement('span'); lb.setAttribute('style','position:absolute;left:10px;bottom:10px;font-size:12.5px;font-weight:600;background:rgba(0,0,0,.55);padding:4px 11px;border-radius:999px;color:#fff'); lb.textContent='six ✦ ai';
   t.appendChild(ph); t.appendChild(lb); vgridEl.appendChild(t); fitGrid();
 }
 function sixTileHide(){ var t=vgridEl.querySelector('[data-tile="sixbot"]'); if(t) t.remove(); fitGrid(); }
