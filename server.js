@@ -5850,7 +5850,7 @@ async function confLoad() {
     try { const got = await storeCmd([['GET', 'confess:wall']], 6000); if (got && got[0]) { try { const arr = JSON.parse(got[0]); if (Array.isArray(arr)) confList = arr; } catch {} } } catch {}
     if (!confList) confList = [];
     // v361 purge (his order 2026-11-08): wipe every confession posted before the cutoff; newer ones survive
-    const CONF_PURGE_TS = 1794154300000;
+    const CONF_PURGE_TS = 1794154800000;
     const confBefore = confList.length;
     confList = confList.filter((c) => c && (c.ts || 0) >= CONF_PURGE_TS);
     if (confList.length !== confBefore) { try { confPersist(); } catch {} }
