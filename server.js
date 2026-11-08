@@ -487,14 +487,33 @@ const NOTIF_JS = `(function () {
   + '.six-toast b{font-weight:700}.six-toast span{display:block;color:#a1a1aa;font-size:12.5px;margin-top:1px}' + '.six-toast{display:flex;gap:10px;align-items:flex-start}' + '.six-toast .tav{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:14px}' + '.six-toast .tmain{flex:1;min-width:0}' + '.six-toast .ttop{display:flex;align-items:baseline;gap:7px;margin-bottom:1px}' + '.six-toast .ttag{font-size:9.5px;font-weight:800;letter-spacing:.13em;color:#a1a1aa;text-transform:uppercase;white-space:nowrap;display:inline}' + '.six-toast .ttime{margin-left:auto;font-size:10.5px;color:#71717a;flex:none;white-space:nowrap;display:inline}' + '.six-msgbar .mb-top b{font-size:14.5px;font-weight:800}' + '.six-msgbar .mb-when{font-size:10.5px;color:#71717a;white-space:nowrap}' + '.six-msgbar.repop{animation:sixPop .45s ease}' + '@keyframes sixPop{0%{transform:scale(1.035)}100%{transform:scale(1)}}'
   + '@keyframes sixTin{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}'
   + '.six-callwrap{position:fixed;inset:0;z-index:9995;display:flex;align-items:flex-start;justify-content:center;padding:18px;pointer-events:none}'
-  + '.six-call{background:linear-gradient(165deg,rgba(34,34,40,.92),rgba(19,19,23,.95));backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.17);border-radius:22px;animation:sixUp .32s cubic-bezier(.2,.7,.2,1);padding:20px 22px;text-align:center;color:#f4f4f5;box-shadow:0 24px 70px rgba(0,0,0,.6);pointer-events:auto;min-width:min(320px,88vw);animation:sixTin .25s ease}'
+  + '.six-call{background:linear-gradient(165deg,rgba(34,34,40,.92),rgba(19,19,23,.95));backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.17);border-radius:22px;padding:20px 22px;text-align:center;color:#f4f4f5;box-shadow:0 24px 70px rgba(0,0,0,.6);pointer-events:auto;width:min(340px,92vw);box-sizing:border-box;animation:sixTin .25s ease;display:flex;flex-direction:column;align-items:center}'
   + '.six-call .av{width:56px;height:56px;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;animation:sixPulse 1.2s ease infinite}'
   + '@keyframes sixPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.25)}50%{box-shadow:0 0 0 12px rgba(255,255,255,0)}}'
   + '.six-call .who{font-size:17px;font-weight:700}.six-call .sub{color:#a1a1aa;font-size:13px;margin:2px 0 14px}'
   + '.six-call .row{display:flex;gap:10px;justify-content:center}'
   + '.six-call button{font-size:14px;font-weight:700;padding:10px 20px;border-radius:999px;border:0;cursor:pointer}'
   + '.six-yes{background:#22c55e;color:#04150a}.six-no{background:#dc2626;color:#fff}.six-mut{background:rgba(255,255,255,.1);color:#f4f4f5}'
-  + '.six-widget{position:fixed;right:14px;bottom:14px;z-index:9996;width:300px;max-width:88vw;background:linear-gradient(165deg,rgba(32,32,38,.93),rgba(15,15,19,.95));backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.16);border-radius:18px;overflow:hidden;color:#f4f4f5;box-shadow:0 24px 70px rgba(0,0,0,.65)}' + '@keyframes sixUp{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}' + '.six-widget{animation:sixUp .3s cubic-bezier(.2,.7,.2,1)}' + '.six-widget .wph .av{animation:sixPulse 2.6s ease-in-out infinite}'
+  + '.six-call .cstage{display:flex;flex-direction:column;align-items:center;padding-top:10px}'
+  + '.six-call .avwrap{position:relative;width:104px;height:104px;margin-bottom:16px;flex:none}'
+  + '.six-call .avwrap .av{width:104px;height:104px;font-size:40px;margin:0;position:relative;z-index:2}'
+  + '.cring{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(255,255,255,.35);animation:sixRingPulse 2s ease-out infinite;z-index:1}'
+  + '.cring.d2{animation-delay:1s}'
+  + '@keyframes sixRingPulse{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.6);opacity:0}}'
+  + '.six-call .who{font-size:23px;font-weight:800}'
+  + '.six-call .sub{font-size:14px}'
+  + '.six-call .cbtns{display:flex;gap:64px;justify-content:center;margin-top:26px}'
+  + '.six-call .cbtn{display:flex;flex-direction:column;align-items:center;gap:8px}'
+  + '.six-call .cbtn span{font-size:12.5px;color:#d4d4d8;font-weight:600}'
+  + '.six-call .cbtn button{width:68px;height:68px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0}'
+  + '.six-call .bob{animation:sixBob 1.1s ease-in-out infinite}'
+  + '@keyframes sixBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}'
+  + '.six-callwrap.primer{z-index:9999;background:rgba(0,0,0,.45)}'
+  + '@media (max-width:820px){.six-callwrap{padding:0;align-items:stretch;justify-content:stretch}.six-call{width:100%;min-height:100dvh;border-radius:0;border:0;justify-content:space-between;padding:calc(30px + env(safe-area-inset-top)) 24px calc(34px + env(safe-area-inset-bottom))}.six-call .cstage{margin-top:8vh}.six-call .cbtns{margin-top:0}}'
+  + '.six-call .cbtn button{border-radius:50%!important}'
+  + '.six-widget .wdock .wbtn,.six-widget .wbtn.wmin,.six-widget .wbtn.wbell{border-radius:50%!important}'
+  + '@media (max-width:820px){.six-widget .wspop{bottom:158px}}'
+  + '.six-widget{position:fixed;right:14px;bottom:14px;z-index:9996;width:330px;max-width:94vw;background:linear-gradient(165deg,rgba(32,32,38,.93),rgba(15,15,19,.95));backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.16);border-radius:18px;overflow:hidden;color:#f4f4f5;box-shadow:0 24px 70px rgba(0,0,0,.65)}' + '@keyframes sixUp{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}' + '.six-widget{animation:sixUp .3s cubic-bezier(.2,.7,.2,1)}' + '.six-widget .wph .av{animation:sixPulse 2.6s ease-in-out infinite}'
   + '.six-widget .wv{display:none;width:100%;height:190px;object-fit:cover;background:#000}'
   + '.six-widget .wph{height:120px;display:flex;align-items:center;justify-content:center;background:#1b1b20}'
   + '.six-widget .wph .av{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:800;color:#fff}'
@@ -506,6 +525,25 @@ const NOTIF_JS = `(function () {
   + '.six-widget .wbtn.we{background:#dc2626;border-color:#dc2626;color:#fff;flex:1}'
   + '.six-widget .wbtn.off{background:#f59e0b;border-color:#f59e0b;color:#1a1205}'
   + '.six-widget .wbtn.wmin{flex:none;width:30px;height:30px;padding:0;border-radius:50%}'
+  + '.six-widget .wrow2{display:flex;align-items:center}'
+  + '.six-widget .wq{display:inline-flex;gap:2px;align-items:flex-end;margin-left:7px}'
+  + '.six-widget .wq i{width:4px;background:#22c55e;border-radius:2px;display:block}'
+  + '.six-widget .wq i:nth-child(1){height:5px}.six-widget .wq i:nth-child(2){height:8px}.six-widget .wq i:nth-child(3){height:11px}.six-widget .wq i:nth-child(4){height:14px}'
+  + '.six-widget .wq.y i{background:#eab308}.six-widget .wq.r i{background:#ef4444}'
+  + '.six-widget .wctl{gap:8px;justify-content:space-between;padding:10px 14px 14px}'
+  + '.six-widget .wdock{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;min-width:0}'
+  + '.six-widget .wdock .wbtn{width:52px;height:52px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;padding:0}'
+  + '.six-widget .wdock span{font-size:10px;color:#a1a1aa;font-weight:600;white-space:nowrap}'
+  + '.six-widget .wdock .wbtn.we{width:60px;height:52px;background:#dc2626;border-color:#dc2626;color:#fff}'
+  + '.six-widget .wdock .wbtn.off{background:#f4f4f5;border-color:#f4f4f5;color:#111}'
+  + '.six-widget .wl{width:86px;height:118px;border-radius:14px;top:auto;bottom:104px;right:12px}'
+  + '.six-widget .wv{height:230px}'
+  + '.six-widget .wspop{position:absolute;left:12px;right:12px;bottom:100px;background:rgba(24,24,28,.97);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:8px;display:none;z-index:5;box-shadow:0 18px 50px rgba(0,0,0,.55)}'
+  + '.six-widget .wspop.open{display:block}'
+  + '.six-widget .wspop button{display:block;width:100%;text-align:left;background:none;border:0;color:#f4f4f5;font-size:13.5px;font-weight:600;padding:9px 10px;border-radius:9px;cursor:pointer;font-family:inherit}'
+  + '.six-widget .wspop button:hover{background:rgba(255,255,255,.08)}'
+  + '.six-widget .wspop .spT{font-size:11px;letter-spacing:.08em;color:#a1a1aa;font-weight:800;padding:4px 10px 6px}'
+  + '@media (max-width:820px){.six-widget{left:0;right:0;top:0;bottom:0;width:auto;max-width:none;border-radius:0;border:0;display:flex;flex-direction:column}.six-widget .wv{flex:1;height:auto}.six-widget .wph{flex:1;height:auto}.six-widget .wl{bottom:118px}.six-widget.mini{left:auto;top:auto;width:min(320px,92vw);border-radius:18px;border:1px solid rgba(255,255,255,.16)}.six-widget.mini .wl{bottom:104px}}'
   + '.six-widget.mini .wv,.six-widget.mini .wph,.six-widget.mini .wctl,.six-widget.mini .wl{display:none}'
   + '#six-msgbars{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9994;display:flex;flex-direction:column;gap:8px;width:min(430px,94vw)}'
   + '.six-msgbar{display:flex;gap:10px;background:rgba(23,23,27,.92);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:11px 12px;color:#f4f4f5;box-shadow:0 18px 50px rgba(0,0,0,.55);cursor:pointer;animation:sixDown .34s cubic-bezier(.2,.7,.2,1)}'
@@ -525,36 +563,50 @@ const NOTIF_JS = `(function () {
   function avColor(name) { var h = 0; for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360; return 'hsl(' + h + ',42%,36%)'; }
   function agoTxt(ts) { if (!ts) return ''; var s = Math.max(0, ((Date.now() - ts) / 1000) | 0); if (s < 50) return 'now'; var m = (s / 60) | 0; if (m < 60) return m + 'm ago'; var h = (m / 60) | 0; if (h < 24) return h + 'h ago'; return ((h / 24) | 0) + 'd ago'; }
   function toast(title, sub, fn, opt) { var t = document.createElement('div'); t.className = 'six-toast'; var av = ''; if (opt && opt.av) av = '<div class="tav" style="background:' + avColor(opt.av) + '">' + esc(String(opt.av).slice(0, 1).toUpperCase()) + '</div>'; var top = ''; if (opt && (opt.tag || opt.ts)) top = '<div class="ttop">' + (opt.tag ? '<span class="ttag">' + esc(opt.tag) + '</span>' : '') + (opt.ts ? '<span class="ttime">' + agoTxt(opt.ts) + '</span>' : '') + '</div>'; t.innerHTML = av + '<div class="tmain">' + top + '<div style="font-weight:700;font-size:13.5px;line-height:1.3">' + esc(title) + '</div>' + (sub ? '<div style="color:#a1a1aa;font-size:12.5px;margin-top:1px;line-height:1.35">' + esc(sub) + '</div>' : '') + '</div>'; if (fn) t.addEventListener('click', function () { fn(); t.remove(); }); toastBox.appendChild(t); setTimeout(function () { if (t.parentNode) t.remove(); }, 6500); }
-  function killCall() { if (callEl) { callEl.remove(); callEl = null; } callKey = ''; }
-  function killCalling() { if (callingEl) { callingEl.remove(); callingEl = null; } }
+  function killCall() { ringStop(); vibLoopStop(); if (callEl) { callEl.remove(); callEl = null; } callKey = ''; }
+  function killCalling() { ringStop(); if (callingEl) { callingEl.remove(); callingEl = null; } }
   function showCall(c) {
     killCall();
     callKey = c.from + ':' + c.mode;
     var w = document.createElement('div'); w.className = 'six-callwrap';
-    w.innerHTML = '<div class="six-call"><div class="av" style="background:' + avColor(c.from) + '">' + esc((c.fromName || c.from || '?').slice(0, 1).toUpperCase()) + '</div><div class="who">' + esc(c.fromName || c.from) + ' is calling you</div><div class="sub">' + (c.mode === 'video' ? 'video call · facetime' : 'voice call') + ' · 6ixchat</div><div class="row"><button class="six-yes" type="button">answer</button><button class="six-no" type="button">decline</button></div></div>';
+    w.innerHTML = '<div class="six-call">'
+      + '<div class="cstage"><div class="avwrap"><span class="cring"></span><span class="cring d2"></span><div class="av" style="background:' + avColor(c.from) + '">' + esc((c.fromName || c.from || '?').slice(0, 1).toUpperCase()) + '</div></div>'
+      + '<div class="who">' + esc(c.fromName || c.from) + '</div>'
+      + '<div class="sub">' + (c.mode === 'video' ? 'incoming video call' : 'incoming voice call') + ' · 6ixchat</div></div>'
+      + '<div class="cbtns"><div class="cbtn"><button class="six-no" type="button" aria-label="decline"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><g transform="rotate(135 12 12)"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24 11.4 11.4 0 0 0 3.57.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2z"/></g></svg></button><span>decline</span></div>'
+      + '<div class="cbtn"><button class="six-yes bob" type="button" aria-label="answer"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24 11.4 11.4 0 0 0 3.57.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2z"/></svg></button><span>answer</span></div></div></div>';
     document.body.appendChild(w); callEl = w;
-    try { if (navigator.vibrate) navigator.vibrate([180, 80, 180]); } catch (e) {}
+    ringStart('in'); vibLoopStart();
     w.querySelector('.six-yes').addEventListener('click', function () {
-      fetch('/chat/respond', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ accept: true }) }).then(function (r) { return r.json(); }).then(function (o) {
-        killCall();
-        if (o && o.ok) startWidget(o.room, o.peer, o.mode, c.fromName || o.peer);
-      }).catch(function () { killCall(); });
+      permPrimer(c.mode, function () {
+        fetch('/chat/respond', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ accept: true }) }).then(function (r) { return r.json(); }).then(function (o) {
+          killCall();
+          if (o && o.ok) startWidget(o.room, o.peer, o.mode, c.fromName || o.peer);
+        }).catch(function () { killCall(); });
+      });
     });
     w.querySelector('.six-no').addEventListener('click', function () { fetch('/chat/respond', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ accept: false }) }).catch(function () {}); killCall(); });
   }
   function showCalling(name) {
     killCalling();
     var w = document.createElement('div'); w.className = 'six-callwrap';
-    w.innerHTML = '<div class="six-call"><div class="av" style="background:' + avColor(myPeer) + '">' + esc((name || myPeer || '?').slice(0, 1).toUpperCase()) + '</div><div class="who">calling ' + esc(name || myPeer) + '…</div><div class="sub">' + (myMode === 'video' ? 'video call' : 'voice call') + ' · waiting on them</div><div class="row"><button class="six-mut" type="button">cancel</button></div></div>';
+    w.innerHTML = '<div class="six-call">'
+      + '<div class="cstage"><div class="avwrap"><span class="cring"></span><span class="cring d2"></span><div class="av" style="background:' + avColor(myPeer) + '">' + esc((name || myPeer || '?').slice(0, 1).toUpperCase()) + '</div></div>'
+      + '<div class="who">' + esc(name || myPeer) + '</div>'
+      + '<div class="sub">' + (myMode === 'video' ? 'video call' : 'voice call') + ' · calling…</div></div>'
+      + '<div class="cbtns"><div class="cbtn"><button class="six-no ccancel" type="button" aria-label="cancel"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><g transform="rotate(135 12 12)"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24 11.4 11.4 0 0 0 3.57.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2z"/></g></svg></button><span>cancel</span></div></div></div>';
     document.body.appendChild(w); callingEl = w;
-    w.querySelector('.six-mut').addEventListener('click', function () { fetch('/chat/cancel', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).catch(function () {}); killCalling(); });
+    ringStart('out');
+    w.querySelector('.ccancel').addEventListener('click', function () { fetch('/chat/cancel', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).catch(function () {}); killCalling(); });
   }
   window.sixRing = function (peer, mode, name) {
     myPeer = String(peer || '').toLowerCase(); myMode = mode === 'video' ? 'video' : 'voice'; myPeerName = name || peer;
-    fetch('/chat/ring', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ peer: myPeer, mode: myMode }) }).then(function (r) { return r.json(); }).then(function (o) {
-      if (o && o.ok) { myRoom = o.room; showCalling(name); }
-      else toast('couldnt call them', (o && o.error) || 'are u two friends?', null);
-    }).catch(function () { toast('couldnt call them', 'network hiccup', null); });
+    permPrimer(myMode, function () {
+      fetch('/chat/ring', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ peer: myPeer, mode: myMode }) }).then(function (r) { return r.json(); }).then(function (o) {
+        if (o && o.ok) { myRoom = o.room; showCalling(name); }
+        else toast('couldnt call them', (o && o.error) || 'are u two friends?', null);
+      }).catch(function () { toast('couldnt call them', 'network hiccup', null); });
+    });
   };
   window.sixDm = function (room, peer) { try { sessionStorage.setItem('gx_dm', JSON.stringify({ room: room, peer: peer })); } catch (e) {} location.href = '/chat?room=' + encodeURIComponent(room); };
   function badges(total) {
@@ -598,6 +650,98 @@ const NOTIF_JS = `(function () {
   var cw = null;
   function wsend(o) { if (cw && cw.ws && cw.ws.readyState === 1) { try { cw.ws.send(JSON.stringify(o)); } catch (e) {} } }
   function fmtT(sec) { var m = Math.floor(sec / 60), s2 = sec % 60; return (m < 10 ? '0' : '') + m + ':' + (s2 < 10 ? '0' : '') + s2; }
+  function callWakeLock() { if (!cw) return; try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (wl) { if (cw) cw.wakeLock = wl; }).catch(function () {}); } catch (e) {} }
+  function callMediaSession() { try { if (navigator.mediaSession && window.MediaMetadata) navigator.mediaSession.metadata = new MediaMetadata({ title: cw ? cw.peerName : '6ixchat call', artist: '6ixchat', album: cw && cw.mode === 'video' ? 'video call' : 'voice call' }); } catch (e) {} }
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && cw && !cw.wakeLock) callWakeLock(); });
+  window.addEventListener('online', function () { if (cw && cw.pc && (cw.pc.iceConnectionState === 'disconnected' || cw.pc.iceConnectionState === 'failed')) { cw.qState = 'recon'; try { cw.pc.restartIce(); } catch (e) {} } });
+  function startQuality() {
+    if (!cw || cw.qIv) return;
+    cw.qIv = setInterval(function () {
+      if (!cw || !cw.pc || !cw.startedAt) return;
+      cw.pc.getStats(null).then(function (rep) {
+        if (!cw) return;
+        var lost = 0, recv = 0, rtt = 0;
+        rep.forEach(function (st) {
+          if (st.type === 'inbound-rtp') { lost += st.packetsLost || 0; recv += st.packetsReceived || 0; }
+          if (st.type === 'candidate-pair' && (st.state === 'succeeded' || st.nominated)) rtt = Math.max(rtt, (st.currentRoundTripTime || 0) * 1000);
+        });
+        var dLost = 0, dRecv = 0;
+        if (cw.qLast) { dLost = lost - cw.qLast.lost; dRecv = recv - cw.qLast.recv; }
+        cw.qLast = { lost: lost, recv: recv };
+        var lossPct = (dLost + dRecv) > 0 ? (dLost / (dLost + dRecv)) * 100 : 0;
+        var bars = 4;
+        if (lossPct > 7 || rtt > 650) bars = 1; else if (lossPct > 3 || rtt > 400) bars = 2; else if (lossPct > 1 || rtt > 220) bars = 3;
+        var wq = cw.wrap ? cw.wrap.querySelector('.wq') : null;
+        if (wq) {
+          wq.className = 'wq' + (bars >= 3 ? '' : bars === 2 ? ' y' : ' r');
+          var bars2 = wq.children;
+          for (var i = 0; i < bars2.length; i++) bars2[i].style.opacity = i < bars ? '1' : '.25';
+        }
+        if (bars <= 2) {
+          cw.qBad = (cw.qBad || 0) + 1;
+          if (cw.qState !== 'recon') cw.qState = 'weak';
+          if (cw.qBad >= 2 && !cw.degraded && cw.camOn && cw.stream) {
+            var vt = cw.stream.getVideoTracks()[0];
+            if (vt && vt.applyConstraints) vt.applyConstraints({ height: { max: 360 }, frameRate: { max: 15 } }).then(function () { cw.degraded = true; }).catch(function () {});
+          }
+        } else {
+          cw.qBad = 0;
+          if (cw.qState === 'weak') cw.qState = '';
+          if (cw.degraded && bars >= 3 && cw.stream) {
+            var vt2 = cw.stream.getVideoTracks()[0];
+            if (vt2 && vt2.applyConstraints) vt2.applyConstraints({ width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { max: 30 } }).then(function () { cw.degraded = false; }).catch(function () {});
+          }
+        }
+      }).catch(function () {});
+    }, 2500);
+  }
+  function speakerPop(btn, pop) {
+    if (!cw) return;
+    var canRoute = false;
+    try { canRoute = 'setSinkId' in HTMLMediaElement.prototype && !!navigator.mediaDevices && !!navigator.mediaDevices.enumerateDevices; } catch (e) {}
+    if (!canRoute) { toast('this phone routes call audio itself', 'use control center / airplay to pick a speaker or headphones', null); return; }
+    navigator.mediaDevices.enumerateDevices().then(function (devs) {
+      var outs = devs.filter(function (d) { return d.kind === 'audiooutput'; });
+      if (!outs.length) { toast('no other audio outputs found', '', null); return; }
+      pop.innerHTML = '<div class="spT">AUDIO OUT</div>' + outs.map(function (d, ix) { return '<button type="button" data-sink="' + esc(d.deviceId) + '">' + esc(d.label || ('output ' + (ix + 1))) + '</button>'; }).join('');
+      pop.classList.toggle('open');
+      Array.prototype.forEach.call(pop.querySelectorAll('button[data-sink]'), function (b) {
+        b.addEventListener('click', function () {
+          var id = b.getAttribute('data-sink');
+          pop.classList.remove('open');
+          if (cw && cw.vid && cw.vid.setSinkId) cw.vid.setSinkId(id).then(function () { cw.sinkId = id; btn.classList.add('off'); toast('audio out switched', '', null); }).catch(function () { toast('couldnt switch audio out', '', null); });
+        });
+      });
+    }).catch(function () { toast('couldnt list audio outputs', '', null); });
+  }
+  function flipCall() {
+    if (!cw || !cw.stream) return;
+    if (!cw.camOn) { toast('turn ur cam on first', '', null); return; }
+    var next = cw.faceMode === 'user' ? 'environment' : 'user';
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: next }, width: { ideal: 1280 }, height: { ideal: 720 } } }).then(function (s2) {
+      if (!cw) { s2.getTracks().forEach(function (t) { t.stop(); }); return; }
+      var nt = s2.getVideoTracks()[0]; if (!nt) return;
+      var ot = cw.stream.getVideoTracks()[0];
+      var snd = null;
+      if (cw.pc) { var snds = cw.pc.getSenders(); for (var i = 0; i < snds.length; i++) { if (snds[i].track && snds[i].track.kind === 'video') { snd = snds[i]; break; } } }
+      var swap = function () {
+        if (!cw) { try { nt.stop(); } catch (e) {} return; }
+        if (ot) { try { ot.stop(); } catch (e) {} cw.stream.removeTrack(ot); }
+        cw.stream.addTrack(nt); cw.faceMode = next; cw.local.srcObject = cw.stream;
+        var lp = cw.local.play(); if (lp && lp.catch) lp.catch(function () {});
+      };
+      if (snd && snd.replaceTrack) snd.replaceTrack(nt).then(swap).catch(swap); else swap();
+    }).catch(function () { toast('couldnt flip the camera', 'this device may only have one', null); });
+  }
+  function pipCall() {
+    if (!cw || !cw.vid) return;
+    try {
+      if (document.pictureInPictureElement) { document.exitPictureInPicture(); return; }
+      if (cw.vid.requestPictureInPicture && cw.vid.srcObject) { cw.vid.requestPictureInPicture().catch(function () { toast('pip isnt available for this call rn', '', null); }); return; }
+      if (cw.vid.webkitSetPresentationMode) { cw.vid.webkitSetPresentationMode(cw.vid.webkitPresentationMode === 'picture-in-picture' ? 'inline' : 'picture-in-picture'); return; }
+    } catch (e) {}
+    toast('pip isnt supported in this browser', '', null);
+  }
   function startWidget(room, peer, mode, peerName) {
     endWidget(true);
     var wrap = document.createElement('div');
@@ -605,15 +749,31 @@ const NOTIF_JS = `(function () {
     wrap.innerHTML = '<video class="wv" playsinline autoplay></video>'
       + '<div class="wph"><div class="av" style="background:' + avColor(peer) + '">' + esc((peerName || peer || '?').slice(0, 1).toUpperCase()) + '</div></div>'
       + '<video class="wl" playsinline autoplay muted></video>'
-      + '<div class="wbar"><div class="wmeta"><div class="wname">' + esc(peerName || peer) + '</div><div class="wstat">connecting…</div></div>'
+      + '<div class="wbar"><div class="wmeta"><div class="wname">' + esc(peerName || peer) + '</div><div class="wrow2"><span class="wstat">connecting…</span><span class="wq"><i></i><i></i><i></i><i></i></span></div></div>'
+      + '<button class="wbtn wbell" type="button" title="notifications when the site is closed" style="flex:none;width:30px;height:30px;padding:0;border-radius:50%"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>'
       + '<button class="wbtn wmin" type="button" title="minimize">–</button></div>'
-      + '<div class="wctl"><button class="wbtn wm" type="button">mute</button><button class="wbtn wc" type="button">cam</button><button class="wbtn we" type="button">end</button></div>';
+      + '<div class="wspop"></div>'
+      + '<div class="wctl">'
+      + '<div class="wdock"><button class="wbtn wm" type="button"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4"/></svg></button><span class="wml">mute</span></div>'
+      + '<div class="wdock"><button class="wbtn wsp" type="button"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z" fill="currentColor" stroke="none"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.6 5.4a9.5 9.5 0 0 1 0 13.2"/></svg></button><span>speaker</span></div>'
+      + '<div class="wdock"><button class="wbtn wc" type="button"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="13.5" height="12" rx="2.5"/><path d="M15.5 10.5 22 7v10l-6.5-3.5"/></svg></button><span>camera</span></div>'
+      + '<div class="wdock"><button class="wbtn wfl" type="button"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button><span>flip</span></div>'
+      + '<div class="wdock"><button class="wbtn wpip" type="button"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><rect x="12" y="12" width="7" height="5" rx="1.2" fill="currentColor" stroke="none"/></svg></button><span>pip</span></div>'
+      + '<div class="wdock"><button class="wbtn we" type="button"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><g transform="rotate(135 12 12)"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24 11.4 11.4 0 0 0 3.57.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2z"/></g></svg></button><span>end</span></div>'
+      + '</div>';
     document.body.appendChild(wrap);
-    cw = { room: room, peer: peer, peerName: peerName || peer, mode: mode, ws: null, pc: null, myPid: null, stream: null, iceQ: [], muted: false, camOn: false, startedAt: 0, timerIv: null, retries: 0, ended: false, candTypes: { host: 0, srflx: 0, relay: 0 }, trail: [], offers: 0, answers: 0, reported: false, wrap: wrap, vid: wrap.querySelector('.wv'), local: wrap.querySelector('.wl'), ph: wrap.querySelector('.wph'), stat: wrap.querySelector('.wstat') };
+    cw = { room: room, peer: peer, peerName: peerName || peer, mode: mode, ws: null, pc: null, myPid: null, stream: null, iceQ: [], muted: false, camOn: false, startedAt: 0, timerIv: null, retries: 0, ended: false, candTypes: { host: 0, srflx: 0, relay: 0 }, trail: [], offers: 0, answers: 0, reported: false, wrap: wrap, vid: wrap.querySelector('.wv'), local: wrap.querySelector('.wl'), ph: wrap.querySelector('.wph'), stat: wrap.querySelector('.wstat'), faceMode: 'user', iceTries: 0, qIv: null, qLast: null, qBad: 0, qState: '', degraded: false, wakeLock: null, sinkId: '' };
     wrap.querySelector('.we').addEventListener('click', function () { endWidget(false); toast('call ended', '', null); });
-    wrap.querySelector('.wm').addEventListener('click', function () { if (!cw || !cw.stream) return; cw.muted = !cw.muted; cw.stream.getAudioTracks().forEach(function (t) { t.enabled = !cw.muted; }); var b = wrap.querySelector('.wm'); b.textContent = cw.muted ? 'unmute' : 'mute'; b.classList.toggle('off', cw.muted); });
+    wrap.querySelector('.wm').addEventListener('click', function () { if (!cw || !cw.stream) return; cw.muted = !cw.muted; cw.stream.getAudioTracks().forEach(function (t) { t.enabled = !cw.muted; }); var b = wrap.querySelector('.wm'); b.classList.toggle('off', cw.muted); var lb = wrap.querySelector('.wml'); if (lb) lb.textContent = cw.muted ? 'unmute' : 'mute'; });
     wrap.querySelector('.wc').addEventListener('click', toggleWidgetCam);
     wrap.querySelector('.wmin').addEventListener('click', function () { wrap.classList.toggle('mini'); });
+    wrap.querySelector('.wsp').addEventListener('click', function () { speakerPop(wrap.querySelector('.wsp'), wrap.querySelector('.wspop')); });
+    wrap.querySelector('.wfl').addEventListener('click', function () { flipCall(); });
+    wrap.querySelector('.wpip').addEventListener('click', function () { pipCall(); });
+    var wb2 = wrap.querySelector('.wbell');
+    if (wb2) { if (!('Notification' in window) || Notification.permission !== 'default') wb2.style.display = 'none'; wb2.addEventListener('click', function () { if (window.sixEnableAlerts) window.sixEnableAlerts(); wb2.style.display = 'none'; }); }
+    if (mode !== 'video') { var wcb = wrap.querySelector('.wc'); if (wcb) wcb.classList.add('off'); }
+    callWakeLock();
     connectWidget();
   }
   function connectWidget() {
@@ -673,16 +833,19 @@ const NOTIF_JS = `(function () {
     };
     pc.oniceconnectionstatechange = function () {
       if (!cw || cw.pc !== pc) return;
-      if (pc.iceConnectionState === 'disconnected' && !cw.startedAt) cw.stat.textContent = 'connection shaky — hold on…';
+      if (pc.iceConnectionState === 'disconnected') { cw.qState = 'recon'; cw.stat.textContent = 'reconnecting…'; }
+      if ((pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') && cw.qState === 'recon') cw.qState = '';
       cw.trail.push(pc.iceConnectionState);
       if (pc.iceConnectionState === 'failed') {
-        if (!cw.iceRetried) { cw.iceRetried = true; cw.stat.textContent = 'retrying the connection…'; try { pc.restartIce(); } catch (e) {} }
+        cw.qState = 'recon'; cw.stat.textContent = 'reconnecting…';
+        if ((cw.iceTries || 0) < 3) { cw.iceTries = (cw.iceTries || 0) + 1; setTimeout(function () { if (cw && cw.pc === pc) { try { pc.restartIce(); } catch (e) {} } }, 1200 * cw.iceTries); }
+        else if (!cw.pcRebuilt) { cw.pcRebuilt = true; cw.iceTries = 0; try { pc.close(); } catch (e) {} if (cw.pc === pc) cw.pc = null; cw.iceQ = []; wsend({ type: 'rtc-join' }); }
         else { cw.stat.textContent = 'couldnt connect — this wifi is blocking the call relay'; iceReport(false); }
       }
     };
     pc.onconnectionstatechange = function () {
       if (!cw) return;
-      if (pc.connectionState === 'connected' && !cw.startedAt) { iceReport(true); cw.startedAt = Date.now(); cw.stat.textContent = 'live · 00:00'; cw.timerIv = setInterval(function () { if (cw && cw.startedAt) cw.stat.textContent = 'live · ' + fmtT(Math.floor((Date.now() - cw.startedAt) / 1000)); }, 1000); }
+      if (pc.connectionState === 'connected' && !cw.startedAt) { iceReport(true); cw.iceTries = 0; cw.startedAt = Date.now(); cw.stat.textContent = 'live · 00:00'; callMediaSession(); startQuality(); cw.timerIv = setInterval(function () { if (cw && cw.startedAt && cw.qState !== 'recon') cw.stat.textContent = (cw.qState === 'weak' ? 'weak signal · ' : 'live · ') + fmtT(Math.floor((Date.now() - cw.startedAt) / 1000)); }, 1000); }
       if (pc.connectionState === 'failed') cw.stat.textContent = 'couldnt connect — this wifi is blocking the call relay';
     };
   }
@@ -707,12 +870,12 @@ const NOTIF_JS = `(function () {
       navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { max: 30 }, facingMode: 'user' } }).then(function (s2) {
         var t = s2.getVideoTracks()[0]; if (!t || !cw) { return; }
         cw.stream.addTrack(t); if (cw.pc) { try { cw.pc.addTrack(t, cw.stream); } catch (e) {} }
-        cw.camOn = true; cw.local.srcObject = cw.stream; cw.local.style.display = 'block';
+        cw.camOn = true; cw.local.srcObject = cw.stream; cw.local.style.display = 'block'; var cb2 = cw.wrap.querySelector('.wc'); if (cb2) cb2.classList.remove('off');
       }).catch(function () {});
     } else {
       var vt = cw.stream.getVideoTracks()[0];
       if (vt) { if (cw.pc) { var snd = cw.pc.getSenders().find(function (x) { return x.track === vt; }); if (snd) { try { snd.replaceTrack(null); } catch (e) {} } } vt.stop(); cw.stream.removeTrack(vt); }
-      cw.camOn = false; cw.local.style.display = 'none';
+      cw.camOn = false; cw.local.style.display = 'none'; var cb3 = cw.wrap.querySelector('.wc'); if (cb3) cb3.classList.add('off');
     }
   }
   function iceReport(ok) { if (!cw || cw.reported) return; cw.reported = true; try { fetch('/chat/ice-report', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ page: location.pathname, ok: ok, cands: cw.candTypes, trail: cw.trail.join('>'), exchanged: { off: cw.offers, ans: cw.answers } }) }).catch(function () {}); } catch (e) {} }
@@ -720,7 +883,7 @@ const NOTIF_JS = `(function () {
     if (!cw) return;
     var c = cw; cw = null; c.ended = true;
     try { if (c.ws && c.ws.readyState === 1) c.ws.send(JSON.stringify({ type: 'rtc-leave' })); } catch (e) {}
-    if (c.timerIv) clearInterval(c.timerIv);
+    if (c.timerIv) clearInterval(c.timerIv); if (c.qIv) clearInterval(c.qIv); if (c.wakeLock) { try { c.wakeLock.release(); } catch (e) {} } try { if (document.pictureInPictureElement) document.exitPictureInPicture(); } catch (e) {} try { if (navigator.mediaSession) navigator.mediaSession.metadata = null; } catch (e) {}
     if (c.pc) { try { c.pc.close(); } catch (e) {} }
     if (c.stream) c.stream.getTracks().forEach(function (t) { try { t.stop(); } catch (e) {} });
     if (c.ws) { try { c.ws.close(); } catch (e) {} }
@@ -767,6 +930,81 @@ const NOTIF_JS = `(function () {
     inp2.addEventListener('blur', function () { bar.classList.remove('hold'); armMsgBar(bar, n.room); });
     armMsgBar(bar, n.room);
   }
+  var ringCtx = null, ringTimer = null, vibIv = null;
+  function ringStart(kind) {
+    ringStop();
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+      ringCtx = new AC();
+      if (ringCtx.state === 'suspended') { ringCtx.resume().catch(function () {}); }
+      var master = ringCtx.createGain(); master.gain.value = 0; master.connect(ringCtx.destination);
+      var o1 = ringCtx.createOscillator(), o2 = ringCtx.createOscillator();
+      o1.frequency.value = 440; o2.frequency.value = 480; o1.type = 'sine'; o2.type = 'sine';
+      o1.connect(master); o2.connect(master); o1.start(); o2.start();
+      var vol = kind === 'in' ? 0.055 : 0.03;
+      var cycle = function () {
+        if (!ringCtx) return;
+        var t = ringCtx.currentTime;
+        try {
+          master.gain.cancelScheduledValues(t);
+          master.gain.setValueAtTime(0.0001, t);
+          master.gain.exponentialRampToValueAtTime(vol, t + 0.09);
+          master.gain.setValueAtTime(vol, t + 1.5);
+          master.gain.exponentialRampToValueAtTime(0.0001, t + 1.75);
+        } catch (e) {}
+      };
+      cycle();
+      ringTimer = setInterval(cycle, 5000);
+    } catch (e) {}
+  }
+  function ringStop() { if (ringTimer) { clearInterval(ringTimer); ringTimer = null; } if (ringCtx) { try { ringCtx.close(); } catch (e) {} ringCtx = null; } }
+  function vibLoopStart() { vibLoopStop(); try { if (navigator.vibrate) { navigator.vibrate([200, 100, 200]); vibIv = setInterval(function () { try { navigator.vibrate([200, 100, 200]); } catch (e) {} }, 3200); } } catch (e) {} }
+  function vibLoopStop() { if (vibIv) { clearInterval(vibIv); vibIv = null; } try { if (navigator.vibrate) navigator.vibrate(0); } catch (e) {} }
+  function permPrimer(mode, proceed) {
+    var seen = false; try { seen = localStorage.getItem('gx_perm1') === '1'; } catch (e) {}
+    if (seen) { proceed(); return; }
+    var w = document.createElement('div'); w.className = 'six-callwrap primer';
+    w.innerHTML = '<div class="six-call"><div class="who" style="margin-top:8px">quick heads up</div><div class="sub" style="max-width:290px;margin:10px auto 18px;line-height:1.55">6ixchat calls need ur ' + (mode === 'video' ? 'mic + camera' : 'mic') + ' to work. its live only — nothing gets recorded or saved, it goes straight between u two.</div><div class="row"><button class="six-yes" type="button" style="border-radius:999px;width:auto;height:auto;padding:12px 24px">continue</button><button class="six-mut" type="button">not now</button></div></div>';
+    document.body.appendChild(w);
+    w.querySelector('.six-yes').addEventListener('click', function () { try { localStorage.setItem('gx_perm1', '1'); } catch (e) {} w.remove(); proceed(); });
+    w.querySelector('.six-mut').addEventListener('click', function () { w.remove(); });
+  }
+  function urlB64ToU8(s) { var pad = '='.repeat((4 - (s.length % 4)) % 4); var b = (s + pad).replace(/-/g, '+').replace(/_/g, '/'); var raw = atob(b); var arr = new Uint8Array(raw.length); for (var i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i); return arr; }
+  function sendSub(s) { try { fetch('/api/push/sub', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(s.toJSON()) }).catch(function () {}); } catch (e) {} }
+  function sixPushSubscribe() {
+    try {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return Promise.resolve(false);
+      return navigator.serviceWorker.ready.then(function (reg) {
+        return fetch('/api/push/key').then(function (r) { return r.json(); }).then(function (o) {
+          if (!o || !o.ok || !o.key) return false;
+          return reg.pushManager.getSubscription().then(function (existing) {
+            if (existing) { sendSub(existing); return true; }
+            return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToU8(o.key) }).then(function (s) { sendSub(s); return true; }).catch(function () { return false; });
+          });
+        });
+      }).catch(function () { return false; });
+    } catch (e) { return Promise.resolve(false); }
+  }
+  window.sixEnableAlerts = function () {
+    if (!('Notification' in window)) { toast('this browser cant do call alerts', '', null); return; }
+    Notification.requestPermission().then(function (p) {
+      if (p === 'granted') sixPushSubscribe().then(function (ok2) { toast(ok2 ? 'alerts on' : 'couldnt turn alerts on', ok2 ? 'calls, messages, everything — even with the site closed' : '', null); });
+      else toast('alerts blocked', 'allow notifications for this site in ur browser settings', null);
+    });
+  };
+  try { if ('Notification' in window && Notification.permission === 'granted') sixPushSubscribe(); } catch (e) {}
+  try { if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('message', function (e) { if (e.data && (e.data.type === 'six-call-push' || e.data.type === 'six-push')) poll(); }); } catch (e) {}
+  try {
+    var aq = new URLSearchParams(location.search);
+    if (aq.get('answercall') === '1') {
+      setTimeout(function () {
+        fetch('/chat/respond', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ accept: true }) }).then(function (r) { return r.json(); }).then(function (o) {
+          if (o && o.ok) startWidget(o.room, o.peer, o.mode, o.peer);
+          else toast('that call already ended', '', null);
+        }).catch(function () {});
+      }, 700);
+    }
+  } catch (e) {}
   poll(); setInterval(poll, 6000);
   var __pill = null;
   function netPill(show) {
@@ -1990,6 +2228,57 @@ const SW_JS = `self.addEventListener('install', function(e){ self.skipWaiting();
 self.addEventListener('activate', function(e){ e.waitUntil(self.clients.claim()); });
 self.addEventListener('fetch', function(e){});
 // pass-through on purpose: this is a proxy — remote content must never be cached or intercepted
+self.addEventListener('push', function (e) {
+  var data = {};
+  try { data = e.data ? e.data.json() : {}; } catch (err) {}
+  if (!data || !data.kind) return;
+  e.waitUntil((async function () {
+    var wins = [];
+    try { wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true }); } catch (err) {}
+    var anyVisible = false;
+    for (var i = 0; i < wins.length; i++) { if (wins[i].visibilityState === 'visible') anyVisible = true; }
+    if (anyVisible) { wins.forEach(function (w) { try { w.postMessage({ type: 'six-push', data: data }); } catch (err) {} }); return; }
+    var name = data.fromName || data.from || 'someone';
+    if (data.kind === 'call') {
+      try {
+        await self.registration.showNotification(name + ' is calling you', {
+          body: (data.mode === 'video' ? 'video call' : 'voice call') + ' - 6ixchat',
+          icon: '/icon-192.png', badge: '/icon-192.png', tag: 'six-call', renotify: true, requireInteraction: true,
+          vibrate: [220, 110, 220, 110, 320],
+          actions: [{ action: 'answer', title: 'Answer' }, { action: 'decline', title: 'Decline' }],
+          data: { peer: data.from || '', mode: data.mode || 'voice', room: data.room || '' }
+        });
+      } catch (err) {}
+      return;
+    }
+    var title = name, body = data.text || '', tag = 'six-ev', url = '/chat';
+    if (data.kind === 'dm') { body = data.text || 'sent u a message'; tag = 'six-dm-' + (data.from || ''); url = '/chat?room=' + encodeURIComponent(data.room || ''); }
+    else if (data.type === 'friend_req') { title = 'friend request'; body = name + ' wants to be friends'; tag = 'six-fr-' + (data.from || ''); }
+    else if (data.type === 'friend_acc') { title = 'new friend'; body = name + ' accepted ur friend request'; tag = 'six-fa-' + (data.from || ''); }
+    else if (data.type === 'call_missed') { title = 'missed call'; body = 'u missed a call from ' + name; tag = 'six-mc-' + (data.from || ''); }
+    else if (data.type === 'req_milestone') { title = 'game request'; body = data.text || 'ur request is heating up'; tag = 'six-req'; url = '/requests'; }
+    try {
+      await self.registration.showNotification(title, { body: body, icon: '/icon-192.png', badge: '/icon-192.png', tag: tag, renotify: true, data: { url: url } });
+    } catch (err) {}
+  })());
+});
+self.addEventListener('notificationclick', function (e) {
+  var d = (e.notification && e.notification.data) || {};
+  e.notification.close();
+  if (e.action === 'decline') {
+    e.waitUntil(fetch('/chat/respond', { method: 'POST', headers: { 'content-type': 'application/json' }, credentials: 'include', body: JSON.stringify({ accept: false }) }).catch(function () {}));
+    return;
+  }
+  var url = d.url ? d.url : '/chat?answercall=1&peer=' + encodeURIComponent(d.peer || '') + '&mode=' + encodeURIComponent(d.mode || 'voice');
+  e.waitUntil((async function () {
+    var wins = [];
+    try { wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true }); } catch (err) {}
+    for (var i = 0; i < wins.length; i++) {
+      try { await wins[i].focus(); try { await wins[i].navigate(url); } catch (err) {} return; } catch (err) {}
+    }
+    try { await self.clients.openWindow(url); } catch (err) {}
+  })());
+});
 `;
 const ICON_512 = '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';
 const ICON_192 = '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';
@@ -4588,7 +4877,7 @@ body{display:block;padding:0}
 #vstat{position:relative;z-index:2;text-align:center;color:#d4d4d8;opacity:.88;font-size:13.5px;padding:9px 16px 0}
 #vcontrols{position:relative;z-index:3;justify-content:center;align-items:center;gap:10px;margin:11px auto 13px;background:rgba(17,17,20,.85);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.11);border-radius:999px;padding:10px 12px;width:fit-content;max-width:94vw;flex-wrap:wrap;box-shadow:0 18px 42px rgba(0,0,0,.5)}
 #vcontrols .chip{border-radius:999px;padding:11px 16px;font-size:13.5px}
-.vctl{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.13);color:#f4f4f5;display:inline-flex;align-items:center;justify-content:center;position:relative;padding:0;flex:none;cursor:pointer;transition:background .15s,transform .15s}
+.vctl{border-radius:50%!important}#vleave{border-radius:999px!important}.vicon{border-radius:50%!important}.vctl{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.13);color:#f4f4f5;display:inline-flex;align-items:center;justify-content:center;position:relative;padding:0;flex:none;cursor:pointer;transition:background .15s,transform .15s}
 .vctl:hover{background:rgba(255,255,255,.17);transform:translateY(-1px)}
 .vctl.off{background:rgba(220,38,38,.92);border-color:transparent;color:#fff}
 .vctl.off::after{content:'';position:absolute;left:50%;top:50%;width:29px;height:2.5px;background:#fff;border-radius:2px;transform:translate(-50%,-50%) rotate(-45deg)}
@@ -4602,7 +4891,7 @@ body{display:block;padding:0}
 @media (max-width:640px){#vgrid .vtile.vvoice{width:152px;height:176px}.vtile.vvoice .vph{width:86px;height:86px;font-size:34px!important}.vctl{width:48px;height:48px}#vleave{width:60px}#vgrid{padding:6px 12px 2px;gap:12px}}
 </style></head><body>
 <div class="callapp">
-<div class="vs-head"><span class="vs-brand">6ix<span>Chat</span></span><span id="vstitle">call</span><span id="vcount"></span><span id="privbadge" class="vs-badge" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> private</span><span style="flex:1"></span><span id="vtimer" class="vs-timer">00:00</span><button class="vicon" id="vfs" type="button" aria-label="fullscreen"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button></div>
+<div class="vs-head"><span class="vs-brand">6ix<span>Chat</span></span><span id="vstitle">call</span><span id="vcount"></span><span id="privbadge" class="vs-badge" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> private</span><span style="flex:1"></span><span id="vtimer" class="vs-timer">00:00</span><button class="vicon" id="vfs" type="button" aria-label="fullscreen"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button><button class="vicon" id="vpip" type="button" aria-label="picture in picture" style="margin-left:6px"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><rect x="12" y="12" width="7" height="5" rx="1.2" fill="currentColor" stroke="none"/></svg></button></div>
 <div id="vgrid"></div>
 <div id="joingate" style="display:none"><button class="btn" id="joinbtn" type="button">tap to join</button><div style="opacity:.65;font-size:13px;text-align:center;padding:0 30px">safari needs a tap before it hands over ur mic + camera</div></div>
 <div id="vmembers" style="display:none;gap:8px;flex-wrap:wrap;align-items:center"></div>
@@ -4776,7 +5065,7 @@ function makePc(pid){
     applyAudio();
   };
   pc.onconnectionstatechange = function(){
-    if(pc.connectionState === 'failed'){ vstatEl.textContent = 'couldnt reach somebody — retrying with a fresh route… strict networks (a lot of school wifi) block peer-to-peer; a different network usually fixes it'; if(myPid && myPid < pid){ try { pc.restartIce(); } catch(e){} } }
+    if(pc.connectionState === 'failed'){ pc.__rt = (pc.__rt || 0) + 1; vstatEl.textContent = pc.__rt >= 4 ? 'couldnt reach somebody — strict networks (a lot of school wifi) block peer-to-peer; a different network usually fixes it' : 'connection dropped — reconnecting…'; if(myPid && myPid < pid){ setTimeout(function(){ try { pc.restartIce(); } catch(e){} }, Math.min(4000, 900 * pc.__rt)); } }
     if(pc.connectionState === 'closed') closePc(pid);
   };
   return pc;
@@ -4963,6 +5252,21 @@ vdeafBtn.addEventListener('click', function(){ vDeaf = !vDeaf; applyAudio(); });
 vpttBtn.addEventListener('click', function(){ vPtt = !vPtt; paintCtl(); applyAudio(); });
 vcamBtn.addEventListener('click', toggleCam);
 vflipBtn.addEventListener('click', flipCam);
+var vpipBtn = document.getElementById('vpip');
+if (vpipBtn) vpipBtn.addEventListener('click', function () {
+  try {
+    if (document.pictureInPictureElement) { document.exitPictureInPicture(); return; }
+    var vids = document.querySelectorAll('#vgrid video'), target = null;
+    for (var i = 0; i < vids.length; i++) { if (vids[i].srcObject && !vids[i].muted) { target = vids[i]; break; } }
+    if (!target && vids.length) target = vids[0];
+    if (!target) return;
+    if (target.requestPictureInPicture) target.requestPictureInPicture().catch(function () {});
+    else if (target.webkitSetPresentationMode) target.webkitSetPresentationMode('picture-in-picture');
+  } catch (e) {}
+});
+function gxWake() { try { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(function () {}); } catch (e) {} }
+gxWake();
+document.addEventListener('visibilitychange', function () { if (!document.hidden) gxWake(); });
 vholdBtn.addEventListener('mousedown', function(){ pttDown = true; applyAudio(); });
 vholdBtn.addEventListener('mouseup', function(){ pttDown = false; applyAudio(); });
 vholdBtn.addEventListener('mouseleave', function(){ if(pttDown){ pttDown = false; applyAudio(); } });
@@ -5937,6 +6241,99 @@ function confParseReact(raw) {
 }
 
 // ===== v363 admin (owner account: deion) =====
+// ---------- web push: call alerts when the site is closed ----------
+// VAPID keys persist in the store (cfg:vapid) or come from env. Payloads are
+// encrypted per RFC 8291 (aes128gcm) with node crypto only — no deps.
+const PUSH = { pub: '', jwk: null, ready: false, loading: null };
+function b64u(buf) { return Buffer.from(buf).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function b64uDec(s) { return Buffer.from(String(s || '').replace(/-/g, '+').replace(/_/g, '/'), 'base64'); }
+function pushInit() {
+  if (PUSH.ready) return Promise.resolve(true);
+  if (PUSH.loading) return PUSH.loading;
+  PUSH.loading = (async () => {
+    try {
+      let saved = null;
+      if (process.env.VAPID_PUBLIC && process.env.VAPID_JWK) { saved = { pub: process.env.VAPID_PUBLIC, jwk: JSON.parse(process.env.VAPID_JWK) }; }
+      else {
+        const got = await storeCmd([['GET', 'cfg:vapid']], 6000);
+        if (got && got[0]) { try { saved = JSON.parse(got[0]); } catch {} }
+      }
+      if (!saved || !saved.pub || !saved.jwk) {
+        const kp = crypto.generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+        const jwk = kp.privateKey.export({ format: 'jwk' });
+        const pubDer = kp.publicKey.export({ type: 'spki', format: 'der' });
+        saved = { pub: b64u(pubDer.subarray(pubDer.length - 65)), jwk: { kty: jwk.kty, crv: jwk.crv, x: jwk.x, y: jwk.y, d: jwk.d } };
+        try { storeSet('cfg:vapid', JSON.stringify(saved)); } catch {}
+      }
+      PUSH.pub = saved.pub; PUSH.jwk = saved.jwk; PUSH.ready = true;
+      return true;
+    } catch { return false; }
+  })();
+  return PUSH.loading;
+}
+async function pushSubsFor(user) { try { const got = await storeCmd([['GET', 'push:' + user]], 6000); if (got && got[0]) { const a = JSON.parse(got[0]); if (Array.isArray(a)) return a; } } catch {} return []; }
+function pushSubsSave(user, subs) { try { storeSet('push:' + user, JSON.stringify((subs || []).slice(0, 5))); } catch {} }
+async function webPushSend(sub, payload, ttlSec) {
+  if (!(await pushInit())) return { status: 0 };
+  try {
+    const endpoint = String(sub.endpoint || '');
+    if (!/^https:\/\//i.test(endpoint)) return { status: 0 };
+    const aud = new URL(endpoint).origin;
+    const priv = crypto.createPrivateKey({ key: PUSH.jwk, format: 'jwk' });
+    const h64 = b64u(Buffer.from(JSON.stringify({ typ: 'JWT', alg: 'ES256' })));
+    const b64 = b64u(Buffer.from(JSON.stringify({ aud, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: 'mailto:deionmontoya1@gmail.com' })));
+    const sig = crypto.sign('sha256', Buffer.from(h64 + '.' + b64), { key: priv, dsaEncoding: 'ieee-p1363' });
+    const jwt = h64 + '.' + b64 + '.' + b64u(sig);
+    const uaPub = b64uDec(sub.keys && sub.keys.p256dh);
+    const authSecret = b64uDec(sub.keys && sub.keys.auth);
+    if (uaPub.length !== 65 || !authSecret.length) return { status: 0 };
+    const eph = crypto.generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+    const ephJwk = eph.privateKey.export({ format: 'jwk' });
+    const ecdh = crypto.createECDH('prime256v1');
+    ecdh.setPrivateKey(b64uDec(ephJwk.d));
+    const shared = ecdh.computeSecret(uaPub);
+    const ephDer = eph.publicKey.export({ type: 'spki', format: 'der' });
+    const asPub = ephDer.subarray(ephDer.length - 65);
+    const ikm = Buffer.from(crypto.hkdfSync('sha256', shared, authSecret, Buffer.concat([Buffer.from('WebPush: info\0', 'latin1'), uaPub, asPub]), 32));
+    const salt = crypto.randomBytes(16);
+    const prk = crypto.createHmac('sha256', salt).update(ikm).digest();
+    const cek = crypto.createHmac('sha256', prk).update(Buffer.concat([Buffer.from('Content-Encoding: aes128gcm\0', 'latin1'), Buffer.from([1])])).digest().subarray(0, 16);
+    const nonce = crypto.createHmac('sha256', prk).update(Buffer.concat([Buffer.from('Content-Encoding: nonce\0', 'latin1'), Buffer.from([1])])).digest().subarray(0, 12);
+    const plain = Buffer.concat([Buffer.from(JSON.stringify(payload), 'utf8'), Buffer.from([2])]);
+    const cipher = crypto.createCipheriv('aes-128-gcm', cek, nonce);
+    const ct = Buffer.concat([cipher.update(plain), cipher.final(), cipher.getAuthTag()]);
+    const rs = Buffer.alloc(4); rs.writeUInt32BE(4096);
+    const bodyBuf = Buffer.concat([salt, rs, Buffer.from([asPub.length]), asPub, ct]);
+    const r = await fetch(endpoint, { method: 'POST', headers: { 'content-type': 'application/octet-stream', 'content-encoding': 'aes128gcm', ttl: String(ttlSec || 60), urgency: 'high', topic: 'sixcall', authorization: 'vapid t=' + jwt + ', k=' + PUSH.pub }, body: bodyBuf });
+    return { status: r.status };
+  } catch { return { status: 0 }; }
+}
+async function sendEventPush(user, payload) {
+  try {
+    const subs = await pushSubsFor(user);
+    if (!subs.length) return;
+    const alive = [];
+    for (const s of subs) {
+      const r = await webPushSend(s, payload, 3600);
+      if (r.status !== 404 && r.status !== 410) alive.push(s);
+    }
+    if (alive.length !== subs.length) pushSubsSave(user, alive);
+  } catch {}
+}
+async function sendCallPush(user, callObj) {
+  try {
+    const subs = await pushSubsFor(user);
+    if (!subs.length) return;
+    const payload = { kind: 'call', from: callObj.from, fromName: callObj.fromName, mode: callObj.mode, room: callObj.room, ts: Date.now() };
+    const alive = [];
+    for (const s of subs) {
+      const r = await webPushSend(s, payload, 55);
+      if (r.status !== 404 && r.status !== 410) alive.push(s);
+    }
+    if (alive.length !== subs.length) pushSubsSave(user, alive);
+  } catch {}
+}
+
 const ADMIN_USERS = new Set(['deion']);
 function isAdminReq(req) { const u = voterUser(req); return !!u && ADMIN_USERS.has(String(u).toLowerCase()); }
 let confAuto = { mins: 0, last: 0 };
@@ -14183,7 +14580,15 @@ const reqMileSeen = new Map();
 function reqMilestone(item, before, after) { if (!item || !item.byUser) return; const hit = REQ_MILESTONES.filter((m) => before < m && after >= m && (reqMileSeen.get(item.id) || 0) < m); if (!hit.length) return; reqMileSeen.set(item.id, hit[hit.length - 1]); pushNotif(item.byUser.toLowerCase(), { type: 'req_milestone', from: 'six', fromName: 'six', text: '\u201C' + item.name + '\u201D just hit ' + after + ' votes on game requests' }); }
 const CALLS = new Map();
 const ICE_REPORTS = [];
-function pushNotif(lower, n) { const rec = ACCOUNTS.get(lower); if (!rec) return; if (!Array.isArray(rec.notifs)) rec.notifs = []; if (n.type === 'dm' && n.text) n.text = String(n.text).slice(0, 140); if (n.type === 'dm') { const ex = rec.notifs.find((x) => x.type === 'dm' && x.from === n.from && !x.read); if (ex) { ex.ts = Date.now(); ex.room = n.room; ex.text = n.text; persistAcct(lower); return; } } rec.notifs.unshift(Object.assign({ id: randHex(6), ts: Date.now(), read: false }, n)); rec.notifs = rec.notifs.slice(0, 30); persistAcct(lower); }
+function pushNotifInner(lower, n) { const rec = ACCOUNTS.get(lower); if (!rec) return; if (!Array.isArray(rec.notifs)) rec.notifs = []; if (n.type === 'dm' && n.text) n.text = String(n.text).slice(0, 140); if (n.type === 'dm') { const ex = rec.notifs.find((x) => x.type === 'dm' && x.from === n.from && !x.read); if (ex) { ex.ts = Date.now(); ex.room = n.room; ex.text = n.text; persistAcct(lower); return; } } rec.notifs.unshift(Object.assign({ id: randHex(6), ts: Date.now(), read: false }, n)); rec.notifs = rec.notifs.slice(0, 30); persistAcct(lower); }
+function pushNotif(lower, n) {
+  pushNotifInner(lower, n);
+  try {
+    if (n && (n.type === 'dm' || n.type === 'friend_req' || n.type === 'friend_acc' || n.type === 'call_missed' || n.type === 'req_milestone')) {
+      sendEventPush(lower, { kind: n.type === 'dm' ? 'dm' : 'event', type: n.type, from: n.from || '', fromName: n.fromName || n.from || '', text: n.text || '', room: n.room || '' });
+    }
+  } catch {}
+}
 function clearReqNotif(meRec, fromLower) { if (meRec && Array.isArray(meRec.notifs)) meRec.notifs = meRec.notifs.filter((x) => !(x.type === 'friend_req' && x.from === fromLower)); }
 function notifState(meName) {
   const lower = String(meName).toLowerCase(); const rec = ACCOUNTS.get(lower);
@@ -14490,6 +14895,59 @@ self.addEventListener("fetch", (event) => {
 });
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
+
+self.addEventListener('push', function (e) {
+  var data = {};
+  try { data = e.data ? e.data.json() : {}; } catch (err) {}
+  if (!data || !data.kind) return;
+  e.waitUntil((async function () {
+    var wins = [];
+    try { wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true }); } catch (err) {}
+    var anyVisible = false;
+    for (var i = 0; i < wins.length; i++) { if (wins[i].visibilityState === 'visible') anyVisible = true; }
+    if (anyVisible) { wins.forEach(function (w) { try { w.postMessage({ type: 'six-push', data: data }); } catch (err) {} }); return; }
+    var name = data.fromName || data.from || 'someone';
+    if (data.kind === 'call') {
+      try {
+        await self.registration.showNotification(name + ' is calling you', {
+          body: (data.mode === 'video' ? 'video call' : 'voice call') + ' - 6ixchat',
+          icon: '/icon-192.png', badge: '/icon-192.png', tag: 'six-call', renotify: true, requireInteraction: true,
+          vibrate: [220, 110, 220, 110, 320],
+          actions: [{ action: 'answer', title: 'Answer' }, { action: 'decline', title: 'Decline' }],
+          data: { peer: data.from || '', mode: data.mode || 'voice', room: data.room || '' }
+        });
+      } catch (err) {}
+      return;
+    }
+    var title = name, body = data.text || '', tag = 'six-ev', url = '/chat';
+    if (data.kind === 'dm') { body = data.text || 'sent u a message'; tag = 'six-dm-' + (data.from || ''); url = '/chat?room=' + encodeURIComponent(data.room || ''); }
+    else if (data.type === 'friend_req') { title = 'friend request'; body = name + ' wants to be friends'; tag = 'six-fr-' + (data.from || ''); }
+    else if (data.type === 'friend_acc') { title = 'new friend'; body = name + ' accepted ur friend request'; tag = 'six-fa-' + (data.from || ''); }
+    else if (data.type === 'call_missed') { title = 'missed call'; body = 'u missed a call from ' + name; tag = 'six-mc-' + (data.from || ''); }
+    else if (data.type === 'req_milestone') { title = 'game request'; body = data.text || 'ur request is heating up'; tag = 'six-req'; url = '/requests'; }
+    try {
+      await self.registration.showNotification(title, { body: body, icon: '/icon-192.png', badge: '/icon-192.png', tag: tag, renotify: true, data: { url: url } });
+    } catch (err) {}
+  })());
+});
+self.addEventListener('notificationclick', function (e) {
+  var d = (e.notification && e.notification.data) || {};
+  e.notification.close();
+  if (e.action === 'decline') {
+    e.waitUntil(fetch('/chat/respond', { method: 'POST', headers: { 'content-type': 'application/json' }, credentials: 'include', body: JSON.stringify({ accept: false }) }).catch(function () {}));
+    return;
+  }
+  var url = d.url ? d.url : '/chat?answercall=1&peer=' + encodeURIComponent(d.peer || '') + '&mode=' + encodeURIComponent(d.mode || 'voice');
+  e.waitUntil((async function () {
+    var wins = [];
+    try { wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true }); } catch (err) {}
+    for (var i = 0; i < wins.length; i++) {
+      try { await wins[i].focus(); try { await wins[i].navigate(url); } catch (err) {} return; } catch (err) {}
+    }
+    try { await self.clients.openWindow(url); } catch (err) {}
+  })());
+});
+
 `;
 // ---------- scramjet engine (v287 — rides again, this time next to uv, not instead of it) ----------
 let SJ_DIR = null;
@@ -15325,6 +15783,34 @@ const server = http.createServer(async (req, res) => {
     if (!voterUser(req)) { res.writeHead(403, { 'content-type': 'application/json' }); return res.end('{"ok":false}'); }
     res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ok: true, reports: ICE_REPORTS }));
   }
+    if (u.pathname === '/api/push/key' && req.method === 'GET') {
+    await pushInit();
+    res.writeHead(200, { 'content-type': 'application/json' });
+    return res.end(JSON.stringify({ ok: PUSH.ready, key: PUSH.pub || '' }));
+  }
+  if (u.pathname === '/api/push/sub' && req.method === 'POST') {
+    const b = await readJsonBody(req);
+    const me = voterUser(req);
+    res.writeHead(200, { 'content-type': 'application/json' });
+    if (!me) return res.end('{"ok":false,"error":"log in first"}');
+    const sub = { endpoint: String((b && b.endpoint) || ''), keys: { p256dh: String(b && b.keys && b.keys.p256dh || ''), auth: String(b && b.keys && b.keys.auth || '') } };
+    if (!/^https:\/\//i.test(sub.endpoint) || !sub.keys.p256dh || !sub.keys.auth) return res.end('{"ok":false,"error":"bad subscription"}');
+    const user = me.toLowerCase();
+    const subs = (await pushSubsFor(user)).filter(s => s.endpoint !== sub.endpoint);
+    subs.push(sub);
+    pushSubsSave(user, subs);
+    return res.end('{"ok":true}');
+  }
+  if (u.pathname === '/api/push/unsub' && req.method === 'POST') {
+    const b = await readJsonBody(req);
+    const me = voterUser(req);
+    res.writeHead(200, { 'content-type': 'application/json' });
+    if (!me) return res.end('{"ok":false}');
+    const user = me.toLowerCase();
+    const subs = (await pushSubsFor(user)).filter(s => s.endpoint !== String((b && b.endpoint) || ''));
+    pushSubsSave(user, subs);
+    return res.end('{"ok":true}');
+  }
   if (u.pathname === '/chat/ring' && req.method === 'POST') {
     const b = await readJsonBody(req);
     const me = voterUser(req);
@@ -15336,6 +15822,7 @@ const server = http.createServer(async (req, res) => {
     const mrec = ACCOUNTS.get(me.toLowerCase());
     const room = dmRoomFor(me, peer);
     CALLS.set(peer, { from: me.toLowerCase(), fromName: (mrec && (mrec.disp || mrec.name)) || me, room, mode, ts: Date.now(), state: 'ringing' });
+    sendCallPush(peer, { from: me.toLowerCase(), fromName: (mrec && (mrec.disp || mrec.name)) || me, mode, room });
     return res.end(JSON.stringify({ ok: true, room }));
   }
   if (u.pathname === '/chat/respond' && req.method === 'POST') {
