@@ -3790,6 +3790,7 @@ body[data-sky] .app6 .cr-item.on,body[data-sky] .app6 .cr-item.on:hover,body[dat
 <div id="frout" style="margin-top:10px"></div>
 </div>
 <div id="msgs"></div>
+<div id="admbar" hidden style="display:none;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 12px;border-top:1px solid rgba(240,171,252,.25);background:rgba(240,171,252,.05)"><span style="font-size:11.5px;font-weight:800;letter-spacing:.05em;color:#f0abfc">✦ ADMIN</span><button type="button" id="admClear" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">clear room</button><button type="button" id="admMute" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">mute user</button><button type="button" id="admUnmute" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">unmute</button><button type="button" id="admKick" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">kick user</button><span id="admMsg" style="font-size:12px;color:#8e8aa0"></span></div>
 <form class="bar" id="sendbar"><button type="button" id="attach" title="send an image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="vertical-align:-2px"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button><input type="text" id="text" placeholder="message…  (/ai asks six · /img draws · paste an image)" autocomplete="off" maxlength="500"><button type="submit" id="sendbtn" aria-label="send"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button></form>
 <input type="file" id="chatfile" accept="image/*" style="display:none">
 
@@ -3988,6 +3989,7 @@ function line(m){
   if (!grouped) {
     var head = document.createElement('div'); head.className = 'mhead';
     var b = document.createElement('b'); b.textContent = m.bot ? 'six ✦ ai' : (m.disp || m.name || 'anon'); b.addEventListener('click', function(){ openUser(m.name || 'anon', !!m.bot); }); head.appendChild(b);
+    if (!m.bot && (m.name || '').toLowerCase() === 'deion') { var at = document.createElement('span'); at.textContent = '✦ admin'; at.setAttribute('style', 'font-size:10.5px;font-weight:800;color:#f0abfc;border:1px solid rgba(240,171,252,.4);border-radius:999px;padding:1px 7px;letter-spacing:.04em'); head.appendChild(at); }
     if (m.ts) { var tm = document.createElement('span'); tm.className = 'mtime'; tm.textContent = msgTime(m.ts); head.appendChild(tm); }
     body.appendChild(head);
   }
@@ -4015,6 +4017,7 @@ function line(m){
     body.appendChild(im2);
   }
   d.appendChild(body);
+  if (window.__adm && m.id) { var delb = document.createElement('button'); delb.type = 'button'; delb.textContent = 'delete'; delb.setAttribute('style', 'align-self:flex-start;background:transparent;border:1px solid rgba(248,113,113,.4);color:#fca5a5;border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;margin-left:8px'); delb.addEventListener('click', function(){ admDelMsg(m.id, d); }); d.appendChild(delb); }
   var rx = document.createElement('div'); rx.className = 'reacts'; body.appendChild(rx); if (m.reacts) paintReacts(rx, m.reacts);
   msgsEl.appendChild(d);
   if (nearBottom) msgsEl.scrollTop = msgsEl.scrollHeight;
@@ -4095,6 +4098,8 @@ function handle(o){
   else if(o.type==='rtc'){ rtcMsg(o.from, o.data); }
   else if(o.type==='sys'){ line({sys:true, text:o.text}); }
   else if(o.type==='react'){ applyReacts(o.id, o.reacts); }
+  else if(o.type==='del'){ var de2 = msgsEl.querySelector('[data-mid="' + o.id + '"]'); if (de2) de2.remove(); }
+  else if(o.type==='clear'){ msgsEl.innerHTML = ''; }
   else if(o.type==='sixtyping'){ sixTyping(); }
 }
 
@@ -4121,6 +4126,21 @@ var typingTimer = null, presCache = '';
 function sixTyping(){ if (!typingTimer) presCache = presEl.textContent; presEl.textContent = 'six is typing…'; clearTimeout(typingTimer); typingTimer = setTimeout(sixTypingDone, 9000); }
 function sixTypingDone(){ if (typingTimer) { clearTimeout(typingTimer); typingTimer = null; if (presEl.textContent === 'six is typing…') presEl.textContent = presCache || 'live ✦'; } }
 
+function admPost(path, body){ return fetch(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body || {}) }).then(function (r) { return r.json(); }); }
+function admDelMsg(id, el){ admPost('/api/admin/chat/del', { room: room, id: id }).then(function () { if (el) el.remove(); }).catch(function () {}); }
+function admInit(){
+  fetch('/api/admin/state').then(function (r) { return r.json(); }).then(function (o) {
+    if (!o || !o.admin) return;
+    window.__adm = true;
+    var bar = document.getElementById('admbar'); if (bar) { bar.hidden = false; bar.style.display = 'flex'; }
+    if (o.mutes && o.mutes.length) document.getElementById('admMsg').textContent = 'muted: ' + o.mutes.join(', ');
+  }).catch(function () {});
+  var bc = document.getElementById('admClear'); if (bc) bc.addEventListener('click', function () { if (!confirm('clear this whole room?')) return; admPost('/api/admin/chat/clear', { room: room }).then(function () { msgsEl.innerHTML = ''; document.getElementById('admMsg').textContent = 'room cleared'; }).catch(function () {}); });
+  var bm = document.getElementById('admMute'); if (bm) bm.addEventListener('click', function () { var un = prompt('mute who? (username)'); if (!un) return; var mins = parseInt(prompt('how many minutes?', '10') || '10', 10) || 10; admPost('/api/admin/chat/mute', { user: un, mins: mins }).then(function () { document.getElementById('admMsg').textContent = 'muted ' + un + ' for ' + mins + 'm'; }).catch(function () {}); });
+  var bu = document.getElementById('admUnmute'); if (bu) bu.addEventListener('click', function () { var un = prompt('unmute who? (username)'); if (!un) return; admPost('/api/admin/chat/unmute', { user: un }).then(function () { document.getElementById('admMsg').textContent = 'unmuted ' + un; }).catch(function () {}); });
+  var bk = document.getElementById('admKick'); if (bk) bk.addEventListener('click', function () { var un = prompt('kick who? (username)'); if (!un) return; admPost('/api/admin/chat/kick', { user: un }).then(function (o) { document.getElementById('admMsg').textContent = 'kicked ' + ((o && o.kicked) || 0) + ' session(s)'; }).catch(function () {}); });
+}
+admInit();
 function connect(){
   stopPoll();
   try { ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/chat/ws?room='+encodeURIComponent(room)+'&name='+encodeURIComponent(curName())+(dmPeer?'&peer='+encodeURIComponent(dmPeer):'')+(myProfile.hue!=null?'&hue='+myProfile.hue:'')); }
@@ -5915,6 +5935,21 @@ function confParseReact(raw) {
   return { r, heat };
 }
 
+// ===== v363 admin (owner account: deion) =====
+const ADMIN_USERS = new Set(['deion']);
+function isAdminReq(req) { const u = voterUser(req); return !!u && ADMIN_USERS.has(String(u).toLowerCase()); }
+let confAuto = { mins: 0, last: 0 };
+let confAutoLoaded = false;
+async function confAutoLoad() { if (confAutoLoaded) return; confAutoLoaded = true; try { const got = await storeCmd([['GET', 'cfg:confessauto']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o) { confAuto.mins = [0, 60, 1440].includes(o.mins) ? o.mins : 0; confAuto.last = o.last || 0; } } } catch {} }
+function confAutoSave() { try { storeSet('cfg:confessauto', JSON.stringify(confAuto)); } catch {} }
+function confWipe() { confList = []; try { confPersist(); } catch {} }
+setInterval(async () => { try { await confAutoLoad(); if (confAuto.mins > 0) { await confLoad(); if (!confAuto.last) { confAuto.last = Date.now(); confAutoSave(); return; } if (Date.now() - confAuto.last >= confAuto.mins * 60000) { confWipe(); confAuto.last = Date.now(); confAutoSave(); } } } catch {} }, 60000);
+const CHAT_MUTES = new Map();
+function chatMuteLeft(name) { const k = String(name || '').toLowerCase(); if (!k) return 0; const exp = CHAT_MUTES.get(k); if (!exp) return 0; const left = exp - Date.now(); if (left <= 0) { CHAT_MUTES.delete(k); return 0; } return left; }
+function chatDelMsg(roomName, id) { const room = chatRoomOf(roomName); const sid = String(id || '').slice(0, 24); const ix = room.msgs.findIndex(m => m.id === sid); if (ix < 0) return false; room.msgs.splice(ix, 1); persistChatRoom(roomName); chatBroadcast(room, { type: 'del', id: sid }); return true; }
+function chatClearRoom(roomName) { const room = chatRoomOf(roomName); room.msgs = []; persistChatRoom(roomName); chatBroadcast(room, { type: 'clear' }); }
+function chatKickUser(lower) { let n = 0; for (const room of CHAT_ROOMS.values()) { for (const [sk, p] of room.peers) { if (p && String(p.name || '').toLowerCase() === lower) { try { sk.write(wsEncode(JSON.stringify({ type: 'sys', text: 'u got kicked by admin' }))); } catch {} try { sk.end(); } catch {} n++; } } } return n; }
+
 function newsPage() {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
@@ -6103,6 +6138,12 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .cfhot{margin-left:auto;display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid rgba(255,255,255,.14);color:#d8d3e4;border-radius:999px;padding:6px 13px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
 .cfhot.on{border-color:rgba(240,171,252,.5);color:#f0abfc}
 .cfempty{color:#8e8aa0;font-size:14px}
+#cfAdm{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:rgba(240,171,252,.07);border:1px solid rgba(240,171,252,.35);border-radius:14px;padding:10px 12px;margin:0 0 14px}
+#cfAdm .admt{font-size:12px;font-weight:800;letter-spacing:.05em;color:#f0abfc}
+.admbtn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.admbtn.danger{border-color:rgba(248,113,113,.55);color:#fca5a5}
+#cfAdm select{background:#14101f;color:#f4f4f5;border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:7px 10px;font-size:13px;font-family:inherit}
+.cfdel{background:transparent;border:1px solid rgba(248,113,113,.45);color:#fca5a5;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
 </style></head>
 <body>${STAR_CANVAS}
 <div class="wrap">
@@ -6113,6 +6154,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <textarea id="cfText" maxlength="300" placeholder="drop ur confession…"></textarea>
 <div class="cfrow"><span class="cfcount" id="cfCount">0 / 280</span><span class="cfmsg" id="cfMsg"></span><button id="cfPost" type="submit">post</button></div>
 </form>
+<div id="cfAdm" hidden><span class="admt">✦ ADMIN</span><button class="admbtn danger" id="cfClear" type="button">clear all confessions</button><label style="font-size:13px;color:#b9b4c9">auto-clear <select id="cfAuto"><option value="0">off</option><option value="60">every hour</option><option value="1440">every day</option></select></label><span id="cfAdmMsg" style="font-size:12.5px;color:#8e8aa0"></span></div>
 <div id="cfFeed"></div>
 <p class="cfempty" id="cfEmpty" hidden>nothing yet</p>
 </div>
@@ -6131,7 +6173,7 @@ function cardHtml(c){
     (c.id === cfPin ? '<div class="cfpin">✦ PINNED BY SIX</div>' : '') +
     '<div class="cft">' + esc(c.t) + '</div>' +
     (c.r ? '<div class="cfr"><b>six</b> · ' + esc(c.r) + '</div>' : '') +
-    '<div class="cfmeta"><span class="cftime">' + ago(c.ts) + '</span>' +
+    '<div class="cfmeta"><span class="cftime">' + ago(c.ts) + '</span>' + (window.__adm ? '<button class="cfdel" type="button" data-del="' + c.id + '">delete</button>' : '') +
     '<button class="cfhot' + (mine ? ' on' : '') + '" type="button" data-id="' + c.id + '"' + (mine ? ' disabled' : '') + '>' + FLAME + '<span>' + (c.hot || 0) + '</span></button></div></div>';
 }
 function renderCf(o){
@@ -6158,12 +6200,30 @@ document.getElementById('cfForm').addEventListener('submit', function (ev) {
   }).catch(function () { btn.disabled = false; msg.textContent = 'didnt go thru'; });
 });
 document.getElementById('cfFeed').addEventListener('click', function (ev) {
+  var db = ev.target && ev.target.closest ? ev.target.closest('.cfdel') : null;
+  if (db) { var did = db.getAttribute('data-del'); db.disabled = true; fetch('/api/admin/confess/del', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: did }) }).then(function () { loadCf(); }).catch(function () {}); return; }
   var b = ev.target && ev.target.closest ? ev.target.closest('.cfhot') : null;
   if (!b || b.disabled) return;
   var id = b.getAttribute('data-id');
   b.disabled = true; b.className = 'cfhot on';
   var set = hotSet(); set.push(id); try { localStorage.setItem('cf_hot', JSON.stringify(set)); } catch (e) {}
   fetch('/api/confess/hot', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: id }) }).then(function (r) { return r.json(); }).then(function (o) { if (o && o.ok) b.querySelector('span').textContent = o.hot; }).catch(function () {});
+});
+fetch('/api/admin/state').then(function (r) { return r.json(); }).then(function (o) {
+  if (!o || !o.admin) return;
+  window.__adm = true;
+  document.getElementById('cfAdm').hidden = false;
+  document.getElementById('cfAuto').value = String(o.confessAuto || 0);
+  loadCf();
+}).catch(function () {});
+var cfClearBtn = document.getElementById('cfClear');
+if (cfClearBtn) cfClearBtn.addEventListener('click', function () {
+  if (!confirm('wipe ALL confessions?')) return;
+  fetch('/api/admin/confess/clear', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).then(function () { document.getElementById('cfAdmMsg').textContent = 'wiped'; loadCf(); }).catch(function () {});
+});
+var cfAutoSel = document.getElementById('cfAuto');
+if (cfAutoSel) cfAutoSel.addEventListener('change', function () {
+  fetch('/api/admin/confess/auto', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mins: parseInt(cfAutoSel.value, 10) || 0 }) }).then(function (r) { return r.json(); }).then(function (o) { document.getElementById('cfAdmMsg').textContent = (o && o.confessAuto) ? 'auto-clear on' : 'auto-clear off'; }).catch(function () {});
 });
 loadCf();
 </script>
@@ -14142,6 +14202,8 @@ function chatUpgrade(req, socket) {
       if (b && b.type === 'rtc-leave') { const p = room.peers.get(socket); if (p) { p.voice = false; chatVoiceList(roomName); } return; }
       if (b && b.type === 'rtc' && b.to) { const me = room.peers.get(socket); for (const [sk, p] of room.peers) { if (p.pid === String(b.to).slice(0, 16)) { try { sk.write(wsEncode(JSON.stringify({ type: 'rtc', from: me ? me.pid : '', data: b.data }))); } catch {} break; } } return; }
       const now = Date.now(); if (now - last < 300) return; last = now;
+      const muteLeft = Math.max(chatMuteLeft(name), chatMuteLeft(voterUser(req)));
+      if (muteLeft > 0) { try { socket.write(wsEncode(JSON.stringify({ type: 'sys', text: 'ur muted — ' + Math.ceil(muteLeft / 60000) + ' min left' }))); } catch {} return; }
       const text = cleanText(b.text); if (!text) return;
       chatPost(roomName, stampMsg({ name, text, ts: now, bot: false }, prof));
       if (roomName.indexOf('dm-') === 0) { const vu = voterUser(req); const pr = String(u.searchParams.get('peer') || '').toLowerCase(); if (vu && pr) pushNotif(pr, { type: 'dm', from: vu.toLowerCase(), fromName: (ACCOUNTS.get(vu.toLowerCase()) || {}).disp || vu, room: roomName, text: text }); }
@@ -14558,6 +14620,26 @@ const server = http.createServer(async (req, res) => {
     if (it) { it.hot = (it.hot || 0) + 1; confPersist(); }
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end(JSON.stringify({ ok: true, hot: it ? it.hot : 0 }));
+  }
+  if (u.pathname === '/api/admin/state' && req.method === 'GET') {
+    const adm = isAdminReq(req);
+    if (adm) await confAutoLoad();
+    res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-cache' });
+    return res.end(JSON.stringify({ ok: true, admin: adm, confessAuto: confAuto.mins, mutes: [...CHAT_MUTES.keys()] }));
+  }
+  if (u.pathname.startsWith('/api/admin/') && req.method === 'POST') {
+    if (!isAdminReq(req)) { res.writeHead(403, { 'content-type': 'application/json' }); return res.end('{"ok":false,"error":"not admin"}'); }
+    const b = await readJsonBody(req);
+    const done = (o) => { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify(o || { ok: true })); };
+    if (u.pathname === '/api/admin/confess/clear') { await confLoad(); confWipe(); return done(); }
+    if (u.pathname === '/api/admin/confess/del') { await confLoad(); const id = String(b.id || ''); const before = (confList || []).length; confList = (confList || []).filter(c => c.id !== id); if (confList.length !== before) confPersist(); return done({ ok: confList.length !== before }); }
+    if (u.pathname === '/api/admin/confess/auto') { await confAutoLoad(); const m = [0, 60, 1440].includes(b.mins) ? b.mins : 0; confAuto.mins = m; confAuto.last = Date.now(); confAutoSave(); return done({ ok: true, confessAuto: m }); }
+    if (u.pathname === '/api/admin/chat/clear') { chatClearRoom(cleanRoom(b.room)); return done(); }
+    if (u.pathname === '/api/admin/chat/del') { return done({ ok: chatDelMsg(cleanRoom(b.room), String(b.id || '')) }); }
+    if (u.pathname === '/api/admin/chat/mute') { const un = String(b.user || '').toLowerCase().replace(/[^a-z0-9_]/g, ''); const mins = Math.max(1, Math.min(1440, parseInt(b.mins, 10) || 10)); if (un) CHAT_MUTES.set(un, Date.now() + mins * 60000); return done({ ok: !!un }); }
+    if (u.pathname === '/api/admin/chat/unmute') { CHAT_MUTES.delete(String(b.user || '').toLowerCase()); return done(); }
+    if (u.pathname === '/api/admin/chat/kick') { const un = String(b.user || '').toLowerCase(); return done({ ok: true, kicked: un ? chatKickUser(un) : 0 }); }
+    res.writeHead(404, { 'content-type': 'application/json' }); return res.end('{"ok":false}');
   }
   if (u.pathname === '/api/splash/next' && req.method === 'GET') {
     const tier = SPLASH_TIERS.includes(u.searchParams.get('tier')) ? u.searchParams.get('tier') : 'fresh';
@@ -15053,6 +15135,7 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/chat/send' && req.method === 'POST') {
     const b = await readJsonBody(req, 3000000);
     if (!dmAccess(req, cleanRoom(b.room), b.peer)) { res.writeHead(403, { 'content-type': 'application/json' }); return res.end('{"ok":false,"error":"dm locked"}'); }
+    if (chatMuteLeft(voterUser(req)) > 0 || chatMuteLeft(chatProfileNode(req, b.name, b.hue).name) > 0) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end('{"ok":false,"error":"muted"}'); }
     const text = cleanText(b.text);
     let img = null;
     if (typeof b.img === 'string' && b.img.startsWith('data:image/') && b.img.length <= 2800000) img = b.img;
