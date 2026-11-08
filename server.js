@@ -3228,7 +3228,20 @@ gf.addEventListener('load', function(){ setTimeout(check, 4000); });
   arm();
 })();
 </script>
-<script>window.onGxEng=function(){ location.reload(); };</script><script>${ENG_JS}</script></body>
+<script>(function(){
+var gf=document.getElementById('gf'); if(!gf) return;
+function uvDec(s){ try{ s=decodeURIComponent(s); }catch(e){} var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return o; }
+function uvEnc(s){ var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return encodeURIComponent(o); }
+function decUrl(h){ if(!h) return ''; var i=h.indexOf('/sj/service/'); if(i>=0){ var r=h.slice(i+12); try{ return decodeURIComponent(r); }catch(e){ return r; } } var j=h.indexOf('/uv/service/'); if(j>=0) return uvDec(h.slice(j+12)); return h; }
+function rbxId(u){ if(!u) return ''; var rest=u; var p=u.indexOf('://'); if(p>=0) rest=u.slice(p+3); var sl=rest.indexOf('/'); var host= sl>=0? rest.slice(0,sl) : rest; if(host.indexOf('roblox.com')<0) return ''; var g=rest.indexOf('/games/'); if(g<0) return ''; var d=''; var k=g+7; while(k<rest.length){ var c=rest.charAt(k); if(c>='0'&&c<='9'){ d+=c; k++; } else break; } return d; }
+function goPlay(id){ var target='https://play.roblox.com/games/start?placeId='+id; var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){} if(cur.indexOf('/uv/service/')>=0){ gf.src='/uv/service/'+uvEnc(target); return; } gf.src='/sj/service/'+encodeURIComponent(target); }
+var lastDec='';
+function pollUrl(){ var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){ return; } var dec=decUrl(cur); if(lastDec && dec!==lastDec){ var id=rbxId(dec); if(id){ lastDec=dec; goPlay(id); return; } } lastDec=dec; }
+function onClick(e){ if(e.defaultPrevented) return; if(e.button!==undefined && e.button!==0) return; if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey) return; var t=e.target; var a=null; while(t){ if(t.tagName==='A'){ a=t; break; } t=t.parentNode; } if(!a) return; var id=rbxId(decUrl(a.href||'')); if(!id) return; e.preventDefault(); e.stopPropagation(); goPlay(id); }
+function hook(){ try{ var d=gf.contentDocument; if(d && !d.__gxRbx){ d.__gxRbx=1; d.addEventListener('click', onClick, true); } }catch(e){} pollUrl(); }
+gf.addEventListener('load', hook);
+setInterval(hook, 900);
+})();</script><script>window.onGxEng=function(){ location.reload(); };</script><script>${ENG_JS}</script></body>
 </html>`;
 }
 
@@ -3303,7 +3316,20 @@ gf.addEventListener('load', function(){ setTimeout(check, 4000); });
   arm();
 })();
 </script>
-<script>window.onGxEng=function(){ location.reload(); };</script><script>${ENG_JS}</script></body>
+<script>(function(){
+var gf=document.getElementById('gf'); if(!gf) return;
+function uvDec(s){ try{ s=decodeURIComponent(s); }catch(e){} var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return o; }
+function uvEnc(s){ var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return encodeURIComponent(o); }
+function decUrl(h){ if(!h) return ''; var i=h.indexOf('/sj/service/'); if(i>=0){ var r=h.slice(i+12); try{ return decodeURIComponent(r); }catch(e){ return r; } } var j=h.indexOf('/uv/service/'); if(j>=0) return uvDec(h.slice(j+12)); return h; }
+function rbxId(u){ if(!u) return ''; var rest=u; var p=u.indexOf('://'); if(p>=0) rest=u.slice(p+3); var sl=rest.indexOf('/'); var host= sl>=0? rest.slice(0,sl) : rest; if(host.indexOf('roblox.com')<0) return ''; var g=rest.indexOf('/games/'); if(g<0) return ''; var d=''; var k=g+7; while(k<rest.length){ var c=rest.charAt(k); if(c>='0'&&c<='9'){ d+=c; k++; } else break; } return d; }
+function goPlay(id){ var target='https://play.roblox.com/games/start?placeId='+id; var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){} if(cur.indexOf('/uv/service/')>=0){ gf.src='/uv/service/'+uvEnc(target); return; } gf.src='/sj/service/'+encodeURIComponent(target); }
+var lastDec='';
+function pollUrl(){ var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){ return; } var dec=decUrl(cur); if(lastDec && dec!==lastDec){ var id=rbxId(dec); if(id){ lastDec=dec; goPlay(id); return; } } lastDec=dec; }
+function onClick(e){ if(e.defaultPrevented) return; if(e.button!==undefined && e.button!==0) return; if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey) return; var t=e.target; var a=null; while(t){ if(t.tagName==='A'){ a=t; break; } t=t.parentNode; } if(!a) return; var id=rbxId(decUrl(a.href||'')); if(!id) return; e.preventDefault(); e.stopPropagation(); goPlay(id); }
+function hook(){ try{ var d=gf.contentDocument; if(d && !d.__gxRbx){ d.__gxRbx=1; d.addEventListener('click', onClick, true); } }catch(e){} pollUrl(); }
+gf.addEventListener('load', hook);
+setInterval(hook, 900);
+})();</script><script>window.onGxEng=function(){ location.reload(); };</script><script>${ENG_JS}</script></body>
 </html>`;
 }
 function sjWarmPage(target) {
@@ -3401,7 +3427,20 @@ gf.addEventListener('load', function(){ setTimeout(check, 4000); });
   arm();
 })();
 </script>
-<script>window.onGxEng=function(){ location.reload(); };</script><script>${ENG_JS}</script></body>
+<script>(function(){
+var gf=document.getElementById('gf'); if(!gf) return;
+function uvDec(s){ try{ s=decodeURIComponent(s); }catch(e){} var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return o; }
+function uvEnc(s){ var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return encodeURIComponent(o); }
+function decUrl(h){ if(!h) return ''; var i=h.indexOf('/sj/service/'); if(i>=0){ var r=h.slice(i+12); try{ return decodeURIComponent(r); }catch(e){ return r; } } var j=h.indexOf('/uv/service/'); if(j>=0) return uvDec(h.slice(j+12)); return h; }
+function rbxId(u){ if(!u) return ''; var rest=u; var p=u.indexOf('://'); if(p>=0) rest=u.slice(p+3); var sl=rest.indexOf('/'); var host= sl>=0? rest.slice(0,sl) : rest; if(host.indexOf('roblox.com')<0) return ''; var g=rest.indexOf('/games/'); if(g<0) return ''; var d=''; var k=g+7; while(k<rest.length){ var c=rest.charAt(k); if(c>='0'&&c<='9'){ d+=c; k++; } else break; } return d; }
+function goPlay(id){ var target='https://play.roblox.com/games/start?placeId='+id; var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){} if(cur.indexOf('/uv/service/')>=0){ gf.src='/uv/service/'+uvEnc(target); return; } gf.src='/sj/service/'+encodeURIComponent(target); }
+var lastDec='';
+function pollUrl(){ var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){ return; } var dec=decUrl(cur); if(lastDec && dec!==lastDec){ var id=rbxId(dec); if(id){ lastDec=dec; goPlay(id); return; } } lastDec=dec; }
+function onClick(e){ if(e.defaultPrevented) return; if(e.button!==undefined && e.button!==0) return; if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey) return; var t=e.target; var a=null; while(t){ if(t.tagName==='A'){ a=t; break; } t=t.parentNode; } if(!a) return; var id=rbxId(decUrl(a.href||'')); if(!id) return; e.preventDefault(); e.stopPropagation(); goPlay(id); }
+function hook(){ try{ var d=gf.contentDocument; if(d && !d.__gxRbx){ d.__gxRbx=1; d.addEventListener('click', onClick, true); } }catch(e){} pollUrl(); }
+gf.addEventListener('load', hook);
+setInterval(hook, 900);
+})();</script><script>window.onGxEng=function(){ location.reload(); };</script><script>${ENG_JS}</script></body>
 </html>`;
 }
 function appPlayPageSj(u, t, backHref, backLabel) {
@@ -3469,7 +3508,20 @@ gf.addEventListener('load', function(){ setTimeout(check, 4000); });
   arm();
 })();
 </script>
-<script>window.onGxEng=function(){ location.reload(); };</script><script>${ENG_JS}</script></body>
+<script>(function(){
+var gf=document.getElementById('gf'); if(!gf) return;
+function uvDec(s){ try{ s=decodeURIComponent(s); }catch(e){} var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return o; }
+function uvEnc(s){ var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return encodeURIComponent(o); }
+function decUrl(h){ if(!h) return ''; var i=h.indexOf('/sj/service/'); if(i>=0){ var r=h.slice(i+12); try{ return decodeURIComponent(r); }catch(e){ return r; } } var j=h.indexOf('/uv/service/'); if(j>=0) return uvDec(h.slice(j+12)); return h; }
+function rbxId(u){ if(!u) return ''; var rest=u; var p=u.indexOf('://'); if(p>=0) rest=u.slice(p+3); var sl=rest.indexOf('/'); var host= sl>=0? rest.slice(0,sl) : rest; if(host.indexOf('roblox.com')<0) return ''; var g=rest.indexOf('/games/'); if(g<0) return ''; var d=''; var k=g+7; while(k<rest.length){ var c=rest.charAt(k); if(c>='0'&&c<='9'){ d+=c; k++; } else break; } return d; }
+function goPlay(id){ var target='https://play.roblox.com/games/start?placeId='+id; var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){} if(cur.indexOf('/uv/service/')>=0){ gf.src='/uv/service/'+uvEnc(target); return; } gf.src='/sj/service/'+encodeURIComponent(target); }
+var lastDec='';
+function pollUrl(){ var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){ return; } var dec=decUrl(cur); if(lastDec && dec!==lastDec){ var id=rbxId(dec); if(id){ lastDec=dec; goPlay(id); return; } } lastDec=dec; }
+function onClick(e){ if(e.defaultPrevented) return; if(e.button!==undefined && e.button!==0) return; if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey) return; var t=e.target; var a=null; while(t){ if(t.tagName==='A'){ a=t; break; } t=t.parentNode; } if(!a) return; var id=rbxId(decUrl(a.href||'')); if(!id) return; e.preventDefault(); e.stopPropagation(); goPlay(id); }
+function hook(){ try{ var d=gf.contentDocument; if(d && !d.__gxRbx){ d.__gxRbx=1; d.addEventListener('click', onClick, true); } }catch(e){} pollUrl(); }
+gf.addEventListener('load', hook);
+setInterval(hook, 900);
+})();</script><script>window.onGxEng=function(){ location.reload(); };</script><script>${ENG_JS}</script></body>
 </html>`;
 }
 
@@ -3523,7 +3575,20 @@ gf.addEventListener('load', function(){ setTimeout(check, 3000); });
 arm();
 </script>
 <script>${NOTIF_JS}</script>
-<script>window.onGxEng=function(){ location.reload(); };</script><script>${ENG_JS}</script></body>
+<script>(function(){
+var gf=document.getElementById('gf'); if(!gf) return;
+function uvDec(s){ try{ s=decodeURIComponent(s); }catch(e){} var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return o; }
+function uvEnc(s){ var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return encodeURIComponent(o); }
+function decUrl(h){ if(!h) return ''; var i=h.indexOf('/sj/service/'); if(i>=0){ var r=h.slice(i+12); try{ return decodeURIComponent(r); }catch(e){ return r; } } var j=h.indexOf('/uv/service/'); if(j>=0) return uvDec(h.slice(j+12)); return h; }
+function rbxId(u){ if(!u) return ''; var rest=u; var p=u.indexOf('://'); if(p>=0) rest=u.slice(p+3); var sl=rest.indexOf('/'); var host= sl>=0? rest.slice(0,sl) : rest; if(host.indexOf('roblox.com')<0) return ''; var g=rest.indexOf('/games/'); if(g<0) return ''; var d=''; var k=g+7; while(k<rest.length){ var c=rest.charAt(k); if(c>='0'&&c<='9'){ d+=c; k++; } else break; } return d; }
+function goPlay(id){ var target='https://play.roblox.com/games/start?placeId='+id; var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){} if(cur.indexOf('/uv/service/')>=0){ gf.src='/uv/service/'+uvEnc(target); return; } gf.src='/sj/service/'+encodeURIComponent(target); }
+var lastDec='';
+function pollUrl(){ var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){ return; } var dec=decUrl(cur); if(lastDec && dec!==lastDec){ var id=rbxId(dec); if(id){ lastDec=dec; goPlay(id); return; } } lastDec=dec; }
+function onClick(e){ if(e.defaultPrevented) return; if(e.button!==undefined && e.button!==0) return; if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey) return; var t=e.target; var a=null; while(t){ if(t.tagName==='A'){ a=t; break; } t=t.parentNode; } if(!a) return; var id=rbxId(decUrl(a.href||'')); if(!id) return; e.preventDefault(); e.stopPropagation(); goPlay(id); }
+function hook(){ try{ var d=gf.contentDocument; if(d && !d.__gxRbx){ d.__gxRbx=1; d.addEventListener('click', onClick, true); } }catch(e){} pollUrl(); }
+gf.addEventListener('load', hook);
+setInterval(hook, 900);
+})();</script><script>window.onGxEng=function(){ location.reload(); };</script><script>${ENG_JS}</script></body>
 </html>`;
 }
 
@@ -3577,7 +3642,20 @@ gf.addEventListener('load', function(){ setTimeout(check, 3000); });
 arm();
 </script>
 <script>${NOTIF_JS}</script>
-<script>window.onGxEng=function(){ location.reload(); };</script><script>${ENG_JS}</script></body>
+<script>(function(){
+var gf=document.getElementById('gf'); if(!gf) return;
+function uvDec(s){ try{ s=decodeURIComponent(s); }catch(e){} var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return o; }
+function uvEnc(s){ var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return encodeURIComponent(o); }
+function decUrl(h){ if(!h) return ''; var i=h.indexOf('/sj/service/'); if(i>=0){ var r=h.slice(i+12); try{ return decodeURIComponent(r); }catch(e){ return r; } } var j=h.indexOf('/uv/service/'); if(j>=0) return uvDec(h.slice(j+12)); return h; }
+function rbxId(u){ if(!u) return ''; var rest=u; var p=u.indexOf('://'); if(p>=0) rest=u.slice(p+3); var sl=rest.indexOf('/'); var host= sl>=0? rest.slice(0,sl) : rest; if(host.indexOf('roblox.com')<0) return ''; var g=rest.indexOf('/games/'); if(g<0) return ''; var d=''; var k=g+7; while(k<rest.length){ var c=rest.charAt(k); if(c>='0'&&c<='9'){ d+=c; k++; } else break; } return d; }
+function goPlay(id){ var target='https://play.roblox.com/games/start?placeId='+id; var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){} if(cur.indexOf('/uv/service/')>=0){ gf.src='/uv/service/'+uvEnc(target); return; } gf.src='/sj/service/'+encodeURIComponent(target); }
+var lastDec='';
+function pollUrl(){ var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){ return; } var dec=decUrl(cur); if(lastDec && dec!==lastDec){ var id=rbxId(dec); if(id){ lastDec=dec; goPlay(id); return; } } lastDec=dec; }
+function onClick(e){ if(e.defaultPrevented) return; if(e.button!==undefined && e.button!==0) return; if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey) return; var t=e.target; var a=null; while(t){ if(t.tagName==='A'){ a=t; break; } t=t.parentNode; } if(!a) return; var id=rbxId(decUrl(a.href||'')); if(!id) return; e.preventDefault(); e.stopPropagation(); goPlay(id); }
+function hook(){ try{ var d=gf.contentDocument; if(d && !d.__gxRbx){ d.__gxRbx=1; d.addEventListener('click', onClick, true); } }catch(e){} pollUrl(); }
+gf.addEventListener('load', hook);
+setInterval(hook, 900);
+})();</script><script>window.onGxEng=function(){ location.reload(); };</script><script>${ENG_JS}</script></body>
 </html>`;
 }
 
