@@ -15389,7 +15389,13 @@ try {
   const wmod = require('@mercuryworkshop/wisp-js/server');
   SJ_WISP = wmod.server;
   try { if (wmod.logging) wmod.logging.set_level(process.env.WISP_LOG ? (wmod.logging[process.env.WISP_LOG] ?? wmod.logging.NONE) : wmod.logging.NONE); } catch (e) {}
-  try { Object.assign(SJ_WISP.options, { allow_private_ips: true, allow_udp_streams: false, dns_servers: ['1.1.1.1', '1.0.0.1'], hostname_blacklist: [/^localhost$/, /^127\./, /^10\./, /^192\.168\./, /^172\.(1[6-9]|2[0-9]|3[01])\./, /^::1$/, /\.local$/] }); } catch (e) {}
+  // v388 SECURITY: allow_private_ips was TRUE here, which disabled wisp-js's
+  // resolved-IP check entirely - the hostname_blacklist only string-matches
+  // the name asked for, so any public name resolving onto the LAN (or an
+  // encoded IP form) sailed straight into his home network. false = the
+  // library default: every destination's resolved address is range-checked
+  // before a socket opens. blacklist stays as a first layer.
+  try { Object.assign(SJ_WISP.options, { allow_private_ips: false, allow_udp_streams: false, dns_servers: ['1.1.1.1', '1.0.0.1'], hostname_blacklist: [/^localhost$/, /^127\./, /^10\./, /^192\.168\./, /^172\.(1[6-9]|2[0-9]|3[01])\./, /^::1$/, /\.local$/] }); } catch (e) {}
   try { if (!SJ_WISP || typeof SJ_WISP.routeRequest !== 'function') { const wsn = require('wisp-server-node'); if (wsn && typeof wsn.routeRequest === 'function') { SJ_WISP = wsn; SJ_WISP_IMPL = 'wisp-server-node'; } } else SJ_WISP_IMPL = 'wisp-js'; } catch (e) { SJ_WISP_IMPL = 'wisp-js'; }
   try { SJ_BAREMUX_DIR = require('@mercuryworkshop/bare-mux/node').baremuxPath; } catch (e) { SJ_BAREMUX_DIR = path2.join(path2.dirname(require.resolve('@mercuryworkshop/bare-mux')), 'dist'); }
   SJ_EPOXY_DIR = (() => { const cands = []; const sep = path2.sep;
@@ -17154,12 +17160,37 @@ const server = http.createServer(async (req, res) => {
 // like everything else. private/loopback targets refused (ssrf guard).
 const { WebSocketServer: WsxServer, WebSocket: WsxClient } = require('ws');
 const wsxServer = new WsxServer({ noServer: true, handleProtocols: (protos) => (protos && protos.length ? protos[0] : false) });
+function wispAllowed(req) {
+  // v388: the tunnel serves the site's own pages - it is not an open
+  // relay for whoever finds the endpoint and points it at the internet
+  // from this box's ip. allow: entered the site (six_in) or signed in
+  // (six_sess), a same-site origin/referer on one of his doors, or a
+  // genuinely local connection. tunnel traffic always carries
+  // cf-connecting-ip, so loopback alone proves nothing on the live box.
+  try {
+    const ck = String(req.headers.cookie || '');
+    if (/(?:^|;\s*)(six_in|six_sess)=/.test(ck)) return true;
+    const srcH = String(req.headers.origin || req.headers.referer || '');
+    if (srcH) { try { const hh = new URL(srcH).hostname.toLowerCase(); if (hh === 'localhost' || hh === '127.0.0.1' || /(^|\.)(usareme\.site|onrender\.com|workers\.dev)$/.test(hh)) return true; } catch { } }
+    const ra = String((req.socket && req.socket.remoteAddress) || '').replace(/^::ffff:/, '');
+    if ((ra === '127.0.0.1' || ra === '::1') && !req.headers['cf-connecting-ip']) return true;
+    return false;
+  } catch { return false; }
+}
 function handleWsx(req, socket, head) {
   let target = '';
   try { target = b64urlDecode(new URL(req.url, 'http://x').searchParams.get('u') || ''); } catch { socket.destroy(); return; }
   let tu = null;
   try { tu = new URL(target); } catch { }
   if (!tu || !/^wss?:$/.test(tu.protocol) || isPrivateHost(tu.hostname)) { socket.destroy(); return; }
+  // v388: the literal-host check above cannot see a public name that
+  // RESOLVES onto the lan - resolve first, upgrade only if it is clean.
+  hostResolvesPrivate(tu.hostname).then((priv) => {
+    if (priv) { try { socket.destroy(); } catch { } return; }
+    wsxUpgrade(req, socket, head, tu);
+  }).catch(() => { try { socket.destroy(); } catch { } });
+}
+function wsxUpgrade(req, socket, head, tu) {
   const wsUrl = tu.href;
   const protoHdr = req.headers['sec-websocket-protocol'];
   const protos = protoHdr ? protoHdr.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -17179,7 +17210,7 @@ function handleWsx(req, socket, head) {
   });
 }
 server.on('upgrade', (req, socket, head) => {
-  try { const p = new URL(req.url, 'http://x').pathname; if (SJ_WISP && (p === '/wisp' || p === '/wisp/')) return SJ_WISP.routeRequest(req, socket, head); if (p === '/wsx') return handleWsx(req, socket, head); } catch (e) {}
+  try { const p = new URL(req.url, 'http://x').pathname; if (SJ_WISP && (p === '/wisp' || p === '/wisp/')) { if (!wispAllowed(req)) { try { socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n'); socket.destroy(); } catch (e) {} return; } return SJ_WISP.routeRequest(req, socket, head); } if (p === '/wsx') return handleWsx(req, socket, head); } catch (e) {}
   return chatUpgrade(req, socket, head);
 });
 server.keepAliveTimeout = 75000; server.headersTimeout = 80000;
