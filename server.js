@@ -11023,6 +11023,7 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
     res.writeHead(400, { 'content-type': 'text/plain' });
     return res.end('bad url');
   }
+  if (!tunOk(req)) { res.writeHead(403, { 'content-type': 'text/plain' }); return res.end('tunnel locked - open the site first'); }
   if (!/^https?:$/.test(target.protocol) || isPrivateHost(target.hostname) || await hostResolvesPrivate(target.hostname)) {
     res.writeHead(403, { 'content-type': 'text/plain' });
     return res.end('that host is blocked');
@@ -15388,6 +15389,49 @@ function chatUpgrade(req, socket) {
 }
 
 
+// ---------- v390 tunnel key: one signed, rotating cookie (gx_vdk) ----------
+// gates every egress surface on this box (wisp, vd classic proxy, /dl,
+// /wsx, /yt/stream). pages hand the cookie out on load and the browser
+// rides it on its own requests, so no client code had to change and a
+// copied endpoint by itself is worthless. 24h life, sliding re-issue.
+let TUN_SECRET = crypto.randomBytes(32);
+async function tunSecretInit() {
+  try {
+    if (!STORE_ON) return;
+    const got = await storeCmd([['GET', 'cfg:tunsecret']], 6000);
+    if (got && got[0]) { const b = Buffer.from(String(got[0]), 'base64'); if (b.length >= 16) { TUN_SECRET = b; return; } }
+    storeSet('cfg:tunsecret', TUN_SECRET.toString('base64'));
+  } catch { }
+}
+function tunToken() {
+  const exp = Math.floor(Date.now() / 1000) + 86400;
+  const mac = crypto.createHmac('sha256', TUN_SECRET).update('tun.' + exp).digest('base64url').slice(0, 27);
+  return exp + '.' + mac;
+}
+function tunValid(v) {
+  try {
+    if (!v || typeof v !== 'string') return false;
+    const dot = v.indexOf('.'); if (dot < 4) return false;
+    const exp = +v.slice(0, dot); if (!exp || exp < Math.floor(Date.now() / 1000)) return false;
+    const mac = crypto.createHmac('sha256', TUN_SECRET).update('tun.' + exp).digest('base64url').slice(0, 27);
+    const got = v.slice(dot + 1);
+    if (got.length !== mac.length) return false;
+    return crypto.timingSafeEqual(Buffer.from(got), Buffer.from(mac));
+  } catch { return false; }
+}
+function ckVal(req, name) {
+  try { const m = new RegExp('(?:^|;\\s*)' + name + '=([^;]*)').exec(String((req && req.headers && req.headers.cookie) || '')); return m ? decodeURIComponent(m[1]) : ''; } catch { return ''; }
+}
+function tunOk(req) {
+  try {
+    if (tunValid(ckVal(req, 'gx_vdk'))) return true;
+    if (voterUser(req)) return true;
+    const ra = String((req.socket && req.socket.remoteAddress) || '').replace(/^::ffff:/, '');
+    if ((ra === '127.0.0.1' || ra === '::1') && !(req.headers && req.headers['cf-connecting-ip'])) return true;
+    return false;
+  } catch { return false; }
+}
+
 // ---------- proxy tunnel (wisp) + shared engine assets (node build) ----------
 const UV_GZ = new Map();
 let SJ_WISP = null, SJ_BAREMUX_DIR = null, SJ_EPOXY_DIR = null, SJ_WISP_IMPL = 'none', SJ_LIBCURL_DIR = null;
@@ -15527,6 +15571,7 @@ process.on('uncaughtException', (e) => { try { console.error('uncaughtException:
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://localhost');
   if (u.pathname.length > 1 && u.pathname.endsWith('/') && !/^\/(uv|sj|px|browse|gproxy|wisp)/.test(u.pathname)) u.pathname = u.pathname.slice(0, -1);
+  const _tunIssue = !tunValid(ckVal(req, 'gx_vdk'));
   const _end0 = res.end.bind(res);
   const _wh0 = res.writeHead.bind(res);
   const _wr0 = res.write.bind(res);
@@ -15542,6 +15587,13 @@ const server = http.createServer(async (req, res) => {
     if (!_stHead) return;
     const st = _stHead; _stHead = null;
     const merged = Object.assign({}, st[2], extra || {});
+    try {
+      if (_tunIssue && (String(merged['content-type'] || '').includes('text/html') || u.pathname === '/go' || u.pathname === '/enter' || u.pathname.startsWith('/gproxy') || u.pathname.startsWith('/browse') || u.pathname.startsWith('/px/'))) {
+        const ckv = 'gx_vdk=' + tunToken() + '; Path=/; Max-Age=86400; HttpOnly; SameSite=Lax';
+        const exCk = merged['set-cookie'];
+        merged['set-cookie'] = exCk ? [].concat(exCk, ckv) : ckv;
+      }
+    } catch (e) {}
     try { if (st[1]) _wh0(st[0], st[1], merged); else _wh0(st[0], merged); } catch (e) {}
   };
   res.write = (...args) => { flushHead(); return _wr0(...args); };
@@ -16459,6 +16511,7 @@ const server = http.createServer(async (req, res) => {
     return res.end(downloadPage());
   }
   if (u.pathname === '/dl') {
+    if (!tunOk(req)) { res.writeHead(403, { 'content-type': 'text/plain' }); return res.end('tunnel locked - open the site first'); }
     let targetStr = '';
     try { targetStr = b64urlDecode(u.searchParams.get('u') || ''); } catch {}
     let target = null;
@@ -16734,12 +16787,14 @@ const server = http.createServer(async (req, res) => {
     return res.end(uvUrl ? ytWatchPage2(vidId, hit, phit, uvUrl, meta) : ytWatchPage(vidId, hit, phit));
   }
   if (u.pathname === '/yt/warm') {
+    if (!tunOk(req)) { res.writeHead(403, { 'content-type': 'text/plain' }); return res.end('tunnel locked - open the site first'); }
     const wv = (u.searchParams.get('v') || '').trim();
     const wk = u.searchParams.get('kind') || 'a';
     if (/^[\w-]{6,20}$/.test(wv)) { try { if (wk === 'v') { ytResolve(wv).catch(() => {}); } else { ytAudioJob(wv); } } catch (e) {} }
     res.writeHead(204); return res.end();
   }
   if (u.pathname === '/yt/stream') {
+    if (!tunOk(req)) { res.writeHead(403, { 'content-type': 'text/plain' }); return res.end('tunnel locked - open the site first'); }
     const vidId = (u.searchParams.get('v') || '').trim();
     const kind = u.searchParams.get('kind') || 'v'; const wantDl = u.searchParams.get('dl') === '1';
     if (!vidId) { res.writeHead(502); return res.end('stream unavailable'); }
@@ -17168,25 +17223,14 @@ const server = http.createServer(async (req, res) => {
 const { WebSocketServer: WsxServer, WebSocket: WsxClient } = require('ws');
 const wsxServer = new WsxServer({ noServer: true, handleProtocols: (protos) => (protos && protos.length ? protos[0] : false) });
 function wispAllowed(req) {
-  // v388: the tunnel serves the site's own pages - it is not an open
-  // relay for whoever finds the endpoint and points it at the internet
-  // from this box's ip. allow: entered the site (six_in) or signed in
-  // (six_sess), a same-site origin/referer on one of his doors, or a
-  // genuinely local connection. tunnel traffic always carries
-  // cf-connecting-ip, so loopback alone proves nothing on the live box.
-  try {
-    const ck = String(req.headers.cookie || '');
-    if (/(?:^|;\s*)(six_in|six_sess)=/.test(ck)) return true;
-    const srcH = String(req.headers.origin || req.headers.referer || '');
-    if (srcH) { try { const hh = new URL(srcH).hostname.toLowerCase(); if (hh === 'localhost' || hh === '127.0.0.1' || /(^|\.)(usareme\.site|onrender\.com|workers\.dev)$/.test(hh)) return true; } catch { } }
-    const ra = String((req.socket && req.socket.remoteAddress) || '').replace(/^::ffff:/, '');
-    if ((ra === '127.0.0.1' || ra === '::1') && !req.headers['cf-connecting-ip']) return true;
-    return false;
-  } catch { return false; }
+  // v390: the tunnel answers to the rotating gx_vdk key cookie (or a
+  // signed-in session, or a genuinely local connection) - nothing else.
+  return tunOk(req);
 }
 function handleWsx(req, socket, head) {
   let target = '';
   try { target = b64urlDecode(new URL(req.url, 'http://x').searchParams.get('u') || ''); } catch { socket.destroy(); return; }
+  if (!tunOk(req)) { try { socket.destroy(); } catch { } return; }
   let tu = null;
   try { tu = new URL(target); } catch { }
   if (!tu || !/^wss?:$/.test(tu.protocol) || isPrivateHost(tu.hostname)) { socket.destroy(); return; }
@@ -17222,7 +17266,7 @@ server.on('upgrade', (req, socket, head) => {
 });
 server.keepAliveTimeout = 75000; server.headersTimeout = 80000;
 setInterval(() => { if (STORE_ON && (!storeHydrated || ACCOUNTS.size === 0)) hydrateStore().catch(() => {}); }, 60000);
-hydrateStore().then(() => hydrateChatStore()).catch(() => {}).finally(() => server.listen(PORT, () => console.log('web proxy listening on ' + PORT)));
+hydrateStore().then(() => hydrateChatStore()).then(() => tunSecretInit()).catch(() => {}).finally(() => server.listen(PORT, () => console.log('web proxy listening on ' + PORT)));
 loadGames().catch(() => {});
 // music prewarm: keep the default feed + for-you seed searches hot so
 // /music paints from cache instead of paying a cold innertube search.
