@@ -1247,7 +1247,7 @@ button{border-radius:8px!important}
     if (isOpener && tr.a && tr.a !== 'your files') { t.openers[tr.a] = (t.openers[tr.a] || 0) + 1; tasteBump(t, tr, 1, 0); }
     if (prevRec && prevRec.last && Date.now() - prevRec.last < 18e5) tasteBump(t, tr, 1, 1);
     t.recent = (t.recent || []).filter(function(x){ return x.id !== tr.id; });
-    t.recent.unshift({ id: tr.id, t: tr.t || '', a: tr.a || '' });
+    t.recent.unshift({ id: tr.id, t: tr.t || '', a: tr.a || '', img: tr.img || '', len: tr.len || 0 });
     t.recent = t.recent.slice(0, 12);
     tasteSave(t);
   }
@@ -1289,14 +1289,14 @@ button{border-radius:8px!important}
     var t = tasteLoad();
     var arts = Object.keys(t.artists).sort(function(x, y){ return t.artists[y] - t.artists[x]; }).slice(0, 16).map(function(a){ return [a, Math.round(t.artists[a])]; });
     var L = likedList().slice(0, 24).map(function(x){ return [x.id, x.t || '', x.a || '']; });
-    var R = (t.recent || []).slice(0, 10).map(function(x){ return [x.id, x.t || '', x.a || '']; });
+    var R = (t.recent || []).slice(0, 10).map(function(x){ return [x.id, x.t || '', x.a || '', x.img || '', x.len || 0]; });
     return { v: 1, a: arts, l: L, r: R, p: t.plays || 0 };
   }
   function fyApply(c){
     if (!c || typeof c !== 'object') return false;
     var t = { artists: {}, tracks: {}, recent: [], plays: c.p || 0 };
     (c.a || []).forEach(function(x){ if (x && x[0]) t.artists[String(x[0])] = +x[1] || 0; });
-    t.recent = (c.r || []).map(function(x){ return { id: String(x[0] || ''), t: String(x[1] || ''), a: String(x[2] || '') }; }).filter(function(x){ return x.id; });
+    t.recent = (c.r || []).map(function(x){ return { id: String(x[0] || ''), t: String(x[1] || ''), a: String(x[2] || ''), img: String(x[3] || ''), len: +x[4] || 0 }; }).filter(function(x){ return x.id; });
     tasteSave(t);
     var have = {}; likedList().forEach(function(x){ have[x.id] = 1; });
     var L = likedList();
@@ -11420,7 +11420,7 @@ function likedList() { return lsGet('gx_liked_v1', []); }
 function isLiked(id) { return likedList().some(function(x) { return x.id === id; }); }
 function pinList() { return lsGet('gx_mus_pins', []); }
 function brain() { var g = gx(); return g && g.brain ? g.brain() : { artists: {}, tracks: {}, searches: [], recent: [] }; }
-function recentFromBrain() { var b = brain(); return (b.recent || []).map(function(r) { return { id: r.id, t: r.t, a: r.a, img: r.img || '', len: r.len || 0 }; }).filter(function(x) { return x.id; }); }
+function recentFromBrain() { var b = brain(); return (b.recent || []).map(function(r) { return { id: r.id, t: r.t, a: r.a, img: r.img || (r.id && String(r.id).indexOf('loc:') !== 0 ? 'https://i.ytimg.com/vi/' + r.id + '/hqdefault.jpg' : ''), len: r.len || 0 }; }).filter(function(x) { return x.id; }); }
 
 function syncSide() {
   PLAYLISTS = lsGet('gx_mus_plists', []);
@@ -13123,7 +13123,7 @@ html,body{overflow-x:clip}
     if (isOpener && tr.a && tr.a !== 'your files') { t.openers[tr.a] = (t.openers[tr.a] || 0) + 1; tasteBump(t, tr, 1, 0); }
     if (prevRec && prevRec.last && Date.now() - prevRec.last < 18e5) tasteBump(t, tr, 1, 1);
     t.recent = (t.recent || []).filter(function(x){ return x.id !== tr.id; });
-    t.recent.unshift({ id: tr.id, t: tr.t || '', a: tr.a || '' });
+    t.recent.unshift({ id: tr.id, t: tr.t || '', a: tr.a || '', img: tr.img || '', len: tr.len || 0 });
     t.recent = t.recent.slice(0, 12);
     tasteSave(t);
   }
@@ -13165,14 +13165,14 @@ html,body{overflow-x:clip}
     var t = tasteLoad();
     var arts = Object.keys(t.artists).sort(function(x, y){ return t.artists[y] - t.artists[x]; }).slice(0, 16).map(function(a){ return [a, Math.round(t.artists[a])]; });
     var L = likedList().slice(0, 24).map(function(x){ return [x.id, x.t || '', x.a || '']; });
-    var R = (t.recent || []).slice(0, 10).map(function(x){ return [x.id, x.t || '', x.a || '']; });
+    var R = (t.recent || []).slice(0, 10).map(function(x){ return [x.id, x.t || '', x.a || '', x.img || '', x.len || 0]; });
     return { v: 1, a: arts, l: L, r: R, p: t.plays || 0 };
   }
   function fyApply(c){
     if (!c || typeof c !== 'object') return false;
     var t = { artists: {}, tracks: {}, recent: [], plays: c.p || 0 };
     (c.a || []).forEach(function(x){ if (x && x[0]) t.artists[String(x[0])] = +x[1] || 0; });
-    t.recent = (c.r || []).map(function(x){ return { id: String(x[0] || ''), t: String(x[1] || ''), a: String(x[2] || '') }; }).filter(function(x){ return x.id; });
+    t.recent = (c.r || []).map(function(x){ return { id: String(x[0] || ''), t: String(x[1] || ''), a: String(x[2] || ''), img: String(x[3] || ''), len: +x[4] || 0 }; }).filter(function(x){ return x.id; });
     tasteSave(t);
     var have = {}; likedList().forEach(function(x){ have[x.id] = 1; });
     var L = likedList();
@@ -14723,59 +14723,99 @@ async function fetchAlbumTracks(bid, hintA, hintT) {
   albCache.set(ck, { at: Date.now(), data });
   return data;
 }
+// ---------- six playlist brain (v379): six names real tracks, the catalog verifies every one ----------
+const plNormTxt = (s) => String(s || '').toLowerCase().replace(/\(.*?\)|\[.*?\]/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
+const plTitleSim = (want, got) => {
+  const w = plNormTxt(want), g = plNormTxt(got);
+  if (!w || !g) return 0;
+  if (w === g) return 3;
+  if (g.startsWith(w) || w.startsWith(g)) return 2;
+  const ws = new Set(w.split(' ')), gs = new Set(g.split(' '));
+  let hit = 0; ws.forEach(x => { if (gs.has(x)) hit++; });
+  return hit / Math.max(1, ws.size);
+};
+const plArtistHit = (want, got) => {
+  const w = plNormTxt(want);
+  if (!w) return true;
+  const g = plNormTxt(got);
+  if (!g) return false;
+  return g === w || g.includes(w) || w.includes(g);
+};
+async function plFindTrack(title, artist) {
+  const q = (String(artist || '') + ' ' + String(title || '')).trim().slice(0, 100);
+  if (!q) return null;
+  try {
+    const j = await ytMusic('search', { query: q, params: decodeURIComponent(YTM_P.songs) });
+    if (!j) return null;
+    const songs = ytmSearchSongs(j, q);
+    let best = null, bs = 0;
+    for (const s of songs) {
+      if (!plArtistHit(artist, s.a)) continue;
+      const sc = plTitleSim(title, s.t);
+      if (sc > bs) { bs = sc; best = s; }
+    }
+    return (best && bs >= 0.6) ? best : null;
+  } catch (e) { return null; }
+}
+async function plPool(queries, perQ) {
+  const out = [];
+  const hits = await Promise.all(queries.map(q => ytMusic('search', { query: q, params: decodeURIComponent(YTM_P.songs) }).catch(() => null)));
+  hits.forEach((j, qi) => { if (j) out.push(...ytmSearchSongs(j, queries[qi]).slice(0, perQ || 10)); });
+  return out;
+}
+async function plAskSix(brief, taste) {
+  const tbits = [];
+  if (taste) {
+    if (taste.artists && taste.artists.length) tbits.push('loves: ' + taste.artists.slice(0, 6).join(', '));
+    if (taste.top && taste.top.length) tbits.push('most played: ' + taste.top.slice(0, 5).map(x => x.t + ' by ' + x.a).join('; '));
+    if (taste.liked && taste.liked.length) tbits.push('liked: ' + taste.liked.slice(0, 5).map(x => x.t + ' by ' + x.a).join('; '));
+    if (taste.skip && taste.skip.length) tbits.push('NEVER include these artists: ' + taste.skip.slice(0, 6).join(', '));
+  }
+  const sys = 'u are six, a music obsessive with encyclopedic knowledge of rap, r&b, alt, pop and underground music — full artist catalogs, every era, deep cuts included. u build playlists ONLY from real released songs u actually know exist. never invent a song title. never name a type beat, instrumental, karaoke version, sped up or slowed edit, nightcore, loop, mix, compilation or fan cover. if u are not sure a song is real, pick a different one u are sure about.';
+  const usr = 'build a playlist for this request: "' + brief + '"' + (tbits.length ? '\nlistener taste — ' + tbits.join(' · ') : '') + '\nreply with ONLY this JSON, no other text: {"name":"<short lowercase playlist name>","tracks":[{"t":"<exact song title>","a":"<exact artist name>"}]} — give 20 to 24 tracks. sequence them like a real playlist: strong opener, good flow, no artist more than 3 times unless the request is about that one artist.';
+  try {
+    const reply = await Promise.race([askGemini(null, [{ role: 'system', content: sys }, { role: 'user', content: usr }], 1600), new Promise(res => setTimeout(() => res(''), 25000))]);
+    const m = String(reply || '').match(/\{[\s\S]*\}/);
+    if (!m) return null;
+    const j = JSON.parse(m[0]);
+    if (!j || !Array.isArray(j.tracks)) return null;
+    const tracks = j.tracks.map(x => ({ t: fyCleanStr(x && x.t, 100), a: fyCleanStr(x && x.a, 60) })).filter(x => x.t && x.a).slice(0, 24);
+    if (tracks.length < 5) return null;
+    return { name: fyCleanStr(j.name, 40), tracks };
+  } catch (e) { return null; }
+}
 async function buildAiPlaylist(b) {
   b = (b && typeof b === 'object') ? b : {};
   const artists = (Array.isArray(b.artists) ? b.artists : String(b.artists || '').split(',')).map(x => fyCleanStr(x, 60)).filter(Boolean).slice(0, 6);
   const type = fyCleanStr(b.type || b.prompt || '', 120);
-  const style = b.style === 'discovery' ? 'discovery' : 'specific';
-  const strict = b.mode !== 'yt';
-  let name = '', queries = [];
-  if (style === 'specific') {
-    // exactly what they asked for. period. no additions, no soundalikes.
-    queries = artists.map(a => a + ' songs');
-    if (type) queries.push(type + ' songs');
-    name = (artists.join(', ') || type || 'my mix').slice(0, 40);
-  } else {
-    try {
-      const lanePick = GENRE_WHEEL[sixHash(artists.join(',') + '|' + type) % GENRE_WHEEL.length];
-      const prompt = 'u are six, building a DISCOVERY playlist. the listener asked for artists: ' + (artists.join(', ') || 'none') + ' — and this type of songs: ' + (type || 'none') + '. go WIDER than the ask: similar artists, adjacent sounds, hidden gems in the same world — and lean into ' + lanePick + ' energy for at least two picks. reply with ONLY this JSON, nothing else: {"name":"<short playlist name, lowercase>","queries":["<youtube music search phrase>"]} — give exactly 6 search phrases, all landing on real released songs (no type beats, no instrumentals, no karaoke). VARIETY IS THE POINT: at least 5 DIFFERENT artists across the 6 phrases, no artist in more than 2 phrases.';
-      const reply = await Promise.race([askSix([{ role: 'user', content: prompt }], SIX_SYSTEM), new Promise(res => setTimeout(() => res(''), 12000))]);
-      const m = String(reply || '').match(/\{[\s\S]*?\}/);
-      if (m) { const j = JSON.parse(m[0]); if (j && Array.isArray(j.queries)) { queries = j.queries.map(x => fyCleanStr(x, 80)).filter(Boolean).slice(0, 6); name = fyCleanStr(j.name, 40); } }
-    } catch {}
-    if (queries.length < 3) { queries = artists.map(a => a + ' similar artists songs'); if (type) queries.push(type + ' similar songs', type + ' songs'); if (!name) name = ((artists[0] || type || 'discovery') + ' + more like it').slice(0, 40); }
+  const style = b.style === 'discovery' ? 'discovery' : (b.style === 'specific' || (artists.length && !type) ? 'specific' : 'vibe');
+  const taste = b.taste ? fyShape(b.taste) : null;
+  const brief = ((artists.length ? 'artists: ' + artists.join(', ') + '. ' : '') + (type || '')).trim();
+  let name = '', vids = [];
+  if (style === 'specific' && artists.length && !type) {
+    name = (artists.join(', ') + ' essentials').slice(0, 40);
+    for (const a of artists.slice(0, 3)) {
+      try { const aid = await ytmArtistIdByName(a); if (aid) { const full = await ytmArtistFull(aid); if (full && full.top && full.top.length) vids.push(...full.top); } } catch (e) {}
+      if (vids.length < 8) { const pool = await plPool([a + ' songs'], 14); vids.push(...pool.filter(v => plArtistHit(a, v.a))); }
+    }
   }
-  if (!queries.length) return { ok: false, name: '', vids: [], style };
-  const hits = await Promise.all(queries.slice(0, 6).map(q => fetchYtSearchIt(q).catch(() => null)));
-  const pools = hits.map(h => h ? musNorm(h.vids, strict) : []);
-  let merged = [];
-  if (style === 'specific') {
-    pools.forEach((pool, pi) => {
-      if (artists.length && pi < artists.length) {
-        const w = artists[pi].toLowerCase();
-        pool = pool.filter(v => { const va = String(v.a || '').toLowerCase(); return va && (va.indexOf(w) >= 0 || w.indexOf(va) >= 0); });
-      }
-      merged = merged.concat(pool);
-    });
-  } else {
-    for (let r = 0; r < 6 && merged.length < 30; r++) for (const pool of pools) { if (pool[r] && merged.length < 30) merged.push(pool[r]); }
+  if (vids.length < 8 && brief) {
+    const plan = await plAskSix(style === 'discovery' ? ('discovery mode — go wider than the ask, similar artists and adjacent sounds welcome: ' + brief) : brief, taste);
+    if (plan) {
+      if (plan.name) name = name || plan.name;
+      const found = await Promise.all(plan.tracks.map(tk => plFindTrack(tk.t, tk.a)));
+      vids.push(...found.filter(Boolean));
+    }
   }
-  let vids = musDedupe(merged, 1);
-  vids = musArtistCap(vids, style === 'specific' ? 8 : 3);
-  if (strict) vids = await sixVerifySongs(vids);
-  if (vids.length < 6 && artists.length) {
-    const hits2 = await Promise.all(artists.slice(0, 4).map(a => fetchYtSearchIt(a + ' songs').catch(() => null)));
-    const pools2 = hits2.map(h => h ? musNorm(h.vids, strict) : []);
-    let m2 = [];
-    pools2.forEach(pl => { m2 = m2.concat(pl); });
-    m2 = musArtistCap(musDedupe(m2, 1), 6);
-    if (m2.length > vids.length) vids = m2;
-  }
+  if (vids.length < 8 && artists.length) vids.push(...await plPool(artists.map(a => a + ' songs'), 10));
+  if (vids.length < 8 && type) vids.push(...await plPool([type + ' songs', type], 10));
+  vids = musDedupe(vids, 1);
+  vids = musArtistCap(vids, style === 'specific' && artists.length === 1 ? 24 : 4);
   vids = fyStrictClean(vids);
+  if (b.mode !== 'yt') vids = await sixVerifySongs(vids.slice(0, 26));
   vids = vids.slice(0, 24);
-  return { ok: !!vids.length, name: name || 'six made this', vids, style };
+  return { ok: !!vids.length, name: name || (type ? type.slice(0, 40) : 'six made this'), vids, style };
 }
-
 function voterKeyFor(req) {
   const ck = req.headers.cookie || '';
   const sm = ck.match(/six_sess=([a-f0-9]+)/);
@@ -14832,7 +14872,7 @@ function gxSanTaste(v) {
   const artists = mapNum(v.artists, 250);
   const tracks = {};
   if (v.tracks && typeof v.tracks === 'object' && !Array.isArray(v.tracks)) { let i = 0; for (const k of Object.keys(v.tracks)) { if (i++ >= 300) break; const r = v.tracks[k] || {}; tracks[str(k, 24)] = { n: num(r.n), t: str(r.t, 120), a: str(r.a, 80), last: num(r.last) }; } }
-  const recent = Array.isArray(v.recent) ? v.recent.slice(0, 12).map((r) => ({ id: str(r && r.id, 24), t: str(r && r.t, 120), a: str(r && r.a, 80) })) : [];
+  const recent = Array.isArray(v.recent) ? v.recent.slice(0, 12).map((r) => ({ id: str(r && r.id, 24), t: str(r && r.t, 120), a: str(r && r.a, 80), img: str(r && r.img, 300), len: num(r && r.len) })) : [];
   const searches = Array.isArray(v.searches) ? v.searches.slice(0, 20).map((s) => str(s, 80)) : [];
   const blocked = {};
   if (v.blocked && typeof v.blocked === 'object' && !Array.isArray(v.blocked)) { let i = 0; for (const k of Object.keys(v.blocked)) { if (i++ >= 100) break; blocked[str(k, 80).toLowerCase()] = 1; } }
