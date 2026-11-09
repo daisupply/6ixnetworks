@@ -11397,7 +11397,18 @@ function jget(u) { return fetch(u).then(function(r) { return r.json(); }); }
 function jpost(u, b) { return fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b || {}) }).then(function(r) { return r.json(); }); }
 function lsGet(k, d) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
 function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
-function gx() { return window.gxMusic || null; }
+function gx() {
+  if (window.gxMusic) return window.gxMusic;
+  try { if (window.parent && window.parent !== window && window.parent.gxMusic) return window.parent.gxMusic; } catch (e) {}
+  try { if (window.top && window.top !== window && window.top.gxMusic) return window.top.gxMusic; } catch (e) {}
+  return null;
+}
+function barDoc() {
+  if (document.getElementById('gxBar')) return document;
+  try { if (window.top && window.top !== window && window.top.document.getElementById('gxBar')) return window.top.document; } catch (e) {}
+  try { if (window.parent && window.parent !== window && window.parent.document.getElementById('gxBar')) return window.parent.document; } catch (e) {}
+  return document;
+}
 var EQ = '<span class="eq"><i></i><i></i><i></i></span>';
 var ICO_PLAY = '<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
 var main = $('msMain'), qInput = $('msQ');
@@ -11454,7 +11465,7 @@ function showToast(msg) {
   showToast._tm = setTimeout(function() { t.hidden = true; }, 3400);
 }
 function barHeal() {
-  var bar = document.getElementById('gxBar'); if (!bar) return;
+  var bar = barDoc().getElementById('gxBar'); if (!bar) return;
   var r = bar.getBoundingClientRect();
   var off = !r.width || r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth;
   if (bar.hidden || off) {
@@ -11475,7 +11486,7 @@ function activateRow(r, target) {
   var i = parseInt(r.getAttribute('data-i'), 10) || 0;
   var tr = list[i];
   if (!tr) { showToast('that one didnt load right — try another'); return; }
-  if (!gx()) { showToast('player still loading — one sec'); return; }
+  if (!gx()) { waitPlay(list, i, 0); return; }
   try { playList(list, i); }
   catch (e) { showToast('play glitched: ' + (e && e.message ? e.message : 'error')); return; }
   setTimeout(function() {
@@ -11488,6 +11499,12 @@ document.addEventListener('click', function(e) {
   var r = e.target && e.target.closest ? e.target.closest('.msrow') : null;
   if (r) activateRow(r, e.target);
 });
+function waitPlay(list, i, n) {
+  if (gx()) { try { playList(list, i); } catch (e) {} setTimeout(barHeal, 500); return; }
+  if (n === 0) showToast('waking the player up…');
+  if (n >= 12) { showToast('player wont wake — close this tab n open music fresh'); return; }
+  setTimeout(function() { waitPlay(list, i, n + 1); }, 300);
+}
 document.addEventListener('click', function(e) {
   var lk = e.target.closest('[data-like]');
   if (lk) {
@@ -11740,7 +11757,7 @@ function npTick() {
   var np = $('msNp'); if (!np || np.hidden) return;
   var g = gx(); if (!g) return;
   var st = g.state(); if (!st || !st.id) return;
-  var au = document.querySelector('audio');
+  var au = document.querySelector('audio') || barDoc().querySelector('audio');
   if (au && au.duration && isFinite(au.duration)) {
     if (!npSeekDrag) $('msNpSeek').value = String(Math.round(au.currentTime / au.duration * 1000));
     $('msNpPos').textContent = dur(au.currentTime);
@@ -11887,7 +11904,7 @@ $('msNpQueue').addEventListener('click', function() { closeNp(); renderQueue(); 
 $('msNpSeek').addEventListener('input', function() { npSeekDrag = true; });
 $('msNpSeek').addEventListener('change', function() {
   npSeekDrag = false;
-  var au = document.querySelector('audio');
+  var au = document.querySelector('audio') || barDoc().querySelector('audio');
   if (au && au.duration && isFinite(au.duration)) au.currentTime = au.duration * (parseInt(this.value, 10) / 1000);
 });
 $('msNpVol').addEventListener('input', function() {
