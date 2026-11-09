@@ -3668,7 +3668,21 @@ function playPage(u, t, bk) {
   if (!/^https:\/\//i.test(u || '')) {
     return '<!DOCTYPE html><body style="background:#0a0a0b;color:#f2f2f2;font-family:system-ui;padding:40px">bad game link — <a style="color:#e4e4e7" href="/gs">back to games</a></body>';
   }
-  const prox = gproxied(u);
+  let prox = gproxied(u);
+  // v394: hand the roblox start page its key. the page reads placeId
+  // from its OWN url query (window.location.search) to fetch the
+  // experience name and tell the engine what to join - inside vd that
+  // query is buried in the b64 blob, so the page saw nothing: the
+  // title stayed 'roblox' and the engine downloaded ~79mb then died
+  // with 'unable to start'. mirror the real query onto the proxied
+  // frame url (handleProxy reads the target from the path; the outer
+  // query is inert) so location.search carries it again.
+  if (bkH === '/blox') {
+    try {
+      const tu = new URL(u);
+      if (/(^|\.)roblox\.com$/i.test(tu.hostname) && tu.search && tu.search.length > 1) prox = prox + tu.search;
+    } catch (e) { }
+  }
   const rawChip = '';
   // v391: on 6ixblox the roblox flow sometimes bounces the VD frame OUT
   // to the real roblox origin (js href jumps the shim cant wrap). the
@@ -3742,7 +3756,7 @@ function uvEnc(s){ var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromC
 function decUrl(h){ if(!h) return ''; var bi=h.indexOf('/browse/'); if(bi>=0){ try{ return decodeURIComponent(escape(atob(h.slice(bi+8).replace(/-/g,'+').replace(/_/g,'/')))); }catch(e){} } var gi=h.indexOf('/gproxy/'); if(gi>=0){ try{ return decodeURIComponent(escape(atob(h.slice(gi+8).replace(/-/g,'+').replace(/_/g,'/')))); }catch(e){} } var i=h.indexOf('/sj/service/'); if(i>=0){ var r=h.slice(i+12); try{ return decodeURIComponent(r); }catch(e){ return r; } } var j=h.indexOf('/uv/service/'); if(j>=0) return uvDec(h.slice(j+12)); return h; }
 function rbxId(u){ if(!u) return ''; var rest=u; var p=u.indexOf('://'); if(p>=0) rest=u.slice(p+3); var sl=rest.indexOf('/'); var host= sl>=0? rest.slice(0,sl) : rest; if(host.indexOf('roblox.com')<0) return ''; var g=rest.indexOf('/games/'); if(g<0) return ''; var d=''; var k=g+7; while(k<rest.length){ var c=rest.charAt(k); if(c>='0'&&c<='9'){ d+=c; k++; } else break; } return d; }
 function rbxB64(s){ return btoa(unescape(encodeURIComponent(s))).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,''); }
-function goPlay(id){ var target='https://play.roblox.com/games/start?placeId='+id; var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){} if(cur.indexOf('/gproxy/')>=0){ gf.src='/gproxy/'+rbxB64(target); return; } if(cur.indexOf('/browse/')>=0){ gf.src='/browse/'+rbxB64(target); return; } if(cur.indexOf('/uv/service/')>=0){ gf.src='/uv/service/'+uvEnc(target); return; } gf.src='/sj/service/'+encodeURIComponent(target); }
+function goPlay(id){ var target='https://play.roblox.com/games/start?placeId='+id; var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){} if(cur.indexOf('/gproxy/')>=0){ gf.src='/gproxy/'+rbxB64(target)+'?placeId='+id; return; } if(cur.indexOf('/browse/')>=0){ gf.src='/browse/'+rbxB64(target)+'?placeId='+id; return; } if(cur.indexOf('/uv/service/')>=0){ gf.src='/uv/service/'+uvEnc(target); return; } gf.src='/sj/service/'+encodeURIComponent(target); }
 var lastDec='';
 function pollUrl(){ var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){ return; } var dec=decUrl(cur); if(lastDec && dec!==lastDec){ var id=rbxId(dec); if(id){ lastDec=dec; goPlay(id); return; } } lastDec=dec; }
 function onClick(e){ if(e.defaultPrevented) return; if(e.button!==undefined && e.button!==0) return; if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey) return; var t=e.target; var a=null; while(t){ if(t.tagName==='A'){ a=t; break; } t=t.parentNode; } if(!a) return; var id=rbxId(decUrl(a.href||'')); if(!id) return; e.preventDefault(); e.stopPropagation(); goPlay(id); }
@@ -11188,6 +11202,18 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
     .map(sc => translateSetCookie(sc, target.hostname)).filter(Boolean);
   if (translatedCookies.length) outHeaders['set-cookie'] = translatedCookies;
 
+  // v394: roblox's web client only runs cross-origin isolated - its own
+  // pages ship coop/coep and the wasm engine needs sharedarraybuffer for
+  // its threads. sj gets this free from its isolated player pages; vd
+  // must stamp the same trio onto roblox-family responses so the framed
+  // doc can join the blox vd player's isolated context (without it the
+  // engine downloads ~79mb then dies with 'unable to start').
+  if (/(^|\.)(roblox\.com|rbxcdn\.com|rbxinfra\.com)$/i.test(target.hostname)) {
+    outHeaders['cross-origin-opener-policy'] = 'same-origin';
+    outHeaders['cross-origin-embedder-policy'] = 'require-corp';
+    outHeaders['cross-origin-resource-policy'] = 'same-origin';
+  }
+
   // redirects: send the browser to the proxied version of the new location
   if (status >= 300 && status < 400 && upstream.headers.get('location')) {
     const loc = new URL(upstream.headers.get('location'), target).toString();
@@ -16667,7 +16693,8 @@ const server = http.createServer(async (req, res) => {
     const bkw = u.searchParams.get('bk') === 'blox' ? ['/blox', '6ixblox'] : null;
     if (staleVdGate(req, res, u)) return;
     const peng = (qeng === 'sj' || qeng === 'uv' || qeng === 'vd') ? qeng : (((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv|vd)/) || [])[1]) || 'sj'); // v392: blox honors the engine cookie too (was hard-'sj' for bk=blox, which orphaned the v391 vd login - cards launched sj/signed-out)
-    if (gu2 && peng === 'vd') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPage(gu2, u.searchParams.get('t') || 'Game', bkw)); }
+    if (gu2 && peng === 'vd') { const ph = { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }; // v394: blox vd player carries the same isolation trio as the sj player - roblox's web client only runs cross-origin isolated (see handleProxy stamp). blox only: coep on a general vd player would break every non-isolated framed doc (v382 law).
+      if (bkw) { ph['cross-origin-opener-policy'] = 'same-origin'; ph['cross-origin-embedder-policy'] = 'require-corp'; ph['cross-origin-resource-policy'] = 'same-origin'; } res.writeHead(200, ph); return res.end(playPage(gu2, u.searchParams.get('t') || 'Game', bkw)); }
     if (gu2 && peng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' }); return res.end(playPageSj(gu2, u.searchParams.get('t') || 'Game', bkw)); }
     if (UV_OK() && gu2) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageUv(gu2, u.searchParams.get('t') || 'Game', bkw)); }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
