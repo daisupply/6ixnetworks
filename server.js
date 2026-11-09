@@ -13841,30 +13841,29 @@ async function askGemini(env, messages, maxTokens, lane, needComplete) {
     const win = await Promise.any(racers.map(r => geminiAttempt(r.model, keys[r.kIdx], messages, maxTokens, 12000, needComplete).then(out => ({ out, model: r.model, kIdx: r.kIdx }))));
     geminiWinner = win.model;
     return win.out;
-  } catch { /* whole race failed — fall through to the sweep */ }
-  for (const model of order) {
-    for (let ki = 0; ki < keys.length; ki++) {
-      const kIdx = (cur + ki) % keys.length;
-      try {
-        const out = await geminiAttempt(model, keys[kIdx], messages, maxTokens, 8000, needComplete);
-        geminiWinner = model;
-        return out;
-      } catch { continue; }
+  } catch { /* whole race failed - borrow, then sweep */ }
+  // v395 resilience: BORROW other pool keys BEFORE the same-key sweep. a
+  // rate-limited or dead lane key used to burn the whole 6-model sweep on
+  // itself (hammering the limit that was already tripped) before other keys
+  // got a turn, so six face-planted with the dead-brain line for minutes at
+  // a time while healthy keys sat idle (live-reproduced 2026-11-09: 5/5
+  // asks dead, then fine minutes later). a 429 on any key now skips
+  // straight to the next key instead of retrying that key.
+  const tryKey = async (key, models) => {
+    for (const model of models) {
+      try { const out = await geminiAttempt(model, key, messages, maxTokens, 8000, needComplete); geminiWinner = model; return out; }
+      catch (e) { if (/http 429/.test(String((e && e.message) || ''))) break; continue; }
     }
-    if (model === geminiWinner) geminiWinner = null;
-  }
+    if (geminiWinner && models.includes(geminiWinner)) geminiWinner = null;
+    return null;
+  };
   const pool = geminiKeys(env);
-  let borrowed = 0;
-  for (const key of pool) {
-    if (borrowed >= 4) break;
-    if (key === keys[0]) continue;
-    for (const model of order.slice(0, 2)) {
-      if (borrowed >= 4) break;
-      borrowed++;
-      try { const out = await geminiAttempt(model, key, messages, maxTokens, 8000, needComplete); geminiWinner = model; return out; } catch { continue; }
-    }
+  const others = pool.filter(k => k !== keys[0]).slice(0, 4);
+  for (const key of others) {
+    const out = await tryKey(key, order.slice(0, 2));
+    if (out) return out;
   }
-  return null;
+  return tryKey(keys[0], order);
 }
 
 // gemini image generation (native generateContent API — the openai-compat
@@ -13991,7 +13990,8 @@ function sixScrub(t) {
 async function askSix(messages, system, lane) {
   let msgs = (messages && messages.length && messages[0].role === 'system') ? messages.slice() : [{ role: 'system', content: system || SIX_SYSTEM }].concat(messages || []);
   if (msgs[0] && msgs[0].role === 'system') msgs[0] = { role: 'system', content: String(msgs[0].content || '') + SIX_SEC_RULE };
-  const g = await askGemini(null, msgs, 800, lane);
+  let g = await askGemini(null, msgs, 800, lane);
+  if (!g) { await new Promise(r => setTimeout(r, 2000)); g = await askGemini(null, msgs, 800, lane); }
   if (g) return sixScrub(g);
   return 'six only wakes up on the cloudflare build ✦ this copy cant reach him — try s.usareme.site';
 }
