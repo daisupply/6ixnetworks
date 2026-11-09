@@ -3273,7 +3273,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 </div>
 <div class="bxcard"><label for="bxIn">play by link or place id</label><div class="bxrow"><input id="bxIn" type="text" placeholder="roblox.com/games/… or 4924922222" autocomplete="off"><button type="button" id="bxGo">play</button></div><div id="bxMsg" class="bxmsg"></div></div>
 <a class="bxhub" href="${hub}"><svg width="42" height="32" viewBox="0 0 120 90" aria-hidden="true"><g transform="rotate(12 60 45)"><path fill="#e9e9ec" fill-rule="evenodd" d="M37 22h46v46H37zM49.5 34.5h21v21h-21z"/></g></svg><div><b>roblox hub</b><span>their own picker — curated games, search, id entry. spawns the game in a new tab</span></div><span class="open">open</span></a>
-<a class="bxhub" href="${login}"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#e9e9ec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg><div><b>log in to roblox — vd first step</b><span>on vd, log in inside the tunnel first. games then launch already signed in, n roblox cant bounce ur page out mid-login</span></div><span class="open">log in</span></a>
+<a class="bxhub" id="bxLogin" href="${login}"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#e9e9ec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg><div><b>log in to roblox — vd first step</b><span>on vd, log in inside the tunnel first. games then launch already signed in, n roblox cant bounce ur page out mid-login</span></div><span class="open">log in</span></a>
 <div class="sec-h">biggest rn</div>
 <div class="bxgrid">${cards}</div>
 <p class="bxnote">web play is still in beta — games u own or can test load first, public games unlock as roblox rolls it out. chrome on pc/android works best; ios cant run it yet.</p>
@@ -3285,6 +3285,7 @@ function bxExtract(v){ v=String(v||'').trim(); if(!v) return ''; var pi=v.indexO
 function bxPlay(){ var id=bxExtract(document.getElementById('bxIn').value); var m=document.getElementById('bxMsg'); if(!id){ m.textContent='that dont look like a game link or a place id'; return; } m.textContent=''; location.href='/play?u='+encodeURIComponent('https://play.roblox.com/games/start?placeId='+id)+'&bk=blox&t='+encodeURIComponent('roblox '+id); }
 document.getElementById('bxGo').addEventListener('click', bxPlay);
 document.getElementById('bxIn').addEventListener('keydown', function(e){ if(e.key==='Enter') bxPlay(); });
+document.getElementById('bxLogin').addEventListener('click', function(){ try{ localStorage.setItem('gx_engine', 'vd'); }catch(e){} try{ document.cookie='gx_eng=vd; Path=/; Max-Age=31536000; SameSite=Lax'; document.cookie='gx_eng_epoch=v387; Path=/; Max-Age=31536000; SameSite=Lax'; }catch(e){} });
 </script>
 </body></html>`;
 }
@@ -16666,7 +16667,7 @@ const server = http.createServer(async (req, res) => {
     const qeng = u.searchParams.get('eng');
     const bkw = u.searchParams.get('bk') === 'blox' ? ['/blox', '6ixblox'] : null;
     if (staleVdGate(req, res, u)) return;
-    const peng = (qeng === 'sj' || qeng === 'uv' || qeng === 'vd') ? qeng : (bkw ? 'sj' : (((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv|vd)/) || [])[1]) || 'sj'));
+    const peng = (qeng === 'sj' || qeng === 'uv' || qeng === 'vd') ? qeng : (((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv|vd)/) || [])[1]) || 'sj'); // v392: blox honors the engine cookie too (was hard-'sj' for bk=blox, which orphaned the v391 vd login - cards launched sj/signed-out)
     if (gu2 && peng === 'vd') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPage(gu2, u.searchParams.get('t') || 'Game', bkw)); }
     if (gu2 && peng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' }); return res.end(playPageSj(gu2, u.searchParams.get('t') || 'Game', bkw)); }
     if (UV_OK() && gu2) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageUv(gu2, u.searchParams.get('t') || 'Game', bkw)); }
