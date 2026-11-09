@@ -3230,6 +3230,7 @@ function bloxPage() {
   const start = (id) => 'https://play.roblox.com/games/start?placeId=' + id;
   const cards = picks.map((p, i) => '<a class="bxg" href="/play?u=' + encodeURIComponent(start(p[1])) + '&bk=blox&t=' + encodeURIComponent(p[0]) + '"><span class="bgtile" style="background:linear-gradient(135deg,hsl(' + hues[i] + ' 85% 58%),hsl(' + (hues[i] + 45) + ' 90% 42%))"><span class="bgini">' + ini(p[0]) + '</span></span><span class="bgname">' + escHtml(p[0]) + '</span><span class="bgmeta">place ' + p[1] + '<span class="bgarr">play</span></span></a>').join('');
   const hub = '/play?u=' + encodeURIComponent('https://play.roblox.com/WebClient/Launcher') + '&bk=blox&t=' + encodeURIComponent('6ixblox hub');
+  const login = '/play?u=' + encodeURIComponent('https://www.roblox.com/login') + '&bk=blox&eng=vd&t=' + encodeURIComponent('roblox login');
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
@@ -3272,6 +3273,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 </div>
 <div class="bxcard"><label for="bxIn">play by link or place id</label><div class="bxrow"><input id="bxIn" type="text" placeholder="roblox.com/games/… or 4924922222" autocomplete="off"><button type="button" id="bxGo">play</button></div><div id="bxMsg" class="bxmsg"></div></div>
 <a class="bxhub" href="${hub}"><svg width="42" height="32" viewBox="0 0 120 90" aria-hidden="true"><g transform="rotate(12 60 45)"><path fill="#e9e9ec" fill-rule="evenodd" d="M37 22h46v46H37zM49.5 34.5h21v21h-21z"/></g></svg><div><b>roblox hub</b><span>their own picker — curated games, search, id entry. spawns the game in a new tab</span></div><span class="open">open</span></a>
+<a class="bxhub" href="${login}"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#e9e9ec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg><div><b>log in to roblox — vd first step</b><span>on vd, log in inside the tunnel first. games then launch already signed in, n roblox cant bounce ur page out mid-login</span></div><span class="open">log in</span></a>
 <div class="sec-h">biggest rn</div>
 <div class="bxgrid">${cards}</div>
 <p class="bxnote">web play is still in beta — games u own or can test load first, public games unlock as roblox rolls it out. chrome on pc/android works best; ios cant run it yet.</p>
@@ -3668,6 +3670,27 @@ function playPage(u, t, bk) {
   }
   const prox = gproxied(u);
   const rawChip = '';
+  // v391: on 6ixblox the roblox flow sometimes bounces the VD frame OUT
+  // to the real roblox origin (js href jumps the shim cant wrap). the
+  // frame going cross-origin is detectable from here - when it happens
+  // after a proxied doc was live, offer the one-tap pull back in. the
+  // vd cookie jar already kept whatever login happened inside.
+  // v391b: sandbox WITHOUT top-navigation/popups - roblox's login doc
+  // frame-busts (top.location = its own url) and its hub spawns tabs;
+  // inside the sandbox both are simply refused, while allow-same-origin
+  // keeps vd cookies/storage/the watcher working. blox vd player only.
+  const frameAttrs = bkH === '/blox' ? ' sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-modals"' : '';
+  const escGuard = bkH === '/blox' ? `<div id="escBar" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:6;background:rgba(18,18,20,.94);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:9px 10px 9px 20px;align-items:center;gap:12px;font-weight:600;max-width:92vw">roblox bounced u out of the tunnel — log in <span style="text-decoration:underline">inside</span> so it sticks<button onclick="escBack()" style="background:#f4f4f5;color:#111;border:0;border-radius:999px;padding:8px 16px;font-weight:800;cursor:pointer;font-family:inherit">back in</button></div><script>
+(function(){
+  var gf=document.getElementById('gf'), bar=document.getElementById('escBar'), wasIn=false, gone=false;
+  window.escBack=function(){ gone=false; bar.style.display='none'; gf.src=PROX; };
+  setInterval(function(){
+    var h='';
+    try{ h=gf.contentWindow.location.href; }catch(e){ if(wasIn && !gone){ gone=true; bar.style.display='flex'; } return; }
+    if(h.indexOf('/gproxy/')>=0 || h.indexOf('/browse/')>=0){ wasIn=true; if(gone){ gone=false; bar.style.display='none'; } }
+  }, 1500);
+})();
+</script>` : '';
   const alt = proxied(u);
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
@@ -3679,7 +3702,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body c
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
 <button onclick="cloakTab('google')">cloak: google</button>
 <button onclick="cloakTab('drive')" style="background:rgba(255,255,255,.07);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()">cloaked tab</button></div>
-<iframe class="gameframe" id="gf" src="${prox}" allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
+<iframe class="gameframe" id="gf" src="${prox}"${frameAttrs} allowfullscreen allow="autoplay; fullscreen; gamepad; keyboard-lock; camera; microphone"></iframe>
 <div id="dead" onclick="retry()" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;background:rgba(18,18,20,.92);border:1px solid rgba(255,255,255,.45);color:#f4f4f5;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:700">✦ retry</div>
 <script src="/ui.js"></script>
 <script src="/stars.js?e=96"></script>
@@ -3710,7 +3733,7 @@ function useNet(){ stage=0; document.getElementById('dead').style.display='none'
 function retry(){ useNet(); }
 gf.addEventListener('load', function(){ setTimeout(check, 3000); });
 arm();
-</script>
+</script>${escGuard}
 <script>${NOTIF_JS}</script>
 <script>(function(){
 var gf=document.getElementById('gf'); if(!gf) return;
