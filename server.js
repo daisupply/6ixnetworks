@@ -2671,7 +2671,7 @@ function isStaticAsset(target, ct) {
 // (1,000+ embeddable HTML5 games, built for iframing) and cached for an
 // hour. Games launch in /play inside an iframe — through the proxy by
 // default, with a one-tap direct mode for games whose code fights it.
-const GM_FEED = 'https://rss.gamemonetize.com/rssfeed.php?format=json&category=All&type=html5&amount=9000';
+const GM_FEED = 'https://rss.gamemonetize.com/rssfeed.php?format=json&category=All&type=html5&amount=20000';
 const FAMOBI_FEED = 'https://api.famobi.com/feed';
 const EXTRA_GAMES = [
   { t: 'CloverPit', u: 'https://genizymath.github.io/iframe/716-fix3.html', img: 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3314790/header.jpg', c: 'Arcade', w: 960, h: 540 },
@@ -2703,14 +2703,14 @@ async function loadGames() {
   let list = [];
   const seen = new Set();
   const seenT = new Set();
-  function push(t, u, img, c, w, h) {
+  function push(t, u, img, c, w, h, m) {
     if (!t || !u || !/^https:\/\//.test(u)) return;
     if (seen.has(u)) return;
     seen.add(u);
     const tk = String(t).toLowerCase().replace(/\s+/g, ' ').trim();
     if (seenT.has(tk)) return;
     seenT.add(tk);
-    list.push({ t: String(t).replace(/&amp;/g, '&').replace(/&#0?39;/g, '\'').replace(/&quot;/g, '"').slice(0, 80), u, img: img || '', c: c || 'Arcade', w: w || 800, h: h || 600 });
+    list.push({ t: String(t).replace(/&amp;/g, '&').replace(/&#0?39;/g, '\'').replace(/&quot;/g, '"').slice(0, 80), u, img: img || '', c: c || 'Arcade', w: w || 800, h: h || 600, m: m ? 1 : 0 });
   }
   // hand-added games first (requests + direct asks) — feeds can't shadow them
   for (const g of EXTRA_GAMES) { push(g.t, g.u, g.img, g.c, g.w, g.h); const gi = list.findIndex(x => x.u === g.u); if (gi >= 0) list[gi].nu = 1; }
@@ -2722,7 +2722,7 @@ async function loadGames() {
       for (const g of ((j && j.games) || [])) {
         if (!g || !g.name || !g.link) continue;
         const raw = (g.categories && g.categories[0]) ? String(g.categories[0]) : 'Arcade';
-        push(g.name, g.link, g.thumb || '', raw.charAt(0).toUpperCase() + raw.slice(1), 800, 600);
+        push(g.name, g.link, g.thumb || '', raw.charAt(0).toUpperCase() + raw.slice(1), 800, 600, 1);
       }
     }
   } catch {}
@@ -2733,8 +2733,8 @@ async function loadGames() {
       const j = await r.json();
       for (const g of (Array.isArray(j) ? j : [])) {
         if (!g || !g.title || !g.url) continue;
-        push(g.title, g.url, g.thumb || '', g.category || 'Arcade', +g.width || 800, +g.height || 600);
-        if (list.length >= 8000) break;
+        push(g.title, g.url, g.thumb || '', g.category || 'Arcade', +g.width || 800, +g.height || 600, (String(g.tags || '').toLowerCase().indexOf('mobile') >= 0 || g.category === 'Hypercasual') ? 1 : 0);
+        if (list.length >= 15000) break;
       }
     }
   } catch {}
@@ -2921,7 +2921,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style><style>.card{p
 @media(hover:hover){ #grid .card{transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease} #grid .card:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(0,0,0,.45)} }
 @media(max-width:640px){ #feat img{height:160px} #feat .feat-t{font-size:18px} .pop{flex-basis:206px} .pop .rank{font-size:42px} #grid{grid-template-columns:repeat(2,1fr);gap:10px} #grid .gt{font-size:13px;padding:8px 10px 1px} #grid .gc{padding:0 10px 9px;font-size:11px} .gbar{padding:8px 6px 7px} .gbar .bar{gap:7px} #gq{padding:11px 14px} .gbar .chip{padding:8px 13px;font-size:13.5px} .pop .rank{font-size:36px} .pop .popcap{padding:24px 12px 9px 50px} #gq{flex:1 1 100%;width:100%} #gchips{padding-top:8px} #feat img{height:168px} #feat .feat-b{display:none} #feat .feat-t{font-size:17px} }
 </style></head><body>${STAR_CANVAS}<div class="wrap">
-<div id="gbarWrap"><div class="gbar" id="gbar"><div class="gtop"><div class="gname">games<span id="gcount">loading games…</span></div><div class="gutils">${ENG_HTML}<a class="chip" href="/blox" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg> 6ixblox</a><a class="chip" href="/emu" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59C2.62 9.42 2 14.46 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.62-6.584-.685-7.258A4 4 0 0 0 17.32 5z"/></svg> emulator</a><a class="chip" href="/chat" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> chat</a><a class="chip" href="/ai" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> ai</a><a class="chip" href="/requests" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><path d="m3 17 6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg> requests</a><a class="chip" href="/forge" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='currentColor' aria-hidden='true'><path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z"/></svg> game forge</a></div></div>\n<div class="bar" style="margin:0"><input id="gq" type="text" placeholder="search 8,000+ games..." autocomplete="off">
+<div id="gbarWrap"><div class="gbar" id="gbar"><div class="gtop"><div class="gname">games<span id="gcount">loading games…</span></div><div class="gutils">${ENG_HTML}<a class="chip" href="/blox" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg> 6ixblox</a><a class="chip" href="/emu" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59C2.62 9.42 2 14.46 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.62-6.584-.685-7.258A4 4 0 0 0 17.32 5z"/></svg> emulator</a><a class="chip" href="/chat" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> chat</a><a class="chip" href="/ai" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> ai</a><a class="chip" href="/requests" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><path d="m3 17 6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg> requests</a><a class="chip" href="/forge" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='currentColor' aria-hidden='true'><path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z"/></svg> game forge</a></div></div>\n<div class="bar" style="margin:0"><input id="gq" type="text" placeholder="search 15,000+ games..." autocomplete="off">
 <button class="chip" id="gfav" type="button">★ favorites</button><button class="chip" id="grec" type="button">recent</button><button class="chip" id="grand" type="button"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg> random</button></div>
 <div id="gchips"></div></div></div>
 
@@ -2988,7 +2988,7 @@ function buildPager(pages){
   btn('next \u2192', page + 1);
 }
 function applyView(){ var q=gq.value.toLowerCase(), f=favs(), r=recents();
-  view = GAMES.filter(function(g){ var ok = (!q || (g.t+' '+g.c).toLowerCase().indexOf(q)>=0) && (!CAT || g.c===CAT); if(favOnly) ok = ok && f.indexOf(g.u)>=0; if(recOnly) ok = ok && r.indexOf(g.u)>=0; return ok; });
+  view = GAMES.filter(function(g){ var ok = (!q || (g.t+' '+g.c).toLowerCase().indexOf(q)>=0) && (!CAT || (CAT==='Mobile' ? !!g.m : g.c===CAT)); if(favOnly) ok = ok && f.indexOf(g.u)>=0; if(recOnly) ok = ok && r.indexOf(g.u)>=0; return ok; });
   if(recOnly){ view.sort(function(a,b){ var ia=r.indexOf(a.u), ib=r.indexOf(b.u); ia=ia<0?999:ia; ib=ib<0?999:ib; return ia-ib; }); }
   grid.innerHTML=''; page=0; renderPage(); }
 gq.addEventListener('input', applyView);
@@ -3012,6 +3012,7 @@ function buildChips(){
   gchips.innerHTML='';
   function chip(label, val){ var b=document.createElement('button'); b.type='button'; b.className='chip'+(CAT===val?' on':''); b.textContent=label; b.addEventListener('click', function(){ CAT = (CAT===val) ? '' : val; buildChips(); applyView(); }); gchips.appendChild(b); }
   chip('all', '');
+  if(GAMES.some(function(g){ return g.m; })) chip('mobile', 'Mobile');
   if(counts['Featured']) chip('featured', 'Featured');
   cats.forEach(function(c){ if(c!=='Featured') chip(c.toLowerCase(), c); });
 }
@@ -3121,7 +3122,8 @@ const ENG_CSS = `.engt{position:relative;display:inline-flex;gap:2px;background:
 .engt button:not(.on):hover{color:#f4f4f5}
 .engt button:focus-visible{outline:2px solid rgba(255,255,255,.55);outline-offset:2px}`;
 const ENG_HTML = `<span class=\"engt\" role=\"group\" aria-label=\"proxy engine\" title=\"proxy engine\"><span class=\"engt-thumb\" aria-hidden=\"true\"></span><button type=\"button\" data-eng=\"sj\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M22 2 11 13\"/><path d=\"M22 2 15 22l-4-9-9-4Z\"/></svg>scramjet</button><button type=\"button\" data-eng=\"uv\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4\"/></svg>uv</button><button type=\"button\" data-eng=\"vd\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M13 2 3 14h9l-1 8 10-12h-9l1-8z\"/></svg>vd</button></span>`;
-const ENG_JS = `function gxEng(){ try{ var sp=new URLSearchParams(location.search); var qe=sp.get('eng'); if(qe==='sj'||qe==='uv'||qe==='vd') return qe; if(sp.get('bk')==='blox') return 'vd'; var c=(document.cookie.match(/(?:^|;\\s*)gx_eng=(sj|uv|vd)/)||[])[1]; if(c) return c; var l=localStorage.getItem('gx_engine'); if(l==='sj'||l==='uv'||l==='vd') return l; }catch(e){} return 'sj'; }
+const ENG_JS = `(function(){ try{ if(localStorage.getItem('gx_eng_epoch')!=='v384'){ localStorage.removeItem('gx_engine'); document.cookie='gx_eng=; Path=/; Max-Age=0'; localStorage.setItem('gx_eng_epoch','v384'); } }catch(e){} })();
+function gxEng(){ try{ var sp=new URLSearchParams(location.search); var qe=sp.get('eng'); if(qe==='sj'||qe==='uv'||qe==='vd') return qe; var c=(document.cookie.match(/(?:^|;\\s*)gx_eng=(sj|uv|vd)/)||[])[1]; if(c) return c; var l=localStorage.getItem('gx_engine'); if(l==='sj'||l==='uv'||l==='vd') return l; }catch(e){} return 'sj'; }
 function paintEngThumb(g){ if(!g) return; var on=g.querySelector('button.on'); var th=g.querySelector('.engt-thumb'); if(!on||!th||!on.offsetWidth){ g.classList.remove('ready'); return; } th.style.width=on.offsetWidth+'px'; th.style.transform='translateX('+on.offsetLeft+'px)'; g.classList.add('ready'); }
 function paintEng(){ var v=gxEng(); var gs=document.querySelectorAll('.engt'); for(var i=0;i<gs.length;i++){ var bs=gs[i].querySelectorAll('button'); for(var j=0;j<bs.length;j++){ if(bs[j].getAttribute('data-eng')===v) bs[j].classList.add('on'); else bs[j].classList.remove('on'); } paintEngThumb(gs[i]); } }
 function gxSetEng(v){ try{ localStorage.setItem('gx_engine', v); }catch(e){} try{ document.cookie='gx_eng='+v+'; Path=/; Max-Age=31536000; SameSite=Lax'; }catch(e){} paintEng(); try{ if(new URLSearchParams(location.search).get('bk')==='blox'){ var bu=new URL(location.href); bu.searchParams.set('eng', v); location.href=bu.toString(); return; } }catch(e){} if(window.onGxEng) window.onGxEng(v); }
@@ -3201,8 +3203,8 @@ function bloxPage() {
   const hues = [265, 205, 150, 18, 330, 28, 190, 275, 45, 350];
   const ini = (n) => n.split(' ').filter((w) => /[a-z0-9]/i.test(w.charAt(0))).slice(0, 2).map((w) => w.charAt(0).toUpperCase()).join('');
   const start = (id) => 'https://play.roblox.com/games/start?placeId=' + id;
-  const cards = picks.map((p, i) => '<a class="bxg" href="/play?u=' + encodeURIComponent(start(p[1])) + '&eng=vd&bk=blox&t=' + encodeURIComponent(p[0]) + '"><span class="bgtile" style="background:linear-gradient(135deg,hsl(' + hues[i] + ' 85% 58%),hsl(' + (hues[i] + 45) + ' 90% 42%))"><span class="bgini">' + ini(p[0]) + '</span></span><span class="bgname">' + escHtml(p[0]) + '</span><span class="bgmeta">place ' + p[1] + '<span class="bgarr">play</span></span></a>').join('');
-  const hub = '/play?u=' + encodeURIComponent('https://play.roblox.com/WebClient/Launcher') + '&eng=vd&bk=blox&t=' + encodeURIComponent('6ixblox hub');
+  const cards = picks.map((p, i) => '<a class="bxg" href="/play?u=' + encodeURIComponent(start(p[1])) + '&bk=blox&t=' + encodeURIComponent(p[0]) + '"><span class="bgtile" style="background:linear-gradient(135deg,hsl(' + hues[i] + ' 85% 58%),hsl(' + (hues[i] + 45) + ' 90% 42%))"><span class="bgini">' + ini(p[0]) + '</span></span><span class="bgname">' + escHtml(p[0]) + '</span><span class="bgmeta">place ' + p[1] + '<span class="bgarr">play</span></span></a>').join('');
+  const hub = '/play?u=' + encodeURIComponent('https://play.roblox.com/WebClient/Launcher') + '&bk=blox&t=' + encodeURIComponent('6ixblox hub');
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
@@ -3253,7 +3255,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <script>
 function bxDigits(s){ var d=''; for(var i=0;i<s.length;i++){ var c=s.charAt(i); if(c>='0'&&c<='9') d+=c; else if(d) break; } return d; }
 function bxExtract(v){ v=String(v||'').trim(); if(!v) return ''; var pi=v.indexOf('placeId='); if(pi>=0) return bxDigits(v.slice(pi+8)); var g=v.indexOf('/games/'); if(g>=0) return bxDigits(v.slice(g+7)); var all=v.length>=3; for(var i=0;i<v.length;i++){ var c=v.charAt(i); if(c<'0'||c>'9'){ all=false; break; } } return all? v : ''; }
-function bxPlay(){ var id=bxExtract(document.getElementById('bxIn').value); var m=document.getElementById('bxMsg'); if(!id){ m.textContent='that dont look like a game link or a place id'; return; } m.textContent=''; location.href='/play?u='+encodeURIComponent('https://play.roblox.com/games/start?placeId='+id)+'&eng=vd&bk=blox&t='+encodeURIComponent('roblox '+id); }
+function bxPlay(){ var id=bxExtract(document.getElementById('bxIn').value); var m=document.getElementById('bxMsg'); if(!id){ m.textContent='that dont look like a game link or a place id'; return; } m.textContent=''; location.href='/play?u='+encodeURIComponent('https://play.roblox.com/games/start?placeId='+id)+'&bk=blox&t='+encodeURIComponent('roblox '+id); }
 document.getElementById('bxGo').addEventListener('click', bxPlay);
 document.getElementById('bxIn').addEventListener('keydown', function(e){ if(e.key==='Enter') bxPlay(); });
 </script>
@@ -7885,7 +7887,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <span class="lab">episode</span><input class="sein" id="wE" type="number" min="1" value="1">
 <button class="mchip" id="seGo" type="button">load episode</button>
 </div>
-<p class="hint" id="mvHint">if it wont play: switch the source, or flip the route to direct \u2014 some networks block the tunnel for video. a black screen for a few seconds while it buffers is normal.</p>
+<p class="hint" id="mvHint">if it wont play: switch the source, or try the direct route \u2014 some networks block the tunnel for video. a black screen for a few seconds while it buffers is normal.</p>
 <p class="hint" id="libHint" hidden>this is a real movie file streaming thru the network — it loads in while u watch, so pause, seek n scrub like any normal video. want it saved for offline? grab the download.</p>
 ${SIDEBAR_HTML}
 </div>
@@ -7893,7 +7895,7 @@ ${SIDEBAR_HTML}
 <script>
 var qs = new URLSearchParams(location.search);
 var tt = qs.get('tt') || '', ttl = qs.get('t') || 'watch', kind = qs.get('kind') === 'series' ? 'series' : 'movie', yr = qs.get('y') || ''; var sInit = parseInt(qs.get('s') || '', 10), eInit = parseInt(qs.get('e') || '', 10); if (sInit >= 1) { var wS0 = document.getElementById('wS'); if (wS0) wS0.value = sInit; } if (eInit >= 1) { var wE0 = document.getElementById('wE'); if (wE0) wE0.value = eInit; }
-var srcMode = 0, route = 'direct'; // v242: direct is the default — it is the one route proven to PLAY on his phone (VD 404s in-player, tunnel spins on tuning in). the others stay as chips
+var srcMode = 0, route = 'tunnel'; // v242: direct is the default — it is the one route proven to PLAY on his phone (VD 404s in-player, tunnel spins on tuning in). the others stay as chips
 var LIB = ${JSON.stringify(LIB_MOVIES.map(function(m){ return { t: m.t, y: m.y, run: m.run, mb: m.mb, b: m.b, f: m.f, note: m.note || '', p: proxied('https://archive.org/services/img/' + m.id) }; }))};
 var libIx = qs.get('lib');
 var libM = (libIx !== null && LIB[+libIx]) ? LIB[+libIx] : null;
@@ -16307,7 +16309,7 @@ const server = http.createServer(async (req, res) => {
   }
   if (u.pathname === '/api/games') {
     const games = FEATURED_GAMES.concat(await loadGames());
-    const out = games.map(g => ({ t: g.t, u: g.u, img: g.img ? proxied(g.img) : '', icon: g.icon || '', lg: g.lg ? 1 : 0, nu: g.nu ? 1 : 0, c: g.c || 'Arcade' }));
+    const out = games.map(g => { const o = { t: g.t, u: g.u, img: g.img ? proxied(g.img) : '', icon: g.icon || '', lg: g.lg ? 1 : 0, nu: g.nu ? 1 : 0, c: g.c || 'Arcade' }; if (g.m) o.m = 1; return o; });
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'public, max-age=600' });
     return res.end(JSON.stringify(out));
   }
@@ -16404,8 +16406,8 @@ const server = http.createServer(async (req, res) => {
     const gu2 = u.searchParams.get('u') || '';
     const qeng = u.searchParams.get('eng');
     const bkw = u.searchParams.get('bk') === 'blox' ? ['/blox', '6ixblox'] : null;
-    const peng = (qeng === 'sj' || qeng === 'uv' || qeng === 'vd') ? qeng : (bkw ? 'vd' : (((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv|vd)/) || [])[1]) || 'sj'));
-    if (gu2 && (peng === 'vd' || isVdHost(gu2))) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPage(gu2, u.searchParams.get('t') || 'Game', bkw)); }
+    const peng = (qeng === 'sj' || qeng === 'uv' || qeng === 'vd') ? qeng : (bkw ? 'sj' : (((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv|vd)/) || [])[1]) || 'sj'));
+    if (gu2 && peng === 'vd') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPage(gu2, u.searchParams.get('t') || 'Game', bkw)); }
     if (gu2 && peng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' }); return res.end(playPageSj(gu2, u.searchParams.get('t') || 'Game', bkw)); }
     if (UV_OK() && gu2) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageUv(gu2, u.searchParams.get('t') || 'Game', bkw)); }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
@@ -16415,7 +16417,6 @@ const server = http.createServer(async (req, res) => {
     const nu = u.searchParams.get('u') || '';
     const nt = u.searchParams.get('t') || 'News';
     const ytN = nu ? ytMirror(nu) : null; if (ytN) { res.writeHead(302, { location: ytN }); return res.end(); }
-    if (nu && isVdHost(nu)) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(appPlayPage(nu, nt, '/news', 'news')); }
     const nck = String(req.headers.cookie || '');
     const neng = (/(?:^|;\s*)gx_eng=(sj|uv|vd)/.exec(nck) || [])[1] || 'sj';
     if (nu && (neng === 'vd' || u.searchParams.get('eng') === 'vd')) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(appPlayPage(nu, nt, '/news', 'news')); }
@@ -16426,7 +16427,6 @@ const server = http.createServer(async (req, res) => {
   }
   if (u.pathname === '/appplay') {
     const ytA = u.searchParams.get('u') ? ytMirror(u.searchParams.get('u')) : null; if (ytA) { res.writeHead(302, { location: ytA }); return res.end(); }
-    if (u.searchParams.get('u') && isVdHost(u.searchParams.get('u'))) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(appPlayPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App')); }
     const aeng = ((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv|vd)/) || [])[1]) || 'sj';
     if (u.searchParams.get('u') && (aeng === 'vd' || u.searchParams.get('eng') === 'vd')) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(appPlayPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App')); }
     if (u.searchParams.get('u') && aeng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' }); return res.end(appPlayPageSj(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App')); }
@@ -16751,7 +16751,6 @@ const server = http.createServer(async (req, res) => {
     if (!dest) { res.writeHead(302, { location: '/home' }); return res.end(); }
     const ytM = ytMirror(dest); if (ytM) { res.writeHead(302, { location: ytM }); return res.end(); }
     if (u.searchParams.get('classic') === '1') { res.writeHead(302, { location: proxied(dest) }); return res.end(); }
-    if (isVdHost(dest)) { res.writeHead(302, { location: '/appplay?u=' + encodeURIComponent(dest) + '&t=' + encodeURIComponent(new URL(dest).hostname.replace(/^www\./, '')) }); return res.end(); }
     const engPick = (u.searchParams.get('eng') === 'uv' || u.searchParams.get('eng') === 'sj' || u.searchParams.get('eng') === 'vd') ? u.searchParams.get('eng') : (((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv|vd)/) || [])[1]) || 'sj');
     if (engPick === 'vd') { res.writeHead(302, { location: '/appplay?u=' + encodeURIComponent(dest) + '&t=' + encodeURIComponent(new URL(dest).hostname.replace(/^www\./, '')) }); return res.end(); }
     if (engPick === 'sj' && SJ_OK()) { res.writeHead(302, { location: '/sj/service/' + sjEncodeUrl(dest) }); return res.end(); }
