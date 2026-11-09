@@ -11295,6 +11295,8 @@ button{border-radius:10px}
 .msnplyr .mssrc{color:#8f8aa5;font-size:12.5px;margin-top:12px}
 .msonb{position:fixed;inset:0;background:rgba(4,4,8,.78);z-index:320;display:flex;align-items:center;justify-content:center;padding:16px}
 .msonb[hidden]{display:none}
+.mstoast{position:fixed;left:50%;transform:translateX(-50%);bottom:118px;z-index:400;background:#1d1b2e;border:1px solid rgba(255,255,255,.16);color:#fff;font-size:13.5px;font-weight:700;padding:11px 18px;border-radius:12px;box-shadow:0 12px 34px rgba(0,0,0,.55);max-width:88vw;text-align:center}
+.mstoast[hidden]{display:none}
 .msonbbox{background:#15131f;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:24px;width:100%;max-width:520px;color:#e8e4f8}
 .msonbbox h2{margin:0 0 5px;font-size:22px;color:#fff}
 .msonbbox p{color:#9d97b8;font-size:14px;line-height:1.5;margin:0 0 14px}
@@ -11371,6 +11373,7 @@ button{border-radius:10px}
   </div>
 </div>
 
+<div class="mstoast" id="msToast" hidden></div>
 ${SIDEBAR_HTML}<script src="/ui.js"></script>
 <script>var INITQ = ${qj};</script>
 <script>var INIT_HASH = location.hash || '';
@@ -11443,16 +11446,48 @@ function cardHtml(c, cls) {
 function skels(n) { var h = ''; for (var i = 0; i < n; i++) h += '<div class="mssk"></div>'; return h; }
 function findTrack(ctxList, id) { for (var i = 0; i < ctxList.length; i++) if (ctxList[i].id === id) return ctxList[i]; return null; }
 var CTX = {};
-function bindRows(scope) {
-  var rows = scope.querySelectorAll('.msrow');
-  rows.forEach(function(r) {
-    r.addEventListener('click', function(e) {
-      if (e.target.closest('[data-like]') || e.target.closest('[data-artist]')) return;
-      var list = CTX[r.getAttribute('data-ctx')] || [];
-      playList(list, parseInt(r.getAttribute('data-i'), 10) || 0);
-    });
-  });
+function bindRows(scope) { /* rows activate via the delegated handler below — survives re-renders */ }
+function showToast(msg) {
+  var t = $('msToast'); if (!t) return;
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(showToast._tm);
+  showToast._tm = setTimeout(function() { t.hidden = true; }, 3400);
 }
+function barHeal() {
+  var bar = document.getElementById('gxBar'); if (!bar) return;
+  var r = bar.getBoundingClientRect();
+  var off = !r.width || r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth;
+  if (bar.hidden || off) {
+    try { localStorage.removeItem('gx_barpos_v1'); } catch (e) {}
+    bar.style.left = ''; bar.style.top = ''; bar.style.right = ''; bar.style.bottom = '';
+    bar.hidden = false;
+  }
+}
+var lastAct = { key: '', at: 0 };
+function activateRow(r, target) {
+  if (!r) return;
+  if (target && target.closest && (target.closest('[data-like]') || target.closest('[data-artist]') || target.closest('[data-add]'))) return;
+  var key = r.getAttribute('data-ctx') + ':' + r.getAttribute('data-i');
+  var now = Date.now();
+  if (lastAct.key === key && now - lastAct.at < 500) return;
+  lastAct = { key: key, at: now };
+  var list = CTX[r.getAttribute('data-ctx')] || [];
+  var i = parseInt(r.getAttribute('data-i'), 10) || 0;
+  var tr = list[i];
+  if (!tr) { showToast('that one didnt load right — try another'); return; }
+  if (!gx()) { showToast('player still loading — one sec'); return; }
+  try { playList(list, i); }
+  catch (e) { showToast('play glitched: ' + (e && e.message ? e.message : 'error')); return; }
+  setTimeout(function() {
+    var g = gx(); var st = g ? g.state() : null;
+    if (!st || st.id !== tr.id) { try { playList(list, i); } catch (e) {} setTimeout(barHeal, 250); }
+    else barHeal();
+  }, 420);
+}
+document.addEventListener('click', function(e) {
+  var r = e.target && e.target.closest ? e.target.closest('.msrow') : null;
+  if (r) activateRow(r, e.target);
+});
 document.addEventListener('click', function(e) {
   var lk = e.target.closest('[data-like]');
   if (lk) {
