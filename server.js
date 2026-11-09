@@ -11076,7 +11076,6 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
         return res.end(bp);
       }
     }
-    if (isHtml && gameMode && /(^|\.)roblox\.com$/i.test(target.hostname)) { outHeaders['cross-origin-opener-policy'] = 'same-origin'; outHeaders['cross-origin-embedder-policy'] = 'require-corp'; }
     let rewritten = isHtml ? rewriteHtml(text, target.toString(), pre) : rewriteCss(text, target.toString(), pre);
   if (isHtml) rewritten = injectProxyShim(rewritten, target.toString(), pre);
     const buf = Buffer.from(rewritten, 'utf8');
@@ -16406,7 +16405,7 @@ const server = http.createServer(async (req, res) => {
     const qeng = u.searchParams.get('eng');
     const bkw = u.searchParams.get('bk') === 'blox' ? ['/blox', '6ixblox'] : null;
     const peng = (qeng === 'sj' || qeng === 'uv' || qeng === 'vd') ? qeng : (bkw ? 'vd' : (((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv|vd)/) || [])[1]) || 'sj'));
-    if (gu2 && (peng === 'vd' || isVdHost(gu2))) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' }); return res.end(playPage(gu2, u.searchParams.get('t') || 'Game', bkw)); }
+    if (gu2 && (peng === 'vd' || isVdHost(gu2))) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPage(gu2, u.searchParams.get('t') || 'Game', bkw)); }
     if (gu2 && peng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' }); return res.end(playPageSj(gu2, u.searchParams.get('t') || 'Game', bkw)); }
     if (UV_OK() && gu2) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(playPageUv(gu2, u.searchParams.get('t') || 'Game', bkw)); }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
@@ -16427,9 +16426,9 @@ const server = http.createServer(async (req, res) => {
   }
   if (u.pathname === '/appplay') {
     const ytA = u.searchParams.get('u') ? ytMirror(u.searchParams.get('u')) : null; if (ytA) { res.writeHead(302, { location: ytA }); return res.end(); }
-    if (u.searchParams.get('u') && isVdHost(u.searchParams.get('u'))) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' }); return res.end(appPlayPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App')); }
+    if (u.searchParams.get('u') && isVdHost(u.searchParams.get('u'))) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(appPlayPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App')); }
     const aeng = ((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv|vd)/) || [])[1]) || 'sj';
-    if (u.searchParams.get('u') && (aeng === 'vd' || u.searchParams.get('eng') === 'vd')) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' }); return res.end(appPlayPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App')); }
+    if (u.searchParams.get('u') && (aeng === 'vd' || u.searchParams.get('eng') === 'vd')) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(appPlayPage(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App')); }
     if (u.searchParams.get('u') && aeng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' }); return res.end(appPlayPageSj(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App')); }
     if (UV_OK() && u.searchParams.get('u')) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(appPlayPageUv(u.searchParams.get('u') || '', u.searchParams.get('t') || 'App')); }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
