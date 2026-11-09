@@ -9143,7 +9143,9 @@ function authPage(mode) {
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 body{display:block;padding:0;min-height:100dvh}
 .authwrap{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px 16px 48px;box-sizing:border-box}
-.authcard{width:100%;max-width:400px;background:rgba(13,11,26,.78);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid rgba(var(--star),.18);border-radius:22px;padding:30px 28px 24px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.authcard{width:100%;max-width:400px;background:rgba(13,11,26,.8);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid rgba(var(--star),.22);border-radius:22px;padding:30px 28px 24px;box-shadow:0 30px 80px rgba(0,0,0,.5),0 0 0 1px rgba(0,0,0,.25),0 0 44px rgba(139,124,246,.13)}
+@media(prefers-reduced-motion:no-preference){ .authcard{animation:aup .45s cubic-bezier(.2,.9,.3,1)} }
+@keyframes aup{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
 .authlogo{font-size:21px;font-weight:800;letter-spacing:-.02em;color:#fafafa;text-decoration:none}
 .authlogo span{color:#b79cff}
 .authcard h1{font-size:26px;margin:18px 0 4px;text-align:left;letter-spacing:-.02em}
@@ -9152,19 +9154,26 @@ body{display:block;padding:0;min-height:100dvh}
 .afield{margin-bottom:14px}
 .afield label{display:block;font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9d99ad;margin-bottom:6px}
 .afield label span{text-transform:none;letter-spacing:0;color:#6f6a80;font-weight:600}
-.afield input{width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 14px;color:#f4f4f5;font-size:16px;font-family:inherit;outline:none}
+.afield input{width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 14px;color:#f4f4f5;font-size:16px;font-family:inherit;outline:none;transition:border-color .15s ease,background .15s ease}
 .afield input:focus{border-color:rgba(var(--star),.55);background:rgba(255,255,255,.08)}
+.afield input:-webkit-autofill{-webkit-box-shadow:0 0 0 60px #17142a inset;-webkit-text-fill-color:#f4f4f5;caret-color:#f4f4f5}
 .ahint{font-size:12.5px;color:#8b8699;margin-top:5px}
 .apw{position:relative}
 .apw input{padding-right:44px}
 .apw button{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:#9d99ad;cursor:pointer;padding:7px;display:flex;border-radius:8px}
 .apw button:hover{color:#fff}
+.ahp{position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;overflow:hidden}
 .aerr{display:none;background:rgba(235,64,80,.12);border:1px solid rgba(235,64,80,.4);color:#ffb4ab;font-size:14px;border-radius:12px;padding:10px 13px;margin-bottom:14px;line-height:1.4}
 .aerr.show{display:block}
-.abtn{width:100%;background:#f4f4f5;color:#0a0a0b;border:0;border-radius:12px;padding:13px;font-size:15.5px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px}
+.abtn{width:100%;background:#f4f4f5;color:#0a0a0b;border:0;border-radius:12px;padding:13px;font-size:15.5px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;transition:background .15s ease,opacity .15s ease}
 .abtn:hover{background:#fff}
 .abtn:disabled{opacity:.55;cursor:wait}
-.afoot{margin-top:18px;text-align:center;font-size:14px;color:#9d99ad}
+.ashield{display:flex;align-items:center;gap:8px;margin-top:14px;color:#8b8699;font-size:12.5px;line-height:1.35}
+.ashield svg{flex:none}
+.ashield .spin{animation:aspin 1s linear infinite}
+@keyframes aspin{to{transform:rotate(360deg)}}
+.ashield.ok{color:#a7f3c0}
+.afoot{margin-top:16px;text-align:center;font-size:14px;color:#9d99ad}
 .afoot a{color:#fff;font-weight:600;text-decoration:none}
 .afoot a:hover{text-decoration:underline}
 .aforgot{text-align:right;margin:-4px 0 12px}
@@ -9183,12 +9192,14 @@ body{display:block;padding:0;min-height:100dvh}
 <h1>${login ? 'welcome back' : 'join 6ixnetworks'}</h1>
 <p class="authsub">${login ? 'ur friends, dms n calls are waitin' : 'one account for the whole site'}</p>
 <div class="aerr" id="aErr"></div>
-<form id="aForm">
-<div class="afield"><label for="aUser">username</label><input id="aUser" type="text" maxlength="16" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="ur username">${login ? '' : '<div class="ahint">3\u201316 chars \u2014 letters, numbers, underscore</div>'}</div>
+<form id="aForm" novalidate>
+<div class="afield"><label for="aUser">username</label><input id="aUser" type="text" maxlength="16" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="ur username">${login ? '' : '<div class="ahint">3-16 chars - letters, numbers, underscore</div>'}</div>
 <div class="afield"><label for="aPass">password</label><div class="apw"><input id="aPass" type="password" maxlength="64" autocomplete="${login ? 'current-password' : 'new-password'}" placeholder="ur password"><button type="button" id="aEye" aria-label="show password"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>${login ? '' : '<div class="ahint">8+ characters</div>'}</div>
 ${login ? '' : '<div class="afield"><label for="aEmail">email <span>(optional)</span></label><input id="aEmail" type="email" maxlength="80" autocomplete="email" placeholder="only for password resets"></div>'}
-${login ? '<div class="aforgot"><button type="button" id="aForgotBtn">forgot password?</button></div><div class="fpanel" id="fPanel"><p>type ur username or the email on ur account n we\'ll send a reset link.</p><input id="fWho" type="text" maxlength="80" placeholder="username or email"><button type="button" class="abtn" id="fSend">email me a reset link</button><div class="fmsg" id="fMsg"></div></div>' : ''}
+${login ? '<div class="aforgot"><button type="button" id="aForgotBtn">forgot password?</button></div><div class="fpanel" id="fPanel"><p>type ur username or the email on ur account n we will send a reset link.</p><input id="fWho" type="text" maxlength="80" placeholder="username or email"><button type="button" class="abtn" id="fSend">email me a reset link</button><div class="fmsg" id="fMsg"></div></div>' : ''}
+<div class="ahp" aria-hidden="true"><label>website<input id="aHp" name="website" type="text" tabindex="-1" autocomplete="off"></label></div>
 <button class="abtn" id="aSubmit" type="submit">${login ? 'log in' : 'create account'}</button>
+<div class="ashield" id="aShield"></div>
 </form>
 <div class="afoot">${login ? 'new here? <a id="aSwitch" href="/signup">create an account</a>' : 'already got an account? <a id="aSwitch" href="/login">log in</a>'}</div>
 </div></div>
@@ -9202,27 +9213,68 @@ fetch('/auth/me').then(function(r){ return r.json(); }).then(function(o){ if (o 
 var passEl = document.getElementById('aPass');
 document.getElementById('aEye').addEventListener('click', function(){ passEl.type = passEl.type === 'password' ? 'text' : 'password'; passEl.focus(); });
 var form = document.getElementById('aForm'), err = document.getElementById('aErr'), btn = document.getElementById('aSubmit');
+var shieldEl = document.getElementById('aShield');
+var SHIELD_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3.6 8-10V5l-8-3-8 3v7c0 6.4 8 10 8 10Z"/></svg>';
+var SPIN_SVG = '<svg class="spin" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.56"/></svg>';
+var CHECK_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+function shield(state, msg){
+  shieldEl.className = 'ashield' + (state === 'ok' ? ' ok' : '');
+  shieldEl.innerHTML = (state === 'busy' ? SPIN_SVG : state === 'ok' ? CHECK_SVG : SHIELD_SVG) + '<span></span>';
+  shieldEl.querySelector('span').textContent = msg;
+}
+shield('idle', 'bot shield on - no puzzles, ur browser just does a quick check');
 function showErr(m){ err.textContent = m; err.classList.add('show'); }
 function btnReset(){ btn.disabled = false; btn.textContent = MODE === 'login' ? 'log in' : 'create account'; }
+function leadBits(buf){ var u = new Uint8Array(buf); var n = 0; for (var i = 0; i < u.length; i++){ var b = u[i]; if (b === 0){ n += 8; continue; } var m = 128; while (m && !(b & m)){ n++; m >>= 1; } break; } return n; }
+function solvePow(c, d){
+  return new Promise(function(res, rej){
+    if (!window.crypto || !crypto.subtle) { rej(new Error('nosubtle')); return; }
+    var enc = new TextEncoder(); var n = 0; var done = false;
+    function batch(){
+      if (done) return;
+      var ps = [], ns = [];
+      for (var k = 0; k < 96; k++){ var nn = n + k; ns.push(nn); ps.push(crypto.subtle.digest('SHA-256', enc.encode(c + ':' + nn))); }
+      Promise.all(ps).then(function(hs){
+        for (var i = 0; i < hs.length; i++){ if (leadBits(hs[i]) >= d){ done = true; res(ns[i]); return; } }
+        n += 96; setTimeout(batch, 0);
+      }).catch(rej);
+    }
+    batch();
+  });
+}
 form.addEventListener('submit', function(ev){
   ev.preventDefault(); err.classList.remove('show');
   var user = document.getElementById('aUser').value.trim(); var pass = passEl.value;
   if (!user || !pass) { showErr('fill in both fields first'); return; }
-  btn.disabled = true; btn.textContent = 'one sec...';
-  var body = { user: user, pass: pass };
-  if (MODE === 'signup') { var em = document.getElementById('aEmail').value.trim(); if (em) body.email = em; }
-  fetch('/auth/' + MODE, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then(function(r){ return r.json(); }).then(function(o){
-    if (o && o.ok) {
-      fetch('/auth/me').then(function(r){ return r.json(); }).then(function(m){ if (m && m.user) { try { localStorage.setItem('six_me2', JSON.stringify({ user: m.user, disp: m.disp || '', hue: (m.hue === undefined ? null : m.hue), av: m.av || '' })); } catch(e){} } location.replace(next); }).catch(function(){ location.replace(next); });
-    } else { btnReset(); showErr((o && o.err) || 'something went wrong \u2014 try again'); }
-  }).catch(function(){ btnReset(); showErr('couldnt reach the server rn'); });
+  btn.disabled = true;
+  attempt(0);
+  function attempt(tries){
+    btn.textContent = 'checking ur browser...'; shield('busy', 'checking ur browser - this kills the bots');
+    fetch('/auth/challenge').then(function(r){ return r.json(); }).then(function(ch){
+      if (!ch || !ch.ok || !ch.c) throw new Error('chal');
+      return solvePow(ch.c, ch.d || 15).then(function(n){ return { c: ch.c, n: n }; });
+    }).then(function(pow){
+      btn.textContent = 'one sec...'; shield('ok', 'verified - ur good');
+      var body = { user: user, pass: pass, pow: pow, hp: document.getElementById('aHp').value || '' };
+      if (MODE === 'signup') { var em = document.getElementById('aEmail').value.trim(); if (em) body.email = em; }
+      return fetch('/auth/' + MODE, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then(function(r){ return r.json(); });
+    }).then(function(o){
+      if (o && o.ok) {
+        fetch('/auth/me').then(function(r){ return r.json(); }).then(function(m){ if (m && m.user) { try { localStorage.setItem('six_me2', JSON.stringify({ user: m.user, disp: m.disp || '', hue: (m.hue === undefined ? null : m.hue), av: m.av || '' })); } catch(e){} } location.replace(next); }).catch(function(){ location.replace(next); });
+      } else {
+        var e = (o && o.err) || 'something went wrong - try again';
+        if (tries < 1 && e.indexOf('bot check') === 0) { attempt(tries + 1); return; }
+        btnReset(); shield('idle', 'bot shield on - no puzzles, ur browser just does a quick check'); showErr(e);
+      }
+    }).catch(function(){ btnReset(); shield('idle', 'bot shield on - no puzzles, ur browser just does a quick check'); showErr('couldnt reach the server rn'); });
+  }
 });
 var fb = document.getElementById('aForgotBtn'); if (fb) fb.addEventListener('click', function(){ document.getElementById('fPanel').classList.toggle('show'); });
 var fsend = document.getElementById('fSend'); if (fsend) fsend.addEventListener('click', function(){
   var who = document.getElementById('fWho').value.trim(); var fm = document.getElementById('fMsg');
   if (!who) { fm.style.display = 'block'; fm.textContent = 'type ur username or email first'; return; }
   fsend.disabled = true;
-  fetch('/auth/forgot', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ user: who }) }).then(function(r){ return r.json(); }).then(function(){ fm.style.display = 'block'; fm.textContent = 'sent \u2014 if that account has an email on it, the reset link is on its way'; fsend.disabled = false; }).catch(function(){ fm.style.display = 'block'; fm.textContent = 'couldnt send rn \u2014 try again in a bit'; fsend.disabled = false; });
+  fetch('/auth/forgot', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ user: who }) }).then(function(r){ return r.json(); }).then(function(){ fm.style.display = 'block'; fm.textContent = 'sent - if that account has an email on it, the reset link is on its way'; fsend.disabled = false; }).catch(function(){ fm.style.display = 'block'; fm.textContent = 'couldnt send rn - try again in a bit'; fsend.disabled = false; });
 });
 </script>
 <script>${NOTIF_JS}</script>
@@ -14997,6 +15049,32 @@ function stampMsg(msg, prof) { if (prof.disp) msg.disp = prof.disp; if (prof.hue
 function enrichMsgAv(m) { if (!m || m.bot || !m.name) return m; const rec = ACCOUNTS.get(String(m.name).toLowerCase()); return (rec && rec.av) ? Object.assign({}, m, { av: rec.av }) : m; }
 const SESSIONS = new Map();
 const LOGIN_FAILS = new Map();
+// v385 bot shield: proof-of-work gate on signup + login. the client fetches a
+// single-use challenge (GET /auth/challenge), burns ~2^15 sha256 tries finding
+// a nonce whose hash clears POW_DIFF leading zero bits, and posts it back.
+// humans feel ~a second of "checking ur browser"; form bots get nothing.
+const POW_DIFF = 15;
+const POW_CHAL = new Map();
+const POW_HITS = new Map();
+const SIGNUP_HITS = new Map();
+function powBits(hex) { let n = 0; for (let i = 0; i + 1 < hex.length; i += 2) { const b = parseInt(hex.substr(i, 2), 16); if (b === 0) { n += 8; continue; } let m = 128; while (m && !(b & m)) { n++; m >>= 1; } break; } return n; }
+async function authGateCheck(req, b, kind) {
+  if (b && typeof b.hp === 'string' && b.hp) return { ok: false, err: 'bot check failed - refresh the page n try again' };
+  const p = b && b.pow;
+  if (!p || !p.c || p.n === undefined || p.n === null) return { ok: false, err: 'bot check missing - refresh the page n try again' };
+  const exp = POW_CHAL.get(String(p.c)); POW_CHAL.delete(String(p.c));
+  if (!exp || exp <= Date.now()) return { ok: false, err: 'bot check expired - try again' };
+  const h = await sha256hex(String(p.c) + ':' + String(p.n));
+  if (powBits(h) < POW_DIFF) return { ok: false, err: 'bot check failed - try again' };
+  if (kind === 'signup') {
+    const ip = clientIp(req); const now = Date.now();
+    const hits = (SIGNUP_HITS.get(ip) || []).filter((t) => now - t < 3600e3);
+    if (hits.length >= 20) return { ok: false, err: 'too many new accounts from this network rn - try again in a bit' };
+    hits.push(now); SIGNUP_HITS.set(ip, hits);
+    if (SIGNUP_HITS.size > 1000) SIGNUP_HITS.delete(SIGNUP_HITS.keys().next().value);
+  }
+  return null;
+}
 // ===== v113 durable store: Upstash Redis REST (env-gated, write-through) =====
 const STORE_URL = process.env.UPSTASH_REDIS_REST_URL || '';
 const STORE_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || '';
@@ -16022,6 +16100,16 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { 'content-type': 'application/json' });
       return res.end(JSON.stringify(out));
     }
+    if (kind === 'challenge' && req.method === 'GET') {
+      const ip = clientIp(req); const now = Date.now();
+      const hits = (POW_HITS.get(ip) || []).filter((t) => now - t < 3600e3);
+      res.writeHead(200, { 'content-type': 'application/json' });
+      if (hits.length >= 120) return res.end(JSON.stringify({ ok: false, err: 'slow down' }));
+      hits.push(now); POW_HITS.set(ip, hits);
+      if (POW_CHAL.size > 500) { for (const [k, v] of POW_CHAL) if (v <= now) POW_CHAL.delete(k); }
+      const c = randHex(16); POW_CHAL.set(c, now + 120e3);
+      return res.end(JSON.stringify({ ok: true, c, d: POW_DIFF }));
+    }
     if ((kind === 'signup' || kind === 'login') && req.method === 'POST') {
       const b = await readJsonBody(req);
       const name = String(b.user || '').trim(); const lower = name.toLowerCase(); const pass = String(b.pass || '');
@@ -16029,7 +16117,9 @@ const server = http.createServer(async (req, res) => {
       const lf = lkey ? LOGIN_FAILS.get(lkey) : null;
       const locked = !!(lf && Date.now() - lf.at < 600e3 && lf.n >= 10);
       let out;
-      if (kind === 'signup') {
+      const gateErr = await authGateCheck(req, b, kind);
+      if (gateErr) out = gateErr;
+      else if (kind === 'signup') {
         if (!validUsername(lower)) out = { ok: false, err: 'username: 3-16 chars, lowercase letters, numbers, _ only' };
         else if (RESERVED_NAMES.includes(lower)) out = { ok: false, err: 'that name is taken' };
         else if (pass.length < 8) out = { ok: false, err: 'password needs 8+ characters' };
@@ -16043,7 +16133,7 @@ const server = http.createServer(async (req, res) => {
         else if (rec.hash !== await sha256hex(rec.salt + ':' + pass)) out = { ok: false, err: 'wrong password' };
         else { const token = randHex(24); SESSIONS.set(token, { name: rec.name, exp: Date.now() + 30 * 24 * 3600e3 }); persistSess(token); out = { ok: true, user: rec.name, token }; }
       }
-      if (kind === 'login' && lkey) { if (out.ok) LOGIN_FAILS.delete(lkey); else if (!locked) { const e = lf && Date.now() - lf.at < 600e3 ? lf : { n: 0, at: Date.now() }; e.n++; e.at = Date.now(); LOGIN_FAILS.set(lkey, e); if (LOGIN_FAILS.size > 500) LOGIN_FAILS.delete(LOGIN_FAILS.keys().next().value); } }
+      if (kind === 'login' && lkey && !gateErr) { if (out.ok) LOGIN_FAILS.delete(lkey); else if (!locked) { const e = lf && Date.now() - lf.at < 600e3 ? lf : { n: 0, at: Date.now() }; e.n++; e.at = Date.now(); LOGIN_FAILS.set(lkey, e); if (LOGIN_FAILS.size > 500) LOGIN_FAILS.delete(LOGIN_FAILS.keys().next().value); } }
       const headers = { 'content-type': 'application/json' };
       if (out.ok && out.token) headers['set-cookie'] = 'six_sess=' + out.token + '; Path=/' + cookieDomain(req) + '; HttpOnly; SameSite=Lax; Max-Age=2592000';
       res.writeHead(200, headers);
