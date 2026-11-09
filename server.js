@@ -11297,6 +11297,7 @@ button{border-radius:10px}
 .msonb[hidden]{display:none}
 .mstoast{position:fixed;left:50%;transform:translateX(-50%);bottom:118px;z-index:400;background:#1d1b2e;border:1px solid rgba(255,255,255,.16);color:#fff;font-size:13.5px;font-weight:700;padding:11px 18px;border-radius:12px;box-shadow:0 12px 34px rgba(0,0,0,.55);max-width:88vw;text-align:center}
 .mstoast[hidden]{display:none}
+body.gx-extbar #gxBar{display:none!important}
 .msonbbox{background:#15131f;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:24px;width:100%;max-width:520px;color:#e8e4f8}
 .msonbbox h2{margin:0 0 5px;font-size:22px;color:#fff}
 .msonbbox p{color:#9d97b8;font-size:14px;line-height:1.5;margin:0 0 14px}
@@ -11376,6 +11377,7 @@ button{border-radius:10px}
 <div class="mstoast" id="msToast" hidden></div>
 ${SIDEBAR_HTML}<script src="/ui.js"></script>
 <script>var INITQ = ${qj};</script>
+<script>(function(){ if (window.top === window) return; try { if (window.top.gxMusic || (window.parent !== window && window.parent.gxMusic)) document.body.classList.add('gx-extbar'); } catch (e) {} })();</script>
 <script>var INIT_HASH = location.hash || '';
 window.addEventListener('hashchange', function() {
   if (location.hash === '#queue' && window.__msShowQueue) window.__msShowQueue();
@@ -11404,7 +11406,7 @@ function gx() {
   return null;
 }
 function barDoc() {
-  if (document.getElementById('gxBar')) return document;
+  if (!document.body || !document.body.classList.contains('gx-extbar')) { if (document.getElementById('gxBar')) return document; }
   try { if (window.top && window.top !== window && window.top.document.getElementById('gxBar')) return window.top.document; } catch (e) {}
   try { if (window.parent && window.parent !== window && window.parent.document.getElementById('gxBar')) return window.parent.document; } catch (e) {}
   return document;
