@@ -2696,10 +2696,9 @@ const EXTRA_GAMES = [
   { t: 'Dice a Million', u: 'https://wasm.rip/files/diceAmillion/diceamillion.html', img: 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3430340/header.jpg', c: 'Arcade', w: 960, h: 540 },
   { t: 'Retro Bowl', u: 'https://806e2242-df99-4dcd-b6ac-2c20175159a8.gdn.poki.com/9a5a5ef4-bd76-48fa-bf07-5ccbdc09b1f6/index.html?country=US&ccpaApplies=0&url_referrer=https%3A%2F%2Fpoki.com%2Fen%2Fg%2Fretro-bowl&domain=poki.com&game_id=806e2242-df99-4dcd-b6ac-2c20175159a8&game_version_id=9a5a5ef4-bd76-48fa-bf07-5ccbdc09b1f6&inspector=0&csp=1', img: 'https://www.google.com/s2/favicons?domain=poki.com&sz=128', c: 'Sports', w: 960, h: 540, m: 1 },
   { t: 'Subway Surfers', u: 'https://5dd312fa-015f-11ea-ad56-9cb6d0d995f7.gdn.poki.com/ec5c789a-69d7-476d-aa4e-1a0064850d79/index.html?country=US&ccpaApplies=0&url_referrer=https%3A%2F%2Fpoki.com%2Fen%2Fg%2Fsubway-surfers&domain=poki.com&game_id=5dd312fa-015f-11ea-ad56-9cb6d0d995f7&game_version_id=ec5c789a-69d7-476d-aa4e-1a0064850d79&inspector=0&csp=1', img: 'https://www.google.com/s2/favicons?domain=poki.com&sz=128', c: 'Arcade', w: 800, h: 600, m: 1 },
-  { t: 'Jetpack Joyride', u: 'https://games.crazygames.com/en_US/jetpack-joyride-pcp/index.html?v=2.14', img: 'https://www.google.com/s2/favicons?domain=crazygames.com&sz=128', c: 'Arcade', w: 960, h: 540, m: 1 },
-  { t: 'Geometry Dash Lite', u: 'https://geometrydashlite.one/', img: 'https://www.google.com/s2/favicons?domain=geometrydashlite.one&sz=128', c: 'Arcade', w: 960, h: 540, m: 1 },
+  { t: 'Jetpack Joyride', u: 'https://jetpack-joyride-pcp.game-files.crazygames.com/jetpack-joyride-pcp/17/index.html', img: 'https://www.google.com/s2/favicons?domain=crazygames.com&sz=128', c: 'Arcade', w: 960, h: 540, m: 1 },
+  { t: 'Geometry Dash Lite', u: 'https://g.w3technic.com/games/_iso/geometrydashlite.one/play/', img: 'https://www.google.com/s2/favicons?domain=geometrydashlite.one&sz=128', c: 'Arcade', w: 960, h: 540, m: 1 },
   { t: 'Paper.io', u: 'https://paperio2.click/play', img: 'https://www.google.com/s2/favicons?domain=paperio2.click&sz=128', c: 'Arcade', w: 800, h: 600, m: 1 },
-  { t: 'Hole.io', u: 'https://games.pizzaedition.com/holeio/j/index.html', img: 'https://www.google.com/s2/favicons?domain=pizzaedition.com&sz=128', c: 'Arcade', w: 800, h: 600, m: 1 },
   { t: 'HexTank.io', u: 'https://hextank.io/', img: 'https://www.google.com/s2/favicons?domain=hextank.io&sz=128', c: '3D', w: 800, h: 600 },
 ];
 const FALLBACK_GAMES = [
