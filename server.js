@@ -192,14 +192,28 @@ const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
 function hostKey(hostname) { return 'px_' + hostname.replace(/[^a-zA-Z0-9]/g, '_') + '_'; }
 function buildUpstreamCookies(cookieHeader, hostname) {
   if (!cookieHeader) return '';
-  const prefix = hostKey(hostname);
-  const out = [];
+  // v381: cookies set for a parent domain (Domain=.roblox.com style) must
+  // ride along to its subdomains (api/auth/games) — the translated jar is
+  // keyed by the host that set it (or its Domain attr), so match the full
+  // host first, then each parent suffix. per cookie name, the most
+  // specific host's value wins.
+  const labels = String(hostname || '').split('.').filter(Boolean);
+  const prefixes = [];
+  for (let i = 0; i + 1 < labels.length; i++) prefixes.push(hostKey(labels.slice(i).join('.')));
+  const jar = new Map();
   for (const part of cookieHeader.split(';')) {
     const eq = part.indexOf('='); if (eq < 0) continue;
     const name = part.slice(0, eq).trim();
-    if (name.startsWith(prefix)) out.push(name.slice(prefix.length) + '=' + part.slice(eq + 1).trim());
+    for (const prefix of prefixes) {
+      if (name.startsWith(prefix) && name.length > prefix.length) {
+        const real = name.slice(prefix.length);
+        const prev = jar.get(real);
+        if (!prev || prefix.length >= prev.spec) jar.set(real, { v: part.slice(eq + 1).trim(), spec: prefix.length });
+        break;
+      }
+    }
   }
-  return out.join('; ');
+  return [...jar.entries()].map(([k, o]) => k + '=' + o.v).join('; ');
 }
 
 // The page the browser was actually on, translated back to target-space:
@@ -219,8 +233,13 @@ function proxyReferer(ref, target) {
   return target.origin + '/';
 }
 function translateSetCookie(setCookieStr, hostname) {
-  const prefix = hostKey(hostname);
   const segments = setCookieStr.split(';').map(s => s.trim());
+  // v381: key the translated cookie by its Domain attribute when it has
+  // one (a Domain=.roblox.com cookie set by auth.roblox.com must come
+  // back out for every roblox subdomain), else by the serving host.
+  let keyHost = hostname;
+  for (const attr of segments.slice(1)) { const dm = attr.match(/^domain=\.?([^;]+)$/i); if (dm) { keyHost = dm[1].trim().toLowerCase(); break; } }
+  const prefix = hostKey(keyHost);
   const first = segments[0];
   const eq = first.indexOf('='); if (eq < 0) return null;
   const name = first.slice(0, eq).trim();
@@ -291,21 +310,21 @@ function debingUrl(abs) {
   } catch { return null; }
 }
 
-function resolveAndProxy(rawValue, baseUrl) {
+function resolveAndProxy(rawValue, baseUrl, pre) {
   const v = (rawValue || '').trim();
   if (!v || v.startsWith('#') || /^(data|javascript|mailto|tel|blob|about):/i.test(v)) return rawValue;
   try {
     const abs = new URL(v, baseUrl).toString();
     const real = debingUrl(new URL(abs));
-    return proxied(real || abs);
+    return pre === '/gproxy/' ? gproxied(real || abs) : proxied(real || abs);
   } catch { return rawValue; }
 }
-function rewriteSrcset(value, baseUrl) {
+function rewriteSrcset(value, baseUrl, pre) {
   return value.split(',').map(part => {
     const seg = part.trim();
     if (!seg) return seg;
     const bits = seg.split(/\s+/);
-    bits[0] = resolveAndProxy(bits[0], baseUrl);
+    bits[0] = resolveAndProxy(bits[0], baseUrl, pre);
     return bits.join(' ');
   }).join(', ');
 }
@@ -315,7 +334,7 @@ function rewriteSrcset(value, baseUrl) {
 function unescapeAttr(s) {
   return s.replace(/&amp;/gi, '&').replace(/&quot;/gi, '"').replace(/&#0?39;|&apos;/gi, "'").replace(/&lt;/gi, '<').replace(/&gt;/gi, '>');
 }
-function rewriteChunk(html, baseUrl) {
+function rewriteChunk(html, baseUrl, pre) {
   // v3: ONE pass over the document (was 4-5 passes). On Cloudflare's free
   // plan only 10ms of CPU is allowed per request, so scan count matters.
   // v234: strip referrer suppression. embed players set <meta
@@ -330,37 +349,37 @@ function rewriteChunk(html, baseUrl) {
   return html.replace(pattern, (m, attr, dq, sq, uq, urlQuote, urlVal) => {
     if (urlVal !== undefined) {
       const q = urlQuote || '';
-      return `url(${q}${resolveAndProxy(urlVal, baseUrl)}${q})`;
+      return `url(${q}${resolveAndProxy(urlVal, baseUrl, pre)}${q})`;
     }
     if (attr === undefined) return ''; // <base ...> tag: drop it
     const val = unescapeAttr(dq !== undefined ? dq : (sq !== undefined ? sq : uq));
     const quote = dq !== undefined ? '"' : (sq !== undefined ? "'" : '');
-    const rewritten = attr.toLowerCase() === 'srcset' ? rewriteSrcset(val, baseUrl) : resolveAndProxy(val, baseUrl);
+    const rewritten = attr.toLowerCase() === 'srcset' ? rewriteSrcset(val, baseUrl, pre) : resolveAndProxy(val, baseUrl, pre);
     return `${attr}=${quote}${rewritten}${quote}`;
   }).replace(/\s+target\s*=\s*("_blank"|'_blank'|_blank)/gi, '');
 }
-function rewriteHtml(html, baseUrl) {
+function rewriteHtml(html, baseUrl, pre) {
   // never run the attribute rewriter through script/style bodies: inline
   // code full of src=/href= lookalikes got shredded into invalid js
   // (v208 — one bad line poisoned whole inline scripts on proxied pages).
   // script tags keep their src rewrite; style bodies keep url() fixes.
   const parts = html.split(/(<script\b[^>]*>[\s\S]*?<\/script\s*>|<style\b[^>]*>[\s\S]*?<\/style\s*>)/gi);
   return parts.map((part, i) => {
-    if (i % 2 !== 1) return rewriteChunk(part, baseUrl);
+    if (i % 2 !== 1) return rewriteChunk(part, baseUrl, pre);
     const tagEnd = part.indexOf('>') + 1;
     const closeAt = part.lastIndexOf('<');
     const openTag = part.slice(0, tagEnd);
     const body = part.slice(tagEnd, closeAt);
     const closeTag = part.slice(closeAt);
     const isScript = /^<script/i.test(part);
-    return rewriteChunk(openTag, baseUrl) + (isScript ? body : rewriteCss(body, baseUrl)) + closeTag;
+    return rewriteChunk(openTag, baseUrl, pre) + (isScript ? body : rewriteCss(body, baseUrl, pre)) + closeTag;
   }).join('');
 }
-function rewriteCss(css, baseUrl) {
+function rewriteCss(css, baseUrl, pre) {
   let out = css.replace(/url\(\s*(['"]?)([^'")]+)\1\s*\)/gi,
-    (m, q, u) => `url(${q}${resolveAndProxy(u.trim(), baseUrl)}${q})`);
+    (m, q, u) => `url(${q}${resolveAndProxy(u.trim(), baseUrl, pre)}${q})`);
   out = out.replace(/@import\s+(["'])([^"']+)\1/gi,
-    (m, q, u) => `@import ${q}${resolveAndProxy(u, baseUrl)}${q}`);
+    (m, q, u) => `@import ${q}${resolveAndProxy(u, baseUrl, pre)}${q}`);
   return out;
 }
 
@@ -3303,10 +3322,10 @@ gf.addEventListener('load', function(){ setTimeout(check, 4000); });
 var gf=document.getElementById('gf'); if(!gf) return;
 function uvDec(s){ try{ s=decodeURIComponent(s); }catch(e){} var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return o; }
 function uvEnc(s){ var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return encodeURIComponent(o); }
-function decUrl(h){ if(!h) return ''; var bi=h.indexOf('/browse/'); if(bi>=0){ try{ return decodeURIComponent(escape(atob(h.slice(bi+8).replace(/-/g,'+').replace(/_/g,'/')))); }catch(e){} } var i=h.indexOf('/sj/service/'); if(i>=0){ var r=h.slice(i+12); try{ return decodeURIComponent(r); }catch(e){ return r; } } var j=h.indexOf('/uv/service/'); if(j>=0) return uvDec(h.slice(j+12)); return h; }
+function decUrl(h){ if(!h) return ''; var bi=h.indexOf('/browse/'); if(bi>=0){ try{ return decodeURIComponent(escape(atob(h.slice(bi+8).replace(/-/g,'+').replace(/_/g,'/')))); }catch(e){} } var gi=h.indexOf('/gproxy/'); if(gi>=0){ try{ return decodeURIComponent(escape(atob(h.slice(gi+8).replace(/-/g,'+').replace(/_/g,'/')))); }catch(e){} } var i=h.indexOf('/sj/service/'); if(i>=0){ var r=h.slice(i+12); try{ return decodeURIComponent(r); }catch(e){ return r; } } var j=h.indexOf('/uv/service/'); if(j>=0) return uvDec(h.slice(j+12)); return h; }
 function rbxId(u){ if(!u) return ''; var rest=u; var p=u.indexOf('://'); if(p>=0) rest=u.slice(p+3); var sl=rest.indexOf('/'); var host= sl>=0? rest.slice(0,sl) : rest; if(host.indexOf('roblox.com')<0) return ''; var g=rest.indexOf('/games/'); if(g<0) return ''; var d=''; var k=g+7; while(k<rest.length){ var c=rest.charAt(k); if(c>='0'&&c<='9'){ d+=c; k++; } else break; } return d; }
 function rbxB64(s){ return btoa(unescape(encodeURIComponent(s))).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,''); }
-function goPlay(id){ var target='https://play.roblox.com/games/start?placeId='+id; var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){} if(cur.indexOf('/browse/')>=0){ gf.src='/browse/'+rbxB64(target); return; } if(cur.indexOf('/uv/service/')>=0){ gf.src='/uv/service/'+uvEnc(target); return; } gf.src='/sj/service/'+encodeURIComponent(target); }
+function goPlay(id){ var target='https://play.roblox.com/games/start?placeId='+id; var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){} if(cur.indexOf('/gproxy/')>=0){ gf.src='/gproxy/'+rbxB64(target); return; } if(cur.indexOf('/browse/')>=0){ gf.src='/browse/'+rbxB64(target); return; } if(cur.indexOf('/uv/service/')>=0){ gf.src='/uv/service/'+uvEnc(target); return; } gf.src='/sj/service/'+encodeURIComponent(target); }
 var lastDec='';
 function pollUrl(){ var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){ return; } var dec=decUrl(cur); if(lastDec && dec!==lastDec){ var id=rbxId(dec); if(id){ lastDec=dec; goPlay(id); return; } } lastDec=dec; }
 function onClick(e){ if(e.defaultPrevented) return; if(e.button!==undefined && e.button!==0) return; if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey) return; var t=e.target; var a=null; while(t){ if(t.tagName==='A'){ a=t; break; } t=t.parentNode; } if(!a) return; var id=rbxId(decUrl(a.href||'')); if(!id) return; e.preventDefault(); e.stopPropagation(); goPlay(id); }
@@ -3392,10 +3411,10 @@ gf.addEventListener('load', function(){ setTimeout(check, 4000); });
 var gf=document.getElementById('gf'); if(!gf) return;
 function uvDec(s){ try{ s=decodeURIComponent(s); }catch(e){} var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return o; }
 function uvEnc(s){ var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return encodeURIComponent(o); }
-function decUrl(h){ if(!h) return ''; var bi=h.indexOf('/browse/'); if(bi>=0){ try{ return decodeURIComponent(escape(atob(h.slice(bi+8).replace(/-/g,'+').replace(/_/g,'/')))); }catch(e){} } var i=h.indexOf('/sj/service/'); if(i>=0){ var r=h.slice(i+12); try{ return decodeURIComponent(r); }catch(e){ return r; } } var j=h.indexOf('/uv/service/'); if(j>=0) return uvDec(h.slice(j+12)); return h; }
+function decUrl(h){ if(!h) return ''; var bi=h.indexOf('/browse/'); if(bi>=0){ try{ return decodeURIComponent(escape(atob(h.slice(bi+8).replace(/-/g,'+').replace(/_/g,'/')))); }catch(e){} } var gi=h.indexOf('/gproxy/'); if(gi>=0){ try{ return decodeURIComponent(escape(atob(h.slice(gi+8).replace(/-/g,'+').replace(/_/g,'/')))); }catch(e){} } var i=h.indexOf('/sj/service/'); if(i>=0){ var r=h.slice(i+12); try{ return decodeURIComponent(r); }catch(e){ return r; } } var j=h.indexOf('/uv/service/'); if(j>=0) return uvDec(h.slice(j+12)); return h; }
 function rbxId(u){ if(!u) return ''; var rest=u; var p=u.indexOf('://'); if(p>=0) rest=u.slice(p+3); var sl=rest.indexOf('/'); var host= sl>=0? rest.slice(0,sl) : rest; if(host.indexOf('roblox.com')<0) return ''; var g=rest.indexOf('/games/'); if(g<0) return ''; var d=''; var k=g+7; while(k<rest.length){ var c=rest.charAt(k); if(c>='0'&&c<='9'){ d+=c; k++; } else break; } return d; }
 function rbxB64(s){ return btoa(unescape(encodeURIComponent(s))).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,''); }
-function goPlay(id){ var target='https://play.roblox.com/games/start?placeId='+id; var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){} if(cur.indexOf('/browse/')>=0){ gf.src='/browse/'+rbxB64(target); return; } if(cur.indexOf('/uv/service/')>=0){ gf.src='/uv/service/'+uvEnc(target); return; } gf.src='/sj/service/'+encodeURIComponent(target); }
+function goPlay(id){ var target='https://play.roblox.com/games/start?placeId='+id; var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){} if(cur.indexOf('/gproxy/')>=0){ gf.src='/gproxy/'+rbxB64(target); return; } if(cur.indexOf('/browse/')>=0){ gf.src='/browse/'+rbxB64(target); return; } if(cur.indexOf('/uv/service/')>=0){ gf.src='/uv/service/'+uvEnc(target); return; } gf.src='/sj/service/'+encodeURIComponent(target); }
 var lastDec='';
 function pollUrl(){ var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){ return; } var dec=decUrl(cur); if(lastDec && dec!==lastDec){ var id=rbxId(dec); if(id){ lastDec=dec; goPlay(id); return; } } lastDec=dec; }
 function onClick(e){ if(e.defaultPrevented) return; if(e.button!==undefined && e.button!==0) return; if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey) return; var t=e.target; var a=null; while(t){ if(t.tagName==='A'){ a=t; break; } t=t.parentNode; } if(!a) return; var id=rbxId(decUrl(a.href||'')); if(!id) return; e.preventDefault(); e.stopPropagation(); goPlay(id); }
@@ -3505,10 +3524,10 @@ gf.addEventListener('load', function(){ setTimeout(check, 4000); });
 var gf=document.getElementById('gf'); if(!gf) return;
 function uvDec(s){ try{ s=decodeURIComponent(s); }catch(e){} var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return o; }
 function uvEnc(s){ var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return encodeURIComponent(o); }
-function decUrl(h){ if(!h) return ''; var bi=h.indexOf('/browse/'); if(bi>=0){ try{ return decodeURIComponent(escape(atob(h.slice(bi+8).replace(/-/g,'+').replace(/_/g,'/')))); }catch(e){} } var i=h.indexOf('/sj/service/'); if(i>=0){ var r=h.slice(i+12); try{ return decodeURIComponent(r); }catch(e){ return r; } } var j=h.indexOf('/uv/service/'); if(j>=0) return uvDec(h.slice(j+12)); return h; }
+function decUrl(h){ if(!h) return ''; var bi=h.indexOf('/browse/'); if(bi>=0){ try{ return decodeURIComponent(escape(atob(h.slice(bi+8).replace(/-/g,'+').replace(/_/g,'/')))); }catch(e){} } var gi=h.indexOf('/gproxy/'); if(gi>=0){ try{ return decodeURIComponent(escape(atob(h.slice(gi+8).replace(/-/g,'+').replace(/_/g,'/')))); }catch(e){} } var i=h.indexOf('/sj/service/'); if(i>=0){ var r=h.slice(i+12); try{ return decodeURIComponent(r); }catch(e){ return r; } } var j=h.indexOf('/uv/service/'); if(j>=0) return uvDec(h.slice(j+12)); return h; }
 function rbxId(u){ if(!u) return ''; var rest=u; var p=u.indexOf('://'); if(p>=0) rest=u.slice(p+3); var sl=rest.indexOf('/'); var host= sl>=0? rest.slice(0,sl) : rest; if(host.indexOf('roblox.com')<0) return ''; var g=rest.indexOf('/games/'); if(g<0) return ''; var d=''; var k=g+7; while(k<rest.length){ var c=rest.charAt(k); if(c>='0'&&c<='9'){ d+=c; k++; } else break; } return d; }
 function rbxB64(s){ return btoa(unescape(encodeURIComponent(s))).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,''); }
-function goPlay(id){ var target='https://play.roblox.com/games/start?placeId='+id; var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){} if(cur.indexOf('/browse/')>=0){ gf.src='/browse/'+rbxB64(target); return; } if(cur.indexOf('/uv/service/')>=0){ gf.src='/uv/service/'+uvEnc(target); return; } gf.src='/sj/service/'+encodeURIComponent(target); }
+function goPlay(id){ var target='https://play.roblox.com/games/start?placeId='+id; var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){} if(cur.indexOf('/gproxy/')>=0){ gf.src='/gproxy/'+rbxB64(target); return; } if(cur.indexOf('/browse/')>=0){ gf.src='/browse/'+rbxB64(target); return; } if(cur.indexOf('/uv/service/')>=0){ gf.src='/uv/service/'+uvEnc(target); return; } gf.src='/sj/service/'+encodeURIComponent(target); }
 var lastDec='';
 function pollUrl(){ var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){ return; } var dec=decUrl(cur); if(lastDec && dec!==lastDec){ var id=rbxId(dec); if(id){ lastDec=dec; goPlay(id); return; } } lastDec=dec; }
 function onClick(e){ if(e.defaultPrevented) return; if(e.button!==undefined && e.button!==0) return; if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey) return; var t=e.target; var a=null; while(t){ if(t.tagName==='A'){ a=t; break; } t=t.parentNode; } if(!a) return; var id=rbxId(decUrl(a.href||'')); if(!id) return; e.preventDefault(); e.stopPropagation(); goPlay(id); }
@@ -3587,10 +3606,10 @@ gf.addEventListener('load', function(){ setTimeout(check, 4000); });
 var gf=document.getElementById('gf'); if(!gf) return;
 function uvDec(s){ try{ s=decodeURIComponent(s); }catch(e){} var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return o; }
 function uvEnc(s){ var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return encodeURIComponent(o); }
-function decUrl(h){ if(!h) return ''; var bi=h.indexOf('/browse/'); if(bi>=0){ try{ return decodeURIComponent(escape(atob(h.slice(bi+8).replace(/-/g,'+').replace(/_/g,'/')))); }catch(e){} } var i=h.indexOf('/sj/service/'); if(i>=0){ var r=h.slice(i+12); try{ return decodeURIComponent(r); }catch(e){ return r; } } var j=h.indexOf('/uv/service/'); if(j>=0) return uvDec(h.slice(j+12)); return h; }
+function decUrl(h){ if(!h) return ''; var bi=h.indexOf('/browse/'); if(bi>=0){ try{ return decodeURIComponent(escape(atob(h.slice(bi+8).replace(/-/g,'+').replace(/_/g,'/')))); }catch(e){} } var gi=h.indexOf('/gproxy/'); if(gi>=0){ try{ return decodeURIComponent(escape(atob(h.slice(gi+8).replace(/-/g,'+').replace(/_/g,'/')))); }catch(e){} } var i=h.indexOf('/sj/service/'); if(i>=0){ var r=h.slice(i+12); try{ return decodeURIComponent(r); }catch(e){ return r; } } var j=h.indexOf('/uv/service/'); if(j>=0) return uvDec(h.slice(j+12)); return h; }
 function rbxId(u){ if(!u) return ''; var rest=u; var p=u.indexOf('://'); if(p>=0) rest=u.slice(p+3); var sl=rest.indexOf('/'); var host= sl>=0? rest.slice(0,sl) : rest; if(host.indexOf('roblox.com')<0) return ''; var g=rest.indexOf('/games/'); if(g<0) return ''; var d=''; var k=g+7; while(k<rest.length){ var c=rest.charAt(k); if(c>='0'&&c<='9'){ d+=c; k++; } else break; } return d; }
 function rbxB64(s){ return btoa(unescape(encodeURIComponent(s))).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,''); }
-function goPlay(id){ var target='https://play.roblox.com/games/start?placeId='+id; var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){} if(cur.indexOf('/browse/')>=0){ gf.src='/browse/'+rbxB64(target); return; } if(cur.indexOf('/uv/service/')>=0){ gf.src='/uv/service/'+uvEnc(target); return; } gf.src='/sj/service/'+encodeURIComponent(target); }
+function goPlay(id){ var target='https://play.roblox.com/games/start?placeId='+id; var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){} if(cur.indexOf('/gproxy/')>=0){ gf.src='/gproxy/'+rbxB64(target); return; } if(cur.indexOf('/browse/')>=0){ gf.src='/browse/'+rbxB64(target); return; } if(cur.indexOf('/uv/service/')>=0){ gf.src='/uv/service/'+uvEnc(target); return; } gf.src='/sj/service/'+encodeURIComponent(target); }
 var lastDec='';
 function pollUrl(){ var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){ return; } var dec=decUrl(cur); if(lastDec && dec!==lastDec){ var id=rbxId(dec); if(id){ lastDec=dec; goPlay(id); return; } } lastDec=dec; }
 function onClick(e){ if(e.defaultPrevented) return; if(e.button!==undefined && e.button!==0) return; if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey) return; var t=e.target; var a=null; while(t){ if(t.tagName==='A'){ a=t; break; } t=t.parentNode; } if(!a) return; var id=rbxId(decUrl(a.href||'')); if(!id) return; e.preventDefault(); e.stopPropagation(); goPlay(id); }
@@ -3656,10 +3675,10 @@ arm();
 var gf=document.getElementById('gf'); if(!gf) return;
 function uvDec(s){ try{ s=decodeURIComponent(s); }catch(e){} var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return o; }
 function uvEnc(s){ var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return encodeURIComponent(o); }
-function decUrl(h){ if(!h) return ''; var bi=h.indexOf('/browse/'); if(bi>=0){ try{ return decodeURIComponent(escape(atob(h.slice(bi+8).replace(/-/g,'+').replace(/_/g,'/')))); }catch(e){} } var i=h.indexOf('/sj/service/'); if(i>=0){ var r=h.slice(i+12); try{ return decodeURIComponent(r); }catch(e){ return r; } } var j=h.indexOf('/uv/service/'); if(j>=0) return uvDec(h.slice(j+12)); return h; }
+function decUrl(h){ if(!h) return ''; var bi=h.indexOf('/browse/'); if(bi>=0){ try{ return decodeURIComponent(escape(atob(h.slice(bi+8).replace(/-/g,'+').replace(/_/g,'/')))); }catch(e){} } var gi=h.indexOf('/gproxy/'); if(gi>=0){ try{ return decodeURIComponent(escape(atob(h.slice(gi+8).replace(/-/g,'+').replace(/_/g,'/')))); }catch(e){} } var i=h.indexOf('/sj/service/'); if(i>=0){ var r=h.slice(i+12); try{ return decodeURIComponent(r); }catch(e){ return r; } } var j=h.indexOf('/uv/service/'); if(j>=0) return uvDec(h.slice(j+12)); return h; }
 function rbxId(u){ if(!u) return ''; var rest=u; var p=u.indexOf('://'); if(p>=0) rest=u.slice(p+3); var sl=rest.indexOf('/'); var host= sl>=0? rest.slice(0,sl) : rest; if(host.indexOf('roblox.com')<0) return ''; var g=rest.indexOf('/games/'); if(g<0) return ''; var d=''; var k=g+7; while(k<rest.length){ var c=rest.charAt(k); if(c>='0'&&c<='9'){ d+=c; k++; } else break; } return d; }
 function rbxB64(s){ return btoa(unescape(encodeURIComponent(s))).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,''); }
-function goPlay(id){ var target='https://play.roblox.com/games/start?placeId='+id; var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){} if(cur.indexOf('/browse/')>=0){ gf.src='/browse/'+rbxB64(target); return; } if(cur.indexOf('/uv/service/')>=0){ gf.src='/uv/service/'+uvEnc(target); return; } gf.src='/sj/service/'+encodeURIComponent(target); }
+function goPlay(id){ var target='https://play.roblox.com/games/start?placeId='+id; var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){} if(cur.indexOf('/gproxy/')>=0){ gf.src='/gproxy/'+rbxB64(target); return; } if(cur.indexOf('/browse/')>=0){ gf.src='/browse/'+rbxB64(target); return; } if(cur.indexOf('/uv/service/')>=0){ gf.src='/uv/service/'+uvEnc(target); return; } gf.src='/sj/service/'+encodeURIComponent(target); }
 var lastDec='';
 function pollUrl(){ var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){ return; } var dec=decUrl(cur); if(lastDec && dec!==lastDec){ var id=rbxId(dec); if(id){ lastDec=dec; goPlay(id); return; } } lastDec=dec; }
 function onClick(e){ if(e.defaultPrevented) return; if(e.button!==undefined && e.button!==0) return; if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey) return; var t=e.target; var a=null; while(t){ if(t.tagName==='A'){ a=t; break; } t=t.parentNode; } if(!a) return; var id=rbxId(decUrl(a.href||'')); if(!id) return; e.preventDefault(); e.stopPropagation(); goPlay(id); }
@@ -3724,10 +3743,10 @@ arm();
 var gf=document.getElementById('gf'); if(!gf) return;
 function uvDec(s){ try{ s=decodeURIComponent(s); }catch(e){} var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return o; }
 function uvEnc(s){ var o=''; for(var i=0;i<s.length;i++) o+= (i%2)? String.fromCharCode(s.charCodeAt(i)^2) : s[i]; return encodeURIComponent(o); }
-function decUrl(h){ if(!h) return ''; var bi=h.indexOf('/browse/'); if(bi>=0){ try{ return decodeURIComponent(escape(atob(h.slice(bi+8).replace(/-/g,'+').replace(/_/g,'/')))); }catch(e){} } var i=h.indexOf('/sj/service/'); if(i>=0){ var r=h.slice(i+12); try{ return decodeURIComponent(r); }catch(e){ return r; } } var j=h.indexOf('/uv/service/'); if(j>=0) return uvDec(h.slice(j+12)); return h; }
+function decUrl(h){ if(!h) return ''; var bi=h.indexOf('/browse/'); if(bi>=0){ try{ return decodeURIComponent(escape(atob(h.slice(bi+8).replace(/-/g,'+').replace(/_/g,'/')))); }catch(e){} } var gi=h.indexOf('/gproxy/'); if(gi>=0){ try{ return decodeURIComponent(escape(atob(h.slice(gi+8).replace(/-/g,'+').replace(/_/g,'/')))); }catch(e){} } var i=h.indexOf('/sj/service/'); if(i>=0){ var r=h.slice(i+12); try{ return decodeURIComponent(r); }catch(e){ return r; } } var j=h.indexOf('/uv/service/'); if(j>=0) return uvDec(h.slice(j+12)); return h; }
 function rbxId(u){ if(!u) return ''; var rest=u; var p=u.indexOf('://'); if(p>=0) rest=u.slice(p+3); var sl=rest.indexOf('/'); var host= sl>=0? rest.slice(0,sl) : rest; if(host.indexOf('roblox.com')<0) return ''; var g=rest.indexOf('/games/'); if(g<0) return ''; var d=''; var k=g+7; while(k<rest.length){ var c=rest.charAt(k); if(c>='0'&&c<='9'){ d+=c; k++; } else break; } return d; }
 function rbxB64(s){ return btoa(unescape(encodeURIComponent(s))).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,''); }
-function goPlay(id){ var target='https://play.roblox.com/games/start?placeId='+id; var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){} if(cur.indexOf('/browse/')>=0){ gf.src='/browse/'+rbxB64(target); return; } if(cur.indexOf('/uv/service/')>=0){ gf.src='/uv/service/'+uvEnc(target); return; } gf.src='/sj/service/'+encodeURIComponent(target); }
+function goPlay(id){ var target='https://play.roblox.com/games/start?placeId='+id; var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){} if(cur.indexOf('/gproxy/')>=0){ gf.src='/gproxy/'+rbxB64(target); return; } if(cur.indexOf('/browse/')>=0){ gf.src='/browse/'+rbxB64(target); return; } if(cur.indexOf('/uv/service/')>=0){ gf.src='/uv/service/'+uvEnc(target); return; } gf.src='/sj/service/'+encodeURIComponent(target); }
 var lastDec='';
 function pollUrl(){ var cur=''; try{ cur=gf.contentWindow.location.href; }catch(e){ return; } var dec=decUrl(cur); if(lastDec && dec!==lastDec){ var id=rbxId(dec); if(id){ lastDec=dec; goPlay(id); return; } } lastDec=dec; }
 function onClick(e){ if(e.defaultPrevented) return; if(e.button!==undefined && e.button!==0) return; if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey) return; var t=e.target; var a=null; while(t){ if(t.tagName==='A'){ a=t; break; } t=t.parentNode; } if(!a) return; var id=rbxId(decUrl(a.href||'')); if(!id) return; e.preventDefault(); e.stopPropagation(); goPlay(id); }
@@ -10953,6 +10972,7 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
   // so bing search requests go out cookieless, always.
   const isBingSearch = /(^|\.)bing\.com$/i.test(target.hostname) && target.pathname.includes('/search');
   const upstreamCookies = isBingSearch ? '' : buildUpstreamCookies(req.headers['cookie'] || '', target.hostname);
+  const pre = gameMode ? '/gproxy/' : '/browse/';
   if (upstreamCookies) headers['cookie'] = upstreamCookies;
 
   // v209: mirror/debing rules are NAVIGATION-only. Fired on a
@@ -10966,7 +10986,7 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
   }
   const debinged = isNav ? debingUrl(target) : null;
   if (debinged) {
-    res.writeHead(302, { location: proxied(debinged) });
+    res.writeHead(302, { location: gameMode ? gproxied(debinged) : proxied(debinged) });
     return res.end();
   }
   // memory cache (Node deploys): static assets only, GET without Range
@@ -11016,7 +11036,7 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
   // redirects: send the browser to the proxied version of the new location
   if (status >= 300 && status < 400 && upstream.headers.get('location')) {
     const loc = new URL(upstream.headers.get('location'), target).toString();
-    outHeaders['location'] = proxied(loc);
+    outHeaders['location'] = gameMode ? gproxied(loc) : proxied(loc);
     res.writeHead(302, outHeaders);
     return res.end();
   }
@@ -11030,8 +11050,8 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
     if (isHtml && isNav && (status === 403 || status === 429 || CHAL_SIG.test(text.slice(0, 4000)))) {
       const relayed = await fetchViaRelay(target.toString());
       if (relayed) {
-        let rw = rewriteHtml(relayed, target.toString());
-        rw = injectProxyShim(rw, target.toString(), gameMode ? '/gproxy/' : '/browse/');
+        let rw = rewriteHtml(relayed, target.toString(), pre);
+        rw = injectProxyShim(rw, target.toString(), pre);
         const rb = Buffer.from(rw, 'utf8');
         res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'content-length': rb.length, 'x-6ixnetworks-route': 'relay' });
         return res.end(rb);
@@ -11042,8 +11062,8 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
         return res.end(bp);
       }
     }
-    let rewritten = isHtml ? rewriteHtml(text, target.toString()) : rewriteCss(text, target.toString());
-  if (isHtml) rewritten = injectProxyShim(rewritten, target.toString(), gameMode ? '/gproxy/' : '/browse/');
+    let rewritten = isHtml ? rewriteHtml(text, target.toString(), pre) : rewriteCss(text, target.toString(), pre);
+  if (isHtml) rewritten = injectProxyShim(rewritten, target.toString(), pre);
     const buf = Buffer.from(rewritten, 'utf8');
     return sendCompressed(req, res, status, outHeaders, buf);
   }
@@ -16945,7 +16965,10 @@ function handleWsx(req, socket, head) {
   const protoHdr = req.headers['sec-websocket-protocol'];
   const protos = protoHdr ? protoHdr.split(',').map(s => s.trim()).filter(Boolean) : [];
   wsxServer.handleUpgrade(req, socket, head, (down) => {
-    const up = new WsxClient(wsUrl, protos.length ? protos : undefined, { headers: { 'user-agent': BROWSER_UA, origin: (tu.protocol === 'wss:' ? 'https://' : 'http://') + tu.host } });
+    const wsHeaders = { 'user-agent': BROWSER_UA, origin: (tu.protocol === 'wss:' ? 'https://' : 'http://') + tu.host };
+    const wsCookies = buildUpstreamCookies(req.headers.cookie || '', tu.hostname);
+    if (wsCookies) wsHeaders.cookie = wsCookies;
+    const up = new WsxClient(wsUrl, protos.length ? protos : undefined, { headers: wsHeaders });
     const queued = [];
     let open = false;
     down.on('message', (data, isBinary) => { if (open) { try { up.send(data, { binary: isBinary }); } catch { } } else queued.push([data, isBinary]); });
