@@ -13740,7 +13740,7 @@ function sixMessages(list) {
   return out.length ? out : [{ role: 'user', content: 'hi' }];
 }
 
-const GEMINI_MODELS = ['gemini-3.6-flash', 'gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-flash-latest', 'gemini-flash-lite-latest'];
+const GEMINI_MODELS = ['gemini-3.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-3.8-flash', 'gemini-flash-latest']; // v397: lite-first — the full-size flash models 429 near-constantly on free keys (per-model quota, live-verified 2026-11-10) while the lites answer reliably; strong models stay in the walk as later tries
 let geminiWinner = null;
 // key pool: up to 4 ai studio keys (GEMINI_API_KEY + GEMINI_API_KEY2/3/4,
 // or a comma list in GEMINI_API_KEYS). each key carries its OWN free
@@ -13854,12 +13854,13 @@ async function askGemini(env, messages, maxTokens, lane, needComplete) {
   // itself (hammering the limit that was already tripped) before other keys
   // got a turn, so six face-planted with the dead-brain line for minutes at
   // a time while healthy keys sat idle (live-reproduced 2026-11-09: 5/5
-  // asks dead, then fine minutes later). a 429 on any key now skips
-  // straight to the next key instead of retrying that key.
+  // asks dead, then fine minutes later). (v397 note: the 429-break this
+  // paragraph originally added is GONE — 429s turned out to be per-model,
+  // see tryKey below.)
   const tryKey = async (key, models) => {
     for (const model of models) {
       try { const out = await geminiAttempt(model, key, messages, maxTokens, 8000, needComplete); geminiWinner = model; return out; }
-      catch (e) { if (/http 429/.test(String((e && e.message) || ''))) break; continue; }
+      catch (e) { continue; } // v397: a 429 here is per-MODEL quota, not per-key (live-verified 2026-11-10: the same key 429s on 3.6-flash and answers on 3.5-flash-lite) — the old break-on-429 abandoned every key at its first model and the whole cascade died in ~1s with healthy lite models never tried. walk the models; a truly dead key just fails each one fast.
     }
     if (geminiWinner && models.includes(geminiWinner)) geminiWinner = null;
     return null;
