@@ -13753,26 +13753,33 @@ function geminiKeys(env) {
   return out;
 }
 let geminiKeyIdx = 0;
-// key lanes (v228, his balancing call): each six surface stays on its OWN
-// keys instead of the whole pool rotating thru everything — /ai page six
-// lives on keys 1-2, 6ixchat six lives on key 1 (one of those same two),
-// forge gets its own key (key 3 when the pool has one). small pools degrade
-// gracefully: 2 keys -> forge shares key 2, 1 key -> everything shares it.
+// key lanes: surfaces keep staggered home offsets in the pool, but since
+// v396 the pool ROTATES under every surface (see geminiLaneKeys) — the
+// old v228/v230 pin (one dedicated key per surface) starved busy pages
+// once the pool grew past the surface count.
 const GEMINI_SURFACES = ['page', 'chat', 'forgeSpec', 'forgeBuild', 'hw', 'summary', 'image'];
+// v396 EVEN DISTRIBUTION (his ask 2026-11-09, after the pool grew to 17
+// keys): the v230 one-dedicated-key-per-surface pin starved busy surfaces
+// (one quota per page while 10 keys sat idle). now geminiLaneKeys returns
+// the WHOLE pool rotated: each lane keeps its own staggered home offset
+// (page 0, chat 1, forgeSpec 2, forgeBuild 3, hw 4, summary 5, image 6,
+// splash 7) and a single global cursor advances on EVERY call, so
+// consecutive asks — on any surface — start on the next key over. over
+// any full cycle every key takes an equal share of first tries, the
+// v395 borrow walk (keys.slice(1,5) in askGemini) follows the same
+// rotation instead of always raiding the head of the list, and a key
+// that 429s is rested while the rotation moves on. small pools degrade
+// the same way they always did (rotation mod pool size).
+let geminiPoolCursor = 0;
 function geminiLaneKeys(env, lane) {
-  // v230 (his design): every ai page gets its OWN dedicated key so no two
-  // surfaces ever queue on the same quota — page six, chat six, hw, summary
-  // and image each own one; forge owns TWO (spec key + build key, spec
-  // fires and the build key takes over instantly). pool smaller than the
-  // surface count wraps + shares. askGemini borrows the rest of the pool
-  // ONLY if a surface's own key is fully dead, so a dead key never
-  // hard-fails a page.
   const all = geminiKeys(env);
   if (!all.length) return all;
-  if (lane === 'splash') { const spares = all.slice(GEMINI_SURFACES.length); return spares.length ? spares : [all[all.length - 1]]; }
-  let ix = GEMINI_SURFACES.indexOf(lane);
-  if (ix < 0) ix = 0;
-  return [all[ix % all.length]];
+  let base;
+  if (lane === 'splash') base = GEMINI_SURFACES.length;
+  else { base = GEMINI_SURFACES.indexOf(lane); if (base < 0) base = 0; }
+  const start = (base + geminiPoolCursor) % all.length;
+  geminiPoolCursor++;
+  return all.slice(start).concat(all.slice(0, start));
 }
 const GEMINI_SAFETY_OFF = ['HARM_CATEGORY_HARASSMENT', 'HARM_CATEGORY_HATE_SPEECH', 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'HARM_CATEGORY_DANGEROUS_CONTENT'].map(category => ({ category, threshold: 'BLOCK_NONE' }));
 async function geminiNativeAttempt(model, key, messages, maxTokens, ms) {
@@ -13857,8 +13864,10 @@ async function askGemini(env, messages, maxTokens, lane, needComplete) {
     if (geminiWinner && models.includes(geminiWinner)) geminiWinner = null;
     return null;
   };
-  const pool = geminiKeys(env);
-  const others = pool.filter(k => k !== keys[0]).slice(0, 4);
+  // v396: keys IS the full pool in this call's rotation order (see
+  // geminiLaneKeys), so the borrow walk takes the next keys in rotation
+  // rather than always raiding the head of the raw pool list.
+  const others = keys.slice(1, 5);
   for (const key of others) {
     const out = await tryKey(key, order.slice(0, 2));
     if (out) return out;
@@ -13878,7 +13887,7 @@ let geminiImageLastErr = '';
 let geminiImageNoModalities = false;
 let geminiImageErrs = {};
 async function askGeminiImage(env, prompt) {
-  const keys = geminiLaneKeys(env, 'image');
+  const keys = geminiLaneKeys(env, 'image').slice(0, 5); // v396: lane keys are the rotated full pool now — cap the image walk so a dead-everywhere day can't loop 17 keys x 3 models
   if (!keys.length || !prompt) return null;
   geminiImageErrs = {};
   const order = geminiImageWinner ? [geminiImageWinner].concat(GEMINI_IMAGE_MODELS.filter(mo => mo !== geminiImageWinner)) : GEMINI_IMAGE_MODELS;
