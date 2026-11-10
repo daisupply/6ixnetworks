@@ -204,7 +204,20 @@ async function askSixSummary(env, url, title, text) {
   return out;
 }
 function injectProxyShim(html, tgt, pre) {
-  const shim = '<script>' + PROXY_SHIM.replace('%%TGT%%', JSON.stringify(tgt).replace(/</g, '\\u003c')).replace('%%PRE%%', JSON.stringify(pre).replace(/</g, '\\u003c')) + '</' + 'script>' + sixAnswerSnippet(tgt);
+  let shimSrc = PROXY_SHIM;
+  // v399: roblox's web client joins games over WebTransport — its WASM-RNA
+  // layer hard-errors 'JS WebTransport is unavailable' when the global is
+  // missing. the v382 hide (generic proxied pages) therefore let the whole
+  // ~110mb engine download finish and then killed the join silently. on
+  // roblox-family pages keep the real WebTransport: the transport connects
+  // browser-direct to the game server (exactly like it does on scramjet),
+  // nothing about it is proxied or stored.
+  try {
+    if (/(^|\.)(roblox\.com|rbxcdn\.com|rbxinfra\.com)$/i.test(new URL(tgt).hostname)) {
+      shimSrc = shimSrc.replace("try{ if('WebTransport' in window){ window.WebTransport=undefined; } }catch(e){}", '/* wt kept: roblox join transport */');
+    }
+  } catch { }
+  const shim = '<script>' + shimSrc.replace('%%TGT%%', JSON.stringify(tgt).replace(/</g, '\\u003c')).replace('%%PRE%%', JSON.stringify(pre).replace(/</g, '\\u003c')) + '</' + 'script>' + sixAnswerSnippet(tgt);
   if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, m => m + shim);
   if (/<html[^>]*>/i.test(html)) return html.replace(/<html[^>]*>/i, m => m + shim);
   return shim + html;
