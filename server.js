@@ -15187,6 +15187,8 @@ function notifState(meName) {
   const snap = notifs.map((n) => Object.assign({}, n));
   let ambDirty = false;
   for (const n of notifs) { if (!n.read && (n.type === 'call_missed' || n.type === 'friend_acc' || n.type === 'req_milestone')) { n.read = true; ambDirty = true; } }
+  /* v398: stale friend_req rows — a request that was withdrawn (friend-remove), or whose sender account is gone, leaves its notif unread forever: badge lit, friends list empty, nothing to open (the phantom, live-reproduced via v411 probe). a friend_req notif whose sender is no longer in the incoming list is dead by definition — flip it read with the ambient rows so existing stuck rows self-heal on the next poll. */
+  if (fr) { const finSet = new Set(fr.fin); for (const n of notifs) { if (!n.read && n.type === 'friend_req' && !finSet.has(String(n.from || '').toLowerCase())) { n.read = true; ambDirty = true; } } }
   if (ambDirty) persistAcct(lower);
   const dmFrom = {}; let unread = 0;
   for (const n of notifs) { if (!n.read) { unread++; if (n.type === 'dm') dmFrom[n.from] = true; } }
@@ -16254,7 +16256,7 @@ const server = http.createServer(async (req, res) => {
         if (me.fin.indexOf(tl) < 0) err = 'no request from them';
         else { pull(me.fin, tl); pull(them.fout, ml); if (me.friends.indexOf(tl) < 0) me.friends.push(tl); if (them.friends.indexOf(ml) < 0) them.friends.push(ml); clearReqNotif(me, tl); pushNotif(tl, { type: 'friend_acc', from: ml, fromName: me.disp || me.name }); }
       } else if (kind === 'friend-decline') { pull(me.fin, tl); pull(them.fout, ml); clearReqNotif(me, tl); }
-      else { pull(me.friends, tl); pull(them.friends, ml); pull(me.fin, tl); pull(me.fout, tl); pull(them.fin, ml); pull(them.fout, ml); }
+      else { pull(me.friends, tl); pull(them.friends, ml); pull(me.fin, tl); pull(me.fout, tl); pull(them.fin, ml); pull(them.fout, ml); clearReqNotif(me, tl); clearReqNotif(them, ml); /* v398: withdrawing a pending request must also kill its notif on the other side, or it strands as an unread phantom */ }
       persistAcct(ml); persistAcct(tl);
       if (err) return res.end(JSON.stringify({ ok: false, err }));
       return res.end(JSON.stringify(Object.assign({ ok: true }, friendsPayload(me.name))));
