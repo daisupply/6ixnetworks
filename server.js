@@ -14172,7 +14172,8 @@ function siteFileNameOk(n) { const m = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,60}\.([a-zA
 function siteSafeUrl(u) { const s = String(u || '').trim(); return (/^https?:\/\//i.test(s) || /^mailto:/i.test(s) || s.startsWith('/s/') || s.startsWith('/')) ? s : '#'; }
 function siteSanHtml(h) {
   let s = String(h || '').slice(0, 20000);
-  s = s.replace(/<\s*(script|iframe|object|embed|form|link|meta|base|title|svg|math)[\s\S]*?(?:<\/\s*\1\s*>|\/>|>)/gi, ' ');
+  s = s.replace(/<(script|iframe|object|embed|form|title|svg|math)\b[\s\S]*?<\/\s*\1\s*>/gi, ' ');
+  s = s.replace(/<\s*\/?\s*(script|iframe|object|embed|form|link|meta|base|title|svg|math)\b[^>]*>/gi, ' ');
   s = s.replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
   s = s.replace(/(href|src)\s*=\s*("\s*(?:javascript|vbscript|data)\s*:[^"]*"|'\s*(?:javascript|vbscript|data)\s*:[^']*')/gi, '$1="#"');
   return s;
