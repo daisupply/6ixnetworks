@@ -2705,15 +2705,15 @@ function isStaticAsset(target, ct) {
 const GM_FEED = 'https://rss.gamemonetize.com/rssfeed.php?format=json&category=All&type=html5&amount=20000';
 const FAMOBI_FEED = 'https://api.famobi.com/feed';
 const EXTRA_GAMES = [
-  { t: 'CloverPit', u: 'https://genizymath.github.io/iframe/716-fix3.html', img: 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3314790/header.jpg', c: 'Arcade', w: 960, h: 540 },
-  { t: 'Deltarune', u: 'https://deltarune.live/chapter1/', img: 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1671210/header.jpg', c: 'RPG', w: 960, h: 540 },
-  { t: 'Dice a Million', u: 'https://wasm.rip/files/diceAmillion/diceamillion.html', img: 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3430340/header.jpg', c: 'Arcade', w: 960, h: 540 },
-  { t: 'Retro Bowl', u: 'https://806e2242-df99-4dcd-b6ac-2c20175159a8.gdn.poki.com/9a5a5ef4-bd76-48fa-bf07-5ccbdc09b1f6/index.html?country=US&ccpaApplies=0&url_referrer=https%3A%2F%2Fpoki.com%2Fen%2Fg%2Fretro-bowl&domain=poki.com&game_id=806e2242-df99-4dcd-b6ac-2c20175159a8&game_version_id=9a5a5ef4-bd76-48fa-bf07-5ccbdc09b1f6&inspector=0&csp=1', img: 'https://www.google.com/s2/favicons?domain=poki.com&sz=128', c: 'Sports', w: 960, h: 540, m: 1 },
-  { t: 'Subway Surfers', u: 'https://5dd312fa-015f-11ea-ad56-9cb6d0d995f7.gdn.poki.com/ec5c789a-69d7-476d-aa4e-1a0064850d79/index.html?country=US&ccpaApplies=0&url_referrer=https%3A%2F%2Fpoki.com%2Fen%2Fg%2Fsubway-surfers&domain=poki.com&game_id=5dd312fa-015f-11ea-ad56-9cb6d0d995f7&game_version_id=ec5c789a-69d7-476d-aa4e-1a0064850d79&inspector=0&csp=1', img: 'https://www.google.com/s2/favicons?domain=poki.com&sz=128', c: 'Arcade', w: 800, h: 600, m: 1 },
-  { t: 'Jetpack Joyride', u: 'https://jetpack-joyride-pcp.game-files.crazygames.com/jetpack-joyride-pcp/17/index.html', img: 'https://www.google.com/s2/favicons?domain=crazygames.com&sz=128', c: 'Arcade', w: 960, h: 540, m: 1 },
-  { t: 'Geometry Dash Lite', u: 'https://g.w3technic.com/games/_iso/geometrydashlite.one/play/', img: 'https://www.google.com/s2/favicons?domain=geometrydashlite.one&sz=128', c: 'Arcade', w: 960, h: 540, m: 1 },
-  { t: 'Paper.io', u: 'https://paperio2.click/play', img: 'https://www.google.com/s2/favicons?domain=paperio2.click&sz=128', c: 'Arcade', w: 800, h: 600, m: 1 },
-  { t: 'HexTank.io', u: 'https://hextank.io/', img: 'https://www.google.com/s2/favicons?domain=hextank.io&sz=128', c: '3D', w: 800, h: 600 },
+  { t: 'CloverPit', ad: 20261106, u: 'https://genizymath.github.io/iframe/716-fix3.html', img: 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3314790/header.jpg', c: 'Arcade', w: 960, h: 540 },
+  { t: 'Deltarune', ad: 20261111, u: 'https://deltarune.live/chapter1/', img: 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1671210/header.jpg', c: 'RPG', w: 960, h: 540 },
+  { t: 'Dice a Million', ad: 20261106, u: 'https://wasm.rip/files/diceAmillion/diceamillion.html', img: 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3430340/header.jpg', c: 'Arcade', w: 960, h: 540 },
+  { t: 'Retro Bowl', ad: 20261109, u: 'https://806e2242-df99-4dcd-b6ac-2c20175159a8.gdn.poki.com/9a5a5ef4-bd76-48fa-bf07-5ccbdc09b1f6/index.html?country=US&ccpaApplies=0&url_referrer=https%3A%2F%2Fpoki.com%2Fen%2Fg%2Fretro-bowl&domain=poki.com&game_id=806e2242-df99-4dcd-b6ac-2c20175159a8&game_version_id=9a5a5ef4-bd76-48fa-bf07-5ccbdc09b1f6&inspector=0&csp=1', img: 'https://play-lh.googleusercontent.com/BsGlLdHni2luaTQ-_656B4evfXgkrsxWwk_7ZnLHLd1UVq7OFisXmpqcfK60qzvTqK7J2m-B-7j6-e4217B4BQ=w512-h512', c: 'Sports', w: 960, h: 540, m: 1 },
+  { t: 'Subway Surfers', ad: 20261109, u: 'https://5dd312fa-015f-11ea-ad56-9cb6d0d995f7.gdn.poki.com/ec5c789a-69d7-476d-aa4e-1a0064850d79/index.html?country=US&ccpaApplies=0&url_referrer=https%3A%2F%2Fpoki.com%2Fen%2Fg%2Fsubway-surfers&domain=poki.com&game_id=5dd312fa-015f-11ea-ad56-9cb6d0d995f7&game_version_id=ec5c789a-69d7-476d-aa4e-1a0064850d79&inspector=0&csp=1', img: 'https://play-lh.googleusercontent.com/G1eIJ3yor1yW20izrYjOfCzHgVkRtewlfPFG9CEFTHzSI2m0Lwds_Y1xYgeg21CFok_UXrol-ox2IwqL4JMrLQ=w512-h512', c: 'Arcade', w: 800, h: 600, m: 1 },
+  { t: 'Jetpack Joyride', ad: 20261109, u: 'https://jetpack-joyride-pcp.game-files.crazygames.com/jetpack-joyride-pcp/17/index.html', img: 'https://play-lh.googleusercontent.com/fo_dS1ZkonPQsBvxnbuIcPU8kuTbmRHsDojJIRsK1zqtlgDHMmzP8hHL2Ex-aapGjYZC7OfsvX92gZNPzxkAwg=w512-h512', c: 'Arcade', w: 960, h: 540, m: 1 },
+  { t: 'Geometry Dash Lite', ad: 20261109, u: 'https://g.w3technic.com/games/_iso/geometrydashlite.one/play/', img: 'https://play-lh.googleusercontent.com/StEbdIF-rV4EoYfIdaP07zClA50KSs-i9o12kceyecfw8R0nwYfzqV64h3UlEzh_fCqxyNCj7Bb7ro86pfYDsSU=w512-h512', c: 'Arcade', w: 960, h: 540, m: 1 },
+  { t: 'Paper.io', ad: 20261109, u: 'https://paperio2.click/play', img: 'https://play-lh.googleusercontent.com/gVtEUeaxaxBsvbbMXK4QiEldapksGxya07DcI-6w3U7FI3RKNulhbw2Rp3zKee_yIIIu16VEFU4Nzrr-Mlp-=w512-h512', c: 'Arcade', w: 800, h: 600, m: 1 },
+  { t: 'HexTank.io', ad: 20261109, u: 'https://hextank.io/', img: 'https://hextank.io/smallLogo.png', c: '3D', w: 800, h: 600 },
 ];
 const FALLBACK_GAMES = [
   { t: 'Nutty Rush Kart', u: 'https://html5.gamemonetize.co/jo8widlpg0usj47eix91m74q1jzvon00/', img: 'https://img.gamemonetize.com/jo8widlpg0usj47eix91m74q1jzvon00/512x384.jpg', c: 'Racing', w: 800, h: 600 },
@@ -2751,7 +2751,7 @@ async function loadGames() {
     list.push({ t: String(t).replace(/&amp;/g, '&').replace(/&#0?39;/g, '\'').replace(/&quot;/g, '"').slice(0, 80), u, img: img || '', c: c || 'Arcade', w: w || 800, h: h || 600, m: m ? 1 : 0 });
   }
   // hand-added games first (requests + direct asks) — feeds can't shadow them
-  for (const g of EXTRA_GAMES) { push(g.t, g.u, g.img, g.c, g.w, g.h, g.m); const gi = list.findIndex(x => x.u === g.u); if (gi >= 0) list[gi].nu = 1; }
+  for (const g of EXTRA_GAMES) { push(g.t, g.u, g.img, g.c, g.w, g.h, g.m); const gi = list.findIndex(x => x.u === g.u); if (gi >= 0) { list[gi].nu = 1; if (g.ad) list[gi].ad = g.ad; } }
   // famobi first: the small curated catalog — every game, quality up front
   try {
     const r = await fetch(FAMOBI_FEED, { headers: { 'user-agent': BROWSER_UA, 'accept': 'application/json' } });
@@ -3063,8 +3063,11 @@ function buildPop(){
 function buildNew(){
   var nw=document.getElementById('newWrap'), nr=document.getElementById('newRow');
   if(!nw || !nr) return;
-  var n=0; nr.innerHTML='';
-  for(var i=0;i<GAMES.length;i++){ var g=GAMES[i]; if(g && g.nu){ n++; nr.appendChild(mkPop(g, n)); } }
+  nr.innerHTML='';
+  var nus=GAMES.filter(function(g){ return g && g.nu; });
+  nus.sort(function(a, b){ return (b.ad || 0) - (a.ad || 0); });
+  var n=0;
+  for(var i=0;i<nus.length && n<12;i++){ n++; nr.appendChild(mkPop(nus[i], n)); }
   if(n) nw.hidden=false;
 }
 function heroStart(){
@@ -16683,8 +16686,8 @@ const server = http.createServer(async (req, res) => {
   }
   if (u.pathname === '/api/games') {
     const games = FEATURED_GAMES.concat(await loadGames());
-    const out = games.map(g => { const o = { t: g.t, u: g.u, img: g.img ? proxied(g.img) : '', icon: g.icon || '', lg: g.lg ? 1 : 0, nu: g.nu ? 1 : 0, c: g.c || 'Arcade' }; if (g.m) o.m = 1; return o; });
-    res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'public, max-age=600' });
+    const out = games.map(g => { const o = { t: g.t, u: g.u, img: g.img ? proxied(g.img) : '', icon: g.icon || '', lg: g.lg ? 1 : 0, nu: g.nu ? 1 : 0, c: g.c || 'Arcade' }; if (g.m) o.m = 1; if (g.ad) o.ad = g.ad; return o; });
+    res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'public, max-age=60' });
     return res.end(JSON.stringify(out));
   }
   if (u.pathname === '/gs') {
