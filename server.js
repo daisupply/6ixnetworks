@@ -7974,6 +7974,10 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .mvwrap{position:relative;width:100%;max-width:1020px;aspect-ratio:16/9;background:#000;border:1px solid rgba(var(--star),.16);border-radius:18px;overflow:hidden}
 .skipbtn{position:absolute;right:14px;bottom:54px;z-index:6;background:rgba(10,9,18,.85);border:1px solid rgba(255,255,255,.4);color:#fff;font-weight:700;font-size:13.5px;border-radius:9px;padding:9px 16px;cursor:pointer;font-family:inherit}
 .skipbtn[hidden]{display:none}
+.mvwrap{border-radius:20px;box-shadow:0 24px 70px rgba(0,0,0,.55),0 0 44px rgba(var(--star),.07)}
+#wTitle{font-size:23px;margin:4px 0 2px;letter-spacing:-.01em}
+.hint:empty{display:none}
+#tuneRow[hidden],#streamRow[hidden],#skipRow[hidden]{display:none}
 .mvwrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .mvwrap video{position:absolute;inset:0;width:100%;height:100%;background:#000}
 #libRow[hidden]{display:none}
@@ -8024,35 +8028,30 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <div class="mvwrap"><iframe id="mvFrame" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="no-referrer"></iframe><video id="mvVid" controls playsinline preload="auto" hidden></video><button id="skipBtn" class="skipbtn" type="button" hidden>skip intro</button><div id="ytBox" hidden></div><div id="mvLoad">tuning in\u2026</div></div>
 <div id="wDesc" hidden><img id="wDescImg" alt=""><div class="wdmain"><p id="wDescTxt"></p><p class="wdsix" id="wDescSix" hidden></p><p class="wdmeta" id="wDescMeta"></p></div></div>
 <div class="ctl" id="srcCtl" style="flex-wrap:wrap;row-gap:8px" hidden>
-<span class="lab">source</span>
 <span class="ddslot" id="srcSlot"></span><select id="srcSel" hidden></select>
-<span class="lab">route</span>
 <span class="ddslot" id="rtSlot"></span><select id="rtSel" hidden><option value="lite">virtual direct</option><option value="tunnel">tunnel</option><option value="direct" selected>direct</option></select>
 </div>
 <div class="ctl" id="tuneRow">
 <button class="mchip" id="tuneBtn" type="button">source + route</button>
-<span class="lab" id="tuneLab"></span>
 </div>
 <div class="ctl" id="skipRow">
-<span class="lab">skip segments</span>
-<button class="mchip" id="skipModeBtn" type="button">button</button>
-<span class="lab">button · auto · off</span>
+<button class="mchip" id="skipModeBtn" type="button">skip: button</button>
 </div>
 <div class="ctl" id="libRow" hidden>
 <a class="mchip" id="dlBtn" href="#" style="text-decoration:none">download the whole movie</a>
-<span class="lab">streams thru the network — loads in while u watch, seek works once its buffered</span>
+
 </div>
 <div class="ctl" id="streamRow" hidden>
-<button class="mchip" id="streamBtn" type="button">stream it — the real file</button>
+<button class="mchip" id="streamBtn" type="button">stream the real file</button>
 <span class="lab" id="streamLab"></span>
 </div>
 <div class="ctl" id="seRow" hidden>
-<span class="lab">season</span><input class="sein" id="wS" type="number" min="1" value="1">
-<span class="lab">episode</span><input class="sein" id="wE" type="number" min="1" value="1">
-<button class="mchip" id="seGo" type="button">load episode</button>
+<input class="sein" id="wS" type="number" min="1" value="1" aria-label="season">
+<input class="sein" id="wE" type="number" min="1" value="1" aria-label="episode">
+<button class="mchip" id="seGo" type="button">load</button>
 </div>
-<p class="hint" id="mvHint">if it wont play: switch the source, or try the direct route \u2014 some networks block the tunnel for video. a black screen for a few seconds while it buffers is normal.</p>
-<p class="hint" id="libHint" hidden>this is a real movie file streaming thru the network — it loads in while u watch, so pause, seek n scrub like any normal video. want it saved for offline? grab the download.</p>
+<p class="hint" id="mvHint"></p>
+<p class="hint" id="libHint" hidden>real file — pause, seek n scrub like normal.</p>
 ${SIDEBAR_HTML}
 </div>
 <script src="/ui.js"></script>
@@ -8429,10 +8428,10 @@ if (['button', 'auto', 'off'].indexOf(skipMode) < 0) skipMode = 'button';
 (function(){
   var mb = document.getElementById('skipModeBtn');
   if (!mb) return;
-  mb.textContent = skipMode;
+  mb.textContent = 'skip: ' + skipMode;
   mb.addEventListener('click', function(){
     skipMode = skipMode === 'button' ? 'auto' : skipMode === 'auto' ? 'off' : 'button';
-    mb.textContent = skipMode;
+    mb.textContent = 'skip: ' + skipMode;
     try { localStorage.setItem('gx_skipmode', skipMode); } catch (e) {}
     if (skipMode === 'off') document.getElementById('skipBtn').hidden = true;
   });
@@ -8475,7 +8474,7 @@ function checkStream(){
     v.addEventListener('canplay', function(){ if (streamOn) document.getElementById('mvLoad').style.opacity = '0'; });
     v.addEventListener('error', function(){ if (streamOn) { var ld = document.getElementById('mvLoad'); ld.style.opacity = '1'; ld.textContent = 'stream hit a wall — tap stream it again, or tap it once more to flip back to the embed'; } }, true);
     if (fp.id === 'archive') {
-      lab.textContent = 'the vault has this one' + (fp.ay ? ' (' + fp.ay + ')' : '') + ' as a real file — streams straight thru the network like 6ixtube, no embed bs';
+      lab.textContent = 'in the vault as a real file';
       btn.addEventListener('click', function(){
         if (streamOn) { streamOff(); return; }
         if (streamBusy) return; streamBusy = true;
@@ -8487,7 +8486,7 @@ function checkStream(){
         }).catch(function(){ streamBusy = false; });
       });
     } else if (fp.id === 'jellyfin') {
-      lab.textContent = 'ur own library has this one — streams from ur server thru the network like 6ixtube';
+      lab.textContent = 'in ur library as a real file';
       btn.addEventListener('click', function(){
         if (streamOn) { streamOff(); return; }
         streamPlay('/api/jfstream?id=' + encodeURIComponent(fp.jelly), '', 0, 'my library');
