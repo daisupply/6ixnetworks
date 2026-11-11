@@ -14194,15 +14194,15 @@ function siteShape(raw, owner, slug) {
   for (const f of (Array.isArray(b.files) ? b.files : []).slice(0, 12)) { if (f && siteFileNameOk(f.name)) files.push({ name: String(f.name), size: +f.size || 0 }); }
   return { slug, owner, title: String(b.title || slug).slice(0, 60), accent: /^#[0-9a-f]{6}$/i.test(String(b.accent || '')) ? String(b.accent) : '#9a86ff', blocks, files, updated: Date.now() };
 }
-function renderSitePage(site) {
+function renderSitePage(site, base) {
   const acc = site.accent;
   let body = '';
   for (const bl of site.blocks) {
     if (bl.k === 'h') body += '<h2>' + escHtml(bl.t) + '</h2>';
     else if (bl.k === 'p') body += '<p>' + escHtml(bl.t).replace(/\n/g, '<br>') + '</p>';
-    else if (bl.k === 'img') { const src = bl.src.startsWith('file:') ? '/s/' + site.slug + '/f/' + encodeURIComponent(bl.src.slice(5)) : siteSafeUrl(bl.src); if (src !== '#') body += '<img class="simg" src="' + escHtml(src) + '" alt="">'; }
+    else if (bl.k === 'img') { const src = bl.src.startsWith('file:') ? base + '/f/' + encodeURIComponent(bl.src.slice(5)) : siteSafeUrl(bl.src); if (src !== '#') body += '<img class="simg" src="' + escHtml(src) + '" alt="">'; }
     else if (bl.k === 'link') body += '<p><a class="sbtn" href="' + escHtml(siteSafeUrl(bl.href)) + '">' + escHtml(bl.t || bl.href) + '</a></p>';
-    else if (bl.k === 'file') { const f = site.files.find(x => x.name === bl.name); if (f) body += '<p><a class="sfile" href="/s/' + site.slug + '/f/' + encodeURIComponent(f.name) + '">' + escHtml(f.name) + ' <span>' + Math.max(1, Math.round(f.size / 1024)) + ' kb</span></a></p>'; }
+    else if (bl.k === 'file') { const f = site.files.find(x => x.name === bl.name); if (f) body += '<p><a class="sfile" href="' + base + '/f/' + encodeURIComponent(f.name) + '">' + escHtml(f.name) + ' <span>' + Math.max(1, Math.round(f.size / 1024)) + ' kb</span></a></p>'; }
     else if (bl.k === 'html') body += '<div class="shtml">' + siteSanHtml(bl.t) + '</div>';
   }
   if (!body) body = '<p class="dim">nothing here yet</p>';
@@ -14215,7 +14215,7 @@ function renderSitePage(site) {
     + '.shtml{margin:12px 0}.shtml a{color:' + acc + '}.dim{opacity:.5}'
     + 'footer{max-width:680px;margin:44px auto 0;opacity:.45;font-size:13px}footer a{color:#eceaf6}</style></head><body>'
     + '<div class="swrap"><h1>' + escHtml(site.title) + '</h1>' + body + '</div>'
-    + '<footer>made on <a href="/sites">6ix sites</a> ✦</footer></body></html>';
+    + '<footer>made on <a href="https://s.usareme.site/sites">6ix sites</a> ✦</footer></body></html>';
 }
 
 function sitesPage() {
@@ -14256,7 +14256,7 @@ select.spin{appearance:none}
 <div id="spOut" hidden><p>log in first — sites are tied to ur account.</p><a class="spbtn" href="/account">log in</a></div>
 <div id="spApp" hidden>
 <div id="spList"></div>
-<div class="splabel">new site — ur link will be /s/…</div>
+<div class="splabel">new site — ur link will be slug.usareme.site</div>
 <div class="sprow"><input class="spin" id="spSlug" placeholder="slug (a-z, 0-9, dashes)" style="flex:1;min-width:150px"><input class="spin" id="spTitle" placeholder="site title" style="flex:1;min-width:150px"><button class="spbtn" id="spCreate" type="button">create</button></div>
 <div class="spmsg" id="spMsg"></div>
 <div id="spEd" hidden>
@@ -14291,7 +14291,7 @@ function $(i) { return document.getElementById(i); }
 function jget(u) { return fetch(u, { headers: { 'accept': 'application/json' } }).then(function(r) { return r.json(); }); }
 function jpost(u, b) { return fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) }).then(function(r) { return r.json(); }); }
 function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-function siteLink(slug) { return location.origin + '/s/' + slug; }
+function siteLink(slug) { return /(^|\\.)usareme\\.site$/.test(location.hostname) ? 'https://' + slug + '.usareme.site' : location.origin + '/s/' + slug; }
 function renderList() {
   var el = $('spList'); el.innerHTML = '';
   MY.forEach(function(s) {
@@ -14311,7 +14311,7 @@ function openSite(slug) {
 function renderEd() {
   if (!W) return;
   $('edTitle').value = W.title || '';
-  $('edView').href = '/s/' + W.slug;
+  $('edView').href = siteLink(W.slug);
   var sw = $('edSw'); sw.innerHTML = '';
   ACCENTS.forEach(function(a) {
     var b = document.createElement('button'); b.type = 'button'; b.className = 'spsw' + (W.accent === a ? ' on' : ''); b.style.background = a;
@@ -16053,6 +16053,35 @@ process.on('uncaughtException', (e) => { try { console.error('uncaughtException:
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://localhost');
   if (u.pathname.length > 1 && u.pathname.endsWith('/') && !/^\/(uv|sj|px|browse|gproxy|wisp)/.test(u.pathname)) u.pathname = u.pathname.slice(0, -1);
+  // v412: user sites live on their own subdomain (<slug>.usareme.site) via
+  // the wildcard — the /s/<slug> path stays as the fallback door. reserved
+  // slugs can never be sites, so real subdomains (s, www, api) never match.
+  if (req.method === 'GET') {
+    const hm = /^([a-z0-9][a-z0-9-]{2,23})\.usareme\.site$/.exec(String(req.headers.host || '').split(':')[0].toLowerCase());
+    if (hm && SITES.has(hm[1])) {
+      const hsite = SITES.get(hm[1]);
+      if (u.pathname === '/' || u.pathname === '') {
+        res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'content-security-policy': "default-src * data: blob:; script-src 'none'; style-src * 'unsafe-inline'; base-uri 'none'; form-action 'none'", 'x-content-type-options': 'nosniff' });
+        return res.end(renderSitePage(hsite, ''));
+      }
+      const fm = /^\/f\/(.+)$/.exec(u.pathname);
+      if (fm) {
+        let fname = ''; try { fname = decodeURIComponent(fm[1]); } catch (e) {}
+        fname = fname.split(/[\\/]/).pop();
+        const ff = hsite.files.find(x => x.name === fname);
+        if (ff && siteFileNameOk(fname)) {
+          try {
+            const data = SITES_FS.readFileSync(SITES_PATH.join(SITES_DIR, hsite.slug, fname));
+            const ext = fname.split('.').pop().toLowerCase();
+            res.writeHead(200, { 'content-type': SITE_FILE_EXTS[ext] || 'application/octet-stream', 'content-length': data.length, 'cache-control': 'public, max-age=3600', 'content-security-policy': 'sandbox', 'x-content-type-options': 'nosniff' });
+            return res.end(data);
+          } catch (e) {}
+        }
+      }
+      res.writeHead(404, { 'content-type': 'text/plain' });
+      return res.end('not found');
+    }
+  }
   const _tunIssue = !tunValid(ckVal(req, 'gx_vdk'));
   const _end0 = res.end.bind(res);
   const _wh0 = res.writeHead.bind(res);
@@ -17027,7 +17056,7 @@ const server = http.createServer(async (req, res) => {
     const site = sm ? SITES.get(sm[1]) : null;
     if (sm && !sm[2]) {
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'content-security-policy': "default-src * data: blob:; script-src 'none'; style-src * 'unsafe-inline'; base-uri 'none'; form-action 'none'", 'x-content-type-options': 'nosniff' });
-      return res.end(site ? renderSitePage(site) : '<!DOCTYPE html><html><head><meta charset="utf-8"><title>no site</title></head><body style="background:#0a0a13;color:#eceaf6;font-family:system-ui;padding:40px 20px;text-align:center"><p>no site at /s/' + escHtml(sm[1]) + ' yet</p><p><a style="color:#9a86ff" href="/sites">make one on 6ix sites</a></p></body></html>');
+      return res.end(site ? renderSitePage(site, '/s/' + site.slug) : '<!DOCTYPE html><html><head><meta charset="utf-8"><title>no site</title></head><body style="background:#0a0a13;color:#eceaf6;font-family:system-ui;padding:40px 20px;text-align:center"><p>no site at /s/' + escHtml(sm[1]) + ' yet</p><p><a style="color:#9a86ff" href="/sites">make one on 6ix sites</a></p></body></html>');
     }
     if (sm && sm[2] && site) {
       let name = ''; try { name = decodeURIComponent(sm[2]); } catch (e) {}
