@@ -13855,6 +13855,7 @@ function sixMessages(list) {
 
 const GEMINI_MODELS = ['gemini-3.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-3.8-flash', 'gemini-flash-latest']; // v397: lite-first — the full-size flash models 429 near-constantly on free keys (per-model quota, live-verified 2026-11-10) while the lites answer reliably; strong models stay in the walk as later tries
 let geminiWinner = null;
+const geminiDeadCombos = new Map(); // v408: (key|model) -> epoch ms when it may be retried; filled by the full-pool sweep in askGemini
 // key pool: up to 4 ai studio keys (GEMINI_API_KEY + GEMINI_API_KEY2/3/4,
 // or a comma list in GEMINI_API_KEYS). each key carries its OWN free
 // quota, so the pool multiplies six's daily budget — when one key hits
@@ -13970,23 +13971,37 @@ async function askGemini(env, messages, maxTokens, lane, needComplete) {
   // asks dead, then fine minutes later). (v397 note: the 429-break this
   // paragraph originally added is GONE — 429s turned out to be per-model,
   // see tryKey below.)
-  const tryKey = async (key, models) => {
-    for (const model of models) {
-      try { const out = await geminiAttempt(model, key, messages, maxTokens, 8000, needComplete); geminiWinner = model; return out; }
-      catch (e) { continue; } // v397: a 429 here is per-MODEL quota, not per-key (live-verified 2026-11-10: the same key 429s on 3.6-flash and answers on 3.5-flash-lite) — the old break-on-429 abandoned every key at its first model and the whole cascade died in ~1s with healthy lite models never tried. walk the models; a truly dead key just fails each one fast.
+  // v408 FULL-POOL SWEEP (his ask 2026-11-11: 'give it access to every key').
+  // live-checked that day: free quota is per key AND per model, and the
+  // patchwork shifts hourly - one key answers on 3.5-flash-lite but 429s
+  // flash-lite-latest, the next key is the exact reverse, and a third of
+  // the pool 429s both lites while later keys still hold live combos. the
+  // old walk (borrow 4 keys x top-2 models, then sweep key 0) died with
+  // live quota sitting unused deeper in the pool - every surface nulled
+  // for ~10s at a time while users called it geeking. now: walk EVERY key
+  // in the lane rotation with the two lite models (429s fail in ~300ms,
+  // so a full sweep is seconds), remember dead combos briefly (60s for a
+  // 429, 15s for a timeout/empty) so repeat calls skip straight to a live
+  // combo, then one strong-model pass as the last resort. 30s budget.
+  const LITES = ['gemini-3.5-flash-lite', 'gemini-flash-lite-latest'];
+  const deadFor = (key, model) => { const t = geminiDeadCombos.get(key + '|' + model); return !!t && t > Date.now(); };
+  const markDead = (key, model, e) => { const msg = String((e && e.message) || e || ''); geminiDeadCombos.set(key + '|' + model, Date.now() + (msg.includes('429') ? 60000 : 15000)); if (geminiDeadCombos.size > 400) geminiDeadCombos.clear(); };
+  const t0 = Date.now();
+  for (const key of keys) {
+    if (Date.now() - t0 > 30000) break;
+    for (const model of LITES) {
+      if (deadFor(key, model)) continue;
+      try { const out = await geminiAttempt(model, key, messages, maxTokens, 6000, needComplete); geminiWinner = model; return out; }
+      catch (e) { markDead(key, model, e); continue; }
     }
-    if (geminiWinner && models.includes(geminiWinner)) geminiWinner = null;
-    return null;
-  };
-  // v396: keys IS the full pool in this call's rotation order (see
-  // geminiLaneKeys), so the borrow walk takes the next keys in rotation
-  // rather than always raiding the head of the raw pool list.
-  const others = keys.slice(1, 5);
-  for (const key of others) {
-    const out = await tryKey(key, order.slice(0, 2));
-    if (out) return out;
   }
-  return tryKey(keys[0], order);
+  for (const key of keys.slice(0, 3)) {
+    if (Date.now() - t0 > 30000) break;
+    if (deadFor(key, 'gemini-3.5-flash')) continue;
+    try { const out = await geminiAttempt('gemini-3.5-flash', key, messages, maxTokens, 10000, needComplete); geminiWinner = 'gemini-3.5-flash'; return out; }
+    catch (e) { markDead(key, 'gemini-3.5-flash', e); continue; }
+  }
+  return null;
 }
 
 // gemini image generation (native generateContent API — the openai-compat
