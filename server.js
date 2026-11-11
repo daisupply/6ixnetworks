@@ -5950,6 +5950,14 @@ Array.prototype.forEach.call(document.querySelectorAll('.q'), function(b){ b.add
 }
 
 
+const HW_SYSTEM = 'you are six, the homework helper inside 6ixnetworks. voice: plain, casual, straight-talking, a little funny when it fits, zero corporate tone. you do the work properly and completely. no rambling, no filler, no lectures.';
+async function askGeminiHard(messages, maxTokens, lane) {
+  for (let i = 0; i < 3; i++) {
+    if (i) await new Promise(r => setTimeout(r, i * 1100));
+    try { const g = await askGemini(null, messages, maxTokens, lane); if (g) return g; } catch (e) {}
+  }
+  return null;
+}
 async function askSixDoc(env, text, mode) {
   const task = {
     sum: 'the user pasted a document or assignment below. summarize it: what it is, what it is asking for, and the key points. short plain lines, no markdown symbols.',
@@ -5958,7 +5966,7 @@ async function askSixDoc(env, text, mode) {
     edit: 'the user pasted a document and wants it edited. instruction: "clean it up, fix the grammar and errors, keep their voice". apply the instruction and return the FULL edited document text only — no commentary before or after, no summary, no markdown code fences.'
   }[mode];
   if (!task) return null;
-  const g = await askGemini(null, [{ role: 'system', content: SIX_SYSTEM + ' TASK: ' + task }, { role: 'user', content: text }], (mode === 'write' || mode === 'edit') ? 1500 : 600, 'hw');
+  const g = await askGeminiHard([{ role: 'system', content: HW_SYSTEM + ' TASK: ' + task }, { role: 'user', content: text }], (mode === 'write' || mode === 'edit') ? 2400 : 900, 'hw');
   return g ? stripActs(g).slice(0, 9000) : null;
 }
 const stripActs = (t) => String(t || '').replace(/\[\[act:[\s\S]*?\]\]/g, '').trim();
@@ -5973,7 +5981,7 @@ async function askSixLook(env, b64, mode, extra) {
   if (!task || !b64) return null;
   const prompt = task + (mode === 'answer' ? ' plain words only, exactly how a voice would say it out loud.' : ' answer in this voice: all lowercase, casual, straight-talking, funny when it fits, zero corporate tone. plain text, short lines, no markdown symbols.') + (extra ? ' extra context from the user: ' + extra : '');
   const url = String(b64).startsWith('data:') ? String(b64) : 'data:image/jpeg;base64,' + String(b64);
-  const g = await askGemini(null, [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: url } }] }], mode === 'answer' ? 220 : 1400, 'hw');
+  const g = await askGeminiHard([{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: url } }] }], mode === 'answer' ? 220 : 1800, 'hw');
   return g ? stripActs(g).slice(0, 9000) : null;
 }
 async function askImageFallback(prompt) {
