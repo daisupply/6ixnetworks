@@ -4051,7 +4051,7 @@ const FEATURED_GAMES = [
   { t: 'Roblox', u: 'https://www.roblox.com/home', img: '', icon: '<svg viewBox="0 0 120 90" aria-hidden="true"><g transform="rotate(12 60 45)"><path fill="#e9e9ec" fill-rule="evenodd" d="M37 22h46v46H37zM49.5 34.5h21v21h-21z"/></g></svg>', c: 'Featured', w: 800, h: 600 },
   { t: 'Minecraft Classic', u: 'https://classic.minecraft.net', img: '', icon: '<svg viewBox="0 0 120 90" aria-hidden="true"><rect width="120" height="90" fill="#5da23c"/><rect x="8" y="8" width="12" height="12" fill="#6fb54c"/><rect x="98" y="62" width="12" height="12" fill="#6fb54c"/><rect x="90" y="8" width="10" height="10" fill="#4c8f31"/><rect x="10" y="64" width="10" height="10" fill="#4c8f31"/><g fill="#16240f"><rect x="36" y="24" width="18" height="18"/><rect x="66" y="24" width="18" height="18"/><rect x="51" y="42" width="18" height="12"/><rect x="42" y="50" width="12" height="22"/><rect x="66" y="50" width="12" height="22"/></g></svg>', c: 'Featured', w: 800, h: 600 },
   { t: 'Krunker', u: 'https://krunker.io', img: '', icon: '<svg viewBox="0 0 120 90" aria-hidden="true"><g stroke="#f5c531" stroke-width="6" stroke-linecap="round" fill="none"><circle cx="60" cy="45" r="17"/><path d="M60 10v14M60 66v14M25 45h14M81 45h14"/></g><circle cx="60" cy="45" r="3.5" fill="#f5c531"/></svg>', c: 'Featured', w: 800, h: 600 },
-  { t: '1v1.LOL', u: 'https://1v1.lol', img: 'https://icon.horse/icon/1v1.lol', icon: '', c: 'Featured', w: 800, h: 600, lg: 1 },
+  { t: 'BuildNow GG', u: 'https://buildnow-gg.io/', img: 'https://imgs.crazygames.com/buildnow-gg_16x9/20251229084241/buildnow-gg_16x9-cover?metadata=none&quality=85&width=800&height=450&fit=crop&resizer=covers', icon: '', c: 'Featured', w: 960, h: 540 },
   { t: 'Paper.io', u: 'https://paperio2.click/play', img: '', icon: '<svg viewBox="0 0 120 90" aria-hidden="true"><rect width="120" height="90" fill="#efe7d6"/><path fill="#ff5964" d="M28 62V34q0-6 6-6h22q6 0 6 6v10q0 6 6 6h14q6 0 6 6v6q0 6-6 6H34q-6 0-6-6z"/><path d="M82 50q14-2 13-14" stroke="#ff5964" stroke-width="5" fill="none" stroke-linecap="round" opacity=".55"/><circle cx="42" cy="48" r="5" fill="#fff"/></svg>', c: 'Featured', w: 800, h: 600 },
   { t: 'Agar.io', u: 'https://agar.io', img: 'https://www.google.com/s2/favicons?domain=agar.io&sz=128', icon: '', c: 'Featured', w: 800, h: 600, lg: 1 },
   { t: 'Slither.io', u: 'https://slither.io', img: 'https://www.google.com/s2/favicons?domain=slither.io&sz=128', icon: '', c: 'Featured', w: 800, h: 600, lg: 1 },
@@ -8559,7 +8559,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <h1>game <span>requests</span></h1>
 <p class="sub">most voted gets added first</p>
 <form id="rqForm" class="rqcard">
-<input id="rqName" type="text" maxlength="60" placeholder="game name — slope, 1v1.lol, retro bowl..." autocomplete="off">
+<input id="rqName" type="text" maxlength="60" placeholder="game name — slope, buildnow gg, retro bowl..." autocomplete="off">
 <input id="rqLink" type="url" placeholder="link to the game (optional)" autocomplete="off">
 <button type="submit">request it</button>
 <div id="rqMsg" class="rqmsg"></div>
@@ -10922,7 +10922,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style>
 </style>
 <script>
 (function(){
-  var T = ['Roblox','Minecraft Classic','Slope','1v1.LOL','Krunker','Moto X3M','Shell Shockers','Tetris','Cookie Clicker','Paper.io','Smash Karts','2048','Agar.io','Diep.io','Hole.io','Bloxd.io'];
+  var T = ['Roblox','Minecraft Classic','Slope','BuildNow GG','Krunker','Moto X3M','Shell Shockers','Tetris','Cookie Clicker','Paper.io','Smash Karts','2048','Agar.io','Diep.io','Hole.io','Bloxd.io'];
   var tr = document.getElementById('mqTrack');
   if (!tr) return;
   for (var k = 0; k < 2; k++) T.forEach(function(t){
