@@ -14263,6 +14263,7 @@ select.spin{appearance:none}
 <div id="spEd" hidden>
 <div class="splabel">title</div>
 <input class="spin" id="edTitle">
+<div class="spmsg" id="edUrl" style="color:var(--acc);opacity:1;font-weight:600"></div>
 <div class="splabel">accent color</div>
 <div class="sprow" id="edSw"></div>
 <div class="sprow" style="margin-top:10px"><a class="spbtn ghost" id="edView" target="_blank" rel="noopener">view site</a><button class="spbtn ghost" id="edCopy" type="button">copy link</button></div>
@@ -14297,7 +14298,7 @@ function renderList() {
   var el = $('spList'); el.innerHTML = '';
   MY.forEach(function(s) {
     var c = document.createElement('button'); c.type = 'button'; c.className = 'spchip' + (W && W.slug === s.slug ? ' on' : '');
-    c.textContent = '/s/' + s.slug;
+    c.textContent = siteLink(s.slug).split('://')[1];
     c.addEventListener('click', function() { openSite(s.slug); });
     el.appendChild(c);
   });
@@ -14312,7 +14313,7 @@ function openSite(slug) {
 function renderEd() {
   if (!W) return;
   $('edTitle').value = W.title || '';
-  $('edView').href = siteLink(W.slug);
+  $('edView').href = siteLink(W.slug); $('edUrl').textContent = 'ur url: ' + siteLink(W.slug).split('://')[1];
   var sw = $('edSw'); sw.innerHTML = '';
   ACCENTS.forEach(function(a) {
     var b = document.createElement('button'); b.type = 'button'; b.className = 'spsw' + (W.accent === a ? ' on' : ''); b.style.background = a;
