@@ -8033,6 +8033,11 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <button class="mchip" id="tuneBtn" type="button">source + route</button>
 <span class="lab" id="tuneLab"></span>
 </div>
+<div class="ctl" id="skipRow">
+<span class="lab">skip segments</span>
+<button class="mchip" id="skipModeBtn" type="button">button</button>
+<span class="lab">button · auto · off</span>
+</div>
 <div class="ctl" id="libRow" hidden>
 <a class="mchip" id="dlBtn" href="#" style="text-decoration:none">download the whole movie</a>
 <span class="lab">streams thru the network — loads in while u watch, seek works once its buffered</span>
@@ -8150,12 +8155,12 @@ var srcSel = document.getElementById('srcSel');
 SRCS.forEach(function(sc, ix){
   var o = document.createElement('option');
   o.value = String(ix);
-  o.textContent = sc.n;
+  o.textContent = 'server ' + (ix + 1);
   srcSel.appendChild(o);
 });
 var srcDD = buildWDD(srcSel, document.getElementById('srcSlot'), function(v){ userPicked = true; srcMode = +v; armDirSave(); loadPlayer(); }, function(){ return String(srcMode); });
 var rtDD = buildWDD(document.getElementById('rtSel'), document.getElementById('rtSlot'), function(v){ route = v; cancelDirSave(); loadPlayer(); if (v !== 'direct') sixResolve(); }, function(){ return route; });
-function syncTune(){ var lab = document.getElementById('tuneLab'); if (lab) lab.textContent = (SRCS[srcMode] || SRCS[0]).n + ' · ' + route + ' — six picks, tap to tune it urself'; }
+function syncTune(){ var lab = document.getElementById('tuneLab'); if (lab) lab.textContent = 'server ' + (srcMode + 1) + ' · ' + route + ' — six picks, tap to tune it urself'; }
 function syncSrcUI(){ if (srcDD) srcDD.sync(); if (rtDD) rtDD.sync(); syncTune(); }
 document.getElementById('tuneBtn').addEventListener('click', function(){ document.getElementById('srcCtl').hidden = false; document.getElementById('tuneRow').hidden = true; });
 syncSrcUI();
@@ -8205,10 +8210,10 @@ function sixResolve(){
     var best = o.order[0];
     if (route !== 'direct') { for (var oi = 0; oi < o.order.length; oi++) { if (!VD_WALLED[o.order[oi]]) { best = o.order[oi]; break; } } }
     var hint = document.getElementById('mvHint');
-    if (best === srcMode) { if (hint) hint.textContent = 'six checked the sources — ' + SRCS[best].n + ' looks alive for this one'; return; }
+    if (best === srcMode) { if (hint) hint.textContent = 'six checked the servers — this one looks alive'; return; }
     srcMode = best;
     syncSrcUI();
-    if (hint) hint.textContent = 'six checked the sources — ' + SRCS[best].n + ' looks alive for this one';
+    if (hint) hint.textContent = 'six checked the servers — this one looks alive';
     loadPlayer();
   }).catch(function(){});
 }
@@ -8241,7 +8246,7 @@ function loadPlayer(){
   var ld = document.getElementById('mvLoad');
   ld.style.opacity = '1';
   var fr = document.getElementById('mvFrame');
-  setProv('via ' + (SRCS[srcMode] || SRCS[0]).n + ' · embed');
+  setProv('');
   syncSrcUI();
   fr.src = route === 'tunnel' ? ('/go?q=' + encodeURIComponent(embedUrl())) : route === 'lite' ? ('/gproxy/' + b64url(embedUrl())) : embedUrl();
   armAuto();
@@ -8328,9 +8333,9 @@ function armAuto(){
       srcMode = nxS;
       syncSrcUI();
       if (hint) {
-        if (leftState === 'dead') hint.textContent = SRCS[leftIx].n + ' is down for everyone — six checked';
-        else if (leftState === 'alive') hint.textContent = SRCS[leftIx].n + ' looks up from here — your network may be blocking it (school wifi does this)';
-        else hint.textContent = 'that source went quiet' + (diedAt ? ' at ' + diedAt : '') + ' — trying ' + SRCS[srcMode].n + ' (source ' + (srcMode + 1) + ' of ' + SRCS.length + ')…';
+        if (leftState === 'dead') hint.textContent = 'server ' + (leftIx + 1) + ' is down for everyone — six checked';
+        else if (leftState === 'alive') hint.textContent = 'server ' + (leftIx + 1) + ' looks up from here — your network may be blocking it (school wifi does this)';
+        else hint.textContent = 'that source went quiet' + (diedAt ? ' at ' + diedAt : '') + ' — trying ' + 'server ' + (srcMode + 1) + ' of ' + SRCS.length + ')…';
       }
       loadPlayer();
     } else if (hint) {
@@ -8418,14 +8423,35 @@ function armSkip(){
   var url = '/api/intro?tt=' + encodeURIComponent(tt) + (isTv ? '&s=' + sv + '&e=' + ev : '');
   fetch(url).then(function(r){ return r.json(); }).then(function(o){ segList = (o && o.ok && o.segments) || []; }).catch(function(){ segList = []; });
 }
+var skipMode = 'button';
+try { skipMode = localStorage.getItem('gx_skipmode') || 'button'; } catch (e) {}
+if (['button', 'auto', 'off'].indexOf(skipMode) < 0) skipMode = 'button';
+(function(){
+  var mb = document.getElementById('skipModeBtn');
+  if (!mb) return;
+  mb.textContent = skipMode;
+  mb.addEventListener('click', function(){
+    skipMode = skipMode === 'button' ? 'auto' : skipMode === 'auto' ? 'off' : 'button';
+    mb.textContent = skipMode;
+    try { localStorage.setItem('gx_skipmode', skipMode); } catch (e) {}
+    if (skipMode === 'off') document.getElementById('skipBtn').hidden = true;
+  });
+})();
 (function(){
   var v = document.getElementById('mvVid'), btn = document.getElementById('skipBtn');
   if (!v || !btn) return;
+  var autoDone = '';
   v.addEventListener('timeupdate', function(){
     var hit = null;
-    if (segList.length) {
+    if (segList.length && skipMode !== 'off') {
       var t = v.currentTime;
       for (var i = 0; i < segList.length; i++) { var sg = segList[i]; if (t >= sg.start && (sg.end == null || t < sg.end - 0.3)) { hit = sg; break; } }
+    }
+    if (hit && hit.end != null && skipMode === 'auto') {
+      var ak = segKey + '|' + hit.k + '|' + hit.start;
+      btn.hidden = true;
+      if (autoDone !== ak) { autoDone = ak; try { v.currentTime = hit.end + 0.05; } catch (e) {} }
+      return;
     }
     if (hit) {
       btn.hidden = false;
