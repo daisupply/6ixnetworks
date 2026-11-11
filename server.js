@@ -14150,6 +14150,286 @@ async function askSixAnswer(q) {
   if (!t || t.includes('only wakes up') || t.includes('unreachable')) return null;
   return String(t).trim().slice(0, 500) || null;
 }
+
+// ---------- 6ix sites (v410): user-made mini sites, google-sites style ----------
+// a signed-in user claims a slug, builds a page from blocks (heading / text /
+// image / link / file / raw html), uploads files to it, and shares the public
+// link /s/<slug>. metadata lives in the account store under cfg:sites (one
+// JSON, banner-style); uploaded FILES live on disk OUTSIDE the app folder
+// (../userfiles) so the auto-updater's git reset can never wipe them.
+// public pages are served script-free (CSP script-src 'none') and the raw
+// html block is sanitized, so a user site can never run code on the domain.
+const SITES_FS = require('fs'), SITES_PATH = require('path');
+const SITES_DIR = process.env.SITES_DIR || SITES_PATH.join(__dirname, '..', 'userfiles');
+try { SITES_FS.mkdirSync(SITES_DIR, { recursive: true }); } catch (e) {}
+let SITES = new Map();
+(async () => { try { const got = await storeCmd([['GET', 'cfg:sites']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); for (const k of Object.keys(o || {})) SITES.set(k, o[k]); } } catch (e) {} })();
+function sitesPersist() { try { storeSet('cfg:sites', JSON.stringify(Object.fromEntries(SITES))); } catch (e) {} }
+const SITE_RESERVED = ['admin', 'api', 'sites', 's', 'www', 'mail', 'six', 'support', 'help', 'login', 'signup', 'account', 'home', 'chat', 'games', 'apps', 'movies', 'music', 'search', 'settings', 'new', 'edit', 'delete', 'root', 'me', 'user', 'users', 'about', 'privacy', 'study', 'enter', 'go', 'play', 'watch', 'news', 'tube', 'flix', 'blox', 'hw', 'doc', 'forge', 'ai', 'proxy', 'dl', 'null', 'undefined'];
+const SITE_FILE_EXTS = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml', ico: 'image/x-icon', mp3: 'audio/mpeg', mp4: 'video/mp4', webm: 'video/webm', pdf: 'application/pdf', txt: 'text/plain', md: 'text/plain', zip: 'application/zip', json: 'application/json' };
+function siteSlugOk(s) { return /^[a-z0-9][a-z0-9-]{2,23}$/.test(s) && !SITE_RESERVED.includes(s); }
+function siteFileNameOk(n) { const m = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,60}\.([a-zA-Z0-9]+)$/.exec(String(n || '')); return !!m && !!SITE_FILE_EXTS[m[1].toLowerCase()]; }
+function siteSafeUrl(u) { const s = String(u || '').trim(); return (/^https?:\/\//i.test(s) || /^mailto:/i.test(s) || s.startsWith('/s/') || s.startsWith('/')) ? s : '#'; }
+function siteSanHtml(h) {
+  let s = String(h || '').slice(0, 20000);
+  s = s.replace(/<\s*(script|iframe|object|embed|form|link|meta|base|title|svg|math)[\s\S]*?(?:<\/\s*\1\s*>|\/>|>)/gi, ' ');
+  s = s.replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+  s = s.replace(/(href|src)\s*=\s*("\s*(?:javascript|vbscript|data)\s*:[^"]*"|'\s*(?:javascript|vbscript|data)\s*:[^']*')/gi, '$1="#"');
+  return s;
+}
+function siteShape(raw, owner, slug) {
+  const b = (raw && typeof raw === 'object') ? raw : {};
+  const blocks = [];
+  for (const bl of (Array.isArray(b.blocks) ? b.blocks : []).slice(0, 60)) {
+    if (!bl || typeof bl !== 'object') continue;
+    if (bl.k === 'h') blocks.push({ k: 'h', t: String(bl.t || '').slice(0, 200) });
+    else if (bl.k === 'p') blocks.push({ k: 'p', t: String(bl.t || '').slice(0, 4000) });
+    else if (bl.k === 'img') blocks.push({ k: 'img', src: String(bl.src || '').slice(0, 1000) });
+    else if (bl.k === 'link') blocks.push({ k: 'link', t: String(bl.t || '').slice(0, 120), href: String(bl.href || '').slice(0, 1000) });
+    else if (bl.k === 'file') blocks.push({ k: 'file', name: String(bl.name || '').slice(0, 80) });
+    else if (bl.k === 'html') blocks.push({ k: 'html', t: String(bl.t || '').slice(0, 20000) });
+  }
+  const files = [];
+  for (const f of (Array.isArray(b.files) ? b.files : []).slice(0, 12)) { if (f && siteFileNameOk(f.name)) files.push({ name: String(f.name), size: +f.size || 0 }); }
+  return { slug, owner, title: String(b.title || slug).slice(0, 60), accent: /^#[0-9a-f]{6}$/i.test(String(b.accent || '')) ? String(b.accent) : '#9a86ff', blocks, files, updated: Date.now() };
+}
+function renderSitePage(site) {
+  const acc = site.accent;
+  let body = '';
+  for (const bl of site.blocks) {
+    if (bl.k === 'h') body += '<h2>' + escHtml(bl.t) + '</h2>';
+    else if (bl.k === 'p') body += '<p>' + escHtml(bl.t).replace(/\n/g, '<br>') + '</p>';
+    else if (bl.k === 'img') { const src = bl.src.startsWith('file:') ? '/s/' + site.slug + '/f/' + encodeURIComponent(bl.src.slice(5)) : siteSafeUrl(bl.src); if (src !== '#') body += '<img class="simg" src="' + escHtml(src) + '" alt="">'; }
+    else if (bl.k === 'link') body += '<p><a class="sbtn" href="' + escHtml(siteSafeUrl(bl.href)) + '">' + escHtml(bl.t || bl.href) + '</a></p>';
+    else if (bl.k === 'file') { const f = site.files.find(x => x.name === bl.name); if (f) body += '<p><a class="sfile" href="/s/' + site.slug + '/f/' + encodeURIComponent(f.name) + '">' + escHtml(f.name) + ' <span>' + Math.max(1, Math.round(f.size / 1024)) + ' kb</span></a></p>'; }
+    else if (bl.k === 'html') body += '<div class="shtml">' + siteSanHtml(bl.t) + '</div>';
+  }
+  if (!body) body = '<p class="dim">nothing here yet</p>';
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' + escHtml(site.title) + '</title><style>'
+    + 'body{margin:0;background:#0a0a13;color:#eceaf6;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:34px 18px 70px}'
+    + '.swrap{max-width:680px;margin:0 auto}h1{font-size:30px;margin:0 0 20px;color:' + acc + '}h2{font-size:21px;margin:26px 0 8px}'
+    + 'p{font-size:16px;line-height:1.65;margin:10px 0;color:#d8d5e8}.simg{max-width:100%;border-radius:14px;margin:12px 0;display:block}'
+    + '.sbtn{display:inline-block;background:' + acc + ';color:#0a0a13;font-weight:700;text-decoration:none;padding:11px 20px;border-radius:999px;margin:6px 0}'
+    + '.sfile{display:inline-flex;gap:10px;align-items:center;border:1px solid rgba(255,255,255,.18);color:#eceaf6;text-decoration:none;padding:11px 16px;border-radius:12px}.sfile span{opacity:.55;font-size:13px}'
+    + '.shtml{margin:12px 0}.shtml a{color:' + acc + '}.dim{opacity:.5}'
+    + 'footer{max-width:680px;margin:44px auto 0;opacity:.45;font-size:13px}footer a{color:#eceaf6}</style></head><body>'
+    + '<div class="swrap"><h1>' + escHtml(site.title) + '</h1>' + body + '</div>'
+    + '<footer>made on <a href="/sites">6ix sites</a> ✦</footer></body></html>';
+}
+
+function sitesPage() {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sites</title>
+<style>${GALAXY_CSS}</style>
+<style>
+.spwrap{max-width:760px;margin:0 auto;padding:18px 16px 110px}
+.spwrap h1{font-size:26px;margin:8px 0 4px}
+.spchip{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(var(--star),.25);border-radius:999px;padding:8px 14px;margin:0 8px 8px 0;cursor:pointer;background:rgba(255,255,255,.04);color:var(--ink);font-size:14px}
+.spchip.on{border-color:var(--acc);background:rgba(var(--star),.12)}
+.spin{width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid rgba(var(--star),.22);border-radius:12px;color:var(--ink);padding:11px 13px;font-size:16px;margin:6px 0}
+textarea.spin{min-height:74px;resize:vertical}
+.spbtn{display:inline-flex;align-items:center;gap:7px;background:var(--acc);color:#0a0a13;border:none;font-weight:700;border-radius:999px;padding:10px 18px;font-size:14px;cursor:pointer;margin:6px 6px 6px 0}
+.spbtn.ghost{background:rgba(255,255,255,.06);color:var(--ink);border:1px solid rgba(var(--star),.25)}
+.spbtn.danger{background:rgba(255,80,80,.16);color:#ff9c9c;border:1px solid rgba(255,80,80,.35)}
+.spblk{border:1px solid rgba(var(--star),.18);border-radius:14px;padding:10px 12px;margin:10px 0;background:rgba(255,255,255,.03)}
+.spblk .spk{font-size:12px;text-transform:uppercase;letter-spacing:.08em;opacity:.55;margin-bottom:4px}
+.sprow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.spmini{background:rgba(255,255,255,.07);border:1px solid rgba(var(--star),.2);color:var(--ink);border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer}
+.spsw{width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+.spsw.on{border-color:#fff}
+.spmsg{font-size:13px;opacity:.75;min-height:18px;margin:6px 0}
+.spfile{display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(var(--star),.15);border-radius:10px;padding:8px 12px;margin:6px 0;font-size:14px}
+.spfile span{opacity:.55;font-size:12px}
+.splabel{font-size:13px;opacity:.65;margin:14px 0 2px}
+select.spin{appearance:none}
+</style>
+</head>
+<body>
+<div class="spwrap">
+<h1>6ix sites</h1>
+<div class="spmsg" id="spTopMsg"></div>
+<div id="spOut" hidden><p>log in first — sites are tied to ur account.</p><a class="spbtn" href="/account">log in</a></div>
+<div id="spApp" hidden>
+<div id="spList"></div>
+<div class="splabel">new site — ur link will be /s/…</div>
+<div class="sprow"><input class="spin" id="spSlug" placeholder="slug (a-z, 0-9, dashes)" style="flex:1;min-width:150px"><input class="spin" id="spTitle" placeholder="site title" style="flex:1;min-width:150px"><button class="spbtn" id="spCreate" type="button">create</button></div>
+<div class="spmsg" id="spMsg"></div>
+<div id="spEd" hidden>
+<div class="splabel">title</div>
+<input class="spin" id="edTitle">
+<div class="splabel">accent color</div>
+<div class="sprow" id="edSw"></div>
+<div class="sprow" style="margin-top:10px"><a class="spbtn ghost" id="edView" target="_blank" rel="noopener">view site</a><button class="spbtn ghost" id="edCopy" type="button">copy link</button></div>
+<div class="splabel">blocks</div>
+<div id="edBlocks"></div>
+<div class="sprow">
+<button class="spmini" data-add="h" type="button">+ heading</button>
+<button class="spmini" data-add="p" type="button">+ text</button>
+<button class="spmini" data-add="img" type="button">+ image</button>
+<button class="spmini" data-add="link" type="button">+ link</button>
+<button class="spmini" data-add="file" type="button">+ file</button>
+<button class="spmini" data-add="html" type="button">+ html</button>
+</div>
+<div class="splabel">files (max 3mb each — images, mp3, mp4, pdf, zip…)</div>
+<div id="edFiles"></div>
+<div class="sprow"><label class="spbtn ghost" for="edFileUp">upload a file</label><input type="file" id="edFileUp" hidden></div>
+<div class="sprow" style="margin-top:14px"><button class="spbtn" id="edSave" type="button">save site</button><button class="spbtn danger" id="edDel" type="button">delete site</button></div>
+<div class="spmsg" id="edMsg"></div>
+</div>
+</div>
+</div>
+${SIDEBAR_HTML}
+<script>
+var MY = [], W = null;
+var ACCENTS = ['#9a86ff', '#5eead4', '#fda4af', '#fcd34d', '#93c5fd', '#bef264', '#f0abfc'];
+function $(i) { return document.getElementById(i); }
+function jget(u) { return fetch(u, { headers: { 'accept': 'application/json' } }).then(function(r) { return r.json(); }); }
+function jpost(u, b) { return fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) }).then(function(r) { return r.json(); }); }
+function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function siteLink(slug) { return location.origin + '/s/' + slug; }
+function renderList() {
+  var el = $('spList'); el.innerHTML = '';
+  MY.forEach(function(s) {
+    var c = document.createElement('button'); c.type = 'button'; c.className = 'spchip' + (W && W.slug === s.slug ? ' on' : '');
+    c.textContent = '/s/' + s.slug;
+    c.addEventListener('click', function() { openSite(s.slug); });
+    el.appendChild(c);
+  });
+}
+function openSite(slug) {
+  var s = null; MY.forEach(function(x) { if (x.slug === slug) s = x; });
+  if (!s) return;
+  W = JSON.parse(JSON.stringify(s));
+  renderList(); renderEd();
+  $('spEd').hidden = false;
+}
+function renderEd() {
+  if (!W) return;
+  $('edTitle').value = W.title || '';
+  $('edView').href = '/s/' + W.slug;
+  var sw = $('edSw'); sw.innerHTML = '';
+  ACCENTS.forEach(function(a) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'spsw' + (W.accent === a ? ' on' : ''); b.style.background = a;
+    b.addEventListener('click', function() { W.accent = a; renderEd(); });
+    sw.appendChild(b);
+  });
+  var ci = document.createElement('input'); ci.type = 'color'; ci.value = /^#[0-9a-f]{6}$/i.test(W.accent || '') ? W.accent : '#9a86ff';
+  ci.addEventListener('input', function() { W.accent = ci.value; var bs = sw.querySelectorAll('.spsw'); for (var i = 0; i < bs.length; i++) bs[i].classList.remove('on'); });
+  sw.appendChild(ci);
+  renderBlocks(); renderFiles();
+}
+function fileOptions(sel) {
+  var o = '<option value="">— pick a file —</option>';
+  (W.files || []).forEach(function(f) { o += '<option value="' + esc(f.name) + '"' + (f.name === sel ? ' selected' : '') + '>' + esc(f.name) + '</option>'; });
+  return o;
+}
+function renderBlocks() {
+  var el = $('edBlocks'); el.innerHTML = '';
+  (W.blocks || []).forEach(function(bl, ix) {
+    var d = document.createElement('div'); d.className = 'spblk'; d.setAttribute('data-ix', ix);
+    var inner = '<div class="spk">' + bl.k + '</div>';
+    if (bl.k === 'h') inner += '<input class="spin bf-t" value="' + esc(bl.t) + '" placeholder="heading">';
+    else if (bl.k === 'p') inner += '<textarea class="spin bf-t" placeholder="text">' + esc(bl.t) + '</textarea>';
+    else if (bl.k === 'img') inner += '<input class="spin bf-t" value="' + esc(bl.src) + '" placeholder="image url — or pick an upload ->"><select class="spin bf-fsel">' + fileOptions(bl.src && bl.src.indexOf('file:') === 0 ? bl.src.slice(5) : '') + '</select>';
+    else if (bl.k === 'link') inner += '<input class="spin bf-t" value="' + esc(bl.t) + '" placeholder="button label"><input class="spin bf-h" value="' + esc(bl.href) + '" placeholder="https://…">';
+    else if (bl.k === 'file') inner += '<select class="spin bf-t">' + fileOptions(bl.name) + '</select>';
+    else if (bl.k === 'html') inner += '<textarea class="spin bf-t" placeholder="raw html (scripts are stripped)">' + esc(bl.t) + '</textarea>';
+    inner += '<div class="sprow" style="margin-top:6px"><button class="spmini bm-up" type="button">up</button><button class="spmini bm-dn" type="button">down</button><button class="spmini bm-del" type="button">delete</button></div>';
+    d.innerHTML = inner;
+    d.querySelector('.bm-up').addEventListener('click', function() { moveBlk(ix, -1); });
+    d.querySelector('.bm-dn').addEventListener('click', function() { moveBlk(ix, 1); });
+    d.querySelector('.bm-del').addEventListener('click', function() { collect(); W.blocks.splice(ix, 1); renderBlocks(); });
+    var fs = d.querySelector('.bf-fsel');
+    if (fs) fs.addEventListener('change', function() { var t = d.querySelector('.bf-t'); if (fs.value) t.value = 'file:' + fs.value; });
+    el.appendChild(d);
+  });
+}
+function collect() {
+  if (!W) return;
+  W.title = $('edTitle').value;
+  var rows = $('edBlocks').children, out = [];
+  for (var i = 0; i < rows.length; i++) {
+    var ix = +rows[i].getAttribute('data-ix'), old = W.blocks[ix] || { k: 'p' }, k = old.k;
+    var t = rows[i].querySelector('.bf-t'), h = rows[i].querySelector('.bf-h');
+    var nb = { k: k };
+    if (k === 'link') { nb.t = t ? t.value : ''; nb.href = h ? h.value : ''; }
+    else if (k === 'img') nb.src = t ? t.value : '';
+    else if (k === 'file') nb.name = t ? t.value : '';
+    else nb.t = t ? t.value : '';
+    out.push(nb);
+  }
+  W.blocks = out;
+}
+function moveBlk(ix, d) { collect(); var j = ix + d; if (j < 0 || j >= W.blocks.length) return; var t = W.blocks[ix]; W.blocks[ix] = W.blocks[j]; W.blocks[j] = t; renderBlocks(); }
+function renderFiles() {
+  var el = $('edFiles'); el.innerHTML = '';
+  (W.files || []).forEach(function(f) {
+    var d = document.createElement('div'); d.className = 'spfile';
+    d.innerHTML = '<div>' + esc(f.name) + ' <span>' + Math.max(1, Math.round((f.size || 0) / 1024)) + ' kb</span></div>';
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'spmini'; b.textContent = 'delete';
+    b.addEventListener('click', function() { jpost('/api/sites/filedel', { slug: W.slug, name: f.name }).then(function(r) { if (r.ok) { W.files = r.files; var s = MY.find(function(x) { return x.slug === W.slug; }); if (s) s.files = r.files; renderFiles(); } }); });
+    d.appendChild(b); el.appendChild(d);
+  });
+}
+document.querySelectorAll('[data-add]').forEach(function(b) {
+  b.addEventListener('click', function() {
+    if (!W) return; collect();
+    var k = b.getAttribute('data-add'), nb = { k: k };
+    if (k === 'h' || k === 'p' || k === 'html') nb.t = '';
+    if (k === 'img') nb.src = '';
+    if (k === 'link') { nb.t = ''; nb.href = ''; }
+    if (k === 'file') nb.name = '';
+    W.blocks.push(nb); renderBlocks();
+  });
+});
+$('spCreate').addEventListener('click', function() {
+  var slug = $('spSlug').value.trim().toLowerCase(), title = $('spTitle').value.trim();
+  jpost('/api/sites/create', { slug: slug, title: title }).then(function(r) {
+    $('spMsg').textContent = r.ok ? '' : (r.err || 'couldnt create that');
+    if (r.ok) { MY.push(r.site); $('spSlug').value = ''; $('spTitle').value = ''; openSite(r.site.slug); }
+  });
+});
+$('edSave').addEventListener('click', function() {
+  if (!W) return; collect();
+  jpost('/api/sites/save', { slug: W.slug, title: W.title, accent: W.accent, blocks: W.blocks }).then(function(r) {
+    $('edMsg').textContent = r.ok ? 'saved ✓ — live at ' + siteLink(W.slug) : (r.err || 'save failed');
+    if (r.ok) { var s = MY.find(function(x) { return x.slug === W.slug; }); if (s) { s.title = r.site.title; s.accent = r.site.accent; s.blocks = r.site.blocks; } }
+  });
+});
+$('edDel').addEventListener('click', function() {
+  if (!W) return;
+  jpost('/api/sites/delete', { slug: W.slug }).then(function(r) {
+    if (r.ok) { MY = MY.filter(function(x) { return x.slug !== W.slug; }); W = null; $('spEd').hidden = true; renderList(); }
+  });
+});
+$('edCopy').addEventListener('click', function() { if (W && navigator.clipboard) navigator.clipboard.writeText(siteLink(W.slug)); $('edMsg').textContent = 'link copied'; });
+$('edFileUp').addEventListener('change', function() {
+  var f = this.files && this.files[0]; if (!f || !W) return;
+  if (f.size > 3 * 1024 * 1024) { $('edMsg').textContent = 'too big — 3mb max'; return; }
+  var rd = new FileReader();
+  rd.onload = function() {
+    jpost('/api/sites/file', { slug: W.slug, name: f.name, data: String(rd.result) }).then(function(r) {
+      $('edMsg').textContent = r.ok ? 'file up ✓ — add it with a file block or an image block' : (r.err || 'upload failed');
+      if (r.ok) { W.files = r.files; var s = MY.find(function(x) { return x.slug === W.slug; }); if (s) s.files = r.files; renderFiles(); }
+    });
+  };
+  rd.readAsDataURL(f);
+  this.value = '';
+});
+jget('/api/sites/mine').then(function(r) {
+  if (!r.ok) { $('spOut').hidden = false; return; }
+  $('spApp').hidden = false; MY = r.sites || []; renderList();
+  if (MY.length) openSite(MY[0].slug);
+});
+</script>
+</body>
+</html>`;
+}
+
 const crypto = require('crypto');
 const GAME_REQUESTS = new Map();
 let greqSeq = 0;
@@ -15844,7 +16124,7 @@ const server = http.createServer(async (req, res) => {
   // exempt and answers normally; real browsers never match the bot filter.
   if (req.method === 'GET' && u.pathname !== '/' && isBotReq(req)) {
     const p = u.pathname;
-    const skip = p === '/study' || p === '/privacy' || p === '/robots.txt' || p === '/sitemap.xml' || p === '/enter' || p === '/healthz' || p === '/ui.js' || p === '/cloak.js' || p === '/sw.js' || p === '/favicon.ico' || p.startsWith('/api') || p.startsWith('/auth') || p.startsWith('/go') || p.startsWith('/gproxy') || p.startsWith('/px/') || p.startsWith('/uv') || p.startsWith('/sj') || p.startsWith('/wisp') || p.startsWith('/baremux') || p.startsWith('/epoxy') || p.startsWith('/libcurl') || p.startsWith('/dl') || p.startsWith('/yt/stream') || p.startsWith('/yt/warm') || p.startsWith('/icons/') || p === '/fonts.css' || p.startsWith('/font/');
+    const skip = p === '/study' || p === '/privacy' || p === '/robots.txt' || p === '/sitemap.xml' || p === '/enter' || p === '/healthz' || p === '/ui.js' || p === '/cloak.js' || p === '/sw.js' || p === '/favicon.ico' || p.startsWith('/api') || p.startsWith('/auth') || p.startsWith('/go') || p.startsWith('/gproxy') || p.startsWith('/px/') || p.startsWith('/uv') || p.startsWith('/sj') || p.startsWith('/wisp') || p.startsWith('/baremux') || p.startsWith('/epoxy') || p.startsWith('/libcurl') || p.startsWith('/dl') || p.startsWith('/yt/stream') || p.startsWith('/s/') || p.startsWith('/yt/warm') || p.startsWith('/icons/') || p === '/fonts.css' || p.startsWith('/font/');
     if (!skip) {
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
       return res.end(studyPage());
@@ -16684,6 +16964,85 @@ const server = http.createServer(async (req, res) => {
     const msgs = (since > 0 ? room.msgs.filter(m => m.ts > since) : room.msgs.slice(-50)).map(enrichMsgAv);
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end(JSON.stringify({ msgs, n: room.socks.size }));
+  }
+  if (u.pathname === '/sites') {
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
+    return res.end(sitesPage());
+  }
+  if (u.pathname === '/api/sites/mine' || u.pathname.startsWith('/api/sites/')) {
+    const me = voterUser(req);
+    const jout = (o) => { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify(o)); };
+    if (!me) return jout({ ok: false, err: 'account required' });
+    if (u.pathname === '/api/sites/mine') return jout({ ok: true, sites: [...SITES.values()].filter(s => s.owner === me) });
+    const b = await readJsonBody(req, 4500000);
+    const slug = String(b.slug || '').toLowerCase().trim();
+    if (u.pathname === '/api/sites/create' && req.method === 'POST') {
+      if (!siteSlugOk(slug)) return jout({ ok: false, err: 'that slug wont work — 3-24 chars, a-z 0-9 n dashes only' });
+      if (SITES.has(slug)) return jout({ ok: false, err: 'that link is already taken' });
+      if (me !== 'deion' && [...SITES.values()].filter(s => s.owner === me).length >= 3) return jout({ ok: false, err: '3 sites max rn' });
+      const site = siteShape({ title: b.title || slug, blocks: [] }, me, slug);
+      SITES.set(slug, site); sitesPersist();
+      return jout({ ok: true, site });
+    }
+    const site = SITES.get(slug);
+    if (!site || site.owner !== me) return jout({ ok: false, err: 'not ur site' });
+    if (u.pathname === '/api/sites/save' && req.method === 'POST') {
+      const upd = siteShape({ title: b.title, accent: b.accent, blocks: b.blocks, files: site.files }, me, slug);
+      SITES.set(slug, upd); sitesPersist();
+      return jout({ ok: true, site: upd });
+    }
+    if (u.pathname === '/api/sites/delete' && req.method === 'POST') {
+      SITES.delete(slug); sitesPersist();
+      try { SITES_FS.rmSync(SITES_PATH.join(SITES_DIR, slug), { recursive: true, force: true }); } catch (e) {}
+      return jout({ ok: true });
+    }
+    if (u.pathname === '/api/sites/file' && req.method === 'POST') {
+      const name = String(b.name || '').split(/[\\/]/).pop();
+      if (!siteFileNameOk(name)) return jout({ ok: false, err: 'that file type wont fly — images, mp3, mp4, pdf, txt, zip' });
+      const raw = String(b.data || '');
+      const b64 = raw.includes(',') ? raw.slice(raw.indexOf(',') + 1) : raw;
+      let buf; try { buf = Buffer.from(b64, 'base64'); } catch (e) { buf = null; }
+      if (!buf || !buf.length || buf.length > 3 * 1024 * 1024) return jout({ ok: false, err: 'file too big or broken — 3mb max' });
+      try {
+        const dir = SITES_PATH.join(SITES_DIR, slug);
+        SITES_FS.mkdirSync(dir, { recursive: true });
+        SITES_FS.writeFileSync(SITES_PATH.join(dir, name), buf);
+      } catch (e) { return jout({ ok: false, err: 'couldnt save that file' }); }
+      site.files = site.files.filter(f => f.name !== name); site.files.push({ name, size: buf.length });
+      sitesPersist();
+      return jout({ ok: true, files: site.files });
+    }
+    if (u.pathname === '/api/sites/filedel' && req.method === 'POST') {
+      const name = String(b.name || '').split(/[\\/]/).pop();
+      try { SITES_FS.unlinkSync(SITES_PATH.join(SITES_DIR, slug, name)); } catch (e) {}
+      site.files = site.files.filter(f => f.name !== name);
+      sitesPersist();
+      return jout({ ok: true, files: site.files });
+    }
+    return jout({ ok: false, err: 'unknown' });
+  }
+  if (u.pathname.startsWith('/s/')) {
+    const sm = /^\/s\/([a-z0-9-]{1,30})(?:\/f\/(.+))?$/.exec(u.pathname);
+    const site = sm ? SITES.get(sm[1]) : null;
+    if (sm && !sm[2]) {
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'content-security-policy': "default-src * data: blob:; script-src 'none'; style-src * 'unsafe-inline'; base-uri 'none'; form-action 'none'", 'x-content-type-options': 'nosniff' });
+      return res.end(site ? renderSitePage(site) : '<!DOCTYPE html><html><head><meta charset="utf-8"><title>no site</title></head><body style="background:#0a0a13;color:#eceaf6;font-family:system-ui;padding:40px 20px;text-align:center"><p>no site at /s/' + escHtml(sm[1]) + ' yet</p><p><a style="color:#9a86ff" href="/sites">make one on 6ix sites</a></p></body></html>');
+    }
+    if (sm && sm[2] && site) {
+      let name = ''; try { name = decodeURIComponent(sm[2]); } catch (e) {}
+      name = name.split(/[\\/]/).pop();
+      const f = site.files.find(x => x.name === name);
+      if (f && siteFileNameOk(name)) {
+        try {
+          const data = SITES_FS.readFileSync(SITES_PATH.join(SITES_DIR, site.slug, name));
+          const ext = name.split('.').pop().toLowerCase();
+          res.writeHead(200, { 'content-type': SITE_FILE_EXTS[ext] || 'application/octet-stream', 'content-length': data.length, 'cache-control': 'public, max-age=3600', 'content-security-policy': 'sandbox', 'x-content-type-options': 'nosniff' });
+          return res.end(data);
+        } catch (e) {}
+      }
+    }
+    res.writeHead(404, { 'content-type': 'text/plain' });
+    return res.end('not found');
   }
   if (u.pathname === '/ai/doc' && req.method === 'POST') {
     const b = await readJsonBody(req);
