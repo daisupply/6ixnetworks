@@ -13985,7 +13985,7 @@ async function askGemini(env, messages, maxTokens, lane, needComplete) {
   // combo, then one strong-model pass as the last resort. 30s budget.
   const LITES = ['gemini-3.5-flash-lite', 'gemini-flash-lite-latest'];
   const deadFor = (key, model) => { const t = geminiDeadCombos.get(key + '|' + model); return !!t && t > Date.now(); };
-  const markDead = (key, model, e) => { const msg = String((e && e.message) || e || ''); geminiDeadCombos.set(key + '|' + model, Date.now() + (msg.includes('429') ? 60000 : 15000)); if (geminiDeadCombos.size > 400) geminiDeadCombos.clear(); };
+  const markDead = (key, model, e) => { const msg = String((e && e.message) || e || ''); geminiDeadCombos.set(key + '|' + model, Date.now() + (msg.includes('429') ? 20000 : 15000)); if (geminiDeadCombos.size > 400) geminiDeadCombos.clear(); };
   const t0 = Date.now();
   for (const key of keys) {
     if (Date.now() - t0 > 30000) break;
@@ -14000,6 +14000,18 @@ async function askGemini(env, messages, maxTokens, lane, needComplete) {
     if (deadFor(key, 'gemini-3.5-flash')) continue;
     try { const out = await geminiAttempt('gemini-3.5-flash', key, messages, maxTokens, 10000, needComplete); geminiWinner = 'gemini-3.5-flash'; return out; }
     catch (e) { markDead(key, 'gemini-3.5-flash', e); continue; }
+  }
+  // second wind: peak-hour 429s are per-minute windows that free up
+  // continuously - one patient re-walk beats a fast null.
+  if (Date.now() - t0 < 24000) {
+    await new Promise(r => setTimeout(r, 2500));
+    for (const key of keys.slice(0, 8)) {
+      if (Date.now() - t0 > 30000) break;
+      for (const model of LITES) {
+        try { const out = await geminiAttempt(model, key, messages, maxTokens, 5000, needComplete); geminiWinner = model; return out; }
+        catch (e) { continue; }
+      }
+    }
   }
   return null;
 }
