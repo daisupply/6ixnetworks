@@ -14196,14 +14196,18 @@ const TPOSTS = new Map();
 const TREPORTS = [];
 const TCHAN = new Map();
 const TVIEWCOOL = new Map();
-(async () => { try { const got = await storeCmd([['GET', 'cfg:tube']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); (o.v || []).forEach(x => TVIDEOS.set(x.id, x)); Object.entries(o.c || {}).forEach(([k, v]) => TCOMMENTS.set(k, v)); Object.entries(o.s || {}).forEach(([k, v]) => TSUBS.set(k, v)); (o.pl || []).forEach(x => TPLS.set(x.id, x)); Object.entries(o.h || {}).forEach(([k, v]) => THIST.set(k, v)); Object.entries(o.w || {}).forEach(([k, v]) => TWL.set(k, v)); (o.po || []).forEach(x => TPOSTS.set(x.id, x)); (o.rp || []).forEach(x => TREPORTS.push(x)); Object.entries(o.ch || {}).forEach(([k, v]) => TCHAN.set(k, v)); } } catch (e) {} })();
+const TEXT = new Map();
+const TEXTMETA = new Map();
+(async () => { try { const got = await storeCmd([['GET', 'cfg:tube']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); (o.v || []).forEach(x => TVIDEOS.set(x.id, x)); Object.entries(o.c || {}).forEach(([k, v]) => TCOMMENTS.set(k, v)); Object.entries(o.s || {}).forEach(([k, v]) => TSUBS.set(k, v)); (o.pl || []).forEach(x => TPLS.set(x.id, x)); Object.entries(o.h || {}).forEach(([k, v]) => THIST.set(k, v)); Object.entries(o.w || {}).forEach(([k, v]) => TWL.set(k, v)); (o.po || []).forEach(x => TPOSTS.set(x.id, x)); (o.rp || []).forEach(x => TREPORTS.push(x)); Object.entries(o.ch || {}).forEach(([k, v]) => TCHAN.set(k, v)); Object.entries(o.x || {}).forEach(([k, v]) => TEXT.set(k, v)); Object.entries(o.xm || {}).forEach(([k, v]) => TEXTMETA.set(k, v)); } } catch (e) {} })();
 let tubeSaveT = null;
-function tubePersist() { clearTimeout(tubeSaveT); tubeSaveT = setTimeout(() => { try { storeSet('cfg:tube', JSON.stringify({ v: [...TVIDEOS.values()], c: Object.fromEntries(TCOMMENTS), s: Object.fromEntries(TSUBS), pl: [...TPLS.values()], h: Object.fromEntries(THIST), w: Object.fromEntries(TWL), po: [...TPOSTS.values()], rp: TREPORTS.slice(-200), ch: Object.fromEntries(TCHAN) })); } catch (e) {} }, 800); }
+function tubePersist() { clearTimeout(tubeSaveT); tubeSaveT = setTimeout(() => { try { storeSet('cfg:tube', JSON.stringify({ v: [...TVIDEOS.values()], c: Object.fromEntries(TCOMMENTS), s: Object.fromEntries(TSUBS), pl: [...TPLS.values()], h: Object.fromEntries(THIST), w: Object.fromEntries(TWL), po: [...TPOSTS.values()], rp: TREPORTS.slice(-200), ch: Object.fromEntries(TCHAN), x: Object.fromEntries(TEXT), xm: Object.fromEntries(TEXTMETA) })); } catch (e) {} }, 800); }
 function tubeId(p) { return (p || 't') + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function chanOf(user) { const c = TCHAN.get(user) || {}; let subs = 0; for (const m of TSUBS.values()) if (m && m[user]) subs++; return { user, name: c.name || user, bio: c.bio || '', banner: c.banner || '', avatar: c.avatar || '', subs }; }
 function vidView(v, me) { if (!v) return null; return { id: v.id, owner: v.owner, chan: chanOf(v.owner).name, title: v.title, desc: v.desc, tags: v.tags || [], cat: v.cat || '', vis: v.vis, thumb: v.thumb || '', dur: v.dur || 0, vertical: !!v.vertical, views: v.views || 0, likes: (v.likedBy || []).length, dislikes: (v.dislikedBy || []).length, my: me ? ((v.likedBy || []).includes(me) ? 'like' : ((v.dislikedBy || []).includes(me) ? 'dislike' : '')) : '', created: v.created, captions: !!v.cap, mine: !!me && v.owner === me, file: v.file }; }
 function canSee(v, me) { return !!v && v.status === 'ready' && (v.vis === 'pub' || v.vis === 'unl' || (!!me && v.owner === me)); }
 function tubeScore(v, me) { const ageH = Math.max(1, (Date.now() - v.created) / 3600000); let s = (v.views || 0) + (v.likedBy || []).length * 9 + 90 / Math.pow(ageH, 0.6); if (me) { const my = TSUBS.get(me) || {}; if (my[v.owner]) s += 60; const hist = THIST.get(me) || []; const myTags = new Set(); hist.slice(0, 30).forEach(h => { const hv = TVIDEOS.get(h.v); if (hv) (hv.tags || []).forEach(t => myTags.add(t)); }); (v.tags || []).forEach(t => { if (myTags.has(t)) s += 14; }); if (v.owner === me) s -= 30; } return s; }
+function extView(id, me) { const m = TEXTMETA.get(id) || {}; const e = TEXT.get(id) || { l: [], d: [], views: 0 }; return { id, ext: true, owner: '', chan: m.c || 'youtube', title: m.t || id, desc: '', tags: [], cat: '', vis: 'pub', thumb: m.th || '', dur: m.dur || 0, vertical: false, views: e.views || 0, likes: (e.l || []).length, dislikes: (e.d || []).length, my: me ? ((e.l || []).includes(me) ? 'like' : ((e.d || []).includes(me) ? 'dislike' : '')) : '', created: 0, captions: false, mine: false, file: '' }; }
+function itemView(id, me) { if (String(id).startsWith('yt:')) return extView(id, me); const v = TVIDEOS.get(id); return v && canSee(v, me) ? vidView(v, me) : null; }
 function postView(p, me) { if (!p) return null; const total = p.poll ? p.poll.opts.reduce((n, o) => n + o.votes.length, 0) : 0; return { id: p.id, owner: p.owner, chan: chanOf(p.owner).name, text: p.text, img: p.img || '', ts: p.ts, likes: (p.likes || []).length, mylike: me ? (p.likes || []).includes(me) : false, mine: !!me && p.owner === me, poll: p.poll ? { total, opts: p.poll.opts.map(o => ({ t: o.t, votes: o.votes.length, pct: total ? Math.round(o.votes.length * 100 / total) : 0, mine: me ? o.votes.includes(me) : false })) } : null }; }
 
 const TUBE_CSS = `
@@ -14255,11 +14259,87 @@ return '<a class="tcard" href="/yt/watch?v='+v.id+'"><div class="tthumb">'+th+(v
 function scard(v){var th=v.thumb?'<img loading="lazy" src="'+esc(v.thumb)+'" alt="">':'';
 return '<a class="scard" href="/yt/shorts?v='+v.id+'"><div class="tthumb">'+th+'</div><div class="tt" style="font-size:13px">'+esc(v.title)+'</div><div class="tm">'+fmtN(v.views)+' views</div></a>'}
 function ava(u,sz){return '<a class="tav" href="/yt/channel/'+encodeURIComponent(u)+'" style="'+(sz?'width:'+sz+'px;height:'+sz+'px;font-size:'+Math.round(sz*.42)+'px':'')+'">'+esc((u||'?').slice(0,1).toUpperCase())+'</a>'}
-function navHtml(on){return '<div class="tnav"><a href="/yt" class="'+(on==='home'?'on':'')+'">home</a><a href="/yt/shorts" class="'+(on==='shorts'?'on':'')+'">shorts</a><a href="/yt/library" class="'+(on==='library'?'on':'')+'">library</a><a href="/yt/studio" class="'+(on==='studio'?'on':'')+'">studio</a><a href="/yt/upload" class="'+(on==='upload'?'on':'')+'">upload</a><span style="flex:1"></span><form class="tsearch" id="tSearchF"><input id="tSearchQ" placeholder="search 6ixtube" autocomplete="off"><button class="tbtn sm" type="submit">search</button><div class="tsug" id="tSug" hidden></div></form></div>'}
+function navHtml(on){return '<div class="tnav"><a href="/yt/home" class="'+(on==='home'?'on':'')+'">home</a><a href="/yt">youtube</a><a href="/yt/shorts" class="'+(on==='shorts'?'on':'')+'">shorts</a><a href="/yt/library" class="'+(on==='library'?'on':'')+'">library</a><a href="/yt/studio" class="'+(on==='studio'?'on':'')+'">studio</a><a href="/yt/upload" class="'+(on==='upload'?'on':'')+'">upload</a><span style="flex:1"></span><form class="tsearch" id="tSearchF"><input id="tSearchQ" placeholder="search 6ixtube" autocomplete="off"><button class="tbtn sm" type="submit">search</button><div class="tsug" id="tSug" hidden></div></form></div>'}
 function wireSearch(){var f=$('tSearchF');if(!f)return;var q=$('tSearchQ'),sg=$('tSug'),t=null;
 q.addEventListener('input',function(){clearTimeout(t);var v=q.value.trim();if(!v){sg.hidden=true;return}t=setTimeout(function(){jget('/api/tube/suggest?q='+encodeURIComponent(v)).then(function(r){if(!r.ok||!r.s.length){sg.hidden=true;return}sg.innerHTML='';r.s.forEach(function(s){var b=document.createElement('button');b.type='button';b.textContent=s;b.addEventListener('click',function(){location.href='/yt/find?q='+encodeURIComponent(s)});sg.appendChild(b)});sg.hidden=false})},220)});
 f.addEventListener('submit',function(e){e.preventDefault();if(q.value.trim())location.href='/yt/find?q='+encodeURIComponent(q.value.trim())});}
 `;
+function tubeSocialWidget(vidId, meta) {
+  const m = meta || {};
+  const data = JSON.stringify({ id: 'yt:' + vidId, raw: vidId, t: m.title || '', th: m.poster || ('https://i.ytimg.com/vi/' + vidId + '/hqdefault.jpg'), c: m.author || '' });
+  return `<style>
+#gxSoc{position:fixed;right:12px;bottom:96px;z-index:90;width:min(368px,94vw);background:rgba(13,11,26,.92);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.16);border-radius:18px;color:#eceaf6;font-family:system-ui,sans-serif;box-shadow:0 18px 44px rgba(0,0,0,.5);overflow:hidden}
+@media(min-width:1100px){#gxSoc{bottom:20px}}
+#gxSoc .hd{display:flex;gap:6px;align-items:center;padding:10px 12px;flex-wrap:wrap}
+#gxSoc .hd b{font-size:13px;letter-spacing:.04em}
+#gxSoc button{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#eceaf6;border-radius:999px;padding:6px 11px;font-size:12.5px;font-weight:700;cursor:pointer}
+#gxSoc button.on{background:rgba(154,134,255,.35);border-color:rgba(154,134,255,.6)}
+#gxSoc .bd{max-height:46dvh;overflow:auto;padding:0 12px 12px;display:none}
+#gxSoc.open .bd{display:block}
+#gxSoc textarea{width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:10px;color:#eceaf6;padding:8px 10px;font-size:14px;resize:vertical}
+#gxSoc .cm{display:flex;gap:8px;margin:10px 0}
+#gxSoc .cm .tx{flex:1;font-size:13.5px;word-break:break-word}
+#gxSoc .cm .wh{font-size:11.5px;opacity:.55}
+#gxSoc .cm button{padding:2px 8px;font-size:11.5px}
+</style>
+<div id="gxSoc"><div class="hd"><b>6IXTUBE</b><button id="gsLike" type="button">▲ 0</button><button id="gsDis" type="button">▼ 0</button><button id="gsSave" type="button">save</button><button id="gsSub" type="button">subscribe</button><button id="gsCm" type="button">comments 0</button></div><div class="bd"><div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1"><textarea id="gsBox" rows="2" placeholder="add a comment…"></textarea></div><button id="gsPost" type="button">post</button></div><div id="gsList"></div></div></div>
+<script>
+(function(){
+var D = ${data};
+var XID = D.id;
+function $(i){return document.getElementById(i)}
+function jp(u,b){return fetch(u,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b||{})}).then(function(r){return r.json()})}
+function jg(u){return fetch(u).then(function(r){return r.json()})}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+var MYK = '';
+function paint(s){ if(!s) return; $('gsLike').innerHTML = '▲ ' + (s.likes||0); $('gsDis').innerHTML = '▼ ' + (s.dislikes||0); $('gsLike').classList.toggle('on', s.my==='like'); $('gsDis').classList.toggle('on', s.my==='dislike'); MYK = s.my||''; if (s.comments != null) $('gsCm').textContent = 'comments ' + s.comments; if (s.chan) $('gsSub').textContent = s.subbed ? 'subscribed' : 'subscribe'; $('gsSub').classList.toggle('on', !!s.subbed); }
+jp('/api/tube/view', { id: XID, prog: 0, meta: { t: D.t, th: D.th, c: D.c } }).catch(function(){});
+jg('/api/tube/extstate?id=' + encodeURIComponent(XID)).then(paint);
+$('gsLike').addEventListener('click', function(){ jp('/api/tube/like', { id: XID, kind: MYK==='like' ? '' : 'like' }).then(function(r){ if (r.ok) paint({ likes: r.likes, dislikes: r.dislikes, my: r.my, comments: null }); else alert(r.err || 'log in first'); }); });
+$('gsDis').addEventListener('click', function(){ jp('/api/tube/like', { id: XID, kind: MYK==='dislike' ? '' : 'dislike' }).then(function(r){ if (r.ok) paint({ likes: r.likes, dislikes: r.dislikes, my: r.my, comments: null }); else alert(r.err || 'log in first'); }); });
+$('gsSave').addEventListener('click', function(){
+  jp('/api/tube/plmod', { act: 'later', vid: XID, meta: { t: D.t, th: D.th, c: D.c } }).then(function(r){ if (!r.ok) { alert(r.err || 'log in first'); return; }
+    $('gsSave').textContent = r.saved ? 'saved ✓' : 'save';
+    if (r.saved) { jp('/api/tube/library', {}).then(function(lib){ if (lib.ok && lib.playlists.length) { var names = lib.playlists.map(function(p, i){ return (i + 1) + '. ' + p.title; }).join('\\n'); var pick = prompt('also add to a playlist? type the number or cancel:\\n' + names); if (pick) { var p = lib.playlists[+pick - 1]; if (p) jp('/api/tube/plmod', { act: 'add', id: p.id, vid: XID, meta: { t: D.t, th: D.th, c: D.c } }).then(function(){ $('gsSave').textContent = 'in playlist ✓'; }); } } }); }
+  });
+});
+$('gsSub').addEventListener('click', function(){ if (!D.c) { alert('channel unknown for this one'); return; } jp('/api/tube/sub', { chan: 'yt:' + D.c, off: $('gsSub').classList.contains('on') }).then(function(r){ if (r.ok) { $('gsSub').textContent = r.subbed ? 'subscribed' : 'subscribe'; $('gsSub').classList.toggle('on', r.subbed); } else alert(r.err || 'log in first'); }); });
+function drawCmts(list){
+  var tops = list.filter(function(c){ return !c.parent; });
+  var h = '';
+  tops.forEach(function(c){ h += '<div class="cm"><div class="tx"><div class="wh">@' + esc(c.user) + (c.pinned ? ' · pinned' : '') + (c.heart ? ' · ♥' : '') + '</div>' + esc(c.text) + '<div><button data-lk="' + c.id + '">▲ ' + (c.likes||0) + '</button> <button data-rp="' + c.id + '">reply</button>' + (c.mine ? ' <button data-dl="' + c.id + '">delete</button>' : '') + '</div></div></div>';
+    list.filter(function(x){ return x.parent === c.id; }).forEach(function(r){ h += '<div class="cm" style="margin-left:22px"><div class="tx"><div class="wh">@' + esc(r.user) + '</div>' + esc(r.text) + '</div></div>'; });
+  });
+  $('gsList').innerHTML = h || '<p style="opacity:.55;font-size:13px">no comments yet — say something</p>';
+  $('gsList').querySelectorAll('[data-lk]').forEach(function(b){ b.addEventListener('click', function(){ jp('/api/tube/commentmod', { vid: XID, id: b.getAttribute('data-lk'), act: 'like' }).then(function(){ loadCmts(); }); }); });
+  $('gsList').querySelectorAll('[data-dl]').forEach(function(b){ b.addEventListener('click', function(){ if (confirm('delete comment?')) jp('/api/tube/commentmod', { vid: XID, id: b.getAttribute('data-dl'), act: 'del' }).then(function(){ loadCmts(); }); }); });
+  $('gsList').querySelectorAll('[data-rp]').forEach(function(b){ b.addEventListener('click', function(){ var t = prompt('reply:'); if (t) jp('/api/tube/comment', { vid: XID, text: t, parent: b.getAttribute('data-rp') }).then(function(r){ if (r.ok) loadCmts(); else alert(r.err || 'log in first'); }); }); });
+}
+function loadCmts(){ jg('/api/tube/comments?vid=' + encodeURIComponent(XID)).then(function(r){ if (r.ok) { drawCmts(r.comments); $('gsCm').textContent = 'comments ' + r.comments.length; } }); }
+$('gsCm').addEventListener('click', function(){ $('gxSoc').classList.toggle('open'); if ($('gxSoc').classList.contains('open')) loadCmts(); });
+$('gsPost').addEventListener('click', function(){ var t = $('gsBox').value.trim(); if (!t) return; jp('/api/tube/comment', { vid: XID, text: t }).then(function(r){ if (r.ok) { $('gsBox').value = ''; loadCmts(); } else alert(r.err || 'log in first'); }); });
+})();
+</script>`;
+}
+function ytHomeServed() {
+  const strip = `<div id="gxTubeStrip" style="display:none;max-width:1240px;margin:0 auto;padding:14px 16px 0;font-family:system-ui,sans-serif;color:#eceaf6"></div><script>
+(function(){
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+fetch('/api/tube/library', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).then(function(r){ return r.json(); }).then(function(d){
+  if (!d || !d.ok) return;
+  var el = document.getElementById('gxTubeStrip'); if (!el) return;
+  var hist = (d.history || []).slice(0, 6), later = d.later || [], subs = d.subs || [];
+  if (!hist.length && !later.length && !subs.length) return;
+  var h = '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><b style="font-size:14px">ur 6ixtube</b><a href="/yt/home" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:#eceaf6;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;text-decoration:none">6ix uploads</a><a href="/yt/library" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:#eceaf6;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;text-decoration:none">library</a><a href="/yt/studio" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:#eceaf6;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;text-decoration:none">studio</a></div>';
+  if (hist.length) { h += '<div style="font-size:12px;opacity:.6;margin-bottom:6px">CONTINUE WATCHING</div><div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px">' + hist.map(function(v){ var raw = v.ext ? v.id.slice(3) : v.id; return '<a href="/yt/watch?v=' + raw + '" style="flex:0 0 168px;color:#eceaf6;text-decoration:none"><span style="display:block;border-radius:12px;overflow:hidden;aspect-ratio:16/9;background:rgba(255,255,255,.08)">' + (v.thumb ? '<img src="' + esc(v.thumb) + '" style="width:100%;height:100%;object-fit:cover">' : '') + '</span><span style="display:block;font-size:12.5px;font-weight:600;margin-top:5px;line-height:1.3">' + esc(v.title) + '</span><span style="display:block;font-size:11.5px;opacity:.55">' + esc(v.chan) + '</span></a>'; }).join('') + '</div>'; }
+  if (subs.length) { h += '<div style="font-size:12px;opacity:.6;margin:8px 0 6px">SUBSCRIPTIONS</div><div style="display:flex;gap:8px;flex-wrap:wrap">' + subs.map(function(c){ var href = c.yt ? '/yt/search?q=' + encodeURIComponent(c.name) : '/yt/channel/' + encodeURIComponent(c.user); return '<a href="' + href + '" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#eceaf6;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:600;text-decoration:none">' + esc(c.name) + '</a>'; }).join('') + '</div>'; }
+  el.innerHTML = h; el.style.display = 'block';
+}).catch(function(){});
+})();
+</script>`;
+  return YT_HOME.replace(/<body[^>]*>/, (mm) => mm + strip);
+}
+
 function tubeHomePage() {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -18582,7 +18662,7 @@ const server = http.createServer(async (req, res) => {
     if (u.pathname === '/api/tube/comments') {
       const vid = u.searchParams.get('vid') || '';
       const v = TVIDEOS.get(vid);
-      if (!canSee(v, me)) return jout({ ok: false, err: 'no video' }, 404);
+      if (!vid.startsWith('yt:') && !canSee(v, me)) return jout({ ok: false, err: 'no video' }, 404);
       let list = (TCOMMENTS.get(vid) || []).map(c => ({ id: c.id, user: c.user, chan: chanOf(c.user).name, text: c.text, ts: c.ts, parent: c.parent || null, likes: (c.likes || []).length, mylike: me ? (c.likes || []).includes(me) : false, pinned: !!c.pinned, heart: !!c.heart, edited: !!c.edited, mine: !!me && c.user === me }));
       if (u.searchParams.get('sort') === 'new') list.sort((a, b) => (b.pinned - a.pinned) || (b.ts - a.ts)); else list.sort((a, b) => (b.pinned - a.pinned) || (b.likes - a.likes) || (b.ts - a.ts));
       return jout({ ok: true, comments: list });
@@ -18615,7 +18695,15 @@ const server = http.createServer(async (req, res) => {
     if (u.pathname === '/api/tube/pl') {
       const p = TPLS.get(u.searchParams.get('id') || '');
       if (!p || (p.vis === 'priv' && (!me || p.owner !== me))) return jout({ ok: false, err: 'no playlist' }, 404);
-      return jout({ ok: true, pl: { id: p.id, title: p.title, owner: p.owner, chan: chanOf(p.owner).name, vis: p.vis, mine: !!me && p.owner === me, items: p.items.map(id => TVIDEOS.get(id)).filter(v => canSee(v, me)).map(v => vidView(v, me)) } });
+      return jout({ ok: true, pl: { id: p.id, title: p.title, owner: p.owner, chan: chanOf(p.owner).name, vis: p.vis, mine: !!me && p.owner === me, items: p.items.map(id => itemView(id, me)).filter(Boolean) } });
+    }
+    if (u.pathname === '/api/tube/extstate') {
+      const id = u.searchParams.get('id') || '';
+      if (!id.startsWith('yt:')) return jout({ ok: false, err: 'ext only' }, 400);
+      const ev = extView(id, me);
+      const my = me ? (TSUBS.get(me) || {}) : {};
+      const m = TEXTMETA.get(id) || {};
+      return jout({ ok: true, likes: ev.likes, dislikes: ev.dislikes, my: ev.my, views: ev.views, comments: (TCOMMENTS.get(id) || []).length, subbed: !!my['yt:' + (m.c || '')], chan: m.c || '' });
     }
     if (u.pathname === '/api/tube/studio') {
       if (needMe()) return;
@@ -18700,6 +18788,17 @@ const server = http.createServer(async (req, res) => {
       return jout({ ok: true });
     }
     if (u.pathname === '/api/tube/view') {
+      if (String(b.id || '').startsWith('yt:')) {
+        const xid = String(b.id);
+        if (b.meta && (b.meta.t || b.meta.c)) TEXTMETA.set(xid, { t: String(b.meta.t || '').slice(0, 160), th: String(b.meta.th || '').slice(0, 500), c: String(b.meta.c || '').slice(0, 80), dur: +b.meta.dur || 0 });
+        const xe = TEXT.get(xid) || { l: [], d: [], views: 0 };
+        const xkey = xid + '|' + clientIp(req);
+        if (Date.now() - (TVIEWCOOL.get(xkey) || 0) > 600000) { xe.views = (xe.views || 0) + 1; TVIEWCOOL.set(xkey, Date.now()); }
+        TEXT.set(xid, xe);
+        if (me) { const hist = THIST.get(me) || []; const ex = hist.find(h => h.v === xid); if (ex) { ex.ts = Date.now(); ex.prog = Math.max(ex.prog || 0, +b.prog || 0); } else hist.unshift({ v: xid, ts: Date.now(), prog: +b.prog || 0 }); THIST.set(me, hist.slice(0, 80)); }
+        tubePersist();
+        return jout({ ok: true, views: xe.views });
+      }
       const v = TVIDEOS.get(String(b.id || ''));
       if (!canSee(v, me)) return jout({ ok: false, err: 'no video' }, 404);
       const key = v.id + '|' + clientIp(req);
@@ -18710,6 +18809,13 @@ const server = http.createServer(async (req, res) => {
     }
     if (u.pathname === '/api/tube/like') {
       if (needMe()) return;
+      if (String(b.id || '').startsWith('yt:')) {
+        const xe = TEXT.get(String(b.id)) || { l: [], d: [], views: 0 };
+        xe.l = (xe.l || []).filter(x => x !== me); xe.d = (xe.d || []).filter(x => x !== me);
+        if (b.kind === 'like') xe.l.push(me); if (b.kind === 'dislike') xe.d.push(me);
+        TEXT.set(String(b.id), xe); tubePersist();
+        return jout({ ok: true, likes: xe.l.length, dislikes: xe.d.length, my: b.kind === 'like' ? 'like' : b.kind === 'dislike' ? 'dislike' : '' });
+      }
       const v = TVIDEOS.get(String(b.id || ''));
       if (!canSee(v, me)) return jout({ ok: false, err: 'no video' }, 404);
       v.likedBy = v.likedBy || []; v.dislikedBy = v.dislikedBy || [];
@@ -18721,8 +18827,8 @@ const server = http.createServer(async (req, res) => {
     }
     if (u.pathname === '/api/tube/sub') {
       if (needMe()) return;
-      const chan = String(b.chan || '').toLowerCase();
-      if (!chan || chan === me || !ACCOUNTS.has(chan)) return jout({ ok: false, err: 'no channel' }, 404);
+      const chan = String(b.chan || '').startsWith('yt:') ? String(b.chan) : String(b.chan || '').toLowerCase();
+      if (!chan || chan === me || (!chan.startsWith('yt:') && !ACCOUNTS.has(chan))) return jout({ ok: false, err: 'no channel' }, 404);
       const my = TSUBS.get(me) || {};
       if (b.off) delete my[chan]; else my[chan] = { bell: b.bell == null ? (my[chan] ? my[chan].bell : true) : !!b.bell };
       TSUBS.set(me, my); tubePersist();
@@ -18741,14 +18847,14 @@ const server = http.createServer(async (req, res) => {
     if (u.pathname === '/api/tube/comment') {
       if (needMe()) return;
       const v = TVIDEOS.get(String(b.vid || ''));
-      if (!canSee(v, me)) return jout({ ok: false, err: 'no video' }, 404);
+      if (!String(b.vid || '').startsWith('yt:') && !canSee(v, me)) return jout({ ok: false, err: 'no video' }, 404);
       const text = String(b.text || '').trim().slice(0, 1200);
       if (!text) return jout({ ok: false, err: 'empty comment' });
-      const list = TCOMMENTS.get(v.id) || [];
+      const list = TCOMMENTS.get(String(b.vid || '')) || [];
       const parent = b.parent && list.some(c => c.id === b.parent) ? b.parent : null;
       const c = { id: tubeId('c'), user: me, text, ts: Date.now(), parent, likes: [], pinned: false, heart: false };
-      list.push(c); TCOMMENTS.set(v.id, list); tubePersist();
-      if (v.owner !== me) pushNotif(v.owner, { type: 'tube', from: me, text: 'commented: ' + text.slice(0, 80), vid: v.id });
+      list.push(c); TCOMMENTS.set(String(b.vid || ''), list); tubePersist();
+      if (v && v.owner !== me) pushNotif(v.owner, { type: 'tube', from: me, text: 'commented: ' + text.slice(0, 80), vid: v.id });
       return jout({ ok: true, comment: { id: c.id, user: c.user, chan: chanOf(me).name, text: c.text, ts: c.ts, parent: c.parent, likes: 0, mylike: false, pinned: false, heart: false, mine: true } });
     }
     if (u.pathname === '/api/tube/commentmod') {
@@ -18756,13 +18862,13 @@ const server = http.createServer(async (req, res) => {
       const v = TVIDEOS.get(String(b.vid || ''));
       const list = TCOMMENTS.get(String(b.vid || '')) || [];
       const c = list.find(x => x.id === b.id);
-      if (!v || !c) return jout({ ok: false, err: 'no comment' }, 404);
+      if ((!v && !String(b.vid || '').startsWith('yt:')) || !c) return jout({ ok: false, err: 'no comment' }, 404);
       const act = String(b.act || '');
       if (act === 'like') { c.likes = c.likes || []; if (c.likes.includes(me)) c.likes = c.likes.filter(x => x !== me); else c.likes.push(me); }
       else if (act === 'edit') { if (c.user !== me) return jout({ ok: false, err: 'not urs' }, 403); c.text = String(b.text || '').trim().slice(0, 1200); c.edited = true; }
-      else if (act === 'del') { if (c.user !== me && v.owner !== me && !isAdminReq(req)) return jout({ ok: false, err: 'cant' }, 403); TCOMMENTS.set(v.id, list.filter(x => x.id !== c.id && x.parent !== c.id)); }
-      else if (act === 'pin') { if (v.owner !== me) return jout({ ok: false, err: 'only the creator pins' }, 403); list.forEach(x => { if (!x.parent) x.pinned = false; }); c.pinned = !c.pinned; }
-      else if (act === 'heart') { if (v.owner !== me) return jout({ ok: false, err: 'only the creator hearts' }, 403); c.heart = !c.heart; }
+      else if (act === 'del') { if (c.user !== me && (!v || v.owner !== me) && !isAdminReq(req)) return jout({ ok: false, err: 'cant' }, 403); TCOMMENTS.set(String(b.vid), list.filter(x => x.id !== c.id && x.parent !== c.id)); }
+      else if (act === 'pin') { if (!v || v.owner !== me) return jout({ ok: false, err: 'only the creator pins' }, 403); list.forEach(x => { if (!x.parent) x.pinned = false; }); c.pinned = !c.pinned; }
+      else if (act === 'heart') { if (!v || v.owner !== me) return jout({ ok: false, err: 'only the creator hearts' }, 403); c.heart = !c.heart; }
       else return jout({ ok: false, err: 'bad act' });
       tubePersist();
       return jout({ ok: true, likes: (c.likes || []).length, pinned: !!c.pinned, heart: !!c.heart });
@@ -18774,7 +18880,7 @@ const server = http.createServer(async (req, res) => {
       if (act === 'later') { const wl = TWL.get(me) || []; const has = wl.includes(b.vid); const nw = has ? wl.filter(x => x !== b.vid) : [b.vid].concat(wl); TWL.set(me, nw.slice(0, 200)); tubePersist(); return jout({ ok: true, saved: !has }); }
       const p = TPLS.get(String(b.id || ''));
       if (!p || p.owner !== me) return jout({ ok: false, err: 'not ur playlist' }, 404);
-      if (act === 'add') { if (b.vid && !p.items.includes(b.vid)) p.items.push(b.vid); }
+      if (act === 'add') { if (b.vid && !p.items.includes(b.vid)) p.items.push(b.vid); if (b.vid && String(b.vid).startsWith('yt:') && b.meta) TEXTMETA.set(String(b.vid), { t: String(b.meta.t || '').slice(0, 160), th: String(b.meta.th || '').slice(0, 500), c: String(b.meta.c || '').slice(0, 80), dur: +b.meta.dur || 0 }); }
       else if (act === 'remove') p.items = p.items.filter(x => x !== b.vid);
       else if (act === 'move') { const i = p.items.indexOf(b.vid); const j = i + (b.dir === 'up' ? -1 : 1); if (i >= 0 && j >= 0 && j < p.items.length) { const t = p.items[i]; p.items[i] = p.items[j]; p.items[j] = t; } }
       else if (act === 'rename') p.title = String(b.title || p.title).slice(0, 80);
@@ -18815,10 +18921,10 @@ const server = http.createServer(async (req, res) => {
     if (u.pathname === '/api/tube/library') {
       if (needMe()) return;
       const wl = TWL.get(me) || [];
-      const liked = [...TVIDEOS.values()].filter(v => (v.likedBy || []).includes(me) && canSee(v, me)).sort((a, b) => b.created - a.created);
-      const hist = (THIST.get(me) || []).map(h => { const v = TVIDEOS.get(h.v); return v && canSee(v, me) ? Object.assign(vidView(v, me), { prog: h.prog, hts: h.ts }) : null; }).filter(Boolean);
+      const liked = [...TVIDEOS.values()].filter(v => (v.likedBy || []).includes(me) && canSee(v, me)).sort((a, b) => b.created - a.created).map(v => vidView(v, me)).concat([...TEXT.entries()].filter(([, e]) => (e.l || []).includes(me)).map(([id]) => extView(id, me)));
+      const hist = (THIST.get(me) || []).map(h => { const iv = itemView(h.v, me); return iv ? Object.assign(iv, { prog: h.prog, hts: h.ts }) : null; }).filter(Boolean);
       const my = TSUBS.get(me) || {};
-      return jout({ ok: true, later: wl.map(id => TVIDEOS.get(id)).filter(v => canSee(v, me)).map(v => vidView(v, me)), liked: liked.slice(0, 40).map(v => vidView(v, me)), history: hist, playlists: [...TPLS.values()].filter(p => p.owner === me).map(p => ({ id: p.id, title: p.title, vis: p.vis, n: p.items.length, cover: (TVIDEOS.get(p.items[0]) || {}).thumb || '' })), subs: Object.keys(my).map(h => chanOf(h)) });
+      return jout({ ok: true, later: wl.map(id => itemView(id, me)).filter(Boolean), liked: liked.slice(0, 40), history: hist, playlists: [...TPLS.values()].filter(p => p.owner === me).map(p => ({ id: p.id, title: p.title, vis: p.vis, n: p.items.length, cover: (itemView(p.items[0], me) || {}).thumb || '' })), subs: Object.keys(my).filter(h => !h.startsWith('yt:')).map(h => chanOf(h)).concat(Object.keys(my).filter(h => h.startsWith('yt:')).map(h => ({ user: h, name: h.slice(3), bio: '', banner: '', avatar: '', subs: 0, yt: true }))) });
     }
     return jout({ ok: false, err: 'unknown tube route' }, 404);
   }
@@ -18835,8 +18941,9 @@ const server = http.createServer(async (req, res) => {
   if (plm) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(tubePlaylistPage(plm[1])); }
   if (u.pathname === '/yt') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
-    return res.end(tubeHomePage());
+    return res.end(ytHomeServed());
   }
+  if (u.pathname === '/yt/home') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(tubeHomePage()); }
   if (u.pathname === '/yt/watch') {
     const vidId = (u.searchParams.get('v') || '').trim();
     if (!vidId) { res.writeHead(302, { location: '/yt' }); return res.end(); }
@@ -18849,7 +18956,8 @@ const server = http.createServer(async (req, res) => {
     const phit = (meta || hit) ? null : await fetchPipedStreams(vidId);
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     const uvUrl = UV_OK() ? '/uv/service/' + uvEncodeUrl('https://www.youtube.com/watch?v=' + vidId) : null;
-    return res.end(uvUrl ? ytWatchPage2(vidId, hit, phit, uvUrl, meta) : ytWatchPage(vidId, hit, phit));
+    const whtml = uvUrl ? ytWatchPage2(vidId, hit, phit, uvUrl, meta) : ytWatchPage(vidId, hit, phit);
+    return res.end(whtml.includes('</body>') ? whtml.replace('</body>', tubeSocialWidget(vidId, meta) + '</body>') : whtml + tubeSocialWidget(vidId, meta));
   }
   if (u.pathname === '/yt/warm') {
     if (!tunOk(req)) { res.writeHead(403, { 'content-type': 'text/plain' }); return res.end('tunnel locked - open the site first'); }
