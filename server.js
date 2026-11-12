@@ -14183,6 +14183,701 @@ try { SITES_FS.mkdirSync(SITES_DIR, { recursive: true }); } catch (e) {}
 let SITES = new Map();
 (async () => { try { const got = await storeCmd([['GET', 'cfg:sites']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); for (const k of Object.keys(o || {})) SITES.set(k, o[k]); } } catch (e) {} })();
 function sitesPersist() { try { storeSet('cfg:sites', JSON.stringify(Object.fromEntries(SITES))); } catch (e) {} }
+// ---------- 6ixTube platform (v422): first-party videos on site accounts ----------
+const TUBE_DIR = process.env.TUBE_DIR || SITES_PATH.join(__dirname, '..', 'tubevideos');
+try { SITES_FS.mkdirSync(TUBE_DIR, { recursive: true }); } catch (e) {}
+const TVIDEOS = new Map();
+const TCOMMENTS = new Map();
+const TSUBS = new Map();
+const TPLS = new Map();
+const THIST = new Map();
+const TWL = new Map();
+const TPOSTS = new Map();
+const TREPORTS = [];
+const TCHAN = new Map();
+const TVIEWCOOL = new Map();
+(async () => { try { const got = await storeCmd([['GET', 'cfg:tube']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); (o.v || []).forEach(x => TVIDEOS.set(x.id, x)); Object.entries(o.c || {}).forEach(([k, v]) => TCOMMENTS.set(k, v)); Object.entries(o.s || {}).forEach(([k, v]) => TSUBS.set(k, v)); (o.pl || []).forEach(x => TPLS.set(x.id, x)); Object.entries(o.h || {}).forEach(([k, v]) => THIST.set(k, v)); Object.entries(o.w || {}).forEach(([k, v]) => TWL.set(k, v)); (o.po || []).forEach(x => TPOSTS.set(x.id, x)); (o.rp || []).forEach(x => TREPORTS.push(x)); Object.entries(o.ch || {}).forEach(([k, v]) => TCHAN.set(k, v)); } } catch (e) {} })();
+let tubeSaveT = null;
+function tubePersist() { clearTimeout(tubeSaveT); tubeSaveT = setTimeout(() => { try { storeSet('cfg:tube', JSON.stringify({ v: [...TVIDEOS.values()], c: Object.fromEntries(TCOMMENTS), s: Object.fromEntries(TSUBS), pl: [...TPLS.values()], h: Object.fromEntries(THIST), w: Object.fromEntries(TWL), po: [...TPOSTS.values()], rp: TREPORTS.slice(-200), ch: Object.fromEntries(TCHAN) })); } catch (e) {} }, 800); }
+function tubeId(p) { return (p || 't') + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function chanOf(user) { const c = TCHAN.get(user) || {}; let subs = 0; for (const m of TSUBS.values()) if (m && m[user]) subs++; return { user, name: c.name || user, bio: c.bio || '', banner: c.banner || '', avatar: c.avatar || '', subs }; }
+function vidView(v, me) { if (!v) return null; return { id: v.id, owner: v.owner, chan: chanOf(v.owner).name, title: v.title, desc: v.desc, tags: v.tags || [], cat: v.cat || '', vis: v.vis, thumb: v.thumb || '', dur: v.dur || 0, vertical: !!v.vertical, views: v.views || 0, likes: (v.likedBy || []).length, dislikes: (v.dislikedBy || []).length, my: me ? ((v.likedBy || []).includes(me) ? 'like' : ((v.dislikedBy || []).includes(me) ? 'dislike' : '')) : '', created: v.created, captions: !!v.cap, mine: !!me && v.owner === me, file: v.file }; }
+function canSee(v, me) { return !!v && v.status === 'ready' && (v.vis === 'pub' || v.vis === 'unl' || (!!me && v.owner === me)); }
+function tubeScore(v, me) { const ageH = Math.max(1, (Date.now() - v.created) / 3600000); let s = (v.views || 0) + (v.likedBy || []).length * 9 + 90 / Math.pow(ageH, 0.6); if (me) { const my = TSUBS.get(me) || {}; if (my[v.owner]) s += 60; const hist = THIST.get(me) || []; const myTags = new Set(); hist.slice(0, 30).forEach(h => { const hv = TVIDEOS.get(h.v); if (hv) (hv.tags || []).forEach(t => myTags.add(t)); }); (v.tags || []).forEach(t => { if (myTags.has(t)) s += 14; }); if (v.owner === me) s -= 30; } return s; }
+function postView(p, me) { if (!p) return null; const total = p.poll ? p.poll.opts.reduce((n, o) => n + o.votes.length, 0) : 0; return { id: p.id, owner: p.owner, chan: chanOf(p.owner).name, text: p.text, img: p.img || '', ts: p.ts, likes: (p.likes || []).length, mylike: me ? (p.likes || []).includes(me) : false, mine: !!me && p.owner === me, poll: p.poll ? { total, opts: p.poll.opts.map(o => ({ t: o.t, votes: o.votes.length, pct: total ? Math.round(o.votes.length * 100 / total) : 0, mine: me ? o.votes.includes(me) : false })) } : null }; }
+
+const TUBE_CSS = `
+.twrap{max-width:1240px;margin:0 auto;padding:16px 16px 120px;width:100%;box-sizing:border-box;text-align:left}
+.tnav{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0 16px}
+.tnav a,.tnav button{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);color:var(--ink);border-radius:999px;padding:8px 14px;font-size:13.5px;font-weight:600;cursor:pointer;text-decoration:none}
+.tnav a.on,.tnav button.on{background:rgba(var(--star),.2);border-color:rgba(var(--star),.4)}
+.tsearch{display:flex;gap:8px;flex:1;min-width:220px;position:relative}
+.tsearch input{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);border-radius:999px;color:var(--ink);padding:10px 18px;font-size:15px;outline:none}
+.tsearch input:focus{border-color:var(--acc)}
+.tsug{position:absolute;top:48px;left:0;right:60px;background:#17142a;border:1px solid rgba(255,255,255,.15);border-radius:14px;overflow:hidden;z-index:40}
+.tsug button{display:block;width:100%;text-align:left;background:none;border:0;color:var(--ink);padding:10px 14px;cursor:pointer;font-size:14px}
+.tsug button:hover{background:rgba(255,255,255,.07)}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px 14px}
+.tcard{display:block;text-decoration:none;color:var(--ink)}
+.tthumb{position:relative;border-radius:14px;overflow:hidden;aspect-ratio:16/9;background:linear-gradient(135deg,rgba(var(--star),.35),rgba(255,255,255,.05))}
+.tthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.tthumb .dur{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.75);color:#fff;font-size:11.5px;font-weight:700;padding:2px 6px;border-radius:6px}
+.tthumb .prog{position:absolute;left:0;bottom:0;height:4px;background:#ff4e45}
+.tt{font-weight:700;font-size:14.5px;margin:8px 0 2px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tm{font-size:12.5px;color:rgba(236,234,246,.55)}
+.tsec{font-size:19px;font-weight:800;margin:26px 0 12px}
+.trail{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scrollbar-width:thin}
+.trail .scard{flex:0 0 150px;text-decoration:none;color:var(--ink)}
+.trail .scard .tthumb{aspect-ratio:9/16}
+.tav{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--acc),rgba(var(--star),.6));color:#0a0a13;font-weight:800;flex:none;text-decoration:none}
+.tbtn{display:inline-flex;align-items:center;gap:7px;background:var(--acc);color:#0a0a13;border:0;font-weight:700;border-radius:999px;padding:9px 16px;font-size:13.5px;cursor:pointer;text-decoration:none}
+.tbtn.ghost{background:rgba(255,255,255,.07);color:var(--ink);border:1px solid rgba(255,255,255,.15)}
+.tbtn.sm{padding:6px 12px;font-size:12.5px}
+.tbtn.on{background:rgba(255,255,255,.16);color:var(--ink)}
+.tin{width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);border-radius:12px;color:var(--ink);padding:10px 12px;font-size:15px;margin:5px 0}
+select.tin{appearance:none;cursor:pointer}
+textarea.tin{resize:vertical;line-height:1.5}
+.tchip{display:inline-block;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);border-radius:999px;padding:6px 13px;font-size:13px;cursor:pointer;color:var(--ink)}
+.tchip.on{background:rgba(var(--star),.22)}
+.tmsg{font-size:13px;opacity:.75;min-height:18px}
+.tempty{opacity:.55;padding:26px 0}
+`;
+const TUBE_JS = `
+function $(i){return document.getElementById(i)}
+function jget(u){return fetch(u,{headers:{'accept':'application/json'}}).then(function(r){return r.json()})}
+function jpost(u,b){return fetch(u,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b||{})}).then(function(r){return r.json()})}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function fmtN(n){n=+n||0;if(n>=1e6)return (n/1e6).toFixed(1).replace(/\.0$/,'')+'M';if(n>=1e3)return (n/1e3).toFixed(1).replace(/\.0$/,'')+'K';return ''+n}
+function fmtD(s){s=Math.max(0,Math.round(+s||0));var h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+':'+('0'+m).slice(-2):m)+':'+('0'+x).slice(-2)}
+function fmtT(ts){var d=Date.now()-ts;if(d<6e4)return 'just now';if(d<36e5)return Math.floor(d/6e4)+'m ago';if(d<864e5)return Math.floor(d/36e5)+'h ago';if(d<6048e5)return Math.floor(d/864e5)+'d ago';return new Date(ts).toLocaleDateString()}
+function card(v){var th=v.thumb?'<img loading="lazy" src="'+esc(v.thumb)+'" alt="">':'';
+return '<a class="tcard" href="/yt/watch?v='+v.id+'"><div class="tthumb">'+th+(v.dur?'<span class="dur">'+fmtD(v.dur)+'</span>':'')+(v.prog?'<span class="prog" style="width:'+Math.min(100,Math.round(v.prog*100/Math.max(1,v.dur)))+'%"></span>':'')+'</div><div class="tt">'+esc(v.title)+'</div><div class="tm">'+esc(v.chan)+' · '+fmtN(v.views)+' views · '+fmtT(v.created)+'</div></a>'}
+function scard(v){var th=v.thumb?'<img loading="lazy" src="'+esc(v.thumb)+'" alt="">':'';
+return '<a class="scard" href="/yt/shorts?v='+v.id+'"><div class="tthumb">'+th+'</div><div class="tt" style="font-size:13px">'+esc(v.title)+'</div><div class="tm">'+fmtN(v.views)+' views</div></a>'}
+function ava(u,sz){return '<a class="tav" href="/yt/channel/'+encodeURIComponent(u)+'" style="'+(sz?'width:'+sz+'px;height:'+sz+'px;font-size:'+Math.round(sz*.42)+'px':'')+'">'+esc((u||'?').slice(0,1).toUpperCase())+'</a>'}
+function navHtml(on){return '<div class="tnav"><a href="/yt" class="'+(on==='home'?'on':'')+'">home</a><a href="/yt/shorts" class="'+(on==='shorts'?'on':'')+'">shorts</a><a href="/yt/library" class="'+(on==='library'?'on':'')+'">library</a><a href="/yt/studio" class="'+(on==='studio'?'on':'')+'">studio</a><a href="/yt/upload" class="'+(on==='upload'?'on':'')+'">upload</a><span style="flex:1"></span><form class="tsearch" id="tSearchF"><input id="tSearchQ" placeholder="search 6ixtube" autocomplete="off"><button class="tbtn sm" type="submit">search</button><div class="tsug" id="tSug" hidden></div></form></div>'}
+function wireSearch(){var f=$('tSearchF');if(!f)return;var q=$('tSearchQ'),sg=$('tSug'),t=null;
+q.addEventListener('input',function(){clearTimeout(t);var v=q.value.trim();if(!v){sg.hidden=true;return}t=setTimeout(function(){jget('/api/tube/suggest?q='+encodeURIComponent(v)).then(function(r){if(!r.ok||!r.s.length){sg.hidden=true;return}sg.innerHTML='';r.s.forEach(function(s){var b=document.createElement('button');b.type='button';b.textContent=s;b.addEventListener('click',function(){location.href='/yt/find?q='+encodeURIComponent(s)});sg.appendChild(b)});sg.hidden=false})},220)});
+f.addEventListener('submit',function(e){e.preventDefault();if(q.value.trim())location.href='/yt/find?q='+encodeURIComponent(q.value.trim())});}
+`;
+function tubeHomePage() {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>6ixTube</title>
+<style>${GALAXY_CSS}</style>
+<style>${TUBE_CSS}</style>
+</head>
+<body>
+<div class="twrap">
+<h1 style="font-size:27px;margin:6px 0 2px">6ix<span style="color:var(--acc)">tube</span></h1>
+<p style="opacity:.6;margin:0 0 6px;font-size:14px">real videos from real people on the network. <a href="/yt/web" style="color:var(--acc)">mirror youtube instead →</a></p>
+<div id="tNav"></div>
+<div id="tCats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px"></div>
+<div id="tMain"><p class="tempty">loading…</p></div>
+</div>
+${SIDEBAR_HTML}
+<script>${TUBE_JS}
+$('tNav').innerHTML = navHtml('home'); wireSearch();
+var CAT = '';
+function draw(d) {
+  var h = '';
+  if (d.cont && d.cont.length) { h += '<div class="tsec">continue watching</div><div class="tgrid">' + d.cont.map(card).join('') + '</div>'; }
+  if (d.shorts && d.shorts.length) { h += '<div class="tsec">shorts</div><div class="trail">' + d.shorts.map(scard).join('') + '</div>'; }
+  if (CAT) { h += '<div class="tsec">' + esc(CAT) + '</div><div class="tgrid">' + d.feed.filter(function(v){return v.cat===CAT}).map(card).join('') + '</div>'; }
+  else {
+    h += '<div class="tsec">for you</div><div class="tgrid">' + d.feed.map(card).join('') + '</div>';
+    if (d.subFeed && d.subFeed.length) { h += '<div class="tsec">from ur subscriptions</div><div class="tgrid">' + d.subFeed.map(card).join('') + '</div>'; }
+    if (d.trend && d.trend.length) { h += '<div class="tsec">trending</div><div class="tgrid">' + d.trend.map(card).join('') + '</div>'; }
+  }
+  if (!d.feed.length) h = '<p class="tempty">no videos yet — be the first to <a href="/yt/upload" style="color:var(--acc)">upload one</a>.</p>' + h;
+  $('tMain').innerHTML = h;
+  var cc = $('tCats'); cc.innerHTML = '';
+  var all = document.createElement('button'); all.className = 'tchip' + (!CAT ? ' on' : ''); all.type = 'button'; all.textContent = 'all';
+  all.addEventListener('click', function(){ CAT=''; load(); }); cc.appendChild(all);
+  (d.cats || []).forEach(function(c){ var b = document.createElement('button'); b.className = 'tchip' + (CAT===c?' on':''); b.type = 'button'; b.textContent = c; b.addEventListener('click', function(){ CAT=c; load(); }); cc.appendChild(b); });
+}
+function load() { jget('/api/tube/feed').then(function(d){ if (d.ok) draw(d); else $('tMain').innerHTML = '<p class="tempty">feed failed to load</p>'; }); }
+load();
+</script>
+</body>
+</html>`;
+}
+
+function tubeWatchPage(id) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>watch — 6ixTube</title>
+<style>${GALAXY_CSS}</style>
+<style>${TUBE_CSS}
+.wgrid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+@media(max-width:900px){.wgrid{grid-template-columns:1fr}}
+.pwrap{background:#000;border-radius:16px;overflow:hidden;position:relative}
+.pwrap.theater{grid-column:1/-1}
+video#vp{width:100%;display:block;aspect-ratio:16/9;background:#000}
+.vctrl{display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(10,9,20,.92);flex-wrap:wrap}
+.vctrl button{background:none;border:0;color:#fff;cursor:pointer;font-size:15px;padding:5px 7px;border-radius:8px}
+.vctrl button:hover{background:rgba(255,255,255,.12)}
+.vctrl input[type=range]{accent-color:var(--acc)}
+#seek{flex:1;min-width:90px}
+.wtitle{font-size:20px;font-weight:800;margin:14px 0 8px;line-height:1.3}
+.wrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.wdesc{background:rgba(255,255,255,.05);border-radius:14px;padding:12px 14px;margin:14px 0;font-size:14px;white-space:pre-wrap;word-break:break-word}
+.cmt{display:flex;gap:10px;margin:14px 0}
+.cmt .body{flex:1;min-width:0}
+.cmt .who{font-size:12.5px;color:rgba(236,234,246,.55)}
+.cmt .txt{font-size:14px;white-space:pre-wrap;word-break:break-word;margin:2px 0}
+.cmt .acts{display:flex;gap:4px;flex-wrap:wrap}
+.cmt .acts button{background:none;border:0;color:rgba(236,234,246,.6);cursor:pointer;font-size:12.5px;font-weight:600;padding:4px 7px;border-radius:7px}
+.cmt .acts button:hover{background:rgba(255,255,255,.08);color:var(--ink)}
+.cmt .acts button.on{color:var(--acc)}
+.replies{margin-left:46px}
+.upn{display:flex;flex-direction:column;gap:12px}
+.upn .tcard{display:flex;gap:10px}
+.upn .tthumb{flex:0 0 150px}
+.upn .tt{margin:0;font-size:13.5px}
+</style>
+</head>
+<body>
+<div class="twrap" style="max-width:1340px">
+<div id="tNav"></div>
+<div id="wMain"><p class="tempty">loading…</p></div>
+</div>
+${SIDEBAR_HTML}
+<script>${TUBE_JS}
+var VID = ${JSON.stringify(id)};
+$('tNav').innerHTML = navHtml(''); wireSearch();
+var V = null, CMTS = [];
+function render() {
+  var v = V.video, ch = V.chan;
+  var cap = v.captions ? '<track kind="subtitles" src="/tube-file/' + v.id + '.vtt" srclang="en" label="captions">' : '';
+  var h = '<div class="wgrid" id="wGrid"><div class="pwrap" id="pWrap"><video id="vp" playsinline poster="' + esc(v.thumb || '') + '" src="/tube-file/' + esc(v.file) + '">' + cap + '</video>' +
+  '<div class="vctrl"><button id="bPlay" type="button">▶</button><input type="range" id="seek" min="0" max="1000" value="0"><span id="tLab" style="font-size:12.5px;color:#c9c4e8">0:00 / ' + fmtD(v.dur) + '</span><input type="range" id="vol" min="0" max="100" value="90" style="width:74px"><select id="spd" style="background:#17142a;color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:4px"><option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2">2x</option></select><button id="bPip" type="button">pip</button><button id="bThe" type="button">theater</button><button id="bFull" type="button">full</button></div></div>' +
+  '<div class="upn" id="upNext"></div></div>' +
+  '<h1 class="wtitle">' + esc(v.title) + '</h1>' +
+  '<div class="wrow">' + ava(v.owner, 40) + '<div style="min-width:0"><a href="/yt/channel/' + encodeURIComponent(v.owner) + '" style="color:var(--ink);text-decoration:none;font-weight:700">' + esc(ch.name) + '</a><div class="tm">' + fmtN(ch.subs) + ' subscribers</div></div>' +
+  (v.mine ? '<span class="tm">ur video</span>' : '<button class="tbtn" id="bSub" type="button">' + (V.subbed ? 'subscribed' : 'subscribe') + '</button><button class="tbtn ghost sm" id="bBell" type="button">' + (V.bell ? 'bell on' : 'bell off') + '</button>') +
+  '<span style="flex:1"></span><button class="tbtn ghost" id="bLike" type="button">▲ ' + fmtN(v.likes) + '</button><button class="tbtn ghost" id="bDis" type="button">▼ ' + fmtN(v.dislikes) + '</button><button class="tbtn ghost" id="bSave" type="button">save</button><button class="tbtn ghost" id="bShare" type="button">share</button><button class="tbtn ghost" id="bRep" type="button">report</button></div>' +
+  '<div class="wdesc"><b>' + fmtN(v.views) + ' views · ' + fmtT(v.created) + '</b>\\n' + esc(v.desc || '') + (v.tags && v.tags.length ? '\\n\\n' + v.tags.map(function(t){return '#'+t}).join(' ') : '') + '</div>' +
+  '<div class="tsec" style="margin-top:20px">comments <span class="tm" id="cCount"></span></div>' +
+  '<div class="wrow" style="align-items:flex-start"><div style="flex:1"><textarea class="tin" id="cBox" rows="2" placeholder="add a comment…"></textarea></div><button class="tbtn" id="cPost" type="button">comment</button></div>' +
+  '<div class="wrow" style="margin-top:6px"><button class="tchip on" id="cSortTop" type="button">top</button><button class="tchip" id="cSortNew" type="button">newest</button></div>' +
+  '<div id="cList"></div>';
+  $('wMain').innerHTML = h;
+  $('upNext').innerHTML = '<b style="font-size:15px">up next</b><label style="font-size:12.5px;opacity:.7"><input type="checkbox" id="autoN" ' + (localStorage.getItem('tube_auto') === '0' ? '' : 'checked') + '> autoplay</label>' + V.up.map(function(x){ return '<a class="tcard" href="/yt/watch?v=' + x.id + '"><div class="tthumb">' + (x.thumb ? '<img loading="lazy" src="' + esc(x.thumb) + '">' : '') + (x.dur ? '<span class="dur">' + fmtD(x.dur) + '</span>' : '') + '</div><div><div class="tt">' + esc(x.title) + '</div><div class="tm">' + esc(x.chan) + ' · ' + fmtN(x.views) + ' views</div></div></a>'; }).join('');
+  wirePlayer(v); wireActions(v, ch); loadComments('top');
+}
+function wirePlayer(v) {
+  var vp = $('vp'), seek = $('seek'), play = $('bPlay');
+  vp.volume = 0.9;
+  var counted = false;
+  function ping(prog) { jpost('/api/tube/view', { id: v.id, prog: Math.round(prog || 0) }).catch(function(){}); }
+  vp.addEventListener('play', function(){ play.textContent = '❚❚'; if (!counted) { counted = true; ping(vp.currentTime); } });
+  vp.addEventListener('pause', function(){ play.textContent = '▶'; ping(vp.currentTime); });
+  vp.addEventListener('timeupdate', function(){ if (vp.duration) { seek.value = Math.round(vp.currentTime * 1000 / vp.duration); $('tLab').textContent = fmtD(vp.currentTime) + ' / ' + fmtD(vp.duration); } });
+  vp.addEventListener('ended', function(){ ping(vp.duration); if ($('autoN') && $('autoN').checked && V.up.length) location.href = '/yt/watch?v=' + V.up[0].id; });
+  setInterval(function(){ if (!vp.paused && vp.currentTime > 0) ping(vp.currentTime); }, 15000);
+  seek.addEventListener('input', function(){ if (vp.duration) vp.currentTime = seek.value * vp.duration / 1000; });
+  play.addEventListener('click', function(){ if (vp.paused) vp.play(); else vp.pause(); });
+  vp.addEventListener('click', function(){ if (vp.paused) vp.play(); else vp.pause(); });
+  $('vol').addEventListener('input', function(){ vp.volume = this.value / 100; });
+  $('spd').addEventListener('change', function(){ vp.playbackRate = +this.value; });
+  $('bFull').addEventListener('click', function(){ var w = $('pWrap'); if (w.requestFullscreen) w.requestFullscreen(); });
+  $('bPip').addEventListener('click', function(){ if (document.pictureInPictureElement) document.exitPictureInPicture(); else if (vp.requestPictureInPicture) vp.requestPictureInPicture(); });
+  $('bThe').addEventListener('click', function(){ $('pWrap').classList.toggle('theater'); $('wGrid').style.gridTemplateColumns = $('pWrap').classList.contains('theater') ? '1fr' : ''; });
+  $('autoN').addEventListener('change', function(){ localStorage.setItem('tube_auto', this.checked ? '1' : '0'); });
+  document.addEventListener('keydown', function(e){ if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return; if (e.key === ' ') { e.preventDefault(); if (vp.paused) vp.play(); else vp.pause(); } if (e.key === 'ArrowRight') vp.currentTime += 5; if (e.key === 'ArrowLeft') vp.currentTime -= 5; if (e.key === 'f') $('bFull').click(); if (e.key === 'm') vp.muted = !vp.muted; });
+}
+function wireActions(v, ch) {
+  function likeBtns(r) { if (r.ok) { $('bLike').innerHTML = '▲ ' + fmtN(r.likes); $('bDis').innerHTML = '▼ ' + fmtN(r.dislikes); $('bLike').classList.toggle('on', r.my === 'like'); $('bDis').classList.toggle('on', r.my === 'dislike'); } }
+  likeBtns({ ok: true, likes: v.likes, dislikes: v.dislikes, my: v.my });
+  $('bLike').addEventListener('click', function(){ jpost('/api/tube/like', { id: v.id, kind: v.my === 'like' ? '' : 'like' }).then(function(r){ if (r.ok) v.my = r.my; likeBtns(r); if (!r.ok) alert(r.err || 'log in first'); }); });
+  $('bDis').addEventListener('click', function(){ jpost('/api/tube/like', { id: v.id, kind: v.my === 'dislike' ? '' : 'dislike' }).then(function(r){ if (r.ok) v.my = r.my; likeBtns(r); if (!r.ok) alert(r.err || 'log in first'); }); });
+  var sb = $('bSub');
+  if (sb) { function drawSub() { sb.textContent = V.subbed ? 'subscribed' : 'subscribe'; sb.classList.toggle('on', V.subbed); var bb = $('bBell'); if (bb) bb.textContent = V.bell ? 'bell on' : 'bell off'; }
+    drawSub();
+    sb.addEventListener('click', function(){ jpost('/api/tube/sub', { chan: v.owner, off: V.subbed }).then(function(r){ if (r.ok) { V.subbed = r.subbed; V.bell = r.bell; drawSub(); } else alert(r.err || 'log in first'); }); });
+    $('bBell').addEventListener('click', function(){ jpost('/api/tube/sub', { chan: v.owner, bell: !V.bell }).then(function(r){ if (r.ok) { V.subbed = r.subbed; V.bell = r.bell; drawSub(); } else alert(r.err || 'log in first'); }); });
+  }
+  $('bSave').addEventListener('click', function(){
+    jpost('/api/tube/plmod', { act: 'later', vid: v.id }).then(function(r){ if (r.ok) { $('bSave').textContent = r.saved ? 'saved ✓' : 'save'; return; }
+      jget('/api/tube/library').catch(function(){});
+      alert(r.err || 'log in first'); });
+  });
+  $('bShare').addEventListener('click', function(){ var url = location.origin + '/yt/watch?v=' + v.id; if (navigator.share) navigator.share({ title: v.title, url: url }).catch(function(){}); else if (navigator.clipboard) { navigator.clipboard.writeText(url); $('bShare').textContent = 'copied ✓'; } });
+  $('bRep').addEventListener('click', function(){ var why = prompt('report this video — why?'); if (why) jpost('/api/tube/report', { kind: 'video', ref: v.id, reason: why }).then(function(r){ alert(r.ok ? 'reported — mods will look' : (r.err || 'log in first')); }); });
+  $('cPost').addEventListener('click', function(){ var t = $('cBox').value.trim(); if (!t) return; jpost('/api/tube/comment', { vid: v.id, text: t }).then(function(r){ if (r.ok) { $('cBox').value = ''; CMTS.unshift(r.comment); drawComments(); } else alert(r.err || 'log in first'); }); });
+  $('cSortTop').addEventListener('click', function(){ loadComments('top'); });
+  $('cSortNew').addEventListener('click', function(){ loadComments('new'); });
+}
+function loadComments(sort) {
+  $('cSortTop').classList.toggle('on', sort === 'top'); $('cSortNew').classList.toggle('on', sort === 'new');
+  jget('/api/tube/comments?vid=' + encodeURIComponent(VID) + '&sort=' + sort).then(function(r){ if (r.ok) { CMTS = r.comments; drawComments(); } });
+}
+function cHtml(c, v) {
+  var acts = '<button data-a="like" class="' + (c.mylike ? 'on' : '') + '">▲ ' + (c.likes || '') + '</button><button data-a="reply">reply</button>';
+  if (c.mine) acts += '<button data-a="edit">edit</button><button data-a="del">delete</button>';
+  if (v.mine && !c.parent) acts += '<button data-a="pin">' + (c.pinned ? 'unpin' : 'pin') + '</button>';
+  if (v.mine) acts += '<button data-a="heart">' + (c.heart ? '♥' : '♡') + '</button>';
+  if (!c.mine) acts += '<button data-a="report">report</button>';
+  return '<div class="cmt" data-cid="' + c.id + '">' + ava(c.user, 34) + '<div class="body"><div class="who">' + (c.pinned ? '📌 pinned · ' : '') + '<a href="/yt/channel/' + encodeURIComponent(c.user) + '" style="color:inherit">@' + esc(c.user) + '</a> · ' + fmtT(c.ts) + (c.edited ? ' · edited' : '') + (c.heart ? ' · ♥ by creator' : '') + '</div><div class="txt">' + esc(c.text) + '</div><div class="acts">' + acts + '</div><div class="rbox"></div></div></div>';
+}
+function drawComments() {
+  var v = V.video;
+  var tops = CMTS.filter(function(c){ return !c.parent; });
+  $('cCount').textContent = '· ' + CMTS.length;
+  var h = '';
+  tops.forEach(function(c){ h += cHtml(c, v); var reps = CMTS.filter(function(x){ return x.parent === c.id; }); if (reps.length) { h += '<div class="replies">' + reps.map(function(r){ return cHtml(r, v); }).join('') + '</div>'; } });
+  $('cList').innerHTML = h || '<p class="tempty">no comments yet — say something</p>';
+  $('cList').querySelectorAll('.cmt').forEach(function(el) {
+    var cid = el.getAttribute('data-cid');
+    var c = CMTS.filter(function(x){ return x.id === cid; })[0]; if (!c) return;
+    el.querySelectorAll('.acts button').forEach(function(b) {
+      b.addEventListener('click', function() {
+        var a = b.getAttribute('data-a');
+        if (a === 'reply') { var box = el.querySelector('.rbox'); box.innerHTML = '<div class="wrow" style="align-items:flex-start;margin-top:6px"><div style="flex:1"><textarea class="tin" rows="2" placeholder="reply…"></textarea></div><button class="tbtn sm" type="button">reply</button></div>'; box.querySelector('button').addEventListener('click', function(){ var t = box.querySelector('textarea').value.trim(); if (!t) return; jpost('/api/tube/comment', { vid: VID, text: t, parent: cid }).then(function(r){ if (r.ok) { CMTS.push(r.comment); drawComments(); } else alert(r.err || 'log in first'); }); }); }
+        else if (a === 'edit') { var t = prompt('edit comment:', c.text); if (t != null) jpost('/api/tube/commentmod', { vid: VID, id: cid, act: 'edit', text: t }).then(function(r){ if (r.ok) loadComments('top'); else alert(r.err || 'failed'); }); }
+        else if (a === 'del') { if (confirm('delete this comment?')) jpost('/api/tube/commentmod', { vid: VID, id: cid, act: 'del' }).then(function(r){ if (r.ok) loadComments('top'); else alert(r.err || 'failed'); }); }
+        else if (a === 'report') { var why = prompt('report this comment — why?'); if (why) jpost('/api/tube/report', { kind: 'comment', ref: VID + ':' + cid, reason: why }).then(function(r){ alert(r.ok ? 'reported' : (r.err || 'log in first')); }); }
+        else jpost('/api/tube/commentmod', { vid: VID, id: cid, act: a }).then(function(r){ if (r.ok) loadComments('top'); else alert(r.err || 'failed'); });
+      });
+    });
+  });
+}
+jget('/api/tube/video?id=' + encodeURIComponent(VID)).then(function(r){ if (!r.ok) { $('wMain').innerHTML = '<p class="tempty">this video is unavailable (private, deleted, or still processing).</p>'; return; } V = r; render(); });
+</script>
+</body>
+</html>`;
+}
+
+function tubeChannelPage(handle) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>channel — 6ixTube</title>
+<style>${GALAXY_CSS}</style>
+<style>${TUBE_CSS}
+.cban{height:130px;border-radius:18px;background:linear-gradient(120deg,rgba(var(--star),.5),rgba(94,234,212,.3),rgba(240,171,252,.3));background-size:cover;background-position:center;margin-bottom:14px}
+.ctabs{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+.post{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.11);border-radius:16px;padding:14px 16px;margin:12px 0}
+.post img{max-width:100%;border-radius:12px;margin-top:8px}
+.pollrow{display:block;width:100%;text-align:left;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:var(--ink);border-radius:10px;padding:9px 12px;margin:6px 0;cursor:pointer;font-size:14px}
+.pollrow .bar{height:6px;background:rgba(var(--star),.5);border-radius:99px;margin-top:5px}
+</style>
+</head>
+<body>
+<div class="twrap">
+<div id="tNav"></div>
+<div id="cMain"><p class="tempty">loading…</p></div>
+</div>
+${SIDEBAR_HTML}
+<script>${TUBE_JS}
+var H = ${JSON.stringify(handle)};
+$('tNav').innerHTML = navHtml(''); wireSearch();
+var D = null, TAB = 'videos';
+function postHtml(p) {
+  var h = '<div class="post"><div class="wrow">' + ava(p.owner, 34) + '<div><b>' + esc(p.chan) + '</b><div class="tm">' + fmtT(p.ts) + '</div></div><span style="flex:1"></span>' + (p.mine ? '<button class="tbtn ghost sm" data-pdel="' + p.id + '" type="button">delete</button>' : '') + '</div>';
+  if (p.text) h += '<div style="margin-top:8px;white-space:pre-wrap;word-break:break-word">' + esc(p.text) + '</div>';
+  if (p.img) h += '<img src="' + esc(p.img) + '" alt="">';
+  if (p.poll) { h += '<div style="margin-top:8px">' + p.poll.opts.map(function(o, i){ return '<button class="pollrow" data-vote="' + p.id + ':' + i + '" type="button">' + esc(o.t) + ' — ' + o.pct + '% (' + o.votes + ')' + (o.mine ? ' ✓' : '') + '<div class="bar" style="width:' + o.pct + '%"></div></button>'; }).join('') + '<div class="tm">' + p.poll.total + ' votes</div></div>'; }
+  h += '<div style="margin-top:8px"><button class="tbtn ghost sm" data-plike="' + p.id + '" type="button">▲ ' + fmtN(p.likes) + '</button></div></div>';
+  return h;
+}
+function render() {
+  var c = D.chan;
+  var h = '<div class="cban"' + (c.banner ? ' style="background-image:url(' + esc(c.banner) + ')"' : '') + '></div>' +
+  '<div class="wrow">' + ava(c.user, 64) + '<div style="flex:1;min-width:200px"><div style="font-size:22px;font-weight:800">' + esc(c.name) + '</div><div class="tm">@' + esc(c.user) + ' · ' + fmtN(c.subs) + ' subscribers · ' + (D.videos.length + D.shorts.length) + ' videos</div>' + (c.bio ? '<div style="font-size:14px;margin-top:4px;white-space:pre-wrap">' + esc(c.bio) + '</div>' : '') + '</div>' +
+  (D.chan.user !== (D.me || '') ? '' : '') +
+  '<span id="subZone"></span></div>' +
+  '<div id="editZone"></div>' +
+  '<div class="ctabs">' + ['videos','shorts','playlists','community','about'].map(function(t){ return '<button class="tchip' + (TAB===t?' on':'') + '" data-tab="' + t + '" type="button">' + t + '</button>'; }).join('') + '</div><div id="tabBody"></div>';
+  $('cMain').innerHTML = h;
+  document.querySelectorAll('[data-tab]').forEach(function(b){ b.addEventListener('click', function(){ TAB = b.getAttribute('data-tab'); render(); }); });
+  drawSub(); drawTab();
+}
+function drawSub() {
+  var z = $('subZone'); if (!z) return;
+  jget('/api/tube/library').then(function(){});
+  z.innerHTML = '<button class="tbtn" id="cSub" type="button">' + (D.subbed ? 'subscribed' : 'subscribe') + '</button> <button class="tbtn ghost sm" id="cBell" type="button">' + (D.bell ? 'bell on' : 'bell off') + '</button>';
+  $('cSub').addEventListener('click', function(){ jpost('/api/tube/sub', { chan: H, off: D.subbed }).then(function(r){ if (r.ok) { D.subbed = r.subbed; D.bell = r.bell; D.chan.subs = r.subs; render(); } else alert(r.err || 'log in (or thats u)'); }); });
+  $('cBell').addEventListener('click', function(){ jpost('/api/tube/sub', { chan: H, bell: !D.bell }).then(function(r){ if (r.ok) { D.subbed = r.subbed; D.bell = r.bell; drawSub(); } else alert(r.err || 'log in first'); }); });
+}
+function drawTab() {
+  var b = $('tabBody'); if (!b) return;
+  if (TAB === 'videos') b.innerHTML = D.videos.length ? '<div class="tgrid">' + D.videos.map(card).join('') + '</div>' : '<p class="tempty">no videos yet</p>';
+  if (TAB === 'shorts') b.innerHTML = D.shorts.length ? '<div class="trail">' + D.shorts.map(scard).join('') + '</div>' : '<p class="tempty">no shorts yet</p>';
+  if (TAB === 'playlists') b.innerHTML = D.playlists.length ? '<div class="tgrid">' + D.playlists.map(function(p){ return '<a class="tcard" href="/yt/pl/' + p.id + '"><div class="tthumb">' + (p.cover ? '<img src="' + esc(p.cover) + '">' : '') + '<span class="dur">' + p.n + ' videos</span></div><div class="tt">' + esc(p.title) + '</div><div class="tm">' + esc(p.vis) + '</div></a>'; }).join('') + '</div>' : '<p class="tempty">no playlists</p>';
+  if (TAB === 'community') { b.innerHTML = D.posts.length ? D.posts.map(postHtml).join('') : '<p class="tempty">no community posts yet</p>'; wirePosts(); }
+  if (TAB === 'about') b.innerHTML = '<div class="wdesc">' + esc(D.chan.bio || 'no bio yet') + '\\n\\n@' + esc(D.chan.user) + ' · ' + fmtN(D.chan.subs) + ' subscribers</div>' + (D.mine ? '<div class="tsec">customize ur channel</div><input class="tin" id="eName" placeholder="display name" value="' + esc(D.chan.name) + '"><input class="tin" id="eAvatar" placeholder="avatar image url (optional)" value="' + esc(D.chan.avatar) + '"><input class="tin" id="eBanner" placeholder="banner image url (optional)" value="' + esc(D.chan.banner) + '"><textarea class="tin" id="eBio" rows="3" placeholder="bio">' + esc(D.chan.bio) + '</textarea><button class="tbtn" id="eSave" type="button">save channel</button> <span class="tmsg" id="eMsg"></span>' : '');
+  var sv = $('eSave'); if (sv) sv.addEventListener('click', function(){ jpost('/api/tube/chanedit', { name: $('eName').value, avatar: $('eAvatar').value, banner: $('eBanner').value, bio: $('eBio').value }).then(function(r){ if (r.ok) { $('eMsg').textContent = 'saved ✓'; load(); } else $('eMsg').textContent = r.err || 'log in first'; }); });
+}
+function wirePosts() {
+  document.querySelectorAll('[data-plike]').forEach(function(b){ b.addEventListener('click', function(){ jpost('/api/tube/postmod', { id: b.getAttribute('data-plike'), act: 'like' }).then(function(r){ if (r.ok) load(); else alert(r.err || 'log in first'); }); }); });
+  document.querySelectorAll('[data-vote]').forEach(function(b){ b.addEventListener('click', function(){ var p = b.getAttribute('data-vote').split(':'); jpost('/api/tube/postmod', { id: p[0], act: 'vote', opt: +p[1] }).then(function(r){ if (r.ok) load(); else alert(r.err || 'log in first'); }); }); });
+  document.querySelectorAll('[data-pdel]').forEach(function(b){ b.addEventListener('click', function(){ if (confirm('delete post?')) jpost('/api/tube/postmod', { id: b.getAttribute('data-pdel'), act: 'del' }).then(function(r){ if (r.ok) load(); }); }); });
+}
+function load() { jget('/api/tube/channel?h=' + encodeURIComponent(H)).then(function(r){ if (!r.ok) { $('cMain').innerHTML = '<p class="tempty">no channel here</p>'; return; } D = r; D.me = null; jget('/api/tube/studio').then(function(s){ if (s.ok && s.me === H) { D.mine = true; } render(); }); }); }
+load();
+</script>
+</body>
+</html>`;
+}
+function tubeShortsPage(startId) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>shorts — 6ixTube</title>
+<style>${GALAXY_CSS}</style>
+<style>${TUBE_CSS}
+.shwrap{max-width:560px;margin:0 auto;padding:10px 12px 110px}
+.shslide{position:relative;border-radius:20px;overflow:hidden;background:#000;margin:0 auto 18px;max-width:420px}
+.shslide video{width:100%;aspect-ratio:9/16;max-height:78dvh;object-fit:contain;display:block;background:#000}
+.shmeta{position:absolute;left:12px;right:70px;bottom:12px;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.7)}
+.shrail{position:absolute;right:8px;bottom:70px;display:flex;flex-direction:column;gap:12px;align-items:center}
+.shrail button{width:48px;height:48px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.45);color:#fff;font-size:13px;cursor:pointer;font-weight:700}
+.shsheet{position:fixed;inset:auto 0 0 0;max-height:62dvh;background:#14121f;border-top:1px solid rgba(255,255,255,.15);border-radius:18px 18px 0 0;padding:14px;overflow:auto;z-index:80}
+</style>
+</head>
+<body>
+<div class="shwrap">
+<div id="tNav"></div>
+<div id="shMain"><p class="tempty">loading shorts…</p></div>
+</div>
+<div id="shSheet" hidden></div>
+${SIDEBAR_HTML}
+<script>${TUBE_JS}
+var START = ${JSON.stringify(startId || '')};
+$('tNav').innerHTML = navHtml('shorts'); wireSearch();
+var SHORTS = [];
+function slideHtml(v) {
+  return '<div class="shslide" data-vid="' + v.id + '"><video playsinline loop preload="metadata" src="/tube-file/' + esc(v.file) + '"' + (v.thumb ? ' poster="' + esc(v.thumb) + '"' : '') + '></video>' +
+  '<div class="shrail"><button data-a="like" type="button">▲<br>' + fmtN(v.likes) + '</button><button data-a="cmts" type="button">cmt</button><button data-a="share" type="button">share</button></div>' +
+  '<div class="shmeta"><div class="wrow">' + ava(v.owner, 30) + '<a href="/yt/channel/' + encodeURIComponent(v.owner) + '" style="color:#fff;text-decoration:none;font-weight:700">@' + esc(v.owner) + '</a><button class="tbtn sm" data-a="sub" type="button">subscribe</button></div><div style="margin-top:6px;font-size:14px">' + esc(v.title) + '</div><div style="font-size:12px;opacity:.8">' + fmtN(v.views) + ' views</div></div></div>';
+}
+function render() {
+  if (!SHORTS.length) { $('shMain').innerHTML = '<p class="tempty">no shorts yet — upload a vertical video n check the short box.</p>'; return; }
+  $('shMain').innerHTML = SHORTS.map(slideHtml).join('');
+  var io = new IntersectionObserver(function(es){ es.forEach(function(e){ var vid = e.target.querySelector('video'); if (!vid) return; if (e.intersectionRatio > 0.6) { vid.play().catch(function(){}); var id = e.target.getAttribute('data-vid'); jpost('/api/tube/view', { id: id, prog: 1 }).catch(function(){}); } else vid.pause(); }); }, { threshold: [0.6] });
+  document.querySelectorAll('.shslide').forEach(function(s){ io.observe(s);
+    s.querySelector('video').addEventListener('click', function(){ var v = this; if (v.paused) { v.muted = false; v.play(); } else v.pause(); });
+    s.querySelectorAll('[data-a]').forEach(function(b){ b.addEventListener('click', function(){
+      var id = s.getAttribute('data-vid'); var v = SHORTS.filter(function(x){ return x.id === id; })[0]; var a = b.getAttribute('data-a');
+      if (a === 'like') jpost('/api/tube/like', { id: id, kind: 'like' }).then(function(r){ if (r.ok) { b.innerHTML = '▲<br>' + fmtN(r.likes); } else alert(r.err || 'log in first'); });
+      if (a === 'sub') jpost('/api/tube/sub', { chan: v.owner }).then(function(r){ b.textContent = r.ok ? (r.subbed ? 'subscribed' : 'subscribe') : 'log in'; });
+      if (a === 'share') { var url = location.origin + '/yt/shorts?v=' + id; if (navigator.clipboard) navigator.clipboard.writeText(url); b.textContent = '✓'; }
+      if (a === 'cmts') openCmts(id);
+    }); });
+  });
+  if (START) { var t = document.querySelector('[data-vid="' + START + '"]'); if (t) t.scrollIntoView(); }
+}
+function openCmts(vid) {
+  var sh = $('shSheet'); sh.hidden = false;
+  sh.className = 'shsheet';
+  sh.innerHTML = '<div class="wrow"><b>comments</b><span style="flex:1"></span><button class="tbtn ghost sm" id="shX" type="button">close</button></div><div class="wrow" style="align-items:flex-start;margin:10px 0"><div style="flex:1"><textarea class="tin" id="shBox" rows="2" placeholder="add a comment…"></textarea></div><button class="tbtn sm" id="shPost" type="button">post</button></div><div id="shList">loading…</div>';
+  $('shX').addEventListener('click', function(){ sh.hidden = true; });
+  function draw() { jget('/api/tube/comments?vid=' + encodeURIComponent(vid)).then(function(r){ $('shList').innerHTML = r.ok && r.comments.length ? r.comments.filter(function(c){ return !c.parent; }).map(function(c){ return '<div class="cmt" style="display:flex;gap:10px;margin:12px 0">' + ava(c.user, 30) + '<div><div style="font-size:12.5px;opacity:.6">@' + esc(c.user) + ' · ' + fmtT(c.ts) + '</div><div style="font-size:14px">' + esc(c.text) + '</div></div></div>'; }).join('') : '<p class="tempty">no comments yet</p>'; }); }
+  $('shPost').addEventListener('click', function(){ var t = $('shBox').value.trim(); if (!t) return; jpost('/api/tube/comment', { vid: vid, text: t }).then(function(r){ if (r.ok) { $('shBox').value = ''; draw(); } else alert(r.err || 'log in first'); }); });
+  draw();
+}
+jget('/api/tube/feed').then(function(d){ SHORTS = (d.shorts || []); if (START && !SHORTS.some(function(v){ return v.id === START; })) { jget('/api/tube/video?id=' + encodeURIComponent(START)).then(function(r){ if (r.ok) SHORTS.unshift(r.video); render(); }); } else render(); });
+</script>
+</body>
+</html>`;
+}
+
+function tubeStudioPage() {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>studio — 6ixTube</title>
+<style>${GALAXY_CSS}</style>
+<style>${TUBE_CSS}
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0}
+.stat{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.11);border-radius:16px;padding:16px}
+.stat b{font-size:24px;display:block}
+.vrow{display:flex;gap:12px;align-items:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:10px;margin:8px 0;flex-wrap:wrap}
+.vrow .tthumb{flex:0 0 130px}
+</style>
+</head>
+<body>
+<div class="twrap">
+<div id="tNav"></div>
+<h1 style="font-size:25px;margin:4px 0">creator studio</h1>
+<div id="sMain"><p class="tempty">loading…</p></div>
+</div>
+${SIDEBAR_HTML}
+<script>${TUBE_JS}
+$('tNav').innerHTML = navHtml('studio'); wireSearch();
+var D = null;
+function render() {
+  var t = D.totals;
+  var h = '<div class="statgrid"><div class="stat"><b>' + fmtN(t.views) + '</b><span class="tm">total views</span></div><div class="stat"><b>' + fmtN(t.likes) + '</b><span class="tm">total likes</span></div><div class="stat"><b>' + fmtN(D.chan.subs) + '</b><span class="tm">subscribers</span></div><div class="stat"><b>' + t.vids + '</b><span class="tm">videos</span></div>' + (D.allCount != null ? '<div class="stat"><b>' + D.allCount + '</b><span class="tm">platform videos (admin)</span></div>' : '') + '</div>';
+  h += '<div class="wrow"><a class="tbtn" href="/yt/upload">upload a video</a><a class="tbtn ghost" href="/yt/channel/' + encodeURIComponent(D.me) + '">view channel</a></div>';
+  h += '<div class="tsec">ur videos</div>';
+  if (!D.videos.length) h += '<p class="tempty">nothing uploaded yet</p>';
+  D.videos.forEach(function(v) {
+    h += '<div class="vrow"><a class="tthumb" href="/yt/watch?v=' + v.id + '" style="display:block">' + (v.thumb ? '<img src="' + esc(v.thumb) + '">' : '') + '</a><div style="flex:1;min-width:180px"><b>' + esc(v.title) + '</b><div class="tm">' + fmtN(v.views) + ' views · ' + fmtN(v.likes) + ' likes · ' + v.comments + ' comments · ' + fmtT(v.created) + '</div></div>' +
+    '<select class="tin" style="width:120px" data-vis="' + v.id + '"><option value="pub"' + (v.vis==='pub'?' selected':'') + '>public</option><option value="unl"' + (v.vis==='unl'?' selected':'') + '>unlisted</option><option value="priv"' + (v.vis==='priv'?' selected':'') + '>private</option></select>' +
+    '<button class="tbtn ghost sm" data-edit="' + v.id + '" type="button">edit</button><button class="tbtn ghost sm" data-cap="' + v.id + '" type="button">captions</button><button class="tbtn ghost sm" data-del="' + v.id + '" type="button">delete</button></div>';
+  });
+  h += '<div class="tsec">community post</div><textarea class="tin" id="pText" rows="3" placeholder="tell ur subscribers something…"></textarea><input class="tin" id="pImg" placeholder="image url (optional)"><input class="tin" id="pPoll" placeholder="poll options, comma separated (optional, 2-4)"><div class="wrow"><button class="tbtn" id="pGo" type="button">post</button><span class="tmsg" id="pMsg"></span></div>';
+  h += '<div class="tsec">ur posts</div>' + (D.posts.length ? D.posts.map(function(p){ return '<div class="post" style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.11);border-radius:16px;padding:14px 16px;margin:12px 0"><div class="tm">' + fmtT(p.ts) + ' · ▲ ' + fmtN(p.likes) + (p.poll ? ' · poll: ' + p.poll.total + ' votes' : '') + '</div><div style="margin-top:4px">' + esc(p.text) + '</div><div style="margin-top:8px"><button class="tbtn ghost sm" data-pdel="' + p.id + '" type="button">delete post</button></div></div>'; }).join('') : '<p class="tempty">no posts yet</p>');
+  if (D.reports) { h += '<div class="tsec">reports (admin)</div>' + (D.reports.length ? D.reports.map(function(r){ return '<div class="vrow"><div style="flex:1"><b>' + esc(r.kind) + '</b> <span class="tm">' + esc(r.ref) + ' · by @' + esc(r.by) + ' · ' + fmtT(r.ts) + '</span><div>' + esc(r.reason) + '</div></div>' + (r.kind === 'video' ? '<button class="tbtn ghost sm" data-rdel="' + esc(r.ref) + '" type="button">delete video</button>' : '') + '</div>'; }).join('') : '<p class="tempty">no reports</p>'); }
+  $('sMain').innerHTML = h;
+  document.querySelectorAll('[data-vis]').forEach(function(s){ s.addEventListener('change', function(){ jpost('/api/tube/meta', { id: s.getAttribute('data-vis'), vis: s.value }).then(function(r){ if (!r.ok) alert(r.err || 'failed'); }); }); });
+  document.querySelectorAll('[data-del]').forEach(function(b){ b.addEventListener('click', function(){ if (confirm('delete this video + its file for good?')) jpost('/api/tube/del', { id: b.getAttribute('data-del') }).then(load); }); });
+  document.querySelectorAll('[data-rdel]').forEach(function(b){ b.addEventListener('click', function(){ if (confirm('admin: delete reported video?')) jpost('/api/tube/del', { id: b.getAttribute('data-rdel') }).then(load); }); });
+  document.querySelectorAll('[data-pdel]').forEach(function(b){ b.addEventListener('click', function(){ if (confirm('delete post?')) jpost('/api/tube/postmod', { id: b.getAttribute('data-pdel'), act: 'del' }).then(load); }); });
+  document.querySelectorAll('[data-edit]').forEach(function(b){ b.addEventListener('click', function(){
+    var v = D.videos.filter(function(x){ return x.id === b.getAttribute('data-edit'); })[0]; if (!v) return;
+    var title = prompt('title:', v.title); if (title == null) return;
+    var desc = prompt('description:', v.desc || ''); if (desc == null) return;
+    var tags = prompt('tags (comma separated):', (v.tags || []).join(',')); if (tags == null) return;
+    var thumb = prompt('thumbnail url (blank = keep):', ''); if (thumb == null) return;
+    var body = { id: v.id, title: title, desc: desc, tags: tags }; if (thumb) body.thumb = thumb;
+    jpost('/api/tube/meta', body).then(function(r){ if (r.ok) load(); else alert(r.err || 'failed'); });
+  }); });
+  document.querySelectorAll('[data-cap]').forEach(function(b){ b.addEventListener('click', function(){
+    var inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.vtt';
+    inp.addEventListener('change', function(){ var f = inp.files[0]; if (!f) return; var rd = new FileReader(); rd.onload = function(){ jpost('/api/tube/caption', { id: b.getAttribute('data-cap'), vtt: rd.result }).then(function(r){ alert(r.ok ? 'captions saved ✓' : (r.err || 'failed')); }); }; rd.readAsText(f); });
+    inp.click();
+  }); });
+  $('pGo').addEventListener('click', function(){
+    var pollTxt = $('pPoll').value.trim();
+    var body = { text: $('pText').value, img: $('pImg').value.trim() };
+    if (pollTxt) body.poll = { opts: pollTxt.split(',') };
+    jpost('/api/tube/post', body).then(function(r){ if (r.ok) { $('pMsg').textContent = 'posted ✓'; load(); } else $('pMsg').textContent = r.err || 'failed'; });
+  });
+}
+function load() { jget('/api/tube/studio').then(function(r){ if (!r.ok) { $('sMain').innerHTML = '<p class="tempty">log in first — <a href="/account" style="color:var(--acc)">ur account</a> is ur channel.</p>'; return; } D = r; render(); }); }
+load();
+</script>
+</body>
+</html>`;
+}
+function tubeUploadPage() {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>upload — 6ixTube</title>
+<style>${GALAXY_CSS}</style>
+<style>${TUBE_CSS}
+.drop{border:2px dashed rgba(255,255,255,.25);border-radius:18px;padding:34px 18px;text-align:center;cursor:pointer}
+.drop.over{border-color:var(--acc);background:rgba(var(--star),.08)}
+.pbar{height:10px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;margin:10px 0}
+.pbar i{display:block;height:100%;width:0;background:var(--acc);transition:width .2s}
+.upgrid{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start}
+@media(max-width:860px){.upgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="twrap" style="max-width:980px">
+<div id="tNav"></div>
+<h1 style="font-size:25px;margin:4px 0 12px">upload a video</h1>
+<div class="drop" id="drop"><b>drop a video file here or tap to pick</b><div class="tm">mp4, webm, mov, mkv · up to 300mb</div><input type="file" id="file" accept="video/mp4,video/webm,video/quicktime,video/x-matroska,.mkv" hidden></div>
+<div class="upgrid" style="margin-top:16px">
+<div>
+<input class="tin" id="uTitle" placeholder="title">
+<textarea class="tin" id="uDesc" rows="4" placeholder="description"></textarea>
+<input class="tin" id="uTags" placeholder="tags, comma separated">
+<input class="tin" id="uCat" placeholder="category (gaming, music, vlog…)" list="catList"><datalist id="catList"><option value="gaming"></option><option value="music"></option><option value="vlog"></option><option value="comedy"></option><option value="sports"></option><option value="tech"></option><option value="irl"></option></datalist>
+<div class="wrow" style="margin:8px 0"><label><input type="radio" name="uVis" value="pub" checked> public</label><label><input type="radio" name="uVis" value="unl"> unlisted</label><label><input type="radio" name="uVis" value="priv"> private</label><label><input type="checkbox" id="uVert"> this is a short (vertical)</label></div>
+</div>
+<div>
+<div class="tm">thumbnail — auto-grabbed from the video, or upload ur own</div>
+<img id="thPrev" style="width:100%;border-radius:12px;margin:8px 0;background:rgba(255,255,255,.05);aspect-ratio:16/9;object-fit:cover" alt="">
+<input type="file" id="thFile" accept="image/*">
+<video id="probe" style="display:none" preload="metadata" muted playsinline></video>
+</div>
+</div>
+<div class="pbar"><i id="pFill"></i></div>
+<div class="wrow"><button class="tbtn" id="uGo" type="button">publish</button><span class="tmsg" id="uMsg"></span></div>
+</div>
+${SIDEBAR_HTML}
+<script>${TUBE_JS}
+$('tNav').innerHTML = navHtml('upload'); wireSearch();
+var FILE = null, DUR = 0, VERT = false, THUMB = '';
+var drop = $('drop'), fileIn = $('file');
+drop.addEventListener('click', function(){ fileIn.click(); });
+drop.addEventListener('dragover', function(e){ e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', function(){ drop.classList.remove('over'); });
+drop.addEventListener('drop', function(e){ e.preventDefault(); drop.classList.remove('over'); if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); });
+fileIn.addEventListener('change', function(){ if (this.files[0]) setFile(this.files[0]); });
+function setFile(f) {
+  FILE = f;
+  drop.querySelector('b').textContent = f.name + ' (' + Math.round(f.size / 1048576 * 10) / 10 + 'mb)';
+  if (!$('uTitle').value) $('uTitle').value = f.name.replace(/\\.[^.]+$/, '').replace(/[-_]+/g, ' ');
+  var url = URL.createObjectURL(f);
+  var pv = $('probe'); pv.src = url;
+  pv.addEventListener('loadedmetadata', function(){ DUR = pv.duration || 0; VERT = pv.videoHeight > pv.videoWidth; $('uVert').checked = VERT;
+    pv.currentTime = Math.min(2, DUR / 4);
+  }, { once: true });
+  pv.addEventListener('seeked', function(){
+    try { var cv = document.createElement('canvas'); cv.width = pv.videoWidth; cv.height = pv.videoHeight; cv.getContext('2d').drawImage(pv, 0, 0); THUMB = cv.toDataURL('image/jpeg', 0.82); $('thPrev').src = THUMB; } catch (e) {}
+  }, { once: true });
+}
+$('thFile').addEventListener('change', function(){ var f = this.files[0]; if (!f) return; var rd = new FileReader(); rd.onload = function(){ THUMB = rd.result; $('thPrev').src = THUMB; }; rd.readAsDataURL(f); });
+$('uGo').addEventListener('click', function(){
+  if (!FILE) { $('uMsg').textContent = 'pick a video first'; return; }
+  var title = $('uTitle').value.trim(); if (!title) { $('uMsg').textContent = 'needs a title'; return; }
+  $('uGo').disabled = true; $('uMsg').textContent = 'creating…';
+  var vis = document.querySelector('input[name=uVis]:checked').value;
+  jpost('/api/tube/uploadinit', { title: title, desc: $('uDesc').value, tags: $('uTags').value, cat: $('uCat').value, vis: vis, vertical: $('uVert').checked, dur: Math.round(DUR) }).then(function(r){
+    if (!r.ok) { $('uMsg').textContent = r.err || 'failed'; $('uGo').disabled = false; return; }
+    var id = r.id;
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/tube/uploadfile?id=' + encodeURIComponent(id));
+    xhr.setRequestHeader('content-type', FILE.type || 'video/mp4');
+    xhr.upload.addEventListener('progress', function(e){ if (e.lengthComputable) { $('pFill').style.width = Math.round(e.loaded * 100 / e.total) + '%'; $('uMsg').textContent = 'uploading ' + Math.round(e.loaded * 100 / e.total) + '%'; } });
+    xhr.addEventListener('load', function(){
+      var resp = {}; try { resp = JSON.parse(xhr.responseText); } catch (e) {}
+      if (!resp.ok) { $('uMsg').textContent = resp.err || 'upload failed'; $('uGo').disabled = false; return; }
+      $('uMsg').textContent = 'processing thumbnail…';
+      var done = function(){ $('uMsg').innerHTML = 'live ✓ <a href="/yt/watch?v=' + id + '" style="color:var(--acc)">watch it</a>'; };
+      if (THUMB) jpost('/api/tube/thumb', { id: id, data: THUMB }).then(done).catch(done); else done();
+    });
+    xhr.addEventListener('error', function(){ $('uMsg').textContent = 'upload error'; $('uGo').disabled = false; });
+    xhr.send(FILE);
+  });
+});
+</script>
+</body>
+</html>`;
+}
+function tubeLibraryPage() {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>library — 6ixTube</title>
+<style>${GALAXY_CSS}</style>
+<style>${TUBE_CSS}</style>
+</head>
+<body>
+<div class="twrap">
+<div id="tNav"></div>
+<h1 style="font-size:25px;margin:4px 0">library</h1>
+<div id="lMain"><p class="tempty">loading…</p></div>
+</div>
+${SIDEBAR_HTML}
+<script>${TUBE_JS}
+$('tNav').innerHTML = navHtml('library'); wireSearch();
+function render(d) {
+  var h = '';
+  h += '<div class="tsec">subscriptions</div>' + (d.subs.length ? '<div style="display:flex;gap:14px;flex-wrap:wrap">' + d.subs.map(function(c){ return '<a href="/yt/channel/' + encodeURIComponent(c.user) + '" style="text-align:center;color:var(--ink);text-decoration:none">' + ava(c.user, 52) + '<div class="tm" style="margin-top:4px">@' + esc(c.user) + '</div></a>'; }).join('') + '</div>' : '<p class="tempty">no subscriptions yet</p>');
+  h += '<div class="tsec">watch later</div>' + (d.later.length ? '<div class="tgrid">' + d.later.map(card).join('') + '</div>' : '<p class="tempty">nothing saved — hit save on any video</p>');
+  h += '<div class="tsec">liked videos</div>' + (d.liked.length ? '<div class="tgrid">' + d.liked.map(card).join('') + '</div>' : '<p class="tempty">no liked videos yet</p>');
+  h += '<div class="tsec">history</div>' + (d.history.length ? '<div class="tgrid">' + d.history.map(card).join('') + '</div>' : '<p class="tempty">nothing watched yet</p>');
+  h += '<div class="tsec">ur playlists</div><div class="wrow"><input class="tin" id="npTitle" placeholder="new playlist name" style="max-width:280px"><select class="tin" id="npVis" style="max-width:140px"><option value="pub">public</option><option value="unl">unlisted</option><option value="priv">private</option></select><button class="tbtn" id="npGo" type="button">create</button></div>';
+  h += d.playlists.length ? '<div class="tgrid" style="margin-top:12px">' + d.playlists.map(function(p){ return '<a class="tcard" href="/yt/pl/' + p.id + '"><div class="tthumb">' + (p.cover ? '<img src="' + esc(p.cover) + '">' : '') + '<span class="dur">' + p.n + ' videos</span></div><div class="tt">' + esc(p.title) + '</div><div class="tm">' + esc(p.vis) + '</div></a>'; }).join('') + '</div>' : '<p class="tempty">no playlists yet</p>';
+  $('lMain').innerHTML = h;
+  $('npGo').addEventListener('click', function(){ var t = $('npTitle').value.trim(); if (!t) return; jpost('/api/tube/plmod', { act: 'create', title: t, vis: $('npVis').value }).then(function(r){ if (r.ok) load(); else alert(r.err || 'failed'); }); });
+}
+function load() { jpost('/api/tube/library', {}).then(function(r){ if (!r.ok) { $('lMain').innerHTML = '<p class="tempty">log in first to see ur library.</p>'; return; } render(r); }); }
+load();
+</script>
+</body>
+</html>`;
+}
+function tubeFindPage() {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>search — 6ixTube</title>
+<style>${GALAXY_CSS}</style>
+<style>${TUBE_CSS}
+.rrow{display:flex;gap:14px;text-decoration:none;color:var(--ink);margin:14px 0}
+.rrow .tthumb{flex:0 0 300px}
+@media(max-width:700px){.rrow{flex-direction:column}.rrow .tthumb{flex:none}}
+</style>
+</head>
+<body>
+<div class="twrap">
+<div id="tNav"></div>
+<div class="wrow"><select class="tin" id="fSort" style="max-width:170px"><option value="rel">sort: relevance</option><option value="views">most viewed</option><option value="new">newest</option></select><select class="tin" id="fDur" style="max-width:170px"><option value="">any length</option><option value="short">under 1 min</option><option value="mid">1–10 min</option><option value="long">over 10 min</option></select><select class="tin" id="fWhen" style="max-width:170px"><option value="">any time</option><option value="day">today</option><option value="week">this week</option><option value="month">this month</option></select></div>
+<div id="fMain"><p class="tempty">searching…</p></div>
+</div>
+${SIDEBAR_HTML}
+<script>${TUBE_JS}
+$('tNav').innerHTML = navHtml(''); wireSearch();
+var Q = new URLSearchParams(location.search).get('q') || '';
+$('tSearchQ').value = Q;
+function load() {
+  var qs = '/api/tube/search?q=' + encodeURIComponent(Q) + '&sort=' + $('fSort').value + '&dur=' + $('fDur').value + '&when=' + $('fWhen').value;
+  jget(qs).then(function(d){
+    if (!d.ok) { $('fMain').innerHTML = '<p class="tempty">search failed</p>'; return; }
+    var h = '';
+    if (d.channels.length) h += '<div class="tsec">channels</div>' + d.channels.map(function(c){ return '<a class="rrow" href="/yt/channel/' + encodeURIComponent(c.user) + '">' + ava(c.user, 56) + '<div><b>' + esc(c.name) + '</b><div class="tm">@' + esc(c.user) + ' · ' + fmtN(c.subs) + ' subscribers</div><div class="tm">' + esc(c.bio || '') + '</div></div></a>'; }).join('');
+    h += '<div class="tsec">videos</div>' + (d.videos.length ? d.videos.map(function(v){ return '<a class="rrow" href="/yt/watch?v=' + v.id + '"><div class="tthumb">' + (v.thumb ? '<img src="' + esc(v.thumb) + '">' : '') + (v.dur ? '<span class="dur">' + fmtD(v.dur) + '</span>' : '') + '</div><div><div class="tt" style="margin-top:0">' + esc(v.title) + '</div><div class="tm">' + fmtN(v.views) + ' views · ' + fmtT(v.created) + '</div><div class="tm" style="margin-top:4px">' + esc(v.chan) + '</div><div class="tm" style="margin-top:4px">' + esc((v.desc || '').slice(0, 140)) + '</div></div></a>'; }).join('') : '<p class="tempty">no videos match</p>');
+    if (d.playlists.length) h += '<div class="tsec">playlists</div>' + d.playlists.map(function(p){ return '<a class="rrow" href="/yt/pl/' + p.id + '"><div class="tthumb">' + (p.cover ? '<img src="' + esc(p.cover) + '">' : '') + '<span class="dur">' + p.n + ' videos</span></div><div><div class="tt" style="margin-top:0">' + esc(p.title) + '</div><div class="tm">by @' + esc(p.owner) + '</div></div></a>'; }).join('');
+    h += '<p class="tempty">no luck? <a href="/yt/search?q=' + encodeURIComponent(Q) + '" style="color:var(--acc)">search the youtube mirror for “' + esc(Q) + '” →</a></p>';
+    $('fMain').innerHTML = h;
+  });
+}
+['fSort','fDur','fWhen'].forEach(function(i){ $(i).addEventListener('change', load); });
+load();
+</script>
+</body>
+</html>`;
+}
+function tubePlaylistPage(id) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>playlist — 6ixTube</title>
+<style>${GALAXY_CSS}</style>
+<style>${TUBE_CSS}
+.prow{display:flex;gap:12px;align-items:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:10px;margin:8px 0;text-decoration:none;color:var(--ink)}
+.prow .tthumb{flex:0 0 150px}
+</style>
+</head>
+<body>
+<div class="twrap">
+<div id="tNav"></div>
+<div id="pMain"><p class="tempty">loading…</p></div>
+</div>
+${SIDEBAR_HTML}
+<script>${TUBE_JS}
+var PID = ${JSON.stringify(id)};
+$('tNav').innerHTML = navHtml(''); wireSearch();
+function render(p) {
+  var h = '<h1 style="font-size:24px;margin:4px 0">' + esc(p.title) + '</h1><div class="tm">by <a href="/yt/channel/' + encodeURIComponent(p.owner) + '" style="color:var(--acc)">@' + esc(p.owner) + '</a> · ' + p.items.length + ' videos · ' + esc(p.vis) + '</div>';
+  if (p.items.length) h += '<a class="tbtn" style="margin:12px 0" href="/yt/watch?v=' + p.items[0].id + '">play</a>';
+  if (!p.items.length) h += '<p class="tempty">this playlist is empty</p>';
+  p.items.forEach(function(v, i){ h += '<div class="prow"><span class="tm" style="width:22px;text-align:center">' + (i + 1) + '</span><a class="tthumb" href="/yt/watch?v=' + v.id + '" style="display:block">' + (v.thumb ? '<img src="' + esc(v.thumb) + '">' : '') + '</a><a href="/yt/watch?v=' + v.id + '" style="flex:1;color:var(--ink);text-decoration:none"><b>' + esc(v.title) + '</b><div class="tm">' + esc(v.chan) + ' · ' + fmtN(v.views) + ' views</div></a>' + (p.mine ? '<button class="tbtn ghost sm" data-mv="' + v.id + ':up" type="button">↑</button><button class="tbtn ghost sm" data-mv="' + v.id + ':down" type="button">↓</button><button class="tbtn ghost sm" data-rm="' + v.id + '" type="button">remove</button>' : '') + '</div>'; });
+  if (p.mine) h += '<div class="wrow" style="margin-top:14px"><button class="tbtn ghost" id="plRen" type="button">rename</button><button class="tbtn ghost" id="plDel" type="button">delete playlist</button></div>';
+  $('pMain').innerHTML = h;
+  document.querySelectorAll('[data-rm]').forEach(function(b){ b.addEventListener('click', function(){ jpost('/api/tube/plmod', { act: 'remove', id: PID, vid: b.getAttribute('data-rm') }).then(load); }); });
+  document.querySelectorAll('[data-mv]').forEach(function(b){ b.addEventListener('click', function(){ var x = b.getAttribute('data-mv').split(':'); jpost('/api/tube/plmod', { act: 'move', id: PID, vid: x[0], dir: x[1] }).then(load); }); });
+  var rn = $('plRen'); if (rn) rn.addEventListener('click', function(){ var t = prompt('new name:', p.title); if (t) jpost('/api/tube/plmod', { act: 'rename', id: PID, title: t }).then(load); });
+  var dl = $('plDel'); if (dl) dl.addEventListener('click', function(){ if (confirm('delete playlist?')) jpost('/api/tube/plmod', { act: 'del', id: PID }).then(function(){ location.href = '/yt/library'; }); });
+}
+function load() { jget('/api/tube/pl?id=' + encodeURIComponent(PID)).then(function(r){ if (!r.ok) { $('pMain').innerHTML = '<p class="tempty">playlist not found (or private)</p>'; return; } render(r.pl); }); }
+load();
+</script>
+</body>
+</html>`;
+}
+
+
 const SITE_RESERVED = ['admin', 'api', 'sites', 's', 'www', 'mail', 'six', 'support', 'help', 'login', 'signup', 'account', 'home', 'chat', 'games', 'apps', 'movies', 'music', 'search', 'settings', 'new', 'edit', 'delete', 'root', 'me', 'user', 'users', 'about', 'privacy', 'study', 'enter', 'go', 'play', 'watch', 'news', 'tube', 'flix', 'blox', 'hw', 'doc', 'forge', 'ai', 'proxy', 'dl', 'null', 'undefined'];
 const SITE_FILE_EXTS = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml', ico: 'image/x-icon', mp3: 'audio/mpeg', mp4: 'video/mp4', webm: 'video/webm', pdf: 'application/pdf', txt: 'text/plain', md: 'text/plain', zip: 'application/zip', json: 'application/json' };
 function siteSlugOk(s) { return /^[a-z0-9][a-z0-9-]{2,23}$/.test(s) && !SITE_RESERVED.includes(s); }
@@ -17840,13 +18535,312 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(await musicPage(u.searchParams.get('q') || ''));
   }
+  const tfm = /^\/tube-file\/([a-z0-9._-]+)$/i.exec(u.pathname);
+  if (tfm) {
+    const fname = tfm[1];
+    const vid = [...TVIDEOS.values()].find(v => v.file === fname);
+    if (vid && vid.vis === 'priv' && voterUser(req) !== vid.owner && !isAdminReq(req)) { res.writeHead(403, { 'content-type': 'text/plain' }); return res.end('private'); }
+    const fp = SITES_PATH.join(TUBE_DIR, fname);
+    let st = null; try { st = SITES_FS.statSync(fp); } catch (e) {}
+    if (!st || !st.isFile()) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('no file'); }
+    const ct = { mp4: 'video/mp4', webm: 'video/webm', mov: 'video/quicktime', mkv: 'video/x-matroska', jpg: 'image/jpeg', png: 'image/png', vtt: 'text/vtt; charset=utf-8' }[fname.split('.').pop().toLowerCase()] || 'application/octet-stream';
+    const range = req.headers.range;
+    if (range) {
+      const m = /bytes=(\d*)-(\d*)/.exec(range);
+      let start = m && m[1] ? parseInt(m[1], 10) : 0;
+      let end = m && m[2] ? parseInt(m[2], 10) : st.size - 1;
+      if (isNaN(start) || start < 0) start = 0;
+      if (isNaN(end) || end >= st.size) end = st.size - 1;
+      if (start > end) { res.writeHead(416, { 'content-range': 'bytes */' + st.size }); return res.end(); }
+      res.writeHead(206, { 'content-type': ct, 'content-length': end - start + 1, 'content-range': 'bytes ' + start + '-' + end + '/' + st.size, 'accept-ranges': 'bytes', 'cache-control': 'public, max-age=3600' });
+      return SITES_FS.createReadStream(fp, { start, end }).pipe(res);
+    }
+    res.writeHead(200, { 'content-type': ct, 'content-length': st.size, 'accept-ranges': 'bytes', 'cache-control': 'public, max-age=3600' });
+    return SITES_FS.createReadStream(fp).pipe(res);
+  }
+  if (u.pathname.startsWith('/api/tube/')) {
+    const me = voterUser(req);
+    const jout = (o, code) => { res.writeHead(code || 200, { 'content-type': 'application/json' }); return res.end(JSON.stringify(o)); };
+    const needMe = () => { if (!me) { jout({ ok: false, err: 'log in first' }, 401); return true; } return false; };
+    if (u.pathname === '/api/tube/feed') {
+      const all = [...TVIDEOS.values()].filter(v => v.vis === 'pub' && canSee(v, me));
+      const scored = all.slice().sort((a, b) => tubeScore(b, me) - tubeScore(a, me)).map(v => vidView(v, me));
+      const shorts = all.filter(v => v.vertical).sort((a, b) => tubeScore(b, me) - tubeScore(a, me)).slice(0, 12).map(v => vidView(v, me));
+      const trend = all.slice().sort((a, b) => ((b.views || 0) + (b.likedBy || []).length * 9) - ((a.views || 0) + (a.likedBy || []).length * 9)).slice(0, 10).map(v => vidView(v, me));
+      let subFeed = [], cont = [];
+      if (me) { const my = TSUBS.get(me) || {}; subFeed = all.filter(v => my[v.owner]).sort((a, b) => b.created - a.created).slice(0, 12).map(v => vidView(v, me)); cont = (THIST.get(me) || []).filter(h => h.prog > 8).map(h => { const v = TVIDEOS.get(h.v); return v && canSee(v, me) && v.dur && h.prog < v.dur - 5 ? Object.assign(vidView(v, me), { prog: h.prog }) : null; }).filter(Boolean).slice(0, 8); }
+      const cats = [...new Set(all.map(v => v.cat).filter(Boolean))];
+      return jout({ ok: true, feed: scored.slice(0, 30), shorts, trend, subFeed, cont, cats });
+    }
+    if (u.pathname === '/api/tube/video') {
+      const v = TVIDEOS.get(u.searchParams.get('id') || '');
+      if (!canSee(v, me)) return jout({ ok: false, err: 'video not available' }, 404);
+      const up = [...TVIDEOS.values()].filter(x => x.id !== v.id && x.vis === 'pub' && canSee(x, me)).sort((a, b) => tubeScore(b, me) - tubeScore(a, me)).slice(0, 14).map(x => vidView(x, me));
+      const my = me ? (TSUBS.get(me) || {}) : {};
+      return jout({ ok: true, video: vidView(v, me), up, subbed: !!my[v.owner], bell: !!(my[v.owner] && my[v.owner].bell), chan: chanOf(v.owner) });
+    }
+    if (u.pathname === '/api/tube/comments') {
+      const vid = u.searchParams.get('vid') || '';
+      const v = TVIDEOS.get(vid);
+      if (!canSee(v, me)) return jout({ ok: false, err: 'no video' }, 404);
+      let list = (TCOMMENTS.get(vid) || []).map(c => ({ id: c.id, user: c.user, chan: chanOf(c.user).name, text: c.text, ts: c.ts, parent: c.parent || null, likes: (c.likes || []).length, mylike: me ? (c.likes || []).includes(me) : false, pinned: !!c.pinned, heart: !!c.heart, edited: !!c.edited, mine: !!me && c.user === me }));
+      if (u.searchParams.get('sort') === 'new') list.sort((a, b) => (b.pinned - a.pinned) || (b.ts - a.ts)); else list.sort((a, b) => (b.pinned - a.pinned) || (b.likes - a.likes) || (b.ts - a.ts));
+      return jout({ ok: true, comments: list });
+    }
+    if (u.pathname === '/api/tube/channel') {
+      const h = String(u.searchParams.get('h') || '').toLowerCase();
+      if (!h || ![...ACCOUNTS.keys()].includes(h)) return jout({ ok: false, err: 'no channel' }, 404);
+      const vids = [...TVIDEOS.values()].filter(v => v.owner === h && canSee(v, me)).sort((a, b) => b.created - a.created);
+      const my = me ? (TSUBS.get(me) || {}) : {};
+      return jout({ ok: true, chan: chanOf(h), videos: vids.filter(v => !v.vertical).map(v => vidView(v, me)), shorts: vids.filter(v => v.vertical).map(v => vidView(v, me)), playlists: [...TPLS.values()].filter(p => p.owner === h && (p.vis === 'pub' || (me && p.owner === me))).map(p => ({ id: p.id, title: p.title, vis: p.vis, n: p.items.length, cover: (TVIDEOS.get(p.items[0]) || {}).thumb || '' })), posts: [...TPOSTS.values()].filter(p => p.owner === h).sort((a, b) => b.ts - a.ts).slice(0, 20).map(p => postView(p, me)), subbed: !!my[h], bell: !!(my[h] && my[h].bell) });
+    }
+    if (u.pathname === '/api/tube/search') {
+      const q = String(u.searchParams.get('q') || '').toLowerCase().trim();
+      const toks = q.split(/\s+/).filter(Boolean);
+      const match = (v) => { const hay = (v.title + ' ' + (v.desc || '') + ' ' + (v.tags || []).join(' ') + ' ' + v.owner).toLowerCase(); return toks.every(t => hay.includes(t)); };
+      let vids = [...TVIDEOS.values()].filter(v => v.vis === 'pub' && canSee(v, me) && (!toks.length || match(v)));
+      const dur = u.searchParams.get('dur') || ''; if (dur === 'short') vids = vids.filter(v => v.dur && v.dur < 60); if (dur === 'mid') vids = vids.filter(v => v.dur >= 60 && v.dur <= 600); if (dur === 'long') vids = vids.filter(v => v.dur > 600);
+      const when = u.searchParams.get('when') || ''; if (when) { const lim = when === 'day' ? 864e5 : when === 'week' ? 6048e5 : 2592e6; vids = vids.filter(v => Date.now() - v.created < lim); }
+      const sort = u.searchParams.get('sort') || 'rel'; if (sort === 'views') vids.sort((a, b) => (b.views || 0) - (a.views || 0)); else if (sort === 'new') vids.sort((a, b) => b.created - a.created); else vids.sort((a, b) => tubeScore(b, me) - tubeScore(a, me));
+      const chans = [...ACCOUNTS.keys()].filter(h => !toks.length || h.includes(q) || (chanOf(h).name || '').toLowerCase().includes(q)).slice(0, 8).map(h => chanOf(h));
+      const pls = [...TPLS.values()].filter(p => p.vis === 'pub' && (!toks.length || p.title.toLowerCase().includes(q))).slice(0, 8).map(p => ({ id: p.id, title: p.title, owner: p.owner, n: p.items.length, cover: (TVIDEOS.get(p.items[0]) || {}).thumb || '' }));
+      return jout({ ok: true, videos: vids.slice(0, 30).map(v => vidView(v, me)), channels: chans, playlists: pls });
+    }
+    if (u.pathname === '/api/tube/suggest') {
+      const q = String(u.searchParams.get('q') || '').toLowerCase().trim();
+      if (!q) return jout({ ok: true, s: [] });
+      const s = [...new Set([...TVIDEOS.values()].filter(v => v.vis === 'pub' && (v.title.toLowerCase().includes(q) || (v.tags || []).some(t => t.includes(q)))).map(v => v.title))].slice(0, 8);
+      return jout({ ok: true, s });
+    }
+    if (u.pathname === '/api/tube/pl') {
+      const p = TPLS.get(u.searchParams.get('id') || '');
+      if (!p || (p.vis === 'priv' && (!me || p.owner !== me))) return jout({ ok: false, err: 'no playlist' }, 404);
+      return jout({ ok: true, pl: { id: p.id, title: p.title, owner: p.owner, chan: chanOf(p.owner).name, vis: p.vis, mine: !!me && p.owner === me, items: p.items.map(id => TVIDEOS.get(id)).filter(v => canSee(v, me)).map(v => vidView(v, me)) } });
+    }
+    if (u.pathname === '/api/tube/studio') {
+      if (needMe()) return;
+      const mine = [...TVIDEOS.values()].filter(v => v.owner === me).sort((a, b) => b.created - a.created);
+      const admin = isAdminReq(req);
+      return jout({ ok: true, me, chan: chanOf(me), videos: mine.map(v => Object.assign(vidView(v, me), { comments: (TCOMMENTS.get(v.id) || []).length })), totals: { views: mine.reduce((n, v) => n + (v.views || 0), 0), likes: mine.reduce((n, v) => n + (v.likedBy || []).length, 0), vids: mine.length }, posts: [...TPOSTS.values()].filter(p => p.owner === me).map(p => postView(p, me)), reports: admin ? TREPORTS.slice(-50).reverse() : null, allCount: admin ? TVIDEOS.size : null });
+    }
+    if (req.method !== 'POST') return jout({ ok: false, err: 'post only' }, 405);
+    const b = u.pathname === '/api/tube/uploadfile' ? null : await readJsonBody(req, 6000000);
+    if (u.pathname === '/api/tube/uploadinit') {
+      if (needMe()) return;
+      const title = String(b.title || '').slice(0, 120).trim();
+      if (!title) return jout({ ok: false, err: 'needs a title' });
+      if ([...TVIDEOS.values()].filter(v => v.owner === me).length >= 200) return jout({ ok: false, err: '200 video cap' });
+      const id = tubeId('t');
+      const v = { id, owner: me, title, desc: String(b.desc || '').slice(0, 3000), tags: String(b.tags || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean).slice(0, 12), cat: String(b.cat || '').slice(0, 24), vis: ['pub', 'unl', 'priv'].includes(b.vis) ? b.vis : 'pub', vertical: !!b.vertical, dur: Math.max(0, Math.min(43200, +b.dur || 0)), views: 0, likedBy: [], dislikedBy: [], created: Date.now(), status: 'uploading', file: '', thumb: '', cap: false };
+      TVIDEOS.set(id, v); tubePersist();
+      return jout({ ok: true, id });
+    }
+    if (u.pathname === '/api/tube/uploadfile') {
+      if (needMe()) return;
+      const v = TVIDEOS.get(u.searchParams.get('id') || '');
+      if (!v || v.owner !== me) return jout({ ok: false, err: 'no upload' }, 404);
+      const ext = { 'video/mp4': 'mp4', 'video/webm': 'webm', 'video/quicktime': 'mov', 'video/x-matroska': 'mkv' }[String(req.headers['content-type'] || '').split(';')[0]] || '';
+      if (!ext) return jout({ ok: false, err: 'mp4, webm, mov or mkv only' }, 415);
+      const fname = v.id + '.' + ext;
+      const fp = SITES_PATH.join(TUBE_DIR, fname);
+      const ws = SITES_FS.createWriteStream(fp);
+      let size = 0, bad = false;
+      req.on('data', (ch) => { size += ch.length; if (size > 300 * 1024 * 1024) { bad = true; req.destroy(); } });
+      req.pipe(ws);
+      await new Promise((resolve) => { ws.on('finish', resolve); ws.on('error', resolve); req.on('close', resolve); });
+      if (bad || !size) { try { SITES_FS.unlinkSync(fp); } catch (e) {} return jout({ ok: false, err: 'file too big (300mb max) or empty' }, 413); }
+      v.file = fname; v.status = 'ready'; v.size = size; tubePersist();
+      if (v.vis === 'pub') { for (const [usr, m] of TSUBS.entries()) if (m && m[v.owner]) pushNotif(usr, { type: 'tube', from: v.owner, text: v.title, vid: v.id }); }
+      return jout({ ok: true, file: fname, size });
+    }
+    if (u.pathname === '/api/tube/thumb') {
+      if (needMe()) return;
+      const v = TVIDEOS.get(String(b.id || ''));
+      if (!v || v.owner !== me) return jout({ ok: false, err: 'not ur video' }, 404);
+      const raw = String(b.data || ''); const b64 = raw.includes(',') ? raw.slice(raw.indexOf(',') + 1) : raw;
+      let buf = null; try { buf = Buffer.from(b64, 'base64'); } catch (e) {}
+      if (!buf || !buf.length || buf.length > 3 * 1024 * 1024) return jout({ ok: false, err: 'thumb broken or too big' });
+      const ext = raw.startsWith('data:image/png') ? 'png' : 'jpg';
+      const fname = v.id + '-th.' + ext;
+      try { SITES_FS.writeFileSync(SITES_PATH.join(TUBE_DIR, fname), buf); } catch (e) { return jout({ ok: false, err: 'couldnt save thumb' }); }
+      v.thumb = '/tube-file/' + fname; tubePersist();
+      return jout({ ok: true, thumb: v.thumb });
+    }
+    if (u.pathname === '/api/tube/caption') {
+      if (needMe()) return;
+      const v = TVIDEOS.get(String(b.id || ''));
+      if (!v || v.owner !== me) return jout({ ok: false, err: 'not ur video' }, 404);
+      const vtt = String(b.vtt || '').slice(0, 300000);
+      if (!vtt.startsWith('WEBVTT')) return jout({ ok: false, err: 'needs a WEBVTT file' });
+      try { SITES_FS.writeFileSync(SITES_PATH.join(TUBE_DIR, v.id + '.vtt'), vtt); } catch (e) { return jout({ ok: false, err: 'couldnt save captions' }); }
+      v.cap = true; tubePersist();
+      return jout({ ok: true });
+    }
+    if (u.pathname === '/api/tube/meta') {
+      if (needMe()) return;
+      const v = TVIDEOS.get(String(b.id || ''));
+      if (!v || (v.owner !== me && !isAdminReq(req))) return jout({ ok: false, err: 'not ur video' }, 404);
+      if (b.title != null) v.title = String(b.title).slice(0, 120);
+      if (b.desc != null) v.desc = String(b.desc).slice(0, 3000);
+      if (b.tags != null) v.tags = String(b.tags).split(',').map(s => s.trim().toLowerCase()).filter(Boolean).slice(0, 12);
+      if (b.cat != null) v.cat = String(b.cat).slice(0, 24);
+      if (['pub', 'unl', 'priv'].includes(b.vis)) v.vis = b.vis;
+      if (b.thumb != null) v.thumb = String(b.thumb).slice(0, 500);
+      tubePersist();
+      return jout({ ok: true, video: vidView(v, me) });
+    }
+    if (u.pathname === '/api/tube/del') {
+      if (needMe()) return;
+      const v = TVIDEOS.get(String(b.id || ''));
+      if (!v || (v.owner !== me && !isAdminReq(req))) return jout({ ok: false, err: 'not ur video' }, 404);
+      TVIDEOS.delete(v.id); TCOMMENTS.delete(v.id);
+      for (const p of TPLS.values()) p.items = p.items.filter(x => x !== v.id);
+      try { if (v.file) SITES_FS.unlinkSync(SITES_PATH.join(TUBE_DIR, v.file)); } catch (e) {}
+      tubePersist();
+      return jout({ ok: true });
+    }
+    if (u.pathname === '/api/tube/view') {
+      const v = TVIDEOS.get(String(b.id || ''));
+      if (!canSee(v, me)) return jout({ ok: false, err: 'no video' }, 404);
+      const key = v.id + '|' + clientIp(req);
+      const last = TVIEWCOOL.get(key) || 0;
+      if (Date.now() - last > 600000) { v.views = (v.views || 0) + 1; TVIEWCOOL.set(key, Date.now()); tubePersist(); }
+      if (me) { const hist = THIST.get(me) || []; const ex = hist.find(h => h.v === v.id); if (ex) { ex.ts = Date.now(); ex.prog = Math.max(ex.prog || 0, +b.prog || 0); } else hist.unshift({ v: v.id, ts: Date.now(), prog: +b.prog || 0 }); THIST.set(me, hist.slice(0, 80)); tubePersist(); }
+      return jout({ ok: true, views: v.views });
+    }
+    if (u.pathname === '/api/tube/like') {
+      if (needMe()) return;
+      const v = TVIDEOS.get(String(b.id || ''));
+      if (!canSee(v, me)) return jout({ ok: false, err: 'no video' }, 404);
+      v.likedBy = v.likedBy || []; v.dislikedBy = v.dislikedBy || [];
+      const kind = b.kind === 'like' ? 'like' : b.kind === 'dislike' ? 'dislike' : '';
+      v.likedBy = v.likedBy.filter(x => x !== me); v.dislikedBy = v.dislikedBy.filter(x => x !== me);
+      if (kind === 'like') v.likedBy.push(me); if (kind === 'dislike') v.dislikedBy.push(me);
+      tubePersist();
+      return jout({ ok: true, likes: v.likedBy.length, dislikes: v.dislikedBy.length, my: kind });
+    }
+    if (u.pathname === '/api/tube/sub') {
+      if (needMe()) return;
+      const chan = String(b.chan || '').toLowerCase();
+      if (!chan || chan === me || !ACCOUNTS.has(chan)) return jout({ ok: false, err: 'no channel' }, 404);
+      const my = TSUBS.get(me) || {};
+      if (b.off) delete my[chan]; else my[chan] = { bell: b.bell == null ? (my[chan] ? my[chan].bell : true) : !!b.bell };
+      TSUBS.set(me, my); tubePersist();
+      return jout({ ok: true, subbed: !!my[chan], bell: !!(my[chan] && my[chan].bell), subs: chanOf(chan).subs });
+    }
+    if (u.pathname === '/api/tube/chanedit') {
+      if (needMe()) return;
+      const c = TCHAN.get(me) || {};
+      if (b.name != null) c.name = String(b.name).slice(0, 40);
+      if (b.bio != null) c.bio = String(b.bio).slice(0, 500);
+      if (b.banner != null) c.banner = String(b.banner).slice(0, 500);
+      if (b.avatar != null) c.avatar = String(b.avatar).slice(0, 500);
+      TCHAN.set(me, c); tubePersist();
+      return jout({ ok: true, chan: chanOf(me) });
+    }
+    if (u.pathname === '/api/tube/comment') {
+      if (needMe()) return;
+      const v = TVIDEOS.get(String(b.vid || ''));
+      if (!canSee(v, me)) return jout({ ok: false, err: 'no video' }, 404);
+      const text = String(b.text || '').trim().slice(0, 1200);
+      if (!text) return jout({ ok: false, err: 'empty comment' });
+      const list = TCOMMENTS.get(v.id) || [];
+      const parent = b.parent && list.some(c => c.id === b.parent) ? b.parent : null;
+      const c = { id: tubeId('c'), user: me, text, ts: Date.now(), parent, likes: [], pinned: false, heart: false };
+      list.push(c); TCOMMENTS.set(v.id, list); tubePersist();
+      if (v.owner !== me) pushNotif(v.owner, { type: 'tube', from: me, text: 'commented: ' + text.slice(0, 80), vid: v.id });
+      return jout({ ok: true, comment: { id: c.id, user: c.user, chan: chanOf(me).name, text: c.text, ts: c.ts, parent: c.parent, likes: 0, mylike: false, pinned: false, heart: false, mine: true } });
+    }
+    if (u.pathname === '/api/tube/commentmod') {
+      if (needMe()) return;
+      const v = TVIDEOS.get(String(b.vid || ''));
+      const list = TCOMMENTS.get(String(b.vid || '')) || [];
+      const c = list.find(x => x.id === b.id);
+      if (!v || !c) return jout({ ok: false, err: 'no comment' }, 404);
+      const act = String(b.act || '');
+      if (act === 'like') { c.likes = c.likes || []; if (c.likes.includes(me)) c.likes = c.likes.filter(x => x !== me); else c.likes.push(me); }
+      else if (act === 'edit') { if (c.user !== me) return jout({ ok: false, err: 'not urs' }, 403); c.text = String(b.text || '').trim().slice(0, 1200); c.edited = true; }
+      else if (act === 'del') { if (c.user !== me && v.owner !== me && !isAdminReq(req)) return jout({ ok: false, err: 'cant' }, 403); TCOMMENTS.set(v.id, list.filter(x => x.id !== c.id && x.parent !== c.id)); }
+      else if (act === 'pin') { if (v.owner !== me) return jout({ ok: false, err: 'only the creator pins' }, 403); list.forEach(x => { if (!x.parent) x.pinned = false; }); c.pinned = !c.pinned; }
+      else if (act === 'heart') { if (v.owner !== me) return jout({ ok: false, err: 'only the creator hearts' }, 403); c.heart = !c.heart; }
+      else return jout({ ok: false, err: 'bad act' });
+      tubePersist();
+      return jout({ ok: true, likes: (c.likes || []).length, pinned: !!c.pinned, heart: !!c.heart });
+    }
+    if (u.pathname === '/api/tube/plmod') {
+      if (needMe()) return;
+      const act = String(b.act || '');
+      if (act === 'create') { const p = { id: tubeId('pl'), owner: me, title: String(b.title || 'untitled').slice(0, 80), vis: ['pub', 'unl', 'priv'].includes(b.vis) ? b.vis : 'pub', items: [] }; TPLS.set(p.id, p); tubePersist(); return jout({ ok: true, pl: p }); }
+      if (act === 'later') { const wl = TWL.get(me) || []; const has = wl.includes(b.vid); const nw = has ? wl.filter(x => x !== b.vid) : [b.vid].concat(wl); TWL.set(me, nw.slice(0, 200)); tubePersist(); return jout({ ok: true, saved: !has }); }
+      const p = TPLS.get(String(b.id || ''));
+      if (!p || p.owner !== me) return jout({ ok: false, err: 'not ur playlist' }, 404);
+      if (act === 'add') { if (b.vid && !p.items.includes(b.vid)) p.items.push(b.vid); }
+      else if (act === 'remove') p.items = p.items.filter(x => x !== b.vid);
+      else if (act === 'move') { const i = p.items.indexOf(b.vid); const j = i + (b.dir === 'up' ? -1 : 1); if (i >= 0 && j >= 0 && j < p.items.length) { const t = p.items[i]; p.items[i] = p.items[j]; p.items[j] = t; } }
+      else if (act === 'rename') p.title = String(b.title || p.title).slice(0, 80);
+      else if (act === 'vis') { if (['pub', 'unl', 'priv'].includes(b.vis)) p.vis = b.vis; }
+      else if (act === 'del') { TPLS.delete(p.id); tubePersist(); return jout({ ok: true }); }
+      else return jout({ ok: false, err: 'bad act' });
+      tubePersist();
+      return jout({ ok: true, pl: p });
+    }
+    if (u.pathname === '/api/tube/post') {
+      if (needMe()) return;
+      const text = String(b.text || '').trim().slice(0, 2000);
+      let poll = null;
+      if (b.poll && Array.isArray(b.poll.opts)) { const opts = b.poll.opts.map(s => String(s || '').trim().slice(0, 60)).filter(Boolean).slice(0, 4); if (opts.length >= 2) poll = { opts: opts.map(t => ({ t, votes: [] })) }; }
+      if (!text && !poll) return jout({ ok: false, err: 'empty post' });
+      const p = { id: tubeId('po'), owner: me, text, img: String(b.img || '').slice(0, 500), poll, likes: [], ts: Date.now() };
+      TPOSTS.set(p.id, p); tubePersist();
+      for (const [usr, m] of TSUBS.entries()) if (m && m[me]) pushNotif(usr, { type: 'tube', from: me, text: 'posted: ' + (text || 'a poll').slice(0, 80) });
+      return jout({ ok: true, post: postView(p, me) });
+    }
+    if (u.pathname === '/api/tube/postmod') {
+      if (needMe()) return;
+      const p = TPOSTS.get(String(b.id || ''));
+      if (!p) return jout({ ok: false, err: 'no post' }, 404);
+      if (b.act === 'like') { p.likes = p.likes || []; if (p.likes.includes(me)) p.likes = p.likes.filter(x => x !== me); else p.likes.push(me); }
+      else if (b.act === 'vote') { if (!p.poll) return jout({ ok: false, err: 'no poll' }); p.poll.opts.forEach(o => { o.votes = o.votes.filter(x => x !== me); }); const o = p.poll.opts[+b.opt]; if (!o) return jout({ ok: false, err: 'bad option' }); o.votes.push(me); }
+      else if (b.act === 'del') { if (p.owner !== me && !isAdminReq(req)) return jout({ ok: false, err: 'cant' }, 403); TPOSTS.delete(p.id); }
+      else return jout({ ok: false, err: 'bad act' });
+      tubePersist();
+      return jout({ ok: true, post: postView(p, me) });
+    }
+    if (u.pathname === '/api/tube/report') {
+      if (needMe()) return;
+      TREPORTS.push({ id: tubeId('rp'), kind: String(b.kind || '').slice(0, 20), ref: String(b.ref || '').slice(0, 60), by: me, reason: String(b.reason || '').slice(0, 200), ts: Date.now() });
+      tubePersist();
+      return jout({ ok: true });
+    }
+    if (u.pathname === '/api/tube/library') {
+      if (needMe()) return;
+      const wl = TWL.get(me) || [];
+      const liked = [...TVIDEOS.values()].filter(v => (v.likedBy || []).includes(me) && canSee(v, me)).sort((a, b) => b.created - a.created);
+      const hist = (THIST.get(me) || []).map(h => { const v = TVIDEOS.get(h.v); return v && canSee(v, me) ? Object.assign(vidView(v, me), { prog: h.prog, hts: h.ts }) : null; }).filter(Boolean);
+      const my = TSUBS.get(me) || {};
+      return jout({ ok: true, later: wl.map(id => TVIDEOS.get(id)).filter(v => canSee(v, me)).map(v => vidView(v, me)), liked: liked.slice(0, 40).map(v => vidView(v, me)), history: hist, playlists: [...TPLS.values()].filter(p => p.owner === me).map(p => ({ id: p.id, title: p.title, vis: p.vis, n: p.items.length, cover: (TVIDEOS.get(p.items[0]) || {}).thumb || '' })), subs: Object.keys(my).map(h => chanOf(h)) });
+    }
+    return jout({ ok: false, err: 'unknown tube route' }, 404);
+  }
+
+  if (u.pathname === '/yt/web') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(YT_HOME); }
+  if (u.pathname === '/yt/shorts') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(tubeShortsPage(u.searchParams.get('v') || '')); }
+  if (u.pathname === '/yt/studio') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(tubeStudioPage()); }
+  if (u.pathname === '/yt/upload') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(tubeUploadPage()); }
+  if (u.pathname === '/yt/library') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(tubeLibraryPage()); }
+  if (u.pathname === '/yt/find') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(tubeFindPage()); }
+  const chm = /^\/yt\/channel\/([a-z0-9_.-]+)$/i.exec(u.pathname);
+  if (chm) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(tubeChannelPage(chm[1].toLowerCase())); }
+  const plm = /^\/yt\/pl\/([a-z0-9_-]+)$/i.exec(u.pathname);
+  if (plm) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(tubePlaylistPage(plm[1])); }
   if (u.pathname === '/yt') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
-    return res.end(YT_HOME);
+    return res.end(tubeHomePage());
   }
   if (u.pathname === '/yt/watch') {
     const vidId = (u.searchParams.get('v') || '').trim();
     if (!vidId) { res.writeHead(302, { location: '/yt' }); return res.end(); }
+    if (vidId.startsWith('t_')) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(tubeWatchPage(vidId)); }
     // metadata is decoration now (title, poster, up next) — the embed
     // player does not need it, so a dead metadata backend no longer
     // kills the watch page; it renders with whatever resolved
