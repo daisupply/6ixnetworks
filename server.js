@@ -1935,7 +1935,7 @@ html,body{overflow-x:clip}
 .xlights{display:none;pointer-events:none}body[data-lights="on"] .xlights{display:block}.xlights svg{width:100%;height:100%;display:block;overflow:visible}.xlights.xsite{position:fixed !important;top:-14px !important;left:0 !important;right:0 !important;height:54px !important;z-index:3}body[data-nav="bar"] .xlights.xsite{top:36px !important}@media (max-width:1099px){.xlights.xsite{top:36px !important}}.xlights .xb{animation:xblink 1.8s linear infinite}.xlights .xg{animation:xglowp 2.6s ease-in-out infinite}@keyframes xblink{0%,52%{opacity:1}62%,100%{opacity:.15}}@keyframes xglowp{0%,100%{opacity:.65}50%{opacity:.12}}body[data-motion="off"] .xlights .xb,body[data-motion="off"] .xlights .xg{animation:none}@media (prefers-reduced-motion: reduce){.xlights .xb,.xlights .xg{animation:none}}
 *{box-sizing:border-box;margin:0}
 html{background:#030304}
-body{background:#030304;color:#f4f4f5;font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:56px 16px 48px;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body{background:#030304;color:#f4f4f5;font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:56px 16px 48px;overflow-x:clip;-webkit-font-smoothing:antialiased}
 h1{font-size:clamp(28px,5vw,38px);font-weight:600;letter-spacing:-.02em;text-transform:lowercase;color:#fafafa;margin-bottom:10px;text-align:center}
 p.sub{color:#a1a1aa;margin-bottom:30px;font-size:15px;text-align:center;max-width:600px;line-height:1.55;font-weight:400}
 form{display:flex;width:100%;max-width:640px;gap:10px}
@@ -2538,57 +2538,60 @@ const YT_HOME = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}
 body{display:block;padding:0}
-.ytwrap{width:100%;box-sizing:border-box;max-width:1240px;margin:0 auto;padding:66px 16px 120px}
-.ythead{text-align:center;margin:10px 0 18px}
-.ytlogo{font-size:40px;font-weight:800;letter-spacing:-.02em;background:linear-gradient(94deg,#f0abfc,#a78bfa 25%,#38bdf8 48%,#34d399 68%,#facc15 85%,#fb7185);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
-.ythead p{color:#a49dc4;margin:6px 0 0;font-size:14.5px}
-.ytsearch{display:flex;gap:8px;align-items:center;background:rgba(12,10,24,.85);-webkit-backdrop-filter:blur(20px) saturate(1.4);backdrop-filter:blur(20px) saturate(1.4);border:1px solid rgba(var(--star),.16);border-radius:999px;padding:6px 6px 6px 18px;max-width:680px;margin:18px auto 0;box-shadow:0 14px 34px rgba(0,0,0,.35)}
+.ytwrap{width:100%;box-sizing:border-box;max-width:1360px;margin:0 auto;padding:64px 20px 130px}
+.ythead{max-width:720px;margin:6px 0 8px}
+.ytlogo{font-size:36px;font-weight:800;letter-spacing:-.03em;color:#fff}
+.ytlogo em{font-style:normal;color:rgb(var(--acc))}
+body .ytlogo{background-image:none}
+.ythead p{color:#9d97b8;margin:7px 0 0;font-size:14.5px}
+.ytsearch{display:flex;gap:8px;align-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:6px 6px 6px 18px;max-width:680px;margin:18px 0 0}
 .ytsearch input{flex:1;min-width:0;background:transparent;border:0;outline:none;color:#fff;font-size:16px;font-family:inherit}
-.ytsearch button[type=submit]{background:linear-gradient(120deg,rgb(var(--acc)),rgb(var(--acc2)));color:#fff;border:0;border-radius:999px;padding:10px 22px;font-weight:700;cursor:pointer;font-family:inherit}
-.ytpaste{display:flex;gap:8px;align-items:center;max-width:680px;margin:10px auto 0;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.18);border-radius:999px;padding:5px 5px 5px 16px}
+.ytsearch button[type=submit]{background:#fff;color:#0a0a0b;border:0;border-radius:999px;padding:10px 22px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:none}
+.ytsearch button[type=submit]:hover{background:#e6e2f2}
+.ytpaste{display:flex;gap:8px;align-items:center;max-width:680px;margin:10px 0 0;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:999px;padding:5px 5px 5px 16px}
 .ytpaste input{flex:1;min-width:0;background:transparent;border:0;outline:none;color:#d8d4ea;font-size:14px;font-family:inherit}
-.ytpaste button{background:rgba(255,255,255,.07);color:#e9e6f5;border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:8px 16px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:none}
-.ytpaste button:hover{background:rgba(167,139,250,.16);color:#fff}
+.ytpaste button{background:rgba(255,255,255,.07);color:#e9e6f5;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:8px 16px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:none}
+.ytpaste button:hover{background:rgba(var(--acc),.2);color:#fff}
 .ytpaste.bad{border-color:rgba(248,113,113,.6)}
-.yth{font-size:19px;font-weight:800;margin:30px 2px 12px;color:#f4f2ff}
-.yth span{color:rgb(var(--star))}
-.yrail{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 12px;scrollbar-width:none}
+.yth{font-size:18px;font-weight:800;margin:26px 2px 11px;color:#f4f2ff;display:flex;align-items:baseline;gap:9px}
+.yth span{color:rgb(var(--acc));font-size:15px}
+.yrail{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 12px;scrollbar-width:none}
 .yrail::-webkit-scrollbar{display:none}
-.yrail .ytcard{flex:0 0 250px}
-.ygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:14px}
-@media(max-width:560px){.ygrid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}.ytlogo{font-size:32px}}
-.ytcard{display:block;background:rgba(14,12,26,.66);border:1px solid rgba(255,255,255,.07);border-radius:16px;overflow:hidden;text-decoration:none;transition:transform .15s ease,border-color .15s ease;box-shadow:none}
-.ytcard:hover{transform:translateY(-2px);border-color:rgba(var(--star),.35)}
-.ytthumb{position:relative;display:block;aspect-ratio:16/9;background:#000}
+.yrail .ytcard{flex:0 0 264px}
+.ygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+@media(max-width:560px){.ygrid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}.ytlogo{font-size:30px}.ytwrap{padding:58px 14px 120px}}
+.ytcard{display:block;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:11px;box-sizing:border-box;text-decoration:none;transition:background .15s ease,transform .15s ease;box-shadow:none}
+.ytcard:hover{background:rgba(255,255,255,.07);transform:translateY(-2px)}
+.ytthumb{position:relative;display:block;aspect-ratio:16/9;background:#000;border-radius:9px;overflow:hidden}
 .ytthumb img{width:100%;height:100%;object-fit:cover;display:block}
 .ytdur{position:absolute;right:7px;bottom:7px;background:rgba(0,0,0,.8);color:#fff;font-size:11.5px;font-weight:700;border-radius:7px;padding:2px 6px}
-.ytt{display:block;padding:10px 12px 0;font-size:14.5px;font-weight:600;color:#f1eefc;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.yta{display:block;padding:3px 12px 12px;font-size:12.5px;color:#9d97b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ytsk{border-radius:16px;background:rgba(255,255,255,.05);aspect-ratio:16/10.4;animation:ytpulse 1.2s ease-in-out infinite}
+.ytt{display:block;padding:9px 1px 0;font-size:13.5px;font-weight:700;color:#fff;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.yta{display:block;padding:2px 1px 0;font-size:12.5px;color:#9d97b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ytsk{border-radius:14px;background:rgba(255,255,255,.05);aspect-ratio:16/10.4;animation:ytpulse 1.2s ease-in-out infinite}
 @keyframes ytpulse{0%,100%{opacity:.45}50%{opacity:.9}}
 .ytempty{color:#9d97b8;font-size:14.5px;padding:16px 2px}
 .ytmore{text-align:center;color:#9d97b8;font-size:13.5px;padding:20px 0 4px;min-height:22px}
 .ytbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.ytbar .yth{margin:30px 2px 12px}
-/* category dropdown — same glass menus as 6ixflix */
+.ytbar .yth{margin:26px 2px 11px}
+/* category dropdown — music-grade glass */
 .dd{position:relative;display:inline-block}
-.ddbtn{display:inline-flex;align-items:center;gap:9px;background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.045));-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(var(--star),.22);color:#f4f2ff;border-radius:999px;padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 8px 22px rgba(0,0,0,.35)}
-.ddbtn svg{color:rgb(var(--star));transition:transform .18s ease;flex:none}
+.ddbtn{display:inline-flex;align-items:center;gap:9px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:#f4f2ff;border-radius:999px;padding:9px 16px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:none}
+.ddbtn svg{color:rgb(var(--acc));transition:transform .18s ease;flex:none}
 .dd.open .ddbtn svg{transform:rotate(180deg)}
-.ddbtn:hover{background:linear-gradient(180deg,rgba(167,139,250,.18),rgba(255,255,255,.05));color:#fff}
-.ddmenu{position:fixed;z-index:300;min-width:190px;max-height:300px;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;background:rgba(13,11,24,.96);-webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px);border:1px solid rgba(var(--star),.2);border-radius:16px;padding:6px;box-shadow:0 24px 60px rgba(0,0,0,.6)}
+.ddbtn:hover{background:rgba(255,255,255,.1);color:#fff}
+.ddmenu{position:fixed;z-index:300;min-width:190px;max-height:300px;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;background:rgba(13,11,24,.96);-webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:6px;box-shadow:0 24px 60px rgba(0,0,0,.6)}
 .ddopt{display:flex;width:100%;align-items:center;gap:9px;background:transparent;border:0;color:#d8d4ea;font-size:14px;font-weight:600;padding:10px 12px;border-radius:11px;cursor:pointer;font-family:inherit;text-align:left;box-shadow:none}
-.ddopt:hover{background:rgba(167,139,250,.16);color:#fff}
-.ddopt.on{color:#fff;background:rgba(var(--acc),.16)}
-.ddopt .dddot{width:7px;height:7px;border-radius:50%;background:rgb(var(--star));flex:none;visibility:hidden}
-.ddopt.on .dddot{visibility:visible}
+.ddopt:hover{background:rgba(255,255,255,.06);color:#fff}
+.ddopt.on{color:#0a0a0b;background:#fff}
+.ddopt .dddot{width:7px;height:7px;border-radius:50%;background:rgb(var(--acc));flex:none;visibility:hidden}
+.ddopt.on .dddot{visibility:visible;background:#0a0a0b}
 </style></head><body>${STAR_CANVAS}
 <div class="ytwrap">
 <div class="ythead">
-<div class="ytlogo">6ixtube</div>
+<div class="ytlogo">6ix<em>tube</em></div>
 <p>youtube thru ur own network — click a video n it streams right here</p>
 <form class="ytsearch" action="/yt/search" method="get"><input name="q" type="text" placeholder="search youtube" autocomplete="off"><button type="submit">search</button></form>
-<div style="text-align:center;margin-top:12px"><a href="/music" style="color:#a78bfa;font-weight:700;text-decoration:none;font-size:14px">just music? → 6ixmusic</a></div>
+<div style="margin-top:12px"><a href="/music" style="color:rgb(var(--acc));font-weight:700;text-decoration:none;font-size:14px">just music? → 6ixmusic</a></div>
 <div class="ytpaste" id="pasteBox"><input id="pasteIn" type="text" placeholder="or paste a youtube link — we'll stream it" autocomplete="off"><button id="pasteGo" type="button">stream it</button></div>
 </div>
 <h2 class="yth"><span>✦</span> trending rn</h2>
@@ -12901,7 +12904,23 @@ function ytWatchPage(id, hit, phit) {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+.wrap{max-width:1180px}
+.back{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#e9e6f5;border-radius:999px;padding:8px 15px;font-size:13.5px;font-weight:700;text-decoration:none;margin-top:4px}
+.back:hover{background:rgba(255,255,255,.1);color:#fff}
+#vid,#ytembed,#ytuv{border-radius:20px!important;box-shadow:0 24px 60px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.09)}
+#modeStream,#modeEmbed,#modeUv{background:rgba(255,255,255,.07)!important;border:1px solid rgba(255,255,255,.13)!important;color:#f4f4f5!important;border-radius:999px!important;padding:9px 16px!important;font-weight:700;box-shadow:none}
+#modeStream{background:rgba(var(--acc),.25)!important;border-color:rgba(var(--acc),.5)!important}
+#ytdl{background:rgba(255,255,255,.07)!important;border:1px solid rgba(255,255,255,.13)!important;border-radius:999px!important;padding:9px 16px!important;font-weight:700}
+#ytstat{color:#9d97b8!important;opacity:1!important}
+.wrap>p{font-size:20px!important;font-weight:800!important;letter-spacing:-.01em;color:#fff;line-height:1.3}
+#ydesc{background:rgba(255,255,255,.04)!important;border:1px solid rgba(255,255,255,.07)!important;border-radius:14px!important}
+#ytretry{background:rgba(var(--acc),.22)!important;border:1px solid rgba(var(--acc),.45)!important;border-radius:999px!important;color:#fff!important}
+.grid .card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:11px;box-shadow:none;transition:background .15s ease,transform .15s ease}
+.grid .card:hover{background:rgba(255,255,255,.07);transform:translateY(-2px);border-color:rgba(255,255,255,.05)}
+.grid .card img{border-radius:9px}
+.grid .card .gt{font-size:13.5px;font-weight:700;color:#fff;line-height:1.35;padding-top:9px}
+</style></head><body>${STAR_CANVAS}
 <div class="wrap">
 <a class="back" href="/yt">← 6ixtube</a>
 <video id="vid" controls playsinline preload="auto" ${poster ? `poster="${poster}"` : ''} style="width:100%;border-radius:18px;background:#000;aspect-ratio:16/9;margin-top:12px"></video>
@@ -13089,7 +13108,23 @@ function ytWatchPage2(id, hit, phit, uvUrl, meta) {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body>${STAR_CANVAS}
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+.wrap{max-width:1180px}
+.back{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#e9e6f5;border-radius:999px;padding:8px 15px;font-size:13.5px;font-weight:700;text-decoration:none;margin-top:4px}
+.back:hover{background:rgba(255,255,255,.1);color:#fff}
+#vid,#ytembed,#ytuv{border-radius:20px!important;box-shadow:0 24px 60px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.09)}
+#modeStream,#modeEmbed,#modeUv{background:rgba(255,255,255,.07)!important;border:1px solid rgba(255,255,255,.13)!important;color:#f4f4f5!important;border-radius:999px!important;padding:9px 16px!important;font-weight:700;box-shadow:none}
+#modeStream{background:rgba(var(--acc),.25)!important;border-color:rgba(var(--acc),.5)!important}
+#ytdl{background:rgba(255,255,255,.07)!important;border:1px solid rgba(255,255,255,.13)!important;border-radius:999px!important;padding:9px 16px!important;font-weight:700}
+#ytstat{color:#9d97b8!important;opacity:1!important}
+.wrap>p{font-size:20px!important;font-weight:800!important;letter-spacing:-.01em;color:#fff;line-height:1.3}
+#ydesc{background:rgba(255,255,255,.04)!important;border:1px solid rgba(255,255,255,.07)!important;border-radius:14px!important}
+#ytretry{background:rgba(var(--acc),.22)!important;border:1px solid rgba(var(--acc),.45)!important;border-radius:999px!important;color:#fff!important}
+.grid .card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:11px;box-shadow:none;transition:background .15s ease,transform .15s ease}
+.grid .card:hover{background:rgba(255,255,255,.07);transform:translateY(-2px);border-color:rgba(255,255,255,.05)}
+.grid .card img{border-radius:9px}
+.grid .card .gt{font-size:13.5px;font-weight:700;color:#fff;line-height:1.35;padding-top:9px}
+</style></head><body>${STAR_CANVAS}
 <div class="wrap">
 <a class="back" href="/yt">← 6ixtube</a>
 <iframe id="ytuv" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="width:100%;aspect-ratio:16/9;border:0;border-radius:18px;background:#000;margin-top:12px;display:none"></iframe>
@@ -14211,38 +14246,40 @@ function itemView(id, me) { if (String(id).startsWith('yt:')) return extView(id,
 function postView(p, me) { if (!p) return null; const total = p.poll ? p.poll.opts.reduce((n, o) => n + o.votes.length, 0) : 0; return { id: p.id, owner: p.owner, chan: chanOf(p.owner).name, text: p.text, img: p.img || '', ts: p.ts, likes: (p.likes || []).length, mylike: me ? (p.likes || []).includes(me) : false, mine: !!me && p.owner === me, poll: p.poll ? { total, opts: p.poll.opts.map(o => ({ t: o.t, votes: o.votes.length, pct: total ? Math.round(o.votes.length * 100 / total) : 0, mine: me ? o.votes.includes(me) : false })) } : null }; }
 
 const TUBE_CSS = `
-.twrap{max-width:1240px;margin:0 auto;padding:16px 16px 120px;width:100%;box-sizing:border-box;text-align:left}
+.twrap{max-width:1360px;margin:0 auto;padding:20px 20px 130px;width:100%;box-sizing:border-box;text-align:left}
 .tnav{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0 16px}
-.tnav a,.tnav button{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);color:var(--ink);border-radius:999px;padding:8px 14px;font-size:13.5px;font-weight:600;cursor:pointer;text-decoration:none}
-.tnav a.on,.tnav button.on{background:rgba(var(--star),.2);border-color:rgba(var(--star),.4)}
+.tnav a,.tnav button{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--ink);border-radius:999px;padding:8px 14px;font-size:13.5px;font-weight:700;cursor:pointer;text-decoration:none}
+.tnav a.on,.tnav button.on{background:#fff;color:#0a0a0b;border-color:#fff}
 .tsearch{display:flex;gap:8px;flex:1;min-width:220px;position:relative}
-.tsearch input{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);border-radius:999px;color:var(--ink);padding:10px 18px;font-size:15px;outline:none}
+.tsearch input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:999px;color:var(--ink);padding:11px 18px;font-size:16px;outline:none}
 .tsearch input:focus{border-color:var(--acc)}
 .tsug{position:absolute;top:48px;left:0;right:60px;background:#17142a;border:1px solid rgba(255,255,255,.15);border-radius:14px;overflow:hidden;z-index:40}
 .tsug button{display:block;width:100%;text-align:left;background:none;border:0;color:var(--ink);padding:10px 14px;cursor:pointer;font-size:14px}
 .tsug button:hover{background:rgba(255,255,255,.07)}
 .tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px 14px}
-.tcard{display:block;text-decoration:none;color:var(--ink)}
-.tthumb{position:relative;border-radius:14px;overflow:hidden;aspect-ratio:16/9;background:linear-gradient(135deg,rgba(var(--star),.35),rgba(255,255,255,.05))}
+.tcard{display:block;text-decoration:none;color:var(--ink);background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:11px;box-sizing:border-box;transition:background .15s ease,transform .15s ease}
+.tcard:hover{background:rgba(255,255,255,.07);transform:translateY(-2px)}
+.tthumb{position:relative;border-radius:9px;overflow:hidden;aspect-ratio:16/9;background:linear-gradient(135deg,rgba(var(--star),.35),rgba(255,255,255,.05))}
 .tthumb img{width:100%;height:100%;object-fit:cover;display:block}
 .tthumb .dur{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.75);color:#fff;font-size:11.5px;font-weight:700;padding:2px 6px;border-radius:6px}
 .tthumb .prog{position:absolute;left:0;bottom:0;height:4px;background:#ff4e45}
-.tt{font-weight:700;font-size:14.5px;margin:8px 0 2px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.tm{font-size:12.5px;color:rgba(236,234,246,.55)}
-.tsec{font-size:19px;font-weight:800;margin:26px 0 12px}
-.trail{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scrollbar-width:thin}
+.tt{font-weight:700;font-size:13.5px;margin:9px 0 2px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tm{font-size:12.5px;color:#9d97b8}
+.tsec{font-size:18px;font-weight:800;margin:26px 0 11px;color:#f4f2ff}
+.trail{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 12px;scrollbar-width:none}
+.trail::-webkit-scrollbar{display:none}
 .trail .scard{flex:0 0 150px;text-decoration:none;color:var(--ink)}
 .trail .scard .tthumb{aspect-ratio:9/16}
 .tav{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--acc),rgba(var(--star),.6));color:#0a0a13;font-weight:800;flex:none;text-decoration:none}
-.tbtn{display:inline-flex;align-items:center;gap:7px;background:var(--acc);color:#0a0a13;border:0;font-weight:700;border-radius:999px;padding:9px 16px;font-size:13.5px;cursor:pointer;text-decoration:none}
+.tbtn{display:inline-flex;align-items:center;gap:7px;background:#fff;color:#0a0a0b;border:0;font-weight:800;border-radius:999px;padding:9px 16px;font-size:13.5px;cursor:pointer;text-decoration:none}
 .tbtn.ghost{background:rgba(255,255,255,.07);color:var(--ink);border:1px solid rgba(255,255,255,.15)}
 .tbtn.sm{padding:6px 12px;font-size:12.5px}
-.tbtn.on{background:rgba(255,255,255,.16);color:var(--ink)}
-.tin{width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);border-radius:12px;color:var(--ink);padding:10px 12px;font-size:15px;margin:5px 0}
+.tbtn.on{background:rgba(var(--acc),.28);color:#fff}
+.tin{width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;color:var(--ink);padding:10px 12px;font-size:15px;margin:5px 0}
 select.tin{appearance:none;cursor:pointer}
 textarea.tin{resize:vertical;line-height:1.5}
-.tchip{display:inline-block;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);border-radius:999px;padding:6px 13px;font-size:13px;cursor:pointer;color:var(--ink)}
-.tchip.on{background:rgba(var(--star),.22)}
+.tchip{display:inline-block;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink)}
+.tchip.on{background:#fff;color:#0a0a0b;border-color:#fff}
 .tmsg{font-size:13px;opacity:.75;min-height:18px}
 .tempty{opacity:.55;padding:26px 0}
 `;
@@ -14268,12 +14305,12 @@ function tubeSocialWidget(vidId, meta) {
   const m = meta || {};
   const data = JSON.stringify({ id: 'yt:' + vidId, raw: vidId, t: m.title || '', th: m.poster || ('https://i.ytimg.com/vi/' + vidId + '/hqdefault.jpg'), c: m.author || '' });
   return `<style>
-#gxSoc{position:fixed;right:12px;bottom:96px;z-index:90;width:min(368px,94vw);background:rgba(13,11,26,.92);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.16);border-radius:18px;color:#eceaf6;font-family:system-ui,sans-serif;box-shadow:0 18px 44px rgba(0,0,0,.5);overflow:hidden}
+#gxSoc{position:fixed;right:12px;bottom:96px;z-index:90;width:min(368px,94vw);background:rgba(13,12,20,.92);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);border-radius:16px;color:#eceaf6;font-family:system-ui,sans-serif;box-shadow:0 18px 44px rgba(0,0,0,.5);overflow:hidden}
 @media(min-width:1100px){#gxSoc{bottom:20px}}
 #gxSoc .hd{display:flex;gap:6px;align-items:center;padding:10px 12px;flex-wrap:wrap}
 #gxSoc .hd b{font-size:13px;letter-spacing:.04em}
 #gxSoc button{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#eceaf6;border-radius:999px;padding:6px 11px;font-size:12.5px;font-weight:700;cursor:pointer}
-#gxSoc button.on{background:rgba(154,134,255,.35);border-color:rgba(154,134,255,.6)}
+#gxSoc button.on{background:rgba(var(--acc),.3);border-color:rgba(var(--acc),.55)}
 #gxSoc .bd{max-height:46dvh;overflow:auto;padding:0 12px 12px;display:none}
 #gxSoc.open .bd{display:block}
 #gxSoc textarea{width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:10px;color:#eceaf6;padding:8px 10px;font-size:14px;resize:vertical}
@@ -14330,8 +14367,8 @@ fetch('/api/tube/library', { method: 'POST', headers: { 'content-type': 'applica
   var el = document.getElementById('gxTubeStrip'); if (!el) return;
   var hist = (d.history || []).slice(0, 6), later = d.later || [], subs = d.subs || [];
   if (!hist.length && !later.length && !subs.length) return;
-  var h = '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><b style="font-size:14px">ur 6ixtube</b><a href="/yt/home" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:#eceaf6;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;text-decoration:none">6ix uploads</a><a href="/yt/library" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:#eceaf6;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;text-decoration:none">library</a><a href="/yt/studio" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:#eceaf6;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;text-decoration:none">studio</a></div>';
-  if (hist.length) { h += '<div style="font-size:12px;opacity:.6;margin-bottom:6px">CONTINUE WATCHING</div><div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px">' + hist.map(function(v){ var raw = v.ext ? v.id.slice(3) : v.id; return '<a href="/yt/watch?v=' + raw + '" style="flex:0 0 168px;color:#eceaf6;text-decoration:none"><span style="display:block;border-radius:12px;overflow:hidden;aspect-ratio:16/9;background:rgba(255,255,255,.08)">' + (v.thumb ? '<img src="' + esc(v.thumb) + '" style="width:100%;height:100%;object-fit:cover">' : '') + '</span><span style="display:block;font-size:12.5px;font-weight:600;margin-top:5px;line-height:1.3">' + esc(v.title) + '</span><span style="display:block;font-size:11.5px;opacity:.55">' + esc(v.chan) + '</span></a>'; }).join('') + '</div>'; }
+  var h = '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><b style="font-size:15px;font-weight:800">ur 6ix<em style="font-style:normal;color:rgb(var(--acc))">tube</em></b><a href="/yt/home" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:#eceaf6;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;text-decoration:none">6ix uploads</a><a href="/yt/library" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:#eceaf6;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;text-decoration:none">library</a><a href="/yt/studio" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:#eceaf6;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;text-decoration:none">studio</a></div>';
+  if (hist.length) { h += '<div style="font-size:12px;opacity:.6;margin-bottom:6px">CONTINUE WATCHING</div><div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px">' + hist.map(function(v){ var raw = v.ext ? v.id.slice(3) : v.id; return '<a href="/yt/watch?v=' + raw + '" style="flex:0 0 190px;color:#eceaf6;text-decoration:none;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:8px;box-sizing:border-box"><span style="display:block;border-radius:9px;overflow:hidden;aspect-ratio:16/9;background:rgba(255,255,255,.08)">' + (v.thumb ? '<img src="' + esc(v.thumb) + '" style="width:100%;height:100%;object-fit:cover">' : '') + '</span><span style="display:block;font-size:12.5px;font-weight:600;margin-top:5px;line-height:1.3">' + esc(v.title) + '</span><span style="display:block;font-size:11.5px;opacity:.55">' + esc(v.chan) + '</span></a>'; }).join('') + '</div>'; }
   if (subs.length) { h += '<div style="font-size:12px;opacity:.6;margin:8px 0 6px">SUBSCRIPTIONS</div><div style="display:flex;gap:8px;flex-wrap:wrap">' + subs.map(function(c){ var href = c.yt ? '/yt/search?q=' + encodeURIComponent(c.name) : '/yt/channel/' + encodeURIComponent(c.user); return '<a href="' + href + '" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#eceaf6;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:600;text-decoration:none">' + esc(c.name) + '</a>'; }).join('') + '</div>'; }
   el.innerHTML = h; el.style.display = 'block';
 }).catch(function(){});
@@ -14352,7 +14389,7 @@ function tubeHomePage() {
 </head>
 <body>
 <div class="twrap">
-<h1 style="font-size:27px;margin:6px 0 2px">6ix<span style="color:var(--acc)">tube</span></h1>
+<h1 style="font-size:29px;font-weight:800;margin:6px 0 2px;text-align:left;color:#fff">6ix<span style="color:rgb(var(--acc))">tube</span></h1>
 <p style="opacity:.6;margin:0 0 6px;font-size:14px">real videos from real people on the network. <a href="/yt/web" style="color:var(--acc)">mirror youtube instead →</a></p>
 <div id="tNav"></div>
 <div id="tCats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px"></div>
