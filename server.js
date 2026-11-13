@@ -3332,13 +3332,14 @@ function playPageUv(u, t, bk) {
   }
   const prox = '/uv/service/' + uvEncodeUrl(u);
   const rawChip = '';
-  const alt = proxied(u);
+  const engHtml = bk ? ENG_HTML : '';
+  const alt = bk ? proxied(u) : prox; // v426: games never fall back to classic (flat urls break game js) - the flip below just retries the rewriting engine
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body class="playbody">${STAR_CANVAS}
 <div class="top"><a href="${bkH}">← ${bkL}</a><span class="title">${escHtml(t || 'Game')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
-<button class="on" onclick="useNet()">network</button> ${ENG_HTML}${rawChip}
+<button class="on" onclick="useNet()">network</button> ${engHtml}${rawChip}
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
 <button onclick="cloakTab('google')">cloak: google</button>
@@ -3352,6 +3353,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body c
 var BOOTING=true;
 var PROX=${JSON.stringify(prox).replace(/</g, '\\u003c')};
 var ALT=${JSON.stringify(alt).replace(/</g, '\\u003c')};
+var ALTMSG=${bk ? "'that engine couldnt load it - flipping to classic...'" : "'still not loading - one more try...'"};
 var gf=document.getElementById('gf'), stEl=document.getElementById('st');
 try{ var gu=new URLSearchParams(location.search).get('u'); if(gu){ var R=[]; try{ R=JSON.parse(localStorage.getItem('gx_recent'))||[]; }catch(e){} R=[gu].concat(R.filter(function(x){ return x!==gu; })).slice(0,12); localStorage.setItem('gx_recent', JSON.stringify(R)); } }catch(e){}
 var tries=0, alive=false, fellBack=false;
@@ -3377,8 +3379,8 @@ function check(final){
   var emptyFrame=false;
   try{ var d3=gf.contentDocument; emptyFrame = !d3 || !d3.body || ((d3.body.innerHTML||'').length < 400); }catch(e){ emptyFrame=false; }
   if(errPage() || (final && emptyFrame)){
-    if(tries<2){ tries++; if(stEl) stEl.textContent='reconnecting...'; gf.src=PROX; arm(); }
-    else if(!fellBack){ fellBack=true; if(stEl) stEl.textContent='that engine couldnt load it - flipping to classic...'; gf.src=ALT; arm(); }
+    if(tries<3){ tries++; if(stEl) stEl.textContent='reconnecting...'; gf.src=PROX; arm(); }
+    else if(!fellBack){ fellBack=true; if(stEl) stEl.textContent=ALTMSG; gf.src=ALT; arm(); }
     else { if(stEl) stEl.textContent=''; document.getElementById('dead').style.display='block'; }
   }
 }
@@ -3548,13 +3550,14 @@ function playPageSj(u, t, bk) {
   }
   const prox = '/sj/service/' + sjEncodeUrl(u);
   const rawChip = '';
-  const alt = proxied(u);
+  const engHtml = bk ? ENG_HTML : '';
+  const alt = bk ? proxied(u) : prox; // v426: games never fall back to classic (flat urls break game js) - the flip below just retries the rewriting engine
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body class="playbody">${STAR_CANVAS}
 <div class="top"><a href="${bkH}">← ${bkL}</a><span class="title">${escHtml(t || 'Game')}</span><span id="st" style="opacity:.7;font-size:13px"></span>
-<button class="on" onclick="useNet()">network</button> ${ENG_HTML}${rawChip}
+<button class="on" onclick="useNet()">network</button> ${engHtml}${rawChip}
 <button onclick="retry()">retry</button>
 <button onclick="document.getElementById('gf').requestFullscreen()">fullscreen</button>
 <button onclick="cloakTab('google')">cloak: google</button>
@@ -3570,6 +3573,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style></head><body c
 var BOOTING=true;
 var PROX=${JSON.stringify(prox).replace(/</g, '\\u003c')};
 var ALT=${JSON.stringify(alt).replace(/</g, '\\u003c')};
+var ALTMSG=${bk ? "'that engine couldnt load it - flipping to classic...'" : "'still not loading - one more try...'"};
 var gf=document.getElementById('gf'), stEl=document.getElementById('st');
 try{ var gu=new URLSearchParams(location.search).get('u'); if(gu){ var R=[]; try{ R=JSON.parse(localStorage.getItem('gx_recent'))||[]; }catch(e){} R=[gu].concat(R.filter(function(x){ return x!==gu; })).slice(0,12); localStorage.setItem('gx_recent', JSON.stringify(R)); } }catch(e){}
 var tries=0, alive=false, fellBack=false;
@@ -3595,8 +3599,8 @@ function check(final){
   var emptyFrame=false;
   try{ var d3=gf.contentDocument; emptyFrame = !d3 || !d3.body || ((d3.body.innerHTML||'').length < 400); }catch(e){ emptyFrame=false; }
   if(errPage() || (final && emptyFrame)){
-    if(tries<2){ tries++; if(stEl) stEl.textContent='reconnecting...'; gf.src=PROX; arm(); }
-    else if(!fellBack){ fellBack=true; if(stEl) stEl.textContent='that engine couldnt load it - flipping to classic...'; gf.src=ALT; arm(); }
+    if(tries<3){ tries++; if(stEl) stEl.textContent='reconnecting...'; gf.src=PROX; arm(); }
+    else if(!fellBack){ fellBack=true; if(stEl) stEl.textContent=ALTMSG; gf.src=ALT; arm(); }
     else { if(stEl) stEl.textContent=''; document.getElementById('dead').style.display='block'; }
   }
 }
@@ -18580,7 +18584,7 @@ const server = http.createServer(async (req, res) => {
     const qeng = u.searchParams.get('eng');
     const bkw = u.searchParams.get('bk') === 'blox' ? ['/blox', '6ixblox'] : null;
     if (staleVdGate(req, res, u)) return;
-    const peng = (qeng === 'sj' || qeng === 'uv' || qeng === 'vd') ? qeng : (((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv|vd)/) || [])[1]) || 'sj'); // v392: blox honors the engine cookie too (was hard-'sj' for bk=blox, which orphaned the v391 vd login - cards launched sj/signed-out)
+    const peng = bkw ? ((qeng === 'sj' || qeng === 'uv' || qeng === 'vd') ? qeng : (((String(req.headers.cookie || '').match(/(?:^|;\s*)gx_eng=(sj|uv|vd)/) || [])[1]) || 'sj')) : 'sj'; // v426: games always land on scramjet (the js-rewriting engine): a vd/uv cookie or ?eng= must not put a game on vd, whose flat urls break game js. blox keeps honoring the pick (v392 vd-login flow). // v392: blox honors the engine cookie too (was hard-'sj' for bk=blox, which orphaned the v391 vd login - cards launched sj/signed-out)
     if (gu2 && peng === 'vd') { const ph = { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }; // v394: blox vd player carries the same isolation trio as the sj player - roblox's web client only runs cross-origin isolated (see handleProxy stamp). blox only: coep on a general vd player would break every non-isolated framed doc (v382 law).
       if (bkw) { ph['cross-origin-opener-policy'] = 'same-origin'; ph['cross-origin-embedder-policy'] = 'require-corp'; ph['cross-origin-resource-policy'] = 'same-origin'; } res.writeHead(200, ph); return res.end(playPage(gu2, u.searchParams.get('t') || 'Game', bkw)); }
     if (gu2 && peng === 'sj' && SJ_OK()) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'cross-origin-opener-policy': 'same-origin', 'cross-origin-embedder-policy': 'require-corp', 'cross-origin-resource-policy': 'same-origin' }); return res.end(playPageSj(gu2, u.searchParams.get('t') || 'Game', bkw)); }
