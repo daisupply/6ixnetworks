@@ -14282,6 +14282,7 @@ textarea.tin{resize:vertical;line-height:1.5}
 .tchip.on{background:#fff;color:#0a0a0b;border-color:#fff}
 .tmsg{font-size:13px;opacity:.75;min-height:18px}
 .tempty{opacity:.55;padding:26px 0}
+.tsl{color:rgb(var(--acc));font-weight:700;cursor:pointer}.tsl:hover{text-decoration:underline}
 `;
 const TUBE_JS = `
 function $(i){return document.getElementById(i)}
@@ -14291,8 +14292,10 @@ function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'
 function fmtN(n){n=+n||0;if(n>=1e6)return (n/1e6).toFixed(1).replace(/\.0$/,'')+'M';if(n>=1e3)return (n/1e3).toFixed(1).replace(/\.0$/,'')+'K';return ''+n}
 function fmtD(s){s=Math.max(0,Math.round(+s||0));var h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+':'+('0'+m).slice(-2):m)+':'+('0'+x).slice(-2)}
 function fmtT(ts){var d=Date.now()-ts;if(d<6e4)return 'just now';if(d<36e5)return Math.floor(d/6e4)+'m ago';if(d<864e5)return Math.floor(d/36e5)+'h ago';if(d<6048e5)return Math.floor(d/864e5)+'d ago';return new Date(ts).toLocaleDateString()}
+function tsHtml(x){return String(x==null?'':x).replace(/(^|[^0-9:])([0-9]{1,2}:)?([0-9]{1,2}):([0-5][0-9])(?![0-9:])/g,function(m,pre,h,mn,sc){var sec=(h?parseInt(h,10)*3600:0)+parseInt(mn,10)*60+parseInt(sc,10);return pre+'<span class="tsl" data-ts="'+sec+'" role="button" tabindex="0">'+(h||'')+mn+':'+sc+'</span>'})}
+function cardMeta(v){var s=esc(v.chan)+' · '+fmtN(v.views)+' views';if(v.created)s+=' · '+fmtT(v.created);if(v.prog&&v.dur&&v.prog>0&&v.prog<v.dur-5)s+=' · '+fmtD(v.dur-v.prog)+' left';if(v.hts)s+=' · watched '+fmtT(v.hts);return s}
 function card(v){var th=v.thumb?'<img loading="lazy" src="'+esc(v.thumb)+'" alt="">':'';
-return '<a class="tcard" href="/yt/watch?v='+v.id+'"><div class="tthumb">'+th+(v.dur?'<span class="dur">'+fmtD(v.dur)+'</span>':'')+(v.prog?'<span class="prog" style="width:'+Math.min(100,Math.round(v.prog*100/Math.max(1,v.dur)))+'%"></span>':'')+'</div><div class="tt">'+esc(v.title)+'</div><div class="tm">'+esc(v.chan)+' · '+fmtN(v.views)+' views · '+fmtT(v.created)+'</div></a>'}
+return '<a class="tcard" href="/yt/watch?v='+v.id+'"><div class="tthumb">'+th+(v.dur?'<span class="dur">'+fmtD(v.dur)+'</span>':'')+(v.prog?'<span class="prog" style="width:'+Math.min(100,Math.round(v.prog*100/Math.max(1,v.dur)))+'%"></span>':'')+'</div><div class="tt">'+esc(v.title)+'</div><div class="tm">'+cardMeta(v)+'</div></a>'}
 function scard(v){var th=v.thumb?'<img loading="lazy" src="'+esc(v.thumb)+'" alt="">':'';
 return '<a class="scard" href="/yt/shorts?v='+v.id+'"><div class="tthumb">'+th+'</div><div class="tt" style="font-size:13px">'+esc(v.title)+'</div><div class="tm">'+fmtN(v.views)+' views</div></a>'}
 function ava(u,sz){return '<a class="tav" href="/yt/channel/'+encodeURIComponent(u)+'" style="'+(sz?'width:'+sz+'px;height:'+sz+'px;font-size:'+Math.round(sz*.42)+'px':'')+'">'+esc((u||'?').slice(0,1).toUpperCase())+'</a>'}
@@ -14305,7 +14308,7 @@ function tubeSocialWidget(vidId, meta) {
   const m = meta || {};
   const data = JSON.stringify({ id: 'yt:' + vidId, raw: vidId, t: m.title || '', th: m.poster || ('https://i.ytimg.com/vi/' + vidId + '/hqdefault.jpg'), c: m.author || '' });
   return `<style>
-#gxSoc{position:fixed;right:12px;bottom:96px;z-index:90;width:min(368px,94vw);background:rgba(13,12,20,.92);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);border-radius:16px;color:#eceaf6;font-family:system-ui,sans-serif;box-shadow:0 18px 44px rgba(0,0,0,.5);overflow:hidden}
+#gxSoc{position:fixed;right:12px;bottom:96px;z-index:120;transform:translateZ(0);width:min(368px,94vw);background:rgba(13,12,20,.92);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);border-radius:16px;color:#eceaf6;font-family:system-ui,sans-serif;box-shadow:0 18px 44px rgba(0,0,0,.5);overflow:hidden}
 @media(min-width:1100px){#gxSoc{bottom:20px}}
 #gxSoc .hd{display:flex;gap:6px;align-items:center;padding:10px 12px;flex-wrap:wrap}
 #gxSoc .hd b{font-size:13px;letter-spacing:.04em}
@@ -14318,8 +14321,9 @@ function tubeSocialWidget(vidId, meta) {
 #gxSoc .cm .tx{flex:1;font-size:13.5px;word-break:break-word}
 #gxSoc .cm .wh{font-size:11.5px;opacity:.55}
 #gxSoc .cm button{padding:2px 8px;font-size:11.5px}
+.tsl{color:#c9b8ff;font-weight:700;cursor:pointer}.tsl:hover{text-decoration:underline}
 </style>
-<div id="gxSoc"><div class="hd"><b>6IXTUBE</b><button id="gsLike" type="button">▲ 0</button><button id="gsDis" type="button">▼ 0</button><button id="gsSave" type="button">save</button><button id="gsSub" type="button">subscribe</button><button id="gsCm" type="button">comments 0</button></div><div class="bd"><div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1"><textarea id="gsBox" rows="2" placeholder="add a comment…"></textarea></div><button id="gsPost" type="button">post</button></div><div id="gsList"></div></div></div>
+<div id="gxSoc"><div class="hd"><b>6IXTUBE</b><button id="gsLike" type="button">▲ 0</button><button id="gsDis" type="button">▼ 0</button><button id="gsSave" type="button">save</button><button id="gsSub" type="button">subscribe</button><button id="gsCm" type="button">comments 0</button><button id="gsHistB" type="button">watched</button></div><div class="bd"><div id="gsHist"></div><div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1"><textarea id="gsBox" rows="2" placeholder="add a comment…"></textarea></div><button id="gsPost" type="button">post</button></div><div id="gsList"></div></div></div>
 <script>
 (function(){
 var D = ${data};
@@ -14329,7 +14333,7 @@ function jp(u,b){return fetch(u,{method:'POST',headers:{'content-type':'applicat
 function jg(u){return fetch(u).then(function(r){return r.json()})}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 var MYK = '';
-function paint(s){ if(!s) return; $('gsLike').innerHTML = '▲ ' + (s.likes||0); $('gsDis').innerHTML = '▼ ' + (s.dislikes||0); $('gsLike').classList.toggle('on', s.my==='like'); $('gsDis').classList.toggle('on', s.my==='dislike'); MYK = s.my||''; if (s.comments != null) $('gsCm').textContent = 'comments ' + s.comments; if (s.chan) $('gsSub').textContent = s.subbed ? 'subscribed' : 'subscribe'; $('gsSub').classList.toggle('on', !!s.subbed); }
+function paint(s){ if(!s) return; $('gsLike').innerHTML = '▲ ' + (s.likes||0); $('gsDis').innerHTML = '▼ ' + (s.dislikes||0); $('gsLike').classList.toggle('on', s.my==='like'); $('gsDis').classList.toggle('on', s.my==='dislike'); MYK = s.my||''; if (s.prog != null) { window.__gsProg = s.prog; if (window.__gsTryResume) window.__gsTryResume(); } if (s.comments != null) $('gsCm').textContent = 'comments ' + s.comments; if (s.chan) $('gsSub').textContent = s.subbed ? 'subscribed' : 'subscribe'; $('gsSub').classList.toggle('on', !!s.subbed); }
 jp('/api/tube/view', { id: XID, prog: 0, meta: { t: D.t, th: D.th, c: D.c } }).catch(function(){});
 jg('/api/tube/extstate?id=' + encodeURIComponent(XID)).then(paint);
 $('gsLike').addEventListener('click', function(){ jp('/api/tube/like', { id: XID, kind: MYK==='like' ? '' : 'like' }).then(function(r){ if (r.ok) paint({ likes: r.likes, dislikes: r.dislikes, my: r.my, comments: null }); else alert(r.err || 'log in first'); }); });
@@ -14344,8 +14348,8 @@ $('gsSub').addEventListener('click', function(){ if (!D.c) { alert('channel unkn
 function drawCmts(list){
   var tops = list.filter(function(c){ return !c.parent; });
   var h = '';
-  tops.forEach(function(c){ h += '<div class="cm"><div class="tx"><div class="wh">@' + esc(c.user) + (c.pinned ? ' · pinned' : '') + (c.heart ? ' · ♥' : '') + '</div>' + esc(c.text) + '<div><button data-lk="' + c.id + '">▲ ' + (c.likes||0) + '</button> <button data-rp="' + c.id + '">reply</button>' + (c.mine ? ' <button data-dl="' + c.id + '">delete</button>' : '') + '</div></div></div>';
-    list.filter(function(x){ return x.parent === c.id; }).forEach(function(r){ h += '<div class="cm" style="margin-left:22px"><div class="tx"><div class="wh">@' + esc(r.user) + '</div>' + esc(r.text) + '</div></div>'; });
+  tops.forEach(function(c){ h += '<div class="cm"><div class="tx"><div class="wh">@' + esc(c.user) + (c.pinned ? ' · pinned' : '') + (c.heart ? ' · ♥' : '') + ' · ' + fmtAgo(c.ts) + '</div>' + tsHtml(esc(c.text)) + '<div><button data-lk="' + c.id + '">▲ ' + (c.likes||0) + '</button> <button data-rp="' + c.id + '">reply</button>' + (c.mine ? ' <button data-dl="' + c.id + '">delete</button>' : '') + '</div></div></div>';
+    list.filter(function(x){ return x.parent === c.id; }).forEach(function(r){ h += '<div class="cm" style="margin-left:22px"><div class="tx"><div class="wh">@' + esc(r.user) + ' · ' + fmtAgo(r.ts) + '</div>' + tsHtml(esc(r.text)) + '</div></div>'; });
   });
   $('gsList').innerHTML = h || '<p style="opacity:.55;font-size:13px">no comments yet — say something</p>';
   $('gsList').querySelectorAll('[data-lk]').forEach(function(b){ b.addEventListener('click', function(){ jp('/api/tube/commentmod', { vid: XID, id: b.getAttribute('data-lk'), act: 'like' }).then(function(){ loadCmts(); }); }); });
@@ -14353,8 +14357,53 @@ function drawCmts(list){
   $('gsList').querySelectorAll('[data-rp]').forEach(function(b){ b.addEventListener('click', function(){ var t = prompt('reply:'); if (t) jp('/api/tube/comment', { vid: XID, text: t, parent: b.getAttribute('data-rp') }).then(function(r){ if (r.ok) loadCmts(); else alert(r.err || 'log in first'); }); }); });
 }
 function loadCmts(){ jg('/api/tube/comments?vid=' + encodeURIComponent(XID)).then(function(r){ if (r.ok) { drawCmts(r.comments); $('gsCm').textContent = 'comments ' + r.comments.length; } }); }
-$('gsCm').addEventListener('click', function(){ $('gxSoc').classList.toggle('open'); if ($('gxSoc').classList.contains('open')) loadCmts(); });
+$('gsCm').addEventListener('click', function(){ $('gxSoc').classList.toggle('open'); if ($('gxSoc').classList.contains('open')) { loadCmts(); loadHist(); } });
 $('gsPost').addEventListener('click', function(){ var t = $('gsBox').value.trim(); if (!t) return; jp('/api/tube/comment', { vid: XID, text: t }).then(function(r){ if (r.ok) { $('gsBox').value = ''; loadCmts(); } else alert(r.err || 'log in first'); }); });
+function fmtD(s){ s = Math.max(0, Math.round(+s || 0)); var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ':' + ('0' + m).slice(-2) : m) + ':' + ('0' + x).slice(-2); }
+function fmtAgo(ts){ if (!ts) return ''; var d = Date.now() - ts; if (d < 6e4) return 'just now'; if (d < 36e5) return Math.floor(d / 6e4) + 'm ago'; if (d < 864e5) return Math.floor(d / 36e5) + 'h ago'; if (d < 6048e5) return Math.floor(d / 864e5) + 'd ago'; return new Date(ts).toLocaleDateString(); }
+function tsHtml(x){ return String(x == null ? '' : x).replace(/(^|[^0-9:])([0-9]{1,2}:)?([0-9]{1,2}):([0-5][0-9])(?![0-9:])/g, function(m, pre, h, mn, sc){ var sec = (h ? parseInt(h, 10) * 3600 : 0) + parseInt(mn, 10) * 60 + parseInt(sc, 10); return pre + '<span class="tsl" data-ts="' + sec + '" role="button" tabindex="0">' + (h || '') + mn + ':' + sc + '</span>'; }); }
+function loadHist(){
+  jp('/api/tube/library', {}).then(function(d){
+    var box = $('gsHist'); if (!box) return;
+    if (!d || !d.ok) { box.innerHTML = ''; return; }
+    var hist = (d.history || []).filter(function(v){ return v.id !== XID; }).slice(0, 5);
+    if (!hist.length) { box.innerHTML = ''; return; }
+    box.innerHTML = '<div style="font-size:11px;letter-spacing:.08em;opacity:.55;margin:2px 0 7px">PREVIOUSLY WATCHED</div>' + hist.map(function(v){
+      var raw = v.ext ? v.id.slice(3) : v.id;
+      var pct = v.prog && v.dur ? Math.min(100, Math.round(v.prog * 100 / Math.max(1, v.dur))) : 0;
+      var left = v.prog && v.dur && v.prog < v.dur - 5 ? fmtD(v.dur - v.prog) + ' left' : '';
+      var ago = v.hts ? 'watched ' + fmtAgo(v.hts) : '';
+      return '<a href="/yt/watch?v=' + raw + '" style="display:flex;gap:9px;color:#eceaf6;text-decoration:none;margin:0 0 9px;align-items:flex-start"><span style="position:relative;flex:0 0 104px;border-radius:8px;overflow:hidden;aspect-ratio:16/9;background:rgba(255,255,255,.08)">' + (v.thumb ? '<img src="' + esc(v.thumb) + '" style="width:100%;height:100%;object-fit:cover">' : '') + (pct ? '<span style="position:absolute;left:0;bottom:0;height:3px;background:#ff4e45;width:' + pct + '%"></span>' : '') + '</span><span style="flex:1;min-width:0"><span style="display:block;font-size:12.5px;font-weight:600;line-height:1.3">' + esc(v.title) + '</span><span style="display:block;font-size:11px;opacity:.55;margin-top:2px">' + esc(v.chan) + (left ? ' · ' + left : '') + (ago ? ' · ' + ago : '') + '</span></span></a>';
+    }).join('');
+  }).catch(function(){});
+}
+$('gsHistB').addEventListener('click', function(){ $('gxSoc').classList.toggle('open'); if ($('gxSoc').classList.contains('open')) { loadHist(); loadCmts(); } });
+loadHist();
+var vidEl = document.getElementById('vid');
+if (vidEl) {
+  var didResume = false;
+  window.__gsTryResume = function(){ if (didResume) return; if (window.__gsProg > 8 && vidEl.duration && window.__gsProg < vidEl.duration - 5) { didResume = true; try { vidEl.currentTime = window.__gsProg; } catch (e) {} } };
+  vidEl.addEventListener('loadedmetadata', function(){ window.__gsTryResume(); });
+  var pingT = 0;
+  function pingNow(force){ var now = Date.now(); if (!force && now - pingT < 5000) return; pingT = now; if (vidEl.duration) jp('/api/tube/view', { id: XID, prog: Math.round(vidEl.currentTime || 0), meta: { t: D.t, th: D.th, c: D.c, dur: Math.round(vidEl.duration || 0) } }).catch(function(){}); }
+  vidEl.addEventListener('timeupdate', function(){ if (!vidEl.paused) pingNow(false); });
+  vidEl.addEventListener('pause', function(){ pingNow(true); });
+}
+window.gxSeek = function(sec){
+  var v = document.getElementById('vid');
+  function play(){ if (!v) return; try { v.currentTime = sec; } catch (e) {} var p = v.play(); if (p && p.catch) p.catch(function(){}); }
+  if (v && v.offsetParent !== null) { play(); return; }
+  var ms = document.getElementById('modeStream');
+  if (ms && v) { ms.click(); var n = 0; var iv = setInterval(function(){ n++; if ((v.offsetParent !== null && v.readyState >= 1) || n > 30) { clearInterval(iv); play(); } }, 250); return; }
+  if (v) play();
+};
+window.addEventListener('click', function(e){ var a = e.target && e.target.closest ? e.target.closest('.tsl') : null; if (!a) return; e.preventDefault(); e.stopPropagation(); window.gxSeek(+a.getAttribute('data-ts') || 0); }, true);
+var ydEl = document.getElementById('ydtext');
+if (ydEl) {
+  var linkDesc = function(){ if (ydEl.querySelector('.tsl')) return; var t = ydEl.textContent || ''; if (/[0-9]{1,2}:[0-5][0-9]/.test(t)) ydEl.innerHTML = tsHtml(esc(t)); };
+  try { new MutationObserver(linkDesc).observe(ydEl, { childList: true, characterData: true, subtree: true }); } catch (e) {}
+  linkDesc();
+}
 })();
 </script>`;
 }
@@ -14362,13 +14411,15 @@ function ytHomeServed() {
   const strip = `<div id="gxTubeStrip" style="display:none;max-width:1240px;margin:0 auto;padding:14px 16px 0;font-family:system-ui,sans-serif;color:#eceaf6"></div><script>
 (function(){
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function fD(s){s=Math.max(0,Math.round(+s||0));var h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+':'+('0'+m).slice(-2):m)+':'+('0'+x).slice(-2)}
+function fT(ts){var d=Date.now()-ts;if(d<6e4)return 'just now';if(d<36e5)return Math.floor(d/6e4)+'m ago';if(d<864e5)return Math.floor(d/36e5)+'h ago';if(d<6048e5)return Math.floor(d/864e5)+'d ago';return new Date(ts).toLocaleDateString()}
 fetch('/api/tube/library', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).then(function(r){ return r.json(); }).then(function(d){
   if (!d || !d.ok) return;
   var el = document.getElementById('gxTubeStrip'); if (!el) return;
   var hist = (d.history || []).slice(0, 6), later = d.later || [], subs = d.subs || [];
   if (!hist.length && !later.length && !subs.length) return;
   var h = '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><b style="font-size:15px;font-weight:800">ur 6ix<em style="font-style:normal;color:rgb(var(--acc))">tube</em></b><a href="/yt/home" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:#eceaf6;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;text-decoration:none">6ix uploads</a><a href="/yt/library" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:#eceaf6;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;text-decoration:none">library</a><a href="/yt/studio" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:#eceaf6;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;text-decoration:none">studio</a></div>';
-  if (hist.length) { h += '<div style="font-size:12px;opacity:.6;margin-bottom:6px">CONTINUE WATCHING</div><div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px">' + hist.map(function(v){ var raw = v.ext ? v.id.slice(3) : v.id; return '<a href="/yt/watch?v=' + raw + '" style="flex:0 0 190px;color:#eceaf6;text-decoration:none;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:8px;box-sizing:border-box"><span style="display:block;border-radius:9px;overflow:hidden;aspect-ratio:16/9;background:rgba(255,255,255,.08)">' + (v.thumb ? '<img src="' + esc(v.thumb) + '" style="width:100%;height:100%;object-fit:cover">' : '') + '</span><span style="display:block;font-size:12.5px;font-weight:600;margin-top:5px;line-height:1.3">' + esc(v.title) + '</span><span style="display:block;font-size:11.5px;opacity:.55">' + esc(v.chan) + '</span></a>'; }).join('') + '</div>'; }
+  if (hist.length) { h += '<div style="font-size:12px;opacity:.6;margin-bottom:6px">CONTINUE WATCHING</div><div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px">' + hist.map(function(v){ var raw = v.ext ? v.id.slice(3) : v.id; return '<a href="/yt/watch?v=' + raw + '" style="flex:0 0 190px;color:#eceaf6;text-decoration:none;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:8px;box-sizing:border-box"><span style="display:block;position:relative;border-radius:9px;overflow:hidden;aspect-ratio:16/9;background:rgba(255,255,255,.08)">' + (v.thumb ? '<img src="' + esc(v.thumb) + '" style="width:100%;height:100%;object-fit:cover">' : '') + (v.prog && v.dur ? '<span style="position:absolute;left:0;bottom:0;height:4px;background:#ff4e45;width:' + Math.min(100, Math.round(v.prog * 100 / Math.max(1, v.dur))) + '%"></span>' : '') + '</span><span style="display:block;font-size:12.5px;font-weight:600;margin-top:5px;line-height:1.3">' + esc(v.title) + '</span><span style="display:block;font-size:11.5px;opacity:.55">' + esc(v.chan) + (v.prog && v.dur && v.prog < v.dur - 5 ? ' · ' + fD(v.dur - v.prog) + ' left' : '') + (v.hts ? ' · watched ' + fT(v.hts) : '') + '</span></a>'; }).join('') + '</div>'; }
   if (subs.length) { h += '<div style="font-size:12px;opacity:.6;margin:8px 0 6px">SUBSCRIPTIONS</div><div style="display:flex;gap:8px;flex-wrap:wrap">' + subs.map(function(c){ var href = c.yt ? '/yt/search?q=' + encodeURIComponent(c.name) : '/yt/channel/' + encodeURIComponent(c.user); return '<a href="' + href + '" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#eceaf6;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:600;text-decoration:none">' + esc(c.name) + '</a>'; }).join('') + '</div>'; }
   el.innerHTML = h; el.style.display = 'block';
 }).catch(function(){});
@@ -14480,18 +14531,21 @@ function render() {
   '<div class="wrow">' + ava(v.owner, 40) + '<div style="min-width:0"><a href="/yt/channel/' + encodeURIComponent(v.owner) + '" style="color:var(--ink);text-decoration:none;font-weight:700">' + esc(ch.name) + '</a><div class="tm">' + fmtN(ch.subs) + ' subscribers</div></div>' +
   (v.mine ? '<span class="tm">ur video</span>' : '<button class="tbtn" id="bSub" type="button">' + (V.subbed ? 'subscribed' : 'subscribe') + '</button><button class="tbtn ghost sm" id="bBell" type="button">' + (V.bell ? 'bell on' : 'bell off') + '</button>') +
   '<span style="flex:1"></span><button class="tbtn ghost" id="bLike" type="button">▲ ' + fmtN(v.likes) + '</button><button class="tbtn ghost" id="bDis" type="button">▼ ' + fmtN(v.dislikes) + '</button><button class="tbtn ghost" id="bSave" type="button">save</button><button class="tbtn ghost" id="bShare" type="button">share</button><button class="tbtn ghost" id="bRep" type="button">report</button></div>' +
-  '<div class="wdesc"><b>' + fmtN(v.views) + ' views · ' + fmtT(v.created) + '</b>\\n' + esc(v.desc || '') + (v.tags && v.tags.length ? '\\n\\n' + v.tags.map(function(t){return '#'+t}).join(' ') : '') + '</div>' +
+  '<div class="wdesc"><b>' + fmtN(v.views) + ' views · ' + fmtT(v.created) + '</b>\\n' + tsHtml(esc(v.desc || '')) + (v.tags && v.tags.length ? '\\n\\n' + v.tags.map(function(t){return '#'+t}).join(' ') : '') + '</div>' +
   '<div class="tsec" style="margin-top:20px">comments <span class="tm" id="cCount"></span></div>' +
   '<div class="wrow" style="align-items:flex-start"><div style="flex:1"><textarea class="tin" id="cBox" rows="2" placeholder="add a comment…"></textarea></div><button class="tbtn" id="cPost" type="button">comment</button></div>' +
   '<div class="wrow" style="margin-top:6px"><button class="tchip on" id="cSortTop" type="button">top</button><button class="tchip" id="cSortNew" type="button">newest</button></div>' +
   '<div id="cList"></div>';
   $('wMain').innerHTML = h;
+  wireTs(document.querySelector('.wdesc'));
   $('upNext').innerHTML = '<b style="font-size:15px">up next</b><label style="font-size:12.5px;opacity:.7"><input type="checkbox" id="autoN" ' + (localStorage.getItem('tube_auto') === '0' ? '' : 'checked') + '> autoplay</label>' + V.up.map(function(x){ return '<a class="tcard" href="/yt/watch?v=' + x.id + '"><div class="tthumb">' + (x.thumb ? '<img loading="lazy" src="' + esc(x.thumb) + '">' : '') + (x.dur ? '<span class="dur">' + fmtD(x.dur) + '</span>' : '') + '</div><div><div class="tt">' + esc(x.title) + '</div><div class="tm">' + esc(x.chan) + ' · ' + fmtN(x.views) + ' views</div></div></a>'; }).join('');
   wirePlayer(v); wireActions(v, ch); loadComments('top');
 }
+function wireTs(root){ if(!root) return; root.querySelectorAll('.tsl').forEach(function(a){ a.addEventListener('click', function(){ var s = +a.getAttribute('data-ts') || 0; var vp = $('vp'); if (vp) { try { vp.currentTime = s; } catch (e) {} var p = vp.play(); if (p && p.catch) p.catch(function(){}); } }); }); }
 function wirePlayer(v) {
   var vp = $('vp'), seek = $('seek'), play = $('bPlay');
   vp.volume = 0.9;
+  vp.addEventListener('loadedmetadata', function(){ if (V && V.prog > 8 && vp.duration && V.prog < vp.duration - 5) { try { vp.currentTime = V.prog; } catch (e) {} } });
   var counted = false;
   function ping(prog) { jpost('/api/tube/view', { id: v.id, prog: Math.round(prog || 0) }).catch(function(){}); }
   vp.addEventListener('play', function(){ play.textContent = '❚❚'; if (!counted) { counted = true; ping(vp.currentTime); } });
@@ -14542,7 +14596,7 @@ function cHtml(c, v) {
   if (v.mine && !c.parent) acts += '<button data-a="pin">' + (c.pinned ? 'unpin' : 'pin') + '</button>';
   if (v.mine) acts += '<button data-a="heart">' + (c.heart ? '♥' : '♡') + '</button>';
   if (!c.mine) acts += '<button data-a="report">report</button>';
-  return '<div class="cmt" data-cid="' + c.id + '">' + ava(c.user, 34) + '<div class="body"><div class="who">' + (c.pinned ? '📌 pinned · ' : '') + '<a href="/yt/channel/' + encodeURIComponent(c.user) + '" style="color:inherit">@' + esc(c.user) + '</a> · ' + fmtT(c.ts) + (c.edited ? ' · edited' : '') + (c.heart ? ' · ♥ by creator' : '') + '</div><div class="txt">' + esc(c.text) + '</div><div class="acts">' + acts + '</div><div class="rbox"></div></div></div>';
+  return '<div class="cmt" data-cid="' + c.id + '">' + ava(c.user, 34) + '<div class="body"><div class="who">' + (c.pinned ? '📌 pinned · ' : '') + '<a href="/yt/channel/' + encodeURIComponent(c.user) + '" style="color:inherit">@' + esc(c.user) + '</a> · ' + fmtT(c.ts) + (c.edited ? ' · edited' : '') + (c.heart ? ' · ♥ by creator' : '') + '</div><div class="txt">' + tsHtml(esc(c.text)) + '</div><div class="acts">' + acts + '</div><div class="rbox"></div></div></div>';
 }
 function drawComments() {
   var v = V.video;
@@ -14551,6 +14605,7 @@ function drawComments() {
   var h = '';
   tops.forEach(function(c){ h += cHtml(c, v); var reps = CMTS.filter(function(x){ return x.parent === c.id; }); if (reps.length) { h += '<div class="replies">' + reps.map(function(r){ return cHtml(r, v); }).join('') + '</div>'; } });
   $('cList').innerHTML = h || '<p class="tempty">no comments yet — say something</p>';
+  wireTs($('cList'));
   $('cList').querySelectorAll('.cmt').forEach(function(el) {
     var cid = el.getAttribute('data-cid');
     var c = CMTS.filter(function(x){ return x.id === cid; })[0]; if (!c) return;
@@ -18685,7 +18740,7 @@ const server = http.createServer(async (req, res) => {
       const shorts = all.filter(v => v.vertical).sort((a, b) => tubeScore(b, me) - tubeScore(a, me)).slice(0, 12).map(v => vidView(v, me));
       const trend = all.slice().sort((a, b) => ((b.views || 0) + (b.likedBy || []).length * 9) - ((a.views || 0) + (a.likedBy || []).length * 9)).slice(0, 10).map(v => vidView(v, me));
       let subFeed = [], cont = [];
-      if (me) { const my = TSUBS.get(me) || {}; subFeed = all.filter(v => my[v.owner]).sort((a, b) => b.created - a.created).slice(0, 12).map(v => vidView(v, me)); cont = (THIST.get(me) || []).filter(h => h.prog > 8).map(h => { const v = TVIDEOS.get(h.v); return v && canSee(v, me) && v.dur && h.prog < v.dur - 5 ? Object.assign(vidView(v, me), { prog: h.prog }) : null; }).filter(Boolean).slice(0, 8); }
+      if (me) { const my = TSUBS.get(me) || {}; subFeed = all.filter(v => my[v.owner]).sort((a, b) => b.created - a.created).slice(0, 12).map(v => vidView(v, me)); cont = (THIST.get(me) || []).filter(h => h.prog > 8).map(h => { const v = TVIDEOS.get(h.v); return v && canSee(v, me) && v.dur && h.prog < v.dur - 5 ? Object.assign(vidView(v, me), { prog: h.prog, hts: h.ts }) : null; }).filter(Boolean).slice(0, 8); }
       const cats = [...new Set(all.map(v => v.cat).filter(Boolean))];
       return jout({ ok: true, feed: scored.slice(0, 30), shorts, trend, subFeed, cont, cats });
     }
@@ -18694,7 +18749,7 @@ const server = http.createServer(async (req, res) => {
       if (!canSee(v, me)) return jout({ ok: false, err: 'video not available' }, 404);
       const up = [...TVIDEOS.values()].filter(x => x.id !== v.id && x.vis === 'pub' && canSee(x, me)).sort((a, b) => tubeScore(b, me) - tubeScore(a, me)).slice(0, 14).map(x => vidView(x, me));
       const my = me ? (TSUBS.get(me) || {}) : {};
-      return jout({ ok: true, video: vidView(v, me), up, subbed: !!my[v.owner], bell: !!(my[v.owner] && my[v.owner].bell), chan: chanOf(v.owner) });
+      return jout({ ok: true, video: vidView(v, me), up, subbed: !!my[v.owner], bell: !!(my[v.owner] && my[v.owner].bell), chan: chanOf(v.owner), prog: me ? (((THIST.get(me) || []).find(h => h.v === v.id) || {}).prog || 0) : 0 });
     }
     if (u.pathname === '/api/tube/comments') {
       const vid = u.searchParams.get('vid') || '';
@@ -18740,7 +18795,7 @@ const server = http.createServer(async (req, res) => {
       const ev = extView(id, me);
       const my = me ? (TSUBS.get(me) || {}) : {};
       const m = TEXTMETA.get(id) || {};
-      return jout({ ok: true, likes: ev.likes, dislikes: ev.dislikes, my: ev.my, views: ev.views, comments: (TCOMMENTS.get(id) || []).length, subbed: !!my['yt:' + (m.c || '')], chan: m.c || '' });
+      return jout({ ok: true, likes: ev.likes, dislikes: ev.dislikes, my: ev.my, views: ev.views, comments: (TCOMMENTS.get(id) || []).length, subbed: !!my['yt:' + (m.c || '')], chan: m.c || '', prog: me ? (((THIST.get(me) || []).find(h => h.v === id) || {}).prog || 0) : 0, hts: me ? (((THIST.get(me) || []).find(h => h.v === id) || {}).ts || 0) : 0 });
     }
     if (u.pathname === '/api/tube/studio') {
       if (needMe()) return;
