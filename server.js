@@ -546,6 +546,8 @@ const NOTIF_JS = `(function () {
   var embedded = false; try { embedded = window.top !== window.self && !!window.top.__sixNotif; } catch (e) { embedded = false; }
   var css = document.createElement('style');
   css.textContent = '.nbadge{position:absolute;top:-5px;right:-7px;min-width:17px;height:17px;border-radius:999px;background:#dc2626;color:#fff;font-size:10.5px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 4px;z-index:6;pointer-events:none}'
+  + '.six-callwrap,.six-widget,#six-toasts,#six-msgbars{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}'
+  + '.six-call button,.six-widget button,.six-widget input,.six-msgbar button,.six-msgbar input{font-family:inherit}'
   + '#six-toasts{position:fixed;left:14px;bottom:14px;z-index:9990;display:flex;flex-direction:column;gap:8px;max-width:min(330px,86vw)}'
   + '.six-toast{background:linear-gradient(165deg,rgba(34,34,40,.92),rgba(20,20,24,.94));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.15);color:#f4f4f5;border-radius:14px;padding:11px 14px;font-size:13.5px;box-shadow:0 14px 40px rgba(0,0,0,.5);cursor:pointer;animation:sixTin .25s ease}'
   + '.six-toast b{font-weight:700}.six-toast span{display:block;color:#a1a1aa;font-size:12.5px;margin-top:1px}' + '.six-toast{display:flex;gap:10px;align-items:flex-start}' + '.six-toast .tav{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:14px}' + '.six-toast .tmain{flex:1;min-width:0}' + '.six-toast .ttop{display:flex;align-items:baseline;gap:7px;margin-bottom:1px}' + '.six-toast .ttag{font-size:9.5px;font-weight:800;letter-spacing:.13em;color:#a1a1aa;text-transform:uppercase;white-space:nowrap;display:inline}' + '.six-toast .ttime{margin-left:auto;font-size:10.5px;color:#71717a;flex:none;white-space:nowrap;display:inline}' + '.six-msgbar .mb-top b{font-size:14.5px;font-weight:800}' + '.six-msgbar .mb-when{font-size:10.5px;color:#71717a;white-space:nowrap}' + '.six-msgbar.repop{animation:sixPop .45s ease}' + '@keyframes sixPop{0%{transform:scale(1.035)}100%{transform:scale(1)}}'
@@ -564,11 +566,11 @@ const NOTIF_JS = `(function () {
   + '.cring{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(255,255,255,.35);animation:sixRingPulse 2s ease-out infinite;z-index:1}'
   + '.cring.d2{animation-delay:1s}'
   + '@keyframes sixRingPulse{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.6);opacity:0}}'
-  + '.six-call .who{font-size:23px;font-weight:800}'
+  + '.six-call .who{font-size:23px;font-weight:800;letter-spacing:-.015em}'
   + '.six-call .sub{font-size:14px}'
   + '.six-call .cbtns{display:flex;gap:64px;justify-content:center;margin-top:26px}'
   + '.six-call .cbtn{display:flex;flex-direction:column;align-items:center;gap:8px}'
-  + '.six-call .cbtn span{font-size:12.5px;color:#d4d4d8;font-weight:600}'
+  + '.six-call .cbtn span{font-size:12.5px;color:#d4d4d8;font-weight:600;letter-spacing:.02em}'
   + '.six-call .cbtn button{width:68px;height:68px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0}'
   + '.six-call .bob{animation:sixBob 1.1s ease-in-out infinite}'
   + '@keyframes sixBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}'
@@ -583,7 +585,7 @@ const NOTIF_JS = `(function () {
   + '.six-widget .wph .av{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:800;color:#fff}'
   + '.six-widget .wl{display:none;position:absolute;top:10px;right:10px;width:74px;height:98px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.3);background:#000;z-index:2}'
   + '.six-widget .wbar{display:flex;align-items:center;gap:8px;padding:10px 12px 4px}'
-  + '.six-widget .wmeta{flex:1;min-width:0}.six-widget .wname{font-weight:700;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.six-widget .wstat{color:#a1a1aa;font-size:12.5px}'
+  + '.six-widget .wmeta{flex:1;min-width:0}.six-widget .wname{font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.six-widget .wstat{color:#a7a7b1;font-size:12.5px;font-variant-numeric:tabular-nums;letter-spacing:.01em}'
   + '.six-widget .wctl{display:flex;gap:8px;padding:8px 12px 12px}'
   + '.six-widget .wbtn{flex:1;font-size:13px;font-weight:600;padding:8px 0;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#f4f4f5;cursor:pointer}'
   + '.six-widget .wbtn.we{background:#dc2626;border-color:#dc2626;color:#fff;flex:1}'
@@ -597,7 +599,7 @@ const NOTIF_JS = `(function () {
   + '.six-widget .wctl{gap:8px;justify-content:space-between;padding:10px 14px 14px}'
   + '.six-widget .wdock{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;min-width:0}'
   + '.six-widget .wdock .wbtn{width:52px;height:52px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;padding:0}'
-  + '.six-widget .wdock span{font-size:10px;color:#a1a1aa;font-weight:600;white-space:nowrap}'
+  + '.six-widget .wdock span{font-size:10.5px;color:#b8b8c0;font-weight:700;letter-spacing:.03em;white-space:nowrap}'
   + '.six-widget .wdock .wbtn.we{width:60px;height:52px;background:#dc2626;border-color:#dc2626;color:#fff}'
   + '.six-widget .wdock .wbtn.off{background:#f4f4f5;border-color:#f4f4f5;color:#111}'
   + '.six-widget .wl{width:86px;height:118px;border-radius:14px;top:auto;bottom:104px;right:12px}'
@@ -2265,6 +2267,9 @@ body #gbar{background:rgba(9,9,13,.8);-webkit-backdrop-filter:blur(16px) saturat
 body[data-font="rounded"]{font-family:'Nunito','Inter',system-ui,sans-serif}
 body[data-font="grot"]{font-family:'Space Grotesk','Inter',system-ui,sans-serif}
 body[data-font="mono"]{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace}
+body[data-font="rounded"] .six-callwrap,body[data-font="rounded"] .six-widget,body[data-font="rounded"] #six-toasts,body[data-font="rounded"] #six-msgbars{font-family:'Nunito','Inter',system-ui,sans-serif}
+body[data-font="grot"] .six-callwrap,body[data-font="grot"] .six-widget,body[data-font="grot"] #six-toasts,body[data-font="grot"] #six-msgbars{font-family:'Space Grotesk','Inter',system-ui,sans-serif}
+body[data-font="mono"] .six-callwrap,body[data-font="mono"] .six-widget,body[data-font="mono"] #six-toasts,body[data-font="mono"] #six-msgbars{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace}
 body[data-font="mono"] h1,body[data-font="mono"] h2{letter-spacing:-.04em}
 body[data-radius="sharp"]{--gxrad:6px}
 body[data-radius="soft"]{--gxrad:14px}
@@ -4218,7 +4223,7 @@ body.frview .hcall{display:none}
 /* ---------- voice stage ---------- */
 .callbar{background:#121214;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:10px 12px}
 .main6 #vmembers,.main6 #vcontrols{margin:10px 16px 0}
-#vstage{position:fixed;inset:0;z-index:90;background:#08080a;flex-direction:column}
+#vstage{position:fixed;inset:0;z-index:90;background:#08080a;flex-direction:column;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 .vs-head{display:flex;align-items:center;gap:10px;padding:14px 18px;padding-top:max(14px,env(safe-area-inset-top));border-bottom:1px solid rgba(255,255,255,.07);background:#0c0c0e;flex:none;flex-wrap:wrap}
 .vs-brand{font-weight:800;font-size:16px;color:#fafafa}
 .vs-brand span{color:#8b8b93}
@@ -5204,7 +5209,7 @@ function callPage() {
 <title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 body{display:block;padding:0}
-.callapp{display:flex;flex-direction:column;height:100vh;height:100dvh;background:#070709;text-align:left;position:relative;overflow:hidden}
+.callapp{display:flex;flex-direction:column;height:100vh;height:100dvh;background:#070709;text-align:left;position:relative;overflow:hidden;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 .callapp::before{content:'';position:absolute;inset:0;background:radial-gradient(900px 520px at 50% -12%,rgba(var(--acc),.17),transparent 62%),radial-gradient(760px 460px at 88% 112%,rgba(var(--acc2),.11),transparent 62%);pointer-events:none}
 .vs-head{position:relative;z-index:3;display:flex;align-items:center;gap:10px;padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));flex:none;flex-wrap:wrap}
 .vs-brand{font-weight:800;font-size:16px;letter-spacing:-.01em}
@@ -13345,8 +13350,8 @@ function shellPage(servers) {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script>
-<title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-<style>html,body{margin:0;height:100%;height:100dvh;background:#070518;overflow:hidden}iframe{position:fixed;inset:0;width:100%;height:100%;height:100dvh;border:0}
+<title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">${FONT_LINKS}
+<style>html,body{margin:0;height:100%;height:100dvh;background:#070518;overflow:hidden;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}iframe{position:fixed;inset:0;width:100%;height:100%;height:100dvh;border:0}
 
 
 /* MINIMAL v146 */
