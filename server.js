@@ -2738,6 +2738,12 @@ const EXTRA_GAMES = [
   { t: 'Geometry Dash Lite', ad: 20261109, u: 'https://g.w3technic.com/games/_iso/geometrydashlite.one/play/', img: 'https://play-lh.googleusercontent.com/StEbdIF-rV4EoYfIdaP07zClA50KSs-i9o12kceyecfw8R0nwYfzqV64h3UlEzh_fCqxyNCj7Bb7ro86pfYDsSU=w512-h512', c: 'Arcade', w: 960, h: 540, m: 1 },
   { t: 'Paper.io', ad: 20261109, u: 'https://paperio2.click/play', img: 'https://play-lh.googleusercontent.com/gVtEUeaxaxBsvbbMXK4QiEldapksGxya07DcI-6w3U7FI3RKNulhbw2Rp3zKee_yIIIu16VEFU4Nzrr-Mlp-=w512-h512', c: 'Arcade', w: 800, h: 600, m: 1 },
   { t: 'HexTank.io', ad: 20261109, u: 'https://hextank.io/', img: 'https://hextank.io/smallLogo.png', c: '3D', w: 800, h: 600 },
+  { t: 'Taipei Rush', ad: 20261115, u: 'https://www.taipei-rush.app/', img: 'https://www.taipei-rush.app/og/taipei.jpg', c: 'Action', w: 960, h: 540 },
+  { t: 'Crime Wars San Andreas', ad: 20261115, u: 'https://html5.gamemonetize.co/zgkpu22p8qekzct8z4b95lv69rh6s58c/', img: 'https://img.gamemonetize.com/zgkpu22p8qekzct8z4b95lv69rh6s58c/512x384.jpg', c: 'Action', w: 1920, h: 1080 },
+  { t: 'Grand Crime City', ad: 20261115, u: 'https://html5.gamemonetize.co/ccons3f0b0o17o9zzx7idewbiro075i1/', img: 'https://img.gamemonetize.com/ccons3f0b0o17o9zzx7idewbiro075i1/512x384.jpg', c: 'Shooting', w: 800, h: 600 },
+  { t: 'Miami City Crime Simulator Game', ad: 20261115, u: 'https://html5.gamemonetize.co/xprw37zlon1jvygprtro5gdoobefune4/', img: 'https://img.gamemonetize.com/xprw37zlon1jvygprtro5gdoobefune4/512x384.jpg', c: 'Adventure', w: 800, h: 600 },
+  { t: 'Vegas City Gangster 2024', ad: 20261115, u: 'https://html5.gamemonetize.co/aannaasrcot1y6q0g667wiu0se7uw0vt/', img: 'https://img.gamemonetize.com/aannaasrcot1y6q0g667wiu0se7uw0vt/512x384.jpg', c: 'Action', w: 800, h: 600 },
+  { t: 'GTA New York', ad: 20261115, u: 'https://html5.gamemonetize.co/zt4qt847w9o5z06a4ayj5kwy2p9eyifi/', img: 'https://img.gamemonetize.com/zt4qt847w9o5z06a4ayj5kwy2p9eyifi/512x384.jpg', c: 'Action', w: 900, h: 600 },
 ];
 const FALLBACK_GAMES = [
   { t: 'Nutty Rush Kart', u: 'https://html5.gamemonetize.co/jo8widlpg0usj47eix91m74q1jzvon00/', img: 'https://img.gamemonetize.com/jo8widlpg0usj47eix91m74q1jzvon00/512x384.jpg', c: 'Racing', w: 800, h: 600 },
