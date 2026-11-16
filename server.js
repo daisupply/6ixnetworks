@@ -8395,14 +8395,15 @@ document.getElementById('wTitle').textContent = ttl;
 document.getElementById('wMeta').textContent = (kind === 'series' ? 'show' : 'movie') + (yr ? ' \u00b7 ' + yr : '');
 if(kind === 'series') document.getElementById('seRow').hidden = false;
 var SRCS = [
-  { n: 'vidsrc', w: 1, m: function(x){ return 'https://vidsrc.to/embed/movie/' + x; }, t: function(x, s, e){ return 'https://vidsrc.to/embed/tv/' + x + '/' + s + '/' + e; } },
-  { n: 'vidlink', m: function(x){ return 'https://vidlink.pro/movie/' + x; }, t: function(x, s, e){ return 'https://vidlink.pro/tv/' + x + '/' + s + '/' + e; } },
-  { n: 'videasy', w: 1, m: function(x){ return 'https://player.videasy.to/movie/' + x; }, t: function(x, s, e){ return 'https://player.videasy.to/tv/' + x + '/' + s + '/' + e; } },
-  { n: 'vidfast', w: 1, m: function(x){ return 'https://vidfast.vc/movie/' + x; }, t: function(x, s, e){ return 'https://vidfast.vc/tv/' + x + '/' + s + '/' + e; } },
-  { n: '2embed', w: 1, m: function(x){ return 'https://www.2embed.cc/embed/' + x; }, t: function(x, s, e){ return 'https://www.2embed.cc/embedtv/' + x + '&s=' + s + '&e=' + e; } },
-  { n: 'autoembed', w: 1, m: function(x){ return 'https://autoembed.me/movie/imdb/' + x; }, t: function(x, s, e){ return 'https://autoembed.me/tv/imdb/' + x + '/' + s + '/' + e; } },
-  { n: '111movies', m: function(x){ return 'https://111movies.com/movie/' + x; }, t: function(x, s, e){ return 'https://111movies.com/tv/' + x + '/' + s + '/' + e; } },
-  { n: 'multiembed', m: function(x){ return 'https://multiembed.mov/?video_id=' + x + '&tmdb=0'; }, t: function(x, s, e){ return 'https://multiembed.mov/?video_id=' + x + '&tmdb=0&s=' + s + '&e=' + e; } }
+{ n: 'pw', special: true }, // Playwright direct rip
+{ n: 'vidsrc', w: 1, m: function(x){ return 'https://vidsrc.to/embed/movie/' + x; }, t: function(x, s, e){ return 'https://vidsrc.to/embed/tv/' + x + '/' + s + '/' + e; } },
+{ n: 'vidlink', m: function(x){ return 'https://vidlink.pro/movie/' + x; }, t: function(x, s, e){ return 'https://vidlink.pro/tv/' + x + '/' + s + '/' + e; } },
+{ n: 'videasy', w: 1, m: function(x){ return 'https://player.videasy.to/movie/' + x; }, t: function(x, s, e){ return 'https://player.videasy.to/tv/' + x + '/' + s + '/' + e; } },
+{ n: 'vidfast', w: 1, m: function(x){ return 'https://vidfast.vc/movie/' + x; }, t: function(x, s, e){ return 'https://vidfast.vc/tv/' + x + '/' + s + '/' + e; } },
+{ n: '2embed', w: 1, m: function(x){ return 'https://www.2embed.cc/embed/' + x; }, t: function(x, s, e){ return 'https://www.2embed.cc/embedtv/' + x + '&s=' + s + '&e=' + e; } },
+{ n: 'autoembed', w: 1, m: function(x){ return 'https://autoembed.me/movie/imdb/' + x; }, t: function(x, s, e){ return 'https://autoembed.me/tv/imdb/' + x + '/' + s + '/' + e; } },
+{ n: '111movies', m: function(x){ return 'https://111movies.com/movie/' + x; }, t: function(x, s, e){ return 'https://111movies.com/tv/' + x + '/' + s + '/' + e; } },
+{ n: 'multiembed', m: function(x){ return 'https://multiembed.mov/?video_id=' + x + '&tmdb=0'; }, t: function(x, s, e){ return 'https://multiembed.mov/?video_id=' + x + '&tmdb=0&s=' + s + '&e=' + e; } }
 ];
 function embedUrl(){
   var s = Math.max(1, +document.getElementById('wS').value || 1), e = Math.max(1, +document.getElementById('wE').value || 1);
@@ -8589,14 +8590,52 @@ function loadMeta(){
   }).catch(function(){});
 }
 function loadPlayer(){
-  aliveSaved = false;
-  var ld = document.getElementById('mvLoad');
-  ld.style.opacity = '1';
-  var fr = document.getElementById('mvFrame');
-  setProv('');
-  syncSrcUI();
-  fr.src = route === 'tunnel' ? ('/go?q=' + encodeURIComponent(embedUrl())) : route === 'lite' ? ('/gproxy/' + b64url(embedUrl())) : embedUrl();
-  armAuto();
+aliveSaved = false;
+var ld = document.getElementById('mvLoad');
+ld.style.opacity = '1';
+var fr = document.getElementById('mvFrame');
+setProv('');
+syncSrcUI();
+
+var sc = SRCS[srcMode] || SRCS[0];
+
+// Special case: Playwright direct rip
+if (sc.special && sc.n === 'pw') {
+fr.src = 'about:blank';
+fr.hidden = true;
+document.getElementById('mvVid').hidden = false;
+ld.textContent = 'pw is ripping the file…';
+
+var s = Math.max(1, +document.getElementById('wS').value || 1);
+var e = Math.max(1, +document.getElementById('wE').value || 1);
+
+fetch('/api/pw?tt=' + encodeURIComponent(tt) + '&kind=' + kind + '&s=' + s + '&e=' + e)
+.then(function(r){ return r.json(); })
+.then(function(o){
+if (o && o.ok && o.file) {
+setProv('pw · file');
+streamPlay(o.file, o.raw || null, null, 'pw');
+} else {
+ld.textContent = 'pw couldnt rip this one — try another source';
+srcMode = 1;
+syncSrcUI();
+loadPlayer();
+}
+})
+.catch(function(){
+ld.textContent = 'pw failed — try another source';
+srcMode = 1;
+syncSrcUI();
+loadPlayer();
+});
+return;
+}
+
+// Normal iframe sources
+document.getElementById('mvVid').hidden = true;
+fr.hidden = false;
+fr.src = route === 'tunnel' ? ('/go?q=' + encodeURIComponent(embedUrl())) : route === 'lite' ? ('/gproxy/' + b64url(embedUrl())) : embedUrl();
+armAuto();
 }
 var autoTimer = null;
 function playerAlive(){
@@ -18310,6 +18349,34 @@ const server = http.createServer(async (req, res) => {
     if (!rtt) return res.end(JSON.stringify({ ok: false, order: [], scores: {} }));
     return res.end(JSON.stringify(await resolveSources(rtt, rkind, rs, re)));
   }
+  // Dedicated Playwright rip endpoint
+if (u.pathname === '/api/pw' && req.method === 'GET') {
+const tt = String(u.searchParams.get('tt') || '').slice(0, 20);
+const kind = u.searchParams.get('kind') === 'series' ? 'series' : 'movie';
+const s = Math.max(1, parseInt(u.searchParams.get('s') || '1', 10) || 1);
+const e = Math.max(1, parseInt(u.searchParams.get('e') || '1', 10) || 1);
+
+res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-cache' });
+
+if (!/^tt\d{6,}$/.test(tt)) {
+return res.end(JSON.stringify({ ok: false, error: 'bad id' }));
+}
+
+try {
+const result = await tryDirectStream(tt, kind, s, e);
+if (result && result.file) {
+return res.end(JSON.stringify({
+ok: true,
+file: result.file,
+raw: result.raw || null,
+name: result.name || 'pw'
+}));
+}
+return res.end(JSON.stringify({ ok: false, error: 'no stream found' }));
+} catch (err) {
+return res.end(JSON.stringify({ ok: false, error: err.message }));
+}
+}
   if (u.pathname === '/api/stream/resolve' && req.method === 'GET') {
     const stt = String(u.searchParams.get('tt') || '').slice(0, 20);
     const skind = u.searchParams.get('kind') === 'series' ? 'series' : 'movie';
