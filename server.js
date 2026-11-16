@@ -16119,6 +16119,136 @@ async function cinemetaList(kind, q, genre, relMode, page) {
   if (!q) mvCache[ck] = { at: Date.now(), list: out };
   return out;
 }
+// ---------- Playwright Direct Stream Extractor ----------
+const { chromium } = require('playwright');
+
+let browserPromise = null;
+
+async function getBrowser() {
+if (!browserPromise) {
+browserPromise = chromium.launch({
+headless: true,
+args: [
+'--no-sandbox',
+'--disable-setuid-sandbox',
+'--disable-dev-shm-usage',
+'--disable-gpu'
+]
+});
+}
+return browserPromise;
+}
+
+async function extractWithPlaywright(embedUrl) {
+let browser, context, page;
+try {
+browser = await getBrowser();
+context = await browser.newContext({
+userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+viewport: { width: 1280, height: 720 }
+});
+page = await context.newPage();
+
+const found = new Set();
+
+page.on('response', (response) => {
+const url = response.url();
+const type = (response.headers()['content-type'] || '').toLowerCase();
+if (
+url.includes('.m3u8') ||
+url.includes('.mp4') ||
+type.includes('mpegurl') ||
+type.includes('application/vnd.apple.mpegurl') ||
+type.includes('video/')
+) {
+// Ignore tiny or obvious non-media files
+if (!url.includes('favicon') && !url.includes('.js') && !url.includes('.css')) {
+found.add(url);
+}
+}
+});
+
+await page.goto(embedUrl, {
+waitUntil: 'domcontentloaded',
+timeout: 15000
+});
+
+// Give the player time to request the stream
+await page.waitForTimeout(7000);
+
+// Try clicking common play buttons if they exist
+try {
+await page.click('button, .play, .vjs-big-play-button, [aria-label*="play" i]', { timeout: 2000 });
+await page.waitForTimeout(3000);
+} catch {}
+
+await context.close();
+
+const urls = [...found];
+if (urls.length === 0) return null;
+
+// Prefer m3u8 over mp4
+const m3u8 = urls.find(u => u.includes('.m3u8'));
+const best = m3u8 || urls[0];
+
+return best;
+} catch (err) {
+console.log('[playwright] error:', err.message);
+try { if (context) await context.close(); } catch {}
+return null;
+}
+}
+
+function makeProxiedStream(absoluteUrl) {
+try {
+const u = new URL(absoluteUrl);
+const base = u.origin + u.pathname.substring(0, u.pathname.lastIndexOf('/') + 1);
+const file = u.pathname.split('/').pop() + (u.search || '');
+return '/px/' + b64urlEncode(base) + '/' + file;
+} catch {
+return null;
+}
+}
+
+const directStreamCache = new Map();
+
+async function tryDirectStream(tt, kind, s, e) {
+const key = `${tt}|${kind}|${s}|${e}`;
+const cached = directStreamCache.get(key);
+if (cached && Date.now() - cached.at < 12 * 60 * 1000) {
+return cached;
+}
+
+const isTv = kind === 'series';
+const embed = isTv
+? `https://vidsrc.to/embed/tv/${tt}/${s}/${e}`
+: `https://vidsrc.to/embed/movie/${tt}`;
+
+console.log('[direct] Playwright trying:', embed);
+
+const rawUrl = await extractWithPlaywright(embed);
+if (!rawUrl) {
+console.log('[direct] Playwright found nothing');
+return null;
+}
+
+const proxied = makeProxiedStream(rawUrl);
+if (!proxied) return null;
+
+const entry = {
+at: Date.now(),
+name: 'vidsrc',
+file: proxied,
+raw: rawUrl
+};
+
+directStreamCache.set(key, entry);
+if (directStreamCache.size > 150) directStreamCache.clear();
+
+console.log('[direct] success →', proxied);
+return entry;
+}
+
 // ---------- six source ranking (server-side liveness probes) ----------
 // SRCS_PROBE mirrors watchPage's client SRCS array — same 11 sources,
 // same order, same URL shapes. Keep the two in sync: index i here is
@@ -16196,12 +16326,31 @@ function titleStrong(qn, cn) {
   return false;
 }
 async function streamResolve(tt, kind, s, e, title, yr) {
-  const out = [];
-  const jobs = [];
-  // iframe family: probe states from the ranking engine (cached)
-  jobs.push(resolveSources(tt, kind, s, e).then(function (r) {
-    for (const ix of r.order) out.push({ id: 'src' + ix, name: SRCS_PROBE[ix].n, mode: 'iframe', state: r.scores[ix] });
-  }).catch(function () { }));
+const out = [];
+const jobs = [];
+
+// 1. Try real direct streams first
+jobs.push((async function () {
+const direct = await tryDirectStream(tt, kind, s, e);
+if (direct && direct.file) {
+out.push({
+id: direct.name || 'direct',
+name: direct.name || 'direct',
+mode: 'file',
+state: 'ready',
+file: direct.file,
+raw: direct.raw || null
+});
+}
+})().catch(() => {}));
+
+// 2. iframe family (fallback)
+jobs.push(resolveSources(tt, kind, s, e).then(function (r) {
+for (const ix of r.order) {
+out.push({ id: 'src' + ix, name: SRCS_PROBE[ix].n, mode: 'iframe', state: r.scores[ix] });
+}
+}).catch(() => {}));
+
   if (title) {
     // the vault: claimed ONLY on a strong title match in the archive
     // index — never on a vague or partial resemblance. the hunt
