@@ -16287,6 +16287,94 @@ if (directStreamCache.size > 150) directStreamCache.clear();
 console.log('[direct] success →', proxied);
 return entry;
 }
+// ---------- Progressive Rip + Stream (yt-dlp) ----------
+const { spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+
+const RIP_CACHE_DIR = path.join(__dirname, 'ripped-cache');
+const RIP_CACHE_MS = 60 * 60 * 1000; // 1 hour
+
+if (!fs.existsSync(RIP_CACHE_DIR)) {
+fs.mkdirSync(RIP_CACHE_DIR, { recursive: true });
+}
+
+// Cleanup old files every 10 minutes
+setInterval(() => {
+try {
+const now = Date.now();
+for (const file of fs.readdirSync(RIP_CACHE_DIR)) {
+const full = path.join(RIP_CACHE_DIR, file);
+try {
+const stats = fs.statSync(full);
+if (now - stats.mtimeMs > RIP_CACHE_MS) {
+fs.unlinkSync(full);
+console.log('[rip] deleted:', file);
+}
+} catch {}
+}
+} catch {}
+}, 10 * 60 * 1000);
+
+function getRipPath(tt, kind, s, e) {
+const name = kind === 'series' ? `${tt}_S${s}E${e}` : tt;
+return path.join(RIP_CACHE_DIR, name + '.mp4');
+}
+
+const activeRips = new Map();
+
+function startRip(tt, kind, s, e) {
+const filePath = getRipPath(tt, kind, s, e);
+const key = filePath;
+
+if (activeRips.has(key)) return activeRips.get(key);
+
+if (fs.existsSync(filePath)) {
+const stats = fs.statSync(filePath);
+if (Date.now() - stats.mtimeMs < RIP_CACHE_MS && stats.size > 5_000_000) {
+return Promise.resolve(filePath);
+}
+}
+
+const url = kind === 'series'
+? `https://vidsrc.to/embed/tv/${tt}/${s}/${e}`
+: `https://vidsrc.to/embed/movie/${tt}`;
+
+console.log('[rip] starting progressive download:', url);
+
+const promise = new Promise((resolve, reject) => {
+const args = [
+'--no-playlist',
+'-f', 'bv*+ba/b',
+'--merge-output-format', 'mp4',
+'--newline',
+'-o', filePath,
+url
+];
+
+const proc = spawn('yt-dlp', args, { stdio: ['ignore', 'pipe', 'pipe'] });
+
+proc.on('close', (code) => {
+activeRips.delete(key);
+if (code === 0 && fs.existsSync(filePath) && fs.statSync(filePath).size > 1_000_000) {
+console.log('[rip] finished:', filePath);
+resolve(filePath);
+} else {
+console.log('[rip] failed with code', code);
+try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch {}
+reject(new Error('yt-dlp failed'));
+}
+});
+
+proc.on('error', (err) => {
+activeRips.delete(key);
+reject(err);
+});
+});
+
+activeRips.set(key, promise);
+return promise;
+}
 
 // ---------- six source ranking (server-side liveness probes) ----------
 // SRCS_PROBE mirrors watchPage's client SRCS array — same 11 sources,
@@ -18376,6 +18464,75 @@ return res.end(JSON.stringify({ ok: false, error: 'no stream found' }));
 } catch (err) {
 return res.end(JSON.stringify({ ok: false, error: err.message }));
 }
+}
+  // Progressive rip + stream
+if (u.pathname === '/api/rip' && req.method === 'GET') {
+const tt = String(u.searchParams.get('tt') || '').slice(0, 20);
+const kind = u.searchParams.get('kind') === 'series' ? 'series' : 'movie';
+const s = Math.max(1, parseInt(u.searchParams.get('s') || '1', 10) || 1);
+const e = Math.max(1, parseInt(u.searchParams.get('e') || '1', 10) || 1);
+
+if (!/^tt\d{6,}$/.test(tt)) {
+res.writeHead(400, { 'content-type': 'application/json' });
+return res.end(JSON.stringify({ ok: false, error: 'bad id' }));
+}
+
+const filePath = getRipPath(tt, kind, s, e);
+
+// Start download
+startRip(tt, kind, s, e).catch(() => {});
+
+// Wait until we have some data
+const waitForData = async () => {
+const maxWait = 45000;
+const start = Date.now();
+while (Date.now() - start < maxWait) {
+if (fs.existsSync(filePath)) {
+const stats = fs.statSync(filePath);
+if (stats.size > 800000) return true;
+}
+await new Promise(r => setTimeout(r, 800));
+}
+return fs.existsSync(filePath);
+};
+
+const hasData = await waitForData();
+if (!hasData) {
+res.writeHead(200, { 'content-type': 'application/json' });
+return res.end(JSON.stringify({ ok: false, error: 'still downloading / failed' }));
+}
+
+const stats = fs.statSync(filePath);
+const range = req.headers.range;
+
+if (range) {
+const parts = range.replace(/bytes=/, '').split('-');
+let start = parseInt(parts[0], 10);
+let end = parts[1] ? parseInt(parts[1], 10) : stats.size - 1;
+
+if (start >= stats.size) start = Math.max(0, stats.size - 1);
+if (end >= stats.size) end = stats.size - 1;
+
+const chunkSize = (end - start) + 1;
+
+res.writeHead(206, {
+'content-range': `bytes ${start}-${end}/${stats.size}`,
+'accept-ranges': 'bytes',
+'content-length': chunkSize,
+'content-type': 'video/mp4',
+'cache-control': 'no-cache'
+});
+fs.createReadStream(filePath, { start, end }).pipe(res);
+} else {
+res.writeHead(200, {
+'content-length': stats.size,
+'content-type': 'video/mp4',
+'accept-ranges': 'bytes',
+'cache-control': 'no-cache'
+});
+fs.createReadStream(filePath).pipe(res);
+}
+return;
 }
   if (u.pathname === '/api/stream/resolve' && req.method === 'GET') {
     const stt = String(u.searchParams.get('tt') || '').slice(0, 20);
