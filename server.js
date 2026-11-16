@@ -8822,40 +8822,22 @@ function checkStream(){
     var v = document.getElementById('mvVid');
     v.addEventListener('canplay', function(){ if (streamOn) document.getElementById('mvLoad').style.opacity = '0'; });
     v.addEventListener('error', function(){ if (streamOn) { var ld = document.getElementById('mvLoad'); ld.style.opacity = '1'; ld.textContent = 'stream hit a wall — tap stream it again, or tap it once more to flip back to the embed'; } }, true);
-   if (fp.mode === 'file' && (fp.file || fp.arc)) {
-lab.textContent = (fp.name || 'direct') + ' · file';
-btn.addEventListener('click', function(){
-if (streamOn) { streamOff(); return; }
-if (streamBusy) return;
-streamBusy = true;
-var ld = document.getElementById('mvLoad');
-ld.style.opacity = '1';
-ld.textContent = 'loading the stream…';
-
-if (fp.file) {
-// New direct extractors (vidsrc / 2embed) – already a /px/ URL
-streamBusy = false;
-streamPlay(fp.file, fp.raw || null, null, fp.name || 'direct');
-} else if (fp.arc) {
-// Original vault path
-fetch('/api/arc?id=' + encodeURIComponent(fp.arc)).then(function(r){ return r.json(); }).then(function(a){
-streamBusy = false;
-if (!a || !a.ok || !a.file) {
-ld.style.opacity = streamOn ? '1' : '0';
-ld.textContent = 'couldnt pull the file — using embed';
-return;
-}
-streamPlay(a.file, a.raw, a.mb, 'the vault');
-}).catch(function(){ streamBusy = false; });
-}
-});
-
-// Auto-start the real file when available
-if (!userPicked && !streamOn && Date.now() - csT0 < 12000) {
-setTimeout(function(){ btn.click(); }, 350);
-}
-} else if (fp.id === 'jellyfin') {
- else if (fp.id === 'jellyfin') {
+    if (fp.id === 'archive') {
+      lab.textContent = 'in the vault as a real file';
+      btn.addEventListener('click', function(){
+        if (streamOn) { streamOff(); return; }
+        if (streamBusy) return; streamBusy = true;
+        var ld = document.getElementById('mvLoad'); ld.style.opacity = '1'; ld.textContent = 'six is finding the file…';
+        fetch('/api/arc?id=' + encodeURIComponent(fp.arc)).then(function(r){ return r.json(); }).then(function(a){
+          streamBusy = false;
+          if (!a || !a.ok || !a.file) { ld.style.opacity = streamOn ? '1' : '0'; ld.textContent = 'six couldnt pull the file for this one — embed it is'; return; }
+          streamPlay(a.file, a.raw, a.mb, 'the vault');
+        }).catch(function(){ streamBusy = false; });
+      });
+      // v429: a verified real file IS the direct stream - play it
+      // straight away instead of hiding it behind a button tap.
+      if (!userPicked && !streamOn && Date.now() - csT0 < 12000) btn.click();
+    } else if (fp.id === 'jellyfin') {
       lab.textContent = 'in ur library as a real file';
       btn.addEventListener('click', function(){
         if (streamOn) { streamOff(); return; }
@@ -16137,126 +16119,6 @@ async function cinemetaList(kind, q, genre, relMode, page) {
   if (!q) mvCache[ck] = { at: Date.now(), list: out };
   return out;
 }
-// ---------- Direct stream extractors (fully proxied) ----------
-const directStreamCache = new Map();
-
-function makeProxiedStream(absoluteUrl) {
-try {
-const u = new URL(absoluteUrl);
-// Force everything through /px/ so the browser never sees the real host
-const base = u.origin + u.pathname.substring(0, u.pathname.lastIndexOf('/') + 1);
-const file = u.pathname.split('/').pop() + (u.search || '');
-return '/px/' + b64urlEncode(base) + '/' + file;
-} catch {
-return null;
-}
-}
-
-async function extractVidsrc(tt, kind, s, e) {
-const isTv = kind === 'series';
-const embed = isTv
-? `https://vidsrc.to/embed/tv/${tt}/${s}/${e}`
-: `https://vidsrc.to/embed/movie/${tt}`;
-
-try {
-const r1 = await fetch(embed, {
-headers: { 'user-agent': BROWSER_UA, 'accept': 'text/html' },
-signal: AbortSignal.timeout(6500)
-});
-if (!r1.ok) return null;
-const html = await r1.text();
-
-const idMatch = html.match(/data-id=["']([^"']+)["']/);
-if (!idMatch) return null;
-const dataId = idMatch[1];
-
-const r2 = await fetch(`https://vidsrc.to/ajax/embed/episode/${dataId}/sources`, {
-headers: { 'user-agent': BROWSER_UA, 'referer': embed },
-signal: AbortSignal.timeout(5000)
-});
-if (!r2.ok) return null;
-const sourcesJson = await r2.json();
-if (!sourcesJson?.result?.length) return null;
-
-const preferred = sourcesJson.result.find(x => /vidplay|cloudstream|filemoon|rabbitstream/i.test(x.title || '')) || sourcesJson.result[0];
-if (!preferred?.id) return null;
-
-const r3 = await fetch(`https://vidsrc.to/ajax/embed/source/${preferred.id}`, {
-headers: { 'user-agent': BROWSER_UA, 'referer': embed },
-signal: AbortSignal.timeout(5000)
-});
-if (!r3.ok) return null;
-const srcData = await r3.json();
-let finalUrl = srcData?.result?.url;
-if (!finalUrl) return null;
-
-if (!/^https?:\/\//i.test(finalUrl)) {
-try { finalUrl = Buffer.from(finalUrl, 'base64').toString('utf8'); } catch {}
-}
-if (!/^https?:\/\//i.test(finalUrl)) return null;
-
-const proxied = makeProxiedStream(finalUrl);
-if (!proxied) return null;
-
-return { name: 'vidsrc', file: proxied, raw: finalUrl };
-} catch {
-return null;
-}
-}
-
-async function extract2embed(tt, kind, s, e) {
-const isTv = kind === 'series';
-const embed = isTv
-? `https://www.2embed.cc/embedtv/${tt}&s=${s}&e=${e}`
-: `https://www.2embed.cc/embed/${tt}`;
-
-try {
-const r = await fetch(embed, {
-headers: {
-'user-agent': BROWSER_UA,
-'accept': 'text/html',
-'referer': 'https://www.2embed.cc/'
-},
-signal: AbortSignal.timeout(7000)
-});
-if (!r.ok) return null;
-const html = await r.text();
-
-const match = html.match(/(https?:\/\/[^"'\\\s]+\.m3u8[^"'\\\s]*)/i)
-|| html.match(/file\s*[:=]\s*["'](https?:\/\/[^"']+)["']/i)
-|| html.match(/source\s*[:=]\s*["'](https?:\/\/[^"']+)["']/i);
-
-if (!match?.[1]) return null;
-
-let finalUrl = match[1].replace(/\\u0026/g, '&').replace(/\\\//g, '/');
-if (!/^https?:\/\//i.test(finalUrl)) return null;
-
-const proxied = makeProxiedStream(finalUrl);
-if (!proxied) return null;
-
-return { name: '2embed', file: proxied, raw: finalUrl };
-} catch {
-return null;
-}
-}
-
-async function tryDirectStream(tt, kind, s, e) {
-const key = tt + '|' + kind + '|' + s + '|' + e;
-const cached = directStreamCache.get(key);
-if (cached && Date.now() - cached.at < 18 * 60 * 1000) return cached;
-
-let result = await extractVidsrc(tt, kind, s, e);
-if (!result) result = await extract2embed(tt, kind, s, e);
-
-if (result?.file) {
-const entry = { at: Date.now(), ...result };
-directStreamCache.set(key, entry);
-if (directStreamCache.size > 250) directStreamCache.clear();
-return entry;
-}
-return null;
-}
-
 // ---------- six source ranking (server-side liveness probes) ----------
 // SRCS_PROBE mirrors watchPage's client SRCS array — same 11 sources,
 // same order, same URL shapes. Keep the two in sync: index i here is
@@ -16334,31 +16196,12 @@ function titleStrong(qn, cn) {
   return false;
 }
 async function streamResolve(tt, kind, s, e, title, yr) {
-const out = [];
-const jobs = [];
-
-// 1. Try real direct streams first (fully proxied through /px/)
-jobs.push((async function () {
-const direct = await tryDirectStream(tt, kind, s, e);
-if (direct && direct.file) {
-out.push({
-id: direct.name || 'direct',
-name: direct.name || 'direct',
-mode: 'file',
-state: 'ready',
-file: direct.file, // already a /px/ URL
-raw: direct.raw || null
-});
-}
-})().catch(function () {}));
-
-// 2. iframe family (fallback only)
-jobs.push(resolveSources(tt, kind, s, e).then(function (r) {
-for (const ix of r.order) {
-out.push({ id: 'src' + ix, name: SRCS_PROBE[ix].n, mode: 'iframe', state: r.scores[ix] });
-}
-}).catch(function () {}));
-
+  const out = [];
+  const jobs = [];
+  // iframe family: probe states from the ranking engine (cached)
+  jobs.push(resolveSources(tt, kind, s, e).then(function (r) {
+    for (const ix of r.order) out.push({ id: 'src' + ix, name: SRCS_PROBE[ix].n, mode: 'iframe', state: r.scores[ix] });
+  }).catch(function () { }));
   if (title) {
     // the vault: claimed ONLY on a strong title match in the archive
     // index — never on a vague or partial resemblance. the hunt
