@@ -3013,7 +3013,7 @@ function ls(k, d){ try{ return JSON.parse(localStorage.getItem(k)) || d; }catch(
 function favs(){ return ls('gx_favs', []); }
 function recents(){ return ls('gx_recent', []); }
 function escA(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
-function playHref(g){ return '/play?u='+encodeURIComponent(g.u)+'&t='+encodeURIComponent(g.t); }
+function playHref(g){ if (g.loc) return g.u; return '/play?u='+encodeURIComponent(g.u)+'&t='+encodeURIComponent(g.t); }
 function hueFor(t){ var h=0; for(var i=0;i<t.length;i++){ h=(h*31 + t.charCodeAt(i))%360; } return h; }
 function tileFor(g){ if(g.img && g.lg) return '<div class="lgwrap"><img loading="lazy" src="'+escA(g.img)+'" alt=""></div>'; if(g.img) return '<img loading="lazy" src="'+escA(g.img)+'" alt="">'; if(g.icon) return '<div class="noimg gicon">'+g.icon+'</div>'; var h=hueFor(g.t); var L=(g.t.replace(/[^a-z0-9]/gi,'').charAt(0) || '?').toUpperCase(); return '<div class="noimg ltile" style="background:linear-gradient(135deg,hsl('+h+',48%,30%),hsl('+((h+50)%360)+',55%,15%))">'+L+'</div>'; }
 function mkCard(g, i){ var a=document.createElement('a'); a.className='card'; a.href=playHref(g); a.dataset.s=(g.t+' '+g.c).toLowerCase(); a.dataset.c=g.c; a.dataset.u=g.u; a.dataset.i=i;
@@ -4097,8 +4097,8 @@ const FEATURED_GAMES = [
   { t: 'Bonk.io', u: 'https://bonk.io', img: 'https://www.google.com/s2/favicons?domain=bonk.io&sz=128', icon: '', c: 'Featured', w: 800, h: 600, lg: 1 },
   { t: 'Hole.io', u: 'https://games.pizzaedition.com/holeio/j/index.html', img: '', icon: '<svg viewBox="0 0 120 90" aria-hidden="true"><rect width="120" height="90" fill="#33414f"/><rect x="10" y="10" width="16" height="22" fill="#5b6b7a"/><rect x="94" y="8" width="14" height="18" fill="#5b6b7a"/><rect x="97" y="58" width="15" height="24" fill="#46545f"/><ellipse cx="60" cy="47" rx="27" ry="21" fill="#000"/><ellipse cx="60" cy="47" rx="27" ry="21" fill="none" stroke="#6b7c8c" stroke-width="3"/><rect x="75" y="15" width="11" height="15" fill="#f2b134" transform="rotate(22 80 22)"/></svg>', c: 'Featured', w: 800, h: 600 },
   { t: 'Tetris', u: 'https://tetris.com/play-tetris', img: 'https://www.google.com/s2/favicons?domain=tetris.com&sz=128', icon: '', c: 'Featured', w: 800, h: 600, lg: 1 },
-  { t: 'Cookie Clicker', u: 'https://orteil.dashnet.org/cookieclicker/', img: 'https://orteil.dashnet.org/cookieclicker/img/perfectCookie.png', icon: '', c: 'Featured', w: 800, h: 600, lg: 1 },
-  { t: '2048', u: 'https://play2048.co', img: 'https://www.google.com/s2/favicons?domain=play2048.co&sz=128', icon: '', c: 'Featured', w: 800, h: 600, lg: 1 },
+  { t: 'Cookie Clicker', u: '/g/cookie', loc: 1, img: '', icon: '<svg viewBox="0 0 120 90" aria-hidden="true"><rect width="120" height="90" fill="#241a10"/><circle cx="60" cy="45" r="30" fill="#c98a4b"/><circle cx="48" cy="34" r="4.5" fill="#5b3413"/><circle cx="70" cy="30" r="3.6" fill="#5b3413"/><circle cx="76" cy="50" r="5" fill="#5b3413"/><circle cx="54" cy="54" r="4" fill="#5b3413"/><circle cx="40" cy="50" r="3.2" fill="#5b3413"/><circle cx="64" cy="64" r="4.2" fill="#5b3413"/></svg>', c: 'Featured', w: 800, h: 600 },
+  { t: '2048', u: '/g/2048', loc: 1, img: '', icon: '<svg viewBox="0 0 120 90" aria-hidden="true"><rect width="120" height="90" fill="#17131f"/><rect x="22" y="13" width="36" height="29" rx="6" fill="#3d3654"/><rect x="62" y="13" width="36" height="29" rx="6" fill="#7a5c2e"/><rect x="22" y="46" width="36" height="29" rx="6" fill="#b3541e"/><rect x="62" y="46" width="36" height="29" rx="6" fill="#f5c531"/><g font-family="Arial,sans-serif" font-weight="800" text-anchor="middle"><text x="40" y="34" font-size="14" fill="#f4f4f5">2</text><text x="80" y="34" font-size="14" fill="#f4f4f5">8</text><text x="40" y="67" font-size="14" fill="#f4f4f5">32</text><text x="80" y="66" font-size="11" fill="#14100a">2048</text></g></svg>', c: 'Featured', w: 800, h: 600 },
 ];
 
 // ---------- six ai + chatroom (shared pages) ----------
@@ -8007,6 +8007,289 @@ try {
 </body></html>`;
 }
 
+function game2048Page() {
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+.g2048wrap{max-width:520px;margin:0 auto;width:100%}
+.g2048top{display:flex;gap:10px;align-items:stretch;margin:14px 0}
+.g2048score{background:#0d0b1a;border:1px solid rgba(var(--star),.18);border-radius:14px;padding:10px 16px;flex:1;text-align:center}
+.g2048score b{display:block;font-size:21px}
+.g2048score span{color:#9d99ad;font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.g2048btn{background:linear-gradient(120deg,rgb(var(--star)),rgb(var(--acc3)));border:0;color:#0d0a18;font-weight:800;border-radius:14px;padding:0 20px;font-family:inherit;font-size:15px;cursor:pointer}
+#bd2048{position:relative;background:#141126;border:1px solid rgba(var(--star),.2);border-radius:16px;padding:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;touch-action:none;user-select:none;-webkit-user-select:none}
+#bd2048 .cell{aspect-ratio:1;border-radius:10px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:clamp(20px,7vw,34px);color:#f4f4f5}
+#bd2048 .v2{background:#3d3654}#bd2048 .v4{background:#4a3f6b}#bd2048 .v8{background:#7a5c2e}#bd2048 .v16{background:#96690f}
+#bd2048 .v32{background:#b3541e}#bd2048 .v64{background:#c93b2e}#bd2048 .v128{background:#8f7b1d;font-size:clamp(17px,6vw,29px)}#bd2048 .v256{background:#a8891f;font-size:clamp(17px,6vw,29px)}
+#bd2048 .v512{background:#bf9b21;font-size:clamp(17px,6vw,29px)}#bd2048 .v1024{background:#d4af37;color:#14100a;font-size:clamp(15px,5vw,25px)}#bd2048 .v2048{background:#f5c531;color:#14100a;font-size:clamp(15px,5vw,25px);box-shadow:0 0 34px rgba(245,197,49,.55)}
+#bd2048 .vsup{background:#f5f0ff;color:#14100a;font-size:clamp(13px,4.4vw,22px)}
+#ov2048{position:absolute;inset:0;background:rgba(8,6,18,.82);border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:3;text-align:center;padding:20px}
+#ov2048[hidden]{display:none}
+#ov2048 .big{font-size:27px;font-weight:800}
+.g2048note{color:#9d99ad;font-size:13px;margin-top:14px;line-height:1.55}
+</style></head>
+<body>${STAR_CANVAS}
+<div class="wrap">
+<a class="back" href="/gs">&larr; games</a>
+<h1>2048</h1>
+<p class="sub">runs right here on the site - no proxy, no loading somebody elses page. arrow keys, WASD, or swipe.</p>
+<div class="g2048wrap">
+<div class="g2048top">
+<div class="g2048score"><span>score</span><b id="sc2048">0</b></div>
+<div class="g2048score"><span>best</span><b id="bs2048">0</b></div>
+<button class="g2048btn" id="ng2048" type="button">new game</button>
+</div>
+<div id="bd2048">
+<div id="ov2048" hidden><div class="big" id="ovT2048"></div><button class="g2048btn" id="ovB2048" type="button" style="padding:12px 22px">keep going</button></div>
+</div>
+<p class="g2048note">join the numbers and get to the 2048 tile. based on the original 2048 by Gabriele Cirulli (MIT licensed) - this build lives on 6ixnetworks itself.</p>
+</div>
+${SIDEBAR_HTML}
+</div>
+<script>
+var G2048 = { g: [], sc: 0, best: 0, won: false, keep: false, over: false };
+try { G2048.best = parseInt(localStorage.getItem('gx_2048_best') || '0', 10) || 0; } catch (e) {}
+var bd2048 = document.getElementById('bd2048');
+function g2048Empty() { var o = []; for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) if (!G2048.g[r][c]) o.push([r, c]); return o; }
+function g2048Add() { var e = g2048Empty(); if (!e.length) return; var p = e[Math.floor(Math.random() * e.length)]; G2048.g[p[0]][p[1]] = Math.random() < 0.9 ? 2 : 4; }
+function g2048Render() {
+  var old = bd2048.querySelectorAll('.cell'); for (var i = old.length - 1; i >= 0; i--) old[i].remove();
+  for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) {
+    var v = G2048.g[r][c]; var d = document.createElement('div');
+    d.className = 'cell' + (v ? (v > 2048 ? ' vsup' : ' v' + v) : '');
+    d.textContent = v ? String(v) : '';
+    bd2048.appendChild(d);
+  }
+  document.getElementById('sc2048').textContent = G2048.sc;
+  document.getElementById('bs2048').textContent = G2048.best;
+  var ov = document.getElementById('ov2048'), t = document.getElementById('ovT2048'), b = document.getElementById('ovB2048');
+  if (G2048.over) { ov.hidden = false; t.textContent = 'game over'; b.textContent = 'try again'; }
+  else if (G2048.won && !G2048.keep) { ov.hidden = false; t.textContent = 'you made 2048'; b.textContent = 'keep going'; }
+  else ov.hidden = true;
+}
+function g2048Line(dir, ix) {
+  var cells = [];
+  for (var k = 0; k < 4; k++) {
+    if (dir === 0) cells.push([k, ix]); else if (dir === 1) cells.push([3 - k, ix]);
+    else if (dir === 2) cells.push([ix, k]); else cells.push([ix, 3 - k]);
+  }
+  return cells;
+}
+function g2048Move(dir) {
+  if (G2048.over || (G2048.won && !G2048.keep)) return;
+  var moved = false, gained = 0;
+  for (var ix = 0; ix < 4; ix++) {
+    var cells = g2048Line(dir, ix);
+    var vals = [];
+    cells.forEach(function(p) { if (G2048.g[p[0]][p[1]]) vals.push(G2048.g[p[0]][p[1]]); });
+    var out = [];
+    for (var i = 0; i < vals.length; i++) {
+      if (i + 1 < vals.length && vals[i] === vals[i + 1]) { var nv = vals[i] * 2; out.push(nv); gained += nv; if (nv === 2048) G2048.won = true; i++; }
+      else out.push(vals[i]);
+    }
+    while (out.length < 4) out.push(0);
+    cells.forEach(function(p, j) { if (G2048.g[p[0]][p[1]] !== out[j]) moved = true; G2048.g[p[0]][p[1]] = out[j]; });
+  }
+  if (!moved) return;
+  G2048.sc += gained;
+  if (G2048.sc > G2048.best) { G2048.best = G2048.sc; try { localStorage.setItem('gx_2048_best', String(G2048.best)); } catch (e) {} }
+  g2048Add();
+  G2048.over = !g2048Empty().length && !g2048CanMerge();
+  g2048Render();
+}
+function g2048CanMerge() {
+  for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) {
+    var v = G2048.g[r][c];
+    if (r + 1 < 4 && G2048.g[r + 1][c] === v) return true;
+    if (c + 1 < 4 && G2048.g[r][c + 1] === v) return true;
+  }
+  return false;
+}
+function g2048New() {
+  G2048.g = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]; G2048.sc = 0; G2048.won = false; G2048.keep = false; G2048.over = false;
+  g2048Add(); g2048Add(); g2048Render();
+}
+document.getElementById('ng2048').addEventListener('click', g2048New);
+document.getElementById('ovB2048').addEventListener('click', function() { if (G2048.over) g2048New(); else { G2048.keep = true; g2048Render(); } });
+document.addEventListener('keydown', function(e) {
+  var k = e.key;
+  var dir = (k === 'ArrowUp' || k === 'w' || k === 'W') ? 0 : (k === 'ArrowDown' || k === 's' || k === 'S') ? 1 : (k === 'ArrowLeft' || k === 'a' || k === 'A') ? 2 : (k === 'ArrowRight' || k === 'd' || k === 'D') ? 3 : -1;
+  if (dir >= 0) { e.preventDefault(); g2048Move(dir); }
+});
+var tsX = 0, tsY = 0;
+bd2048.addEventListener('touchstart', function(e) { var t = e.changedTouches[0]; tsX = t.clientX; tsY = t.clientY; }, { passive: true });
+bd2048.addEventListener('touchend', function(e) {
+  var t = e.changedTouches[0]; var dx = t.clientX - tsX, dy = t.clientY - tsY;
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+  g2048Move(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 3 : 2) : (dy > 0 ? 1 : 0));
+});
+g2048New();
+</script>
+<script>${NOTIF_JS}</script>
+</body></html>`;
+}
+
+function cookiePage() {
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+.cklayout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.15fr);gap:18px;width:100%;max-width:1180px;align-items:start}
+@media(max-width:900px){.cklayout{grid-template-columns:minmax(0,1fr)}}
+.ckcol{background:rgba(13,11,26,.66);border:1px solid rgba(var(--star),.14);border-radius:18px;padding:16px;position:relative}
+.ckcol h3{margin:2px 0 12px;font-size:15px;letter-spacing:.04em;text-transform:uppercase;color:#c9b8ff}
+#ckCount{font-size:27px;font-weight:800;line-height:1.15}
+#ckCps{color:#9d99ad;font-size:14px;margin:4px 0 14px}
+#ckBig{display:block;margin:6px auto;background:none;border:0;cursor:pointer;padding:0;transition:transform .06s;border-radius:50%}
+#ckBig:active{transform:scale(.94)}
+#ckBig svg{display:block;filter:drop-shadow(0 14px 34px rgba(0,0,0,.5))}
+.ckfloat{position:absolute;font-weight:800;font-size:19px;color:#ffd98a;pointer-events:none;animation:ckUp 1s ease-out forwards;text-shadow:0 2px 10px rgba(0,0,0,.6);z-index:5}
+@keyframes ckUp{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-74px)}}
+.ckrow{display:flex;align-items:center;gap:11px;width:100%;background:#0d0b1a;border:1px solid rgba(var(--star),.16);border-radius:14px;padding:11px 13px;margin-bottom:9px;color:#f4f4f5;font-family:inherit;text-align:left;cursor:pointer;box-sizing:border-box}
+.ckrow:disabled{opacity:.45;cursor:default}
+.ckrow .own{font-size:23px;font-weight:800;color:#c9b8ff;min-width:36px;text-align:center}
+.ckrow .mid{flex:1;min-width:0}
+.ckrow .nm{font-weight:700;font-size:15px}
+.ckrow .ds{color:#9d99ad;font-size:12.5px;margin-top:1px}
+.ckrow .cost{font-weight:700;color:#ffd98a;font-size:13.5px;white-space:nowrap}
+#ckGold{position:fixed;z-index:60;background:none;border:0;cursor:pointer;padding:0;display:none;animation:ckPulse 1s ease-in-out infinite}
+@keyframes ckPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.13)}}
+#ckBuff{color:#ffd98a;font-weight:700;min-height:20px;margin-top:10px;text-align:center}
+#ckStats{color:#9d99ad;font-size:13.5px;line-height:1.7}
+.ckreset{background:transparent;border:1px solid rgba(248,113,113,.5);color:#fca5a5;border-radius:999px;padding:8px 15px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;margin-top:12px}
+.cknote{color:#9d99ad;font-size:12.5px;margin-top:10px;line-height:1.5}
+</style></head>
+<body>${STAR_CANVAS}
+<div class="wrap">
+<a class="back" href="/gs">&larr; games</a>
+<h1>cookie clicker</h1>
+<p class="sub">built into the site - no proxy, it just runs. ur bakery saves in this browser.</p>
+<div class="cklayout">
+<div class="ckcol" id="ckLeft">
+<div id="ckCount">0 cookies</div>
+<div id="ckCps">per second: 0</div>
+<button id="ckBig" type="button" aria-label="bake a cookie"><svg width="228" height="228" viewBox="0 0 228 228"><circle cx="114" cy="114" r="102" fill="#c98a4b"/><circle cx="114" cy="114" r="102" fill="none" stroke="#8a5a24" stroke-width="5"/><circle cx="76" cy="72" r="13" fill="#5b3413"/><circle cx="142" cy="58" r="10" fill="#5b3413"/><circle cx="164" cy="112" r="14" fill="#5b3413"/><circle cx="94" cy="128" r="11" fill="#5b3413"/><circle cx="58" cy="140" r="9" fill="#5b3413"/><circle cx="128" cy="168" r="12" fill="#5b3413"/><circle cx="172" cy="162" r="8" fill="#5b3413"/><circle cx="44" cy="96" r="8" fill="#5b3413"/></svg></button>
+<div id="ckBuff"></div>
+<p class="cknote">click the cookie. buy buildings, they bake on their own. golden cookies show up sometimes - grab them fast.</p>
+</div>
+<div class="ckcol">
+<h3>upgrades</h3>
+<div id="ckUps"></div>
+<h3 style="margin-top:20px">stats</h3>
+<div id="ckStats"></div>
+<button class="ckreset" id="ckReset" type="button">hard reset</button>
+</div>
+<div class="ckcol">
+<h3>store</h3>
+<div id="ckShop"></div>
+</div>
+</div>
+<button id="ckGold" type="button" aria-label="golden cookie"><svg width="86" height="86" viewBox="0 0 228 228"><circle cx="114" cy="114" r="102" fill="#f5c531"/><circle cx="114" cy="114" r="102" fill="none" stroke="#b8860b" stroke-width="6"/><circle cx="76" cy="72" r="13" fill="#a8740a"/><circle cx="142" cy="58" r="10" fill="#a8740a"/><circle cx="164" cy="112" r="14" fill="#a8740a"/><circle cx="94" cy="128" r="11" fill="#a8740a"/><circle cx="128" cy="168" r="12" fill="#a8740a"/></svg></button>
+${SIDEBAR_HTML}
+</div>
+<script>
+var BLD = [
+  { n: 'Cursor', base: 15, cps: 0.1, ds: 'auto-clicks once in a while' },
+  { n: 'Grandma', base: 100, cps: 1, ds: 'a nice grandma to bake more cookies' },
+  { n: 'Farm', base: 1100, cps: 8, ds: 'grows cookie plants from cookie seeds' },
+  { n: 'Mine', base: 12000, cps: 47, ds: 'mines out cookie dough and chocolate chips' },
+  { n: 'Factory', base: 130000, cps: 260, ds: 'produces large quantities of cookies' },
+  { n: 'Bank', base: 1400000, cps: 1400, ds: 'generates interest from cookie deposits' },
+  { n: 'Temple', base: 20000000, cps: 7800, ds: 'full of precious, ancient cookies' },
+  { n: 'Wizard Tower', base: 330000000, cps: 44000, ds: 'summons cookies with magic spells' },
+  { n: 'Alchemy Lab', base: 5100000000, cps: 260000, ds: 'turns gold into cookies' },
+  { n: 'Portal', base: 100000000000, cps: 1600000, ds: 'opens a door to the cookie dimension' }
+];
+var UPS = [
+  { id: 'click1', n: 'Reinforced index finger', cost: 100, ds: 'clicking gains +1 cookie', kind: 'clickadd', v: 1 },
+  { id: 'click2', n: 'Ambidextrous', cost: 5000, ds: 'clicking is twice as efficient', kind: 'clickmult', v: 2 },
+  { id: 'click3', n: 'Plastic mouse', cost: 50000, ds: 'clicking is twice as efficient', kind: 'clickmult', v: 2 },
+  { id: 'b0a', n: 'Auto gloves', cost: 1000, ds: 'cursors are twice as efficient', kind: 'bld', b: 0, v: 2 },
+  { id: 'b1a', n: 'Rolling pins', cost: 5000, ds: 'grandmas are twice as efficient', kind: 'bld', b: 1, v: 2 },
+  { id: 'b2a', n: 'Fertilizer', cost: 55000, ds: 'farms are twice as efficient', kind: 'bld', b: 2, v: 2 },
+  { id: 'b3a', n: 'Sugar gas', cost: 600000, ds: 'mines are twice as efficient', kind: 'bld', b: 3, v: 2 },
+  { id: 'b4a', n: 'Child labor (cookie sized)', cost: 6500000, ds: 'factories are twice as efficient', kind: 'bld', b: 4, v: 2 }
+];
+var S = { c: 0, total: 0, clicks: 0, b: [0,0,0,0,0,0,0,0,0,0], ups: {}, gold: 0, last: 0 };
+var frenzyEnd = 0;
+function fmt(n) {
+  if (n < 1000) return String(Math.floor(n) === n ? n : Math.round(n * 10) / 10);
+  var U = ['K','M','B','T','Qa','Qi','Sx','Sp']; var i = -1; var x = n;
+  while (x >= 1000 && i < U.length - 1) { x = x / 1000; i++; }
+  return (Math.round(x * 100) / 100) + ' ' + U[i];
+}
+function bldMult(i) { var m = 1; UPS.forEach(function(u) { if (u.kind === 'bld' && u.b === i && S.ups[u.id]) m = m * u.v; }); return m; }
+function cps() { var t = 0; BLD.forEach(function(b, i) { t += b.cps * S.b[i] * bldMult(i); }); return t; }
+function frenzyMult() { return Date.now() < frenzyEnd ? 7 : 1; }
+function clickPow() { var p = 1; UPS.forEach(function(u) { if (!S.ups[u.id]) return; if (u.kind === 'clickadd') p += u.v; if (u.kind === 'clickmult') p = p * u.v; }); return p; }
+function cost(i) { return Math.ceil(BLD[i].base * Math.pow(1.15, S.b[i])); }
+function save() { S.last = Date.now(); try { localStorage.setItem('gx_cookie_v1', JSON.stringify(S)); } catch (e) {} }
+function load() {
+  try { var j = JSON.parse(localStorage.getItem('gx_cookie_v1') || 'null'); if (j && j.b) { S = j; } } catch (e) {}
+  if (S.last) { var secs = Math.min(28800, Math.max(0, (Date.now() - S.last) / 1000)); var gain = secs * cps() * 0.5; if (gain > 0) { S.c += gain; S.total += gain; setTimeout(function() { document.getElementById('ckBuff').textContent = 'ur bakery kept working - +' + fmt(gain) + ' cookies while u were gone'; }, 600); } }
+}
+var shopEl = document.getElementById('ckShop'), upsEl = document.getElementById('ckUps');
+var shopRows = [], upRows = {};
+BLD.forEach(function(b, i) {
+  var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'ckrow';
+  btn.innerHTML = '<span class="own">0</span><span class="mid"><span class="nm"></span><span class="ds" style="display:block"></span></span><span class="cost"></span>';
+  btn.querySelector('.nm').textContent = b.n; btn.querySelector('.ds').textContent = b.ds;
+  btn.addEventListener('click', function() { var k = cost(i); if (S.c < k) return; S.c -= k; S.b[i]++; paint(); save(); });
+  shopEl.appendChild(btn); shopRows.push(btn);
+});
+UPS.forEach(function(u) {
+  var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'ckrow';
+  btn.innerHTML = '<span class="mid"><span class="nm"></span><span class="ds" style="display:block"></span></span><span class="cost"></span>';
+  btn.querySelector('.nm').textContent = u.n; btn.querySelector('.ds').textContent = u.ds;
+  btn.querySelector('.cost').textContent = fmt(u.cost);
+  btn.addEventListener('click', function() { if (S.ups[u.id] || S.c < u.cost) return; S.c -= u.cost; S.ups[u.id] = 1; paint(); save(); });
+  upsEl.appendChild(btn); upRows[u.id] = btn;
+});
+function paint() {
+  document.getElementById('ckCount').textContent = fmt(S.c) + ' cookies';
+  document.getElementById('ckCps').textContent = 'per second: ' + fmt(cps() * frenzyMult()) + ' - per click: ' + fmt(clickPow());
+  BLD.forEach(function(b, i) { var r = shopRows[i]; r.querySelector('.own').textContent = S.b[i]; r.querySelector('.cost').textContent = fmt(cost(i)); r.disabled = S.c < cost(i); });
+  UPS.forEach(function(u) { var r = upRows[u.id]; if (S.ups[u.id]) r.style.display = 'none'; else { r.style.display = ''; r.disabled = S.c < u.cost; } });
+  document.getElementById('ckStats').innerHTML = 'cookies baked (all time): ' + fmt(S.total) + '<br>hand clicks: ' + fmt(S.clicks) + '<br>buildings owned: ' + S.b.reduce(function(a, x) { return a + x; }, 0) + '<br>golden cookies grabbed: ' + S.gold;
+  var bf = document.getElementById('ckBuff');
+  if (Date.now() < frenzyEnd) bf.textContent = 'FRENZY - production x7 for ' + Math.ceil((frenzyEnd - Date.now()) / 1000) + 's';
+  else if (bf.textContent.indexOf('FRENZY') === 0) bf.textContent = '';
+}
+document.getElementById('ckBig').addEventListener('click', function(e) {
+  var p = clickPow(); S.c += p; S.total += p; S.clicks++;
+  var left = document.getElementById('ckLeft'); var r = left.getBoundingClientRect();
+  var f = document.createElement('span'); f.className = 'ckfloat'; f.textContent = '+' + fmt(p);
+  f.style.left = (e.clientX - r.left - 12) + 'px'; f.style.top = (e.clientY - r.top - 10) + 'px';
+  left.appendChild(f); setTimeout(function() { f.remove(); }, 1000);
+  paint();
+});
+var goldEl = document.getElementById('ckGold'), goldTimer = null, goldHide = null;
+function schedGold() { if (goldTimer) clearTimeout(goldTimer); goldTimer = setTimeout(spawnGold, 75000 + Math.random() * 90000); }
+function spawnGold() {
+  goldEl.style.display = 'block';
+  goldEl.style.left = (8 + Math.random() * 78) + 'vw';
+  goldEl.style.top = (14 + Math.random() * 62) + 'vh';
+  if (goldHide) clearTimeout(goldHide);
+  goldHide = setTimeout(function() { goldEl.style.display = 'none'; schedGold(); }, 13000);
+}
+goldEl.addEventListener('click', function() {
+  goldEl.style.display = 'none'; if (goldHide) clearTimeout(goldHide); S.gold++;
+  var bf = document.getElementById('ckBuff');
+  if (Math.random() < 0.5) { frenzyEnd = Date.now() + 30000; bf.textContent = 'FRENZY - production x7 for 30s'; }
+  else { var gain = Math.min(S.c * 0.15, cps() * 900) + 13; S.c += gain; S.total += gain; bf.textContent = 'LUCKY - +' + fmt(gain) + ' cookies'; }
+  paint(); save(); schedGold();
+});
+document.getElementById('ckReset').addEventListener('click', function() { if (!confirm('wipe ur whole bakery? this cant be undone')) return; try { localStorage.removeItem('gx_cookie_v1'); } catch (e) {} location.reload(); });
+load(); paint(); schedGold();
+setInterval(function() { var g = cps() * frenzyMult() * 0.1; if (g > 0) { S.c += g; S.total += g; } paint(); }, 100);
+setInterval(save, 5000);
+window.addEventListener('beforeunload', save);
+</script>
+<script>${NOTIF_JS}</script>
+</body></html>`;
+}
+
 function watchPage() {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
@@ -8208,7 +8491,7 @@ syncSrcUI();
 // six source ranking: remembered winner per title + /api/resolve probe order.
 // the walker below still walks srcMode+1 on its own — this only picks the
 // starting source and remembers the one that actually played.
-var userPicked = false, aliveSaved = false, dirTimer = null;
+var userPicked = false, aliveSaved = false, dirTimer = null, memWinner = false;
 var lastScores = null;
 var srcKey = 'gx_src_' + tt;
 function saveSrc(){ try { localStorage.setItem(srcKey, String(srcMode)); } catch (e) {} }
@@ -8225,7 +8508,7 @@ function armDirSave(){
   if (!tt || libM || arcId) return;
   try {
     var mem = parseInt(localStorage.getItem(srcKey) || '', 10);
-    if (mem > 0 && mem < SRCS.length) { srcMode = mem; syncSrcUI(); }
+    if (mem > 0 && mem < SRCS.length) { srcMode = mem; memWinner = true; syncSrcUI(); }
   } catch (e) {}
 })();
 var VD_WALLED = {}; SRCS.forEach(function(s, i){ if (s.w) VD_WALLED[i] = 1; });
@@ -8257,6 +8540,29 @@ function sixResolve(){
     if (hint) hint.textContent = 'six checked the servers — this one looks alive';
     loadPlayer();
   }).catch(function(){});
+}
+function startPlayer(){
+  // v429: no remembered winner? ask six FIRST (capped at 2.5s) and
+  // load the frame ONCE on the ranked best server, instead of
+  // loading the default server and then reloading onto the winner
+  // mid-load - that double load was half the 'movies dont work'.
+  if (memWinner || userPicked) { loadPlayer(); sixResolve(); return; }
+  var done = false;
+  var to = setTimeout(function(){ if (!done) { done = true; loadPlayer(); } }, 2500);
+  var s = Math.max(1, +document.getElementById('wS').value || 1), e = Math.max(1, +document.getElementById('wE').value || 1);
+  fetch('/api/resolve?tt=' + encodeURIComponent(tt) + '&kind=' + kind + '&s=' + s + '&e=' + e).then(function(r){ return r.json(); }).then(function(o){
+    if (done) return; done = true; clearTimeout(to);
+    if (o && o.ok && o.order && o.order.length) {
+      lastScores = o.scores || null;
+      var best = o.order[0];
+      if (route !== 'direct') { for (var oi = 0; oi < o.order.length; oi++) { if (!VD_WALLED[o.order[oi]]) { best = o.order[oi]; break; } } }
+      srcMode = best;
+      syncSrcUI();
+      var hint = document.getElementById('mvHint');
+      if (hint) hint.textContent = 'six checked the servers - this one looks alive';
+    }
+    loadPlayer();
+  }).catch(function(){ if (!done) { done = true; clearTimeout(to); loadPlayer(); } });
 }
 function setProv(txt){ var p = document.getElementById('wProv'); if (p) p.textContent = txt; }
 function loadMeta(){
@@ -8504,6 +8810,7 @@ if (['button', 'auto', 'off'].indexOf(skipMode) < 0) skipMode = 'button';
 })();
 function checkStream(){
   if (!tt || libM || arcId || ytId || kind !== 'movie') return;
+  var csT0 = Date.now();
   var t = (ttl && ttl !== 'watch') ? ttl : '';
   fetch('/api/stream/resolve?tt=' + encodeURIComponent(tt) + '&kind=' + kind + '&t=' + encodeURIComponent(t) + '&y=' + encodeURIComponent(yr || '')).then(function(r){ return r.json(); }).then(function(o){
     if (!o || !o.ok || !o.providers) return;
@@ -8523,16 +8830,20 @@ function checkStream(){
         var ld = document.getElementById('mvLoad'); ld.style.opacity = '1'; ld.textContent = 'six is finding the file…';
         fetch('/api/arc?id=' + encodeURIComponent(fp.arc)).then(function(r){ return r.json(); }).then(function(a){
           streamBusy = false;
-          if (!a || !a.ok || !a.file) { ld.style.opacity = '1'; ld.textContent = 'six couldnt pull the file for this one — embed it is'; return; }
+          if (!a || !a.ok || !a.file) { ld.style.opacity = streamOn ? '1' : '0'; ld.textContent = 'six couldnt pull the file for this one — embed it is'; return; }
           streamPlay(a.file, a.raw, a.mb, 'the vault');
         }).catch(function(){ streamBusy = false; });
       });
+      // v429: a verified real file IS the direct stream - play it
+      // straight away instead of hiding it behind a button tap.
+      if (!userPicked && !streamOn && Date.now() - csT0 < 12000) btn.click();
     } else if (fp.id === 'jellyfin') {
       lab.textContent = 'in ur library as a real file';
       btn.addEventListener('click', function(){
         if (streamOn) { streamOff(); return; }
         streamPlay('/api/jfstream?id=' + encodeURIComponent(fp.jelly), '', 0, 'my library');
       });
+      if (!userPicked && !streamOn && Date.now() - csT0 < 12000) btn.click();
     }
   }).catch(function(){});
 }
@@ -8588,7 +8899,7 @@ if(libM){
     ald.textContent = 'loading the movie…';
     var ap = avid.play(); if (ap && ap.catch) ap.catch(function(){ avid.muted = true; var aq = avid.play(); if (aq && aq.catch) aq.catch(function(){}); });
   }).catch(function(){ ald.textContent = 'six couldnt reach the vault — try again'; });
-} else if(ytId){ ytMode(); } else if(tt) { loadPlayer(); sixResolve(); loadMeta(); checkStream(); } else { var bml = document.getElementById('mvLoad'); if (bml) bml.innerHTML = '<div style="text-align:center;padding:34px 20px"><div style="font-size:17px;font-weight:800;margin-bottom:8px">nothing to watch yet</div><div style="color:#a49fb4;font-size:14px">pick a movie or show first</div><div style="margin-top:16px"><a href="/movies" style="color:#fff;font-weight:700;text-decoration:none">browse 6ixflix</a></div></div>'; }
+} else if(ytId){ ytMode(); } else if(tt) { startPlayer(); loadMeta(); checkStream(); } else { var bml = document.getElementById('mvLoad'); if (bml) bml.innerHTML = '<div style="text-align:center;padding:34px 20px"><div style="font-size:17px;font-weight:800;margin-bottom:8px">nothing to watch yet</div><div style="color:#a49fb4;font-size:14px">pick a movie or show first</div><div style="margin-top:16px"><a href="/movies" style="color:#fff;font-weight:700;text-decoration:none">browse 6ixflix</a></div></div>'; }
 </script>
 <script>${NOTIF_JS}</script>
 </body></html>`;
@@ -12587,9 +12898,13 @@ function ytAudioJob(vidId) {
     let ah = await ytResolveMuxed(vidId);
     if (!ah) { job.err = true; job.done = true; wake(); itJobCache.delete(vidId); return; }
     job.title = ah.title || '';
-    const CH = 524288;
     try {
       for (let guard = 0; guard < 80; guard++) {
+        // v429: first chunk is small (64KB) so waitFor(1) wakes and
+        // the browser gets audio almost immediately; the rest of the
+        // song streams in behind it in 512KB chunks. no full-cache
+        // wait before first sound.
+        const CH = job.have === 0 ? 65536 : 524288;
         let b = null, st = 0;
         for (let att = 0; att < 3 && !b; att++) {
           if (att > 0) { itMuxCache.delete(vidId); const nah = await ytResolveMuxed(vidId); if (nah) ah = nah; }
@@ -16224,7 +16539,7 @@ let sixPickBusy = null;
 const SIX_PICK_LINES = ['ran thru the whole catalog so u dont have to — this the one today twin', 'i dont miss. todays feature goes stupid, just tap it', 'checked everything on the page n this ones carrying today. ur welcome', 'the algorithm is me. i am the algorithm. play this', 'this been sitting in the catalog too quiet — not anymore. featured'];
 function sixPickDay() { try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago' }).format(new Date()); } catch { return new Date().toISOString().slice(0, 10); } }
 function sixHash(s) { let h = 7; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); }
-function sixPickShape(g, blurb, src) { return { ok: true, t: g.t, c: g.c || '', img: g.img ? proxied(g.img) : '', href: '/play?u=' + encodeURIComponent(g.u) + '&t=' + encodeURIComponent(g.t), blurb: blurb || '', src }; }
+function sixPickShape(g, blurb, src) { return { ok: true, t: g.t, c: g.c || '', img: g.img ? proxied(g.img) : '', href: g.loc ? g.u : '/play?u=' + encodeURIComponent(g.u) + '&t=' + encodeURIComponent(g.t), blurb: blurb || '', src }; }
 function sixPickFallback(pool, day) { const g = pool[sixHash('sixpick:' + day) % pool.length]; return sixPickShape(g, SIX_PICK_LINES[sixHash('line:' + day) % SIX_PICK_LINES.length], 'rotation'); }
 function sixPickParse(text, pool) {
   if (!text) return null;
@@ -18497,7 +18812,7 @@ const server = http.createServer(async (req, res) => {
   }
   if (u.pathname === '/api/games') {
     const games = FEATURED_GAMES.concat(await loadGames());
-    const out = games.map(g => { const o = { t: g.t, u: g.u, img: g.img ? proxied(g.img) : '', icon: g.icon || '', lg: g.lg ? 1 : 0, nu: g.nu ? 1 : 0, c: g.c || 'Arcade' }; if (g.m) o.m = 1; if (g.ad) o.ad = g.ad; return o; });
+    const out = games.map(g => { const o = { t: g.t, u: g.u, img: g.img ? proxied(g.img) : '', icon: g.icon || '', lg: g.lg ? 1 : 0, nu: g.nu ? 1 : 0, c: g.c || 'Arcade' }; if (g.m) o.m = 1; if (g.ad) o.ad = g.ad; if (g.loc) o.loc = 1; return o; });
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'public, max-age=60' });
     return res.end(JSON.stringify(out));
   }
@@ -18590,6 +18905,8 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(bloxPage());
   }
+  if (u.pathname === '/g/2048') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(game2048Page()); }
+  if (u.pathname === '/g/cookie') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(cookiePage()); }
   if (u.pathname === '/play') {
     const gu2 = u.searchParams.get('u') || '';
     const qeng = u.searchParams.get('eng');
@@ -19083,8 +19400,16 @@ const server = http.createServer(async (req, res) => {
       // music: the audio track only, pulled from youtube and streamed
       // straight through — nothing saved. dl=1 converts to a real mp3
       // via ffmpeg when it's around, else sends the raw m4a.
-      const ah = await ytResolveMuxed(vidId);
-      if (!ah) { res.writeHead(502); return res.end('audio unavailable'); }
+      // v429: playback used to await a FULL muxed resolve here (all
+      // innertube clients + probes) before the audio job even started,
+      // then the job resolved AGAIN - that double resolve was the
+      // startup stall. only the dl=1 ffmpeg lane needs ah; playback
+      // goes straight to the job, which resolves once, inside.
+      let ah = null;
+      if (wantDl) {
+        ah = await ytResolveMuxed(vidId);
+        if (!ah) { res.writeHead(502); return res.end('audio unavailable'); }
+      }
       if (wantDl) {
         const bin = await ffmpegBin();
         if (bin) {
