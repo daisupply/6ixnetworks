@@ -8395,15 +8395,14 @@ document.getElementById('wTitle').textContent = ttl;
 document.getElementById('wMeta').textContent = (kind === 'series' ? 'show' : 'movie') + (yr ? ' \u00b7 ' + yr : '');
 if(kind === 'series') document.getElementById('seRow').hidden = false;
 var SRCS = [
-{ n: 'pw', special: true }, // Playwright direct rip
-{ n: 'vidsrc', w: 1, m: function(x){ return 'https://vidsrc.to/embed/movie/' + x; }, t: function(x, s, e){ return 'https://vidsrc.to/embed/tv/' + x + '/' + s + '/' + e; } },
-{ n: 'vidlink', m: function(x){ return 'https://vidlink.pro/movie/' + x; }, t: function(x, s, e){ return 'https://vidlink.pro/tv/' + x + '/' + s + '/' + e; } },
-{ n: 'videasy', w: 1, m: function(x){ return 'https://player.videasy.to/movie/' + x; }, t: function(x, s, e){ return 'https://player.videasy.to/tv/' + x + '/' + s + '/' + e; } },
-{ n: 'vidfast', w: 1, m: function(x){ return 'https://vidfast.vc/movie/' + x; }, t: function(x, s, e){ return 'https://vidfast.vc/tv/' + x + '/' + s + '/' + e; } },
-{ n: '2embed', w: 1, m: function(x){ return 'https://www.2embed.cc/embed/' + x; }, t: function(x, s, e){ return 'https://www.2embed.cc/embedtv/' + x + '&s=' + s + '&e=' + e; } },
-{ n: 'autoembed', w: 1, m: function(x){ return 'https://autoembed.me/movie/imdb/' + x; }, t: function(x, s, e){ return 'https://autoembed.me/tv/imdb/' + x + '/' + s + '/' + e; } },
-{ n: '111movies', m: function(x){ return 'https://111movies.com/movie/' + x; }, t: function(x, s, e){ return 'https://111movies.com/tv/' + x + '/' + s + '/' + e; } },
-{ n: 'multiembed', m: function(x){ return 'https://multiembed.mov/?video_id=' + x + '&tmdb=0'; }, t: function(x, s, e){ return 'https://multiembed.mov/?video_id=' + x + '&tmdb=0&s=' + s + '&e=' + e; } }
+  { n: 'vidsrc', w: 1, m: function(x){ return 'https://vidsrc.to/embed/movie/' + x; }, t: function(x, s, e){ return 'https://vidsrc.to/embed/tv/' + x + '/' + s + '/' + e; } },
+  { n: 'vidlink', m: function(x){ return 'https://vidlink.pro/movie/' + x; }, t: function(x, s, e){ return 'https://vidlink.pro/tv/' + x + '/' + s + '/' + e; } },
+  { n: 'videasy', w: 1, m: function(x){ return 'https://player.videasy.to/movie/' + x; }, t: function(x, s, e){ return 'https://player.videasy.to/tv/' + x + '/' + s + '/' + e; } },
+  { n: 'vidfast', w: 1, m: function(x){ return 'https://vidfast.vc/movie/' + x; }, t: function(x, s, e){ return 'https://vidfast.vc/tv/' + x + '/' + s + '/' + e; } },
+  { n: '2embed', w: 1, m: function(x){ return 'https://www.2embed.cc/embed/' + x; }, t: function(x, s, e){ return 'https://www.2embed.cc/embedtv/' + x + '&s=' + s + '&e=' + e; } },
+  { n: 'autoembed', w: 1, m: function(x){ return 'https://autoembed.me/movie/imdb/' + x; }, t: function(x, s, e){ return 'https://autoembed.me/tv/imdb/' + x + '/' + s + '/' + e; } },
+  { n: '111movies', m: function(x){ return 'https://111movies.com/movie/' + x; }, t: function(x, s, e){ return 'https://111movies.com/tv/' + x + '/' + s + '/' + e; } },
+  { n: 'multiembed', m: function(x){ return 'https://multiembed.mov/?video_id=' + x + '&tmdb=0'; }, t: function(x, s, e){ return 'https://multiembed.mov/?video_id=' + x + '&tmdb=0&s=' + s + '&e=' + e; } }
 ];
 function embedUrl(){
   var s = Math.max(1, +document.getElementById('wS').value || 1), e = Math.max(1, +document.getElementById('wE').value || 1);
@@ -8590,52 +8589,14 @@ function loadMeta(){
   }).catch(function(){});
 }
 function loadPlayer(){
-aliveSaved = false;
-var ld = document.getElementById('mvLoad');
-ld.style.opacity = '1';
-var fr = document.getElementById('mvFrame');
-setProv('');
-syncSrcUI();
-
-var sc = SRCS[srcMode] || SRCS[0];
-
-// Special case: Playwright direct rip
-if (sc.special && sc.n === 'pw') {
-fr.src = 'about:blank';
-fr.hidden = true;
-document.getElementById('mvVid').hidden = false;
-ld.textContent = 'pw is ripping the file…';
-
-var s = Math.max(1, +document.getElementById('wS').value || 1);
-var e = Math.max(1, +document.getElementById('wE').value || 1);
-
-fetch('/api/pw?tt=' + encodeURIComponent(tt) + '&kind=' + kind + '&s=' + s + '&e=' + e)
-.then(function(r){ return r.json(); })
-.then(function(o){
-if (o && o.ok && o.file) {
-setProv('pw · file');
-streamPlay(o.file, o.raw || null, null, 'pw');
-} else {
-ld.textContent = 'pw couldnt rip this one — try another source';
-srcMode = 1;
-syncSrcUI();
-loadPlayer();
-}
-})
-.catch(function(){
-ld.textContent = 'pw failed — try another source';
-srcMode = 1;
-syncSrcUI();
-loadPlayer();
-});
-return;
-}
-
-// Normal iframe sources
-document.getElementById('mvVid').hidden = true;
-fr.hidden = false;
-fr.src = route === 'tunnel' ? ('/go?q=' + encodeURIComponent(embedUrl())) : route === 'lite' ? ('/gproxy/' + b64url(embedUrl())) : embedUrl();
-armAuto();
+  aliveSaved = false;
+  var ld = document.getElementById('mvLoad');
+  ld.style.opacity = '1';
+  var fr = document.getElementById('mvFrame');
+  setProv('');
+  syncSrcUI();
+  fr.src = route === 'tunnel' ? ('/go?q=' + encodeURIComponent(embedUrl())) : route === 'lite' ? ('/gproxy/' + b64url(embedUrl())) : embedUrl();
+  armAuto();
 }
 var autoTimer = null;
 function playerAlive(){
@@ -16158,224 +16119,6 @@ async function cinemetaList(kind, q, genre, relMode, page) {
   if (!q) mvCache[ck] = { at: Date.now(), list: out };
   return out;
 }
-// ---------- Playwright Direct Stream Extractor ----------
-const { chromium } = require('playwright');
-
-let browserPromise = null;
-
-async function getBrowser() {
-if (!browserPromise) {
-browserPromise = chromium.launch({
-headless: true,
-args: [
-'--no-sandbox',
-'--disable-setuid-sandbox',
-'--disable-dev-shm-usage',
-'--disable-gpu'
-]
-});
-}
-return browserPromise;
-}
-
-async function extractWithPlaywright(embedUrl) {
-let browser, context, page;
-try {
-browser = await getBrowser();
-context = await browser.newContext({
-userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-viewport: { width: 1280, height: 720 }
-});
-page = await context.newPage();
-
-const found = new Set();
-
-page.on('response', (response) => {
-const url = response.url();
-const type = (response.headers()['content-type'] || '').toLowerCase();
-if (
-url.includes('.m3u8') ||
-url.includes('.mp4') ||
-type.includes('mpegurl') ||
-type.includes('application/vnd.apple.mpegurl') ||
-type.includes('video/')
-) {
-// Ignore tiny or obvious non-media files
-if (!url.includes('favicon') && !url.includes('.js') && !url.includes('.css')) {
-found.add(url);
-}
-}
-});
-
-await page.goto(embedUrl, {
-waitUntil: 'domcontentloaded',
-timeout: 15000
-});
-
-// Give the player time to request the stream
-await page.waitForTimeout(7000);
-
-// Try clicking common play buttons if they exist
-try {
-await page.click('button, .play, .vjs-big-play-button, [aria-label*="play" i]', { timeout: 2000 });
-await page.waitForTimeout(3000);
-} catch {}
-
-await context.close();
-
-const urls = [...found];
-if (urls.length === 0) return null;
-
-// Prefer m3u8 over mp4
-const m3u8 = urls.find(u => u.includes('.m3u8'));
-const best = m3u8 || urls[0];
-
-return best;
-} catch (err) {
-console.log('[playwright] error:', err.message);
-try { if (context) await context.close(); } catch {}
-return null;
-}
-}
-
-function makeProxiedStream(absoluteUrl) {
-try {
-const u = new URL(absoluteUrl);
-const base = u.origin + u.pathname.substring(0, u.pathname.lastIndexOf('/') + 1);
-const file = u.pathname.split('/').pop() + (u.search || '');
-return '/px/' + b64urlEncode(base) + '/' + file;
-} catch {
-return null;
-}
-}
-
-const directStreamCache = new Map();
-
-async function tryDirectStream(tt, kind, s, e) {
-const key = `${tt}|${kind}|${s}|${e}`;
-const cached = directStreamCache.get(key);
-if (cached && Date.now() - cached.at < 12 * 60 * 1000) {
-return cached;
-}
-
-const isTv = kind === 'series';
-const embed = isTv
-? `https://vidsrc.to/embed/tv/${tt}/${s}/${e}`
-: `https://vidsrc.to/embed/movie/${tt}`;
-
-console.log('[direct] Playwright trying:', embed);
-
-const rawUrl = await extractWithPlaywright(embed);
-if (!rawUrl) {
-console.log('[direct] Playwright found nothing');
-return null;
-}
-
-const proxied = makeProxiedStream(rawUrl);
-if (!proxied) return null;
-
-const entry = {
-at: Date.now(),
-name: 'vidsrc',
-file: proxied,
-raw: rawUrl
-};
-
-directStreamCache.set(key, entry);
-if (directStreamCache.size > 150) directStreamCache.clear();
-
-console.log('[direct] success →', proxied);
-return entry;
-}
-// ---------- Progressive Rip + Stream (yt-dlp) ----------
-const { spawn } = require('child_process');
-const fs = require('fs');
-const path = require('path');
-
-const RIP_CACHE_DIR = path.join(__dirname, 'ripped-cache');
-const RIP_CACHE_MS = 60 * 60 * 1000; // 1 hour
-
-if (!fs.existsSync(RIP_CACHE_DIR)) {
-fs.mkdirSync(RIP_CACHE_DIR, { recursive: true });
-}
-
-// Cleanup old files every 10 minutes
-setInterval(() => {
-try {
-const now = Date.now();
-for (const file of fs.readdirSync(RIP_CACHE_DIR)) {
-const full = path.join(RIP_CACHE_DIR, file);
-try {
-const stats = fs.statSync(full);
-if (now - stats.mtimeMs > RIP_CACHE_MS) {
-fs.unlinkSync(full);
-console.log('[rip] deleted:', file);
-}
-} catch {}
-}
-} catch {}
-}, 10 * 60 * 1000);
-
-function getRipPath(tt, kind, s, e) {
-const name = kind === 'series' ? `${tt}_S${s}E${e}` : tt;
-return path.join(RIP_CACHE_DIR, name + '.mp4');
-}
-
-const activeRips = new Map();
-
-function startRip(tt, kind, s, e) {
-const filePath = getRipPath(tt, kind, s, e);
-const key = filePath;
-
-if (activeRips.has(key)) return activeRips.get(key);
-
-if (fs.existsSync(filePath)) {
-const stats = fs.statSync(filePath);
-if (Date.now() - stats.mtimeMs < RIP_CACHE_MS && stats.size > 5_000_000) {
-return Promise.resolve(filePath);
-}
-}
-
-const url = kind === 'series'
-? `https://vidsrc.to/embed/tv/${tt}/${s}/${e}`
-: `https://vidsrc.to/embed/movie/${tt}`;
-
-console.log('[rip] starting progressive download:', url);
-
-const promise = new Promise((resolve, reject) => {
-const args = [
-'--no-playlist',
-'-f', 'bv*+ba/b',
-'--merge-output-format', 'mp4',
-'--newline',
-'-o', filePath,
-url
-];
-
-const proc = spawn('yt-dlp', args, { stdio: ['ignore', 'pipe', 'pipe'] });
-
-proc.on('close', (code) => {
-activeRips.delete(key);
-if (code === 0 && fs.existsSync(filePath) && fs.statSync(filePath).size > 1_000_000) {
-console.log('[rip] finished:', filePath);
-resolve(filePath);
-} else {
-console.log('[rip] failed with code', code);
-try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch {}
-reject(new Error('yt-dlp failed'));
-}
-});
-
-proc.on('error', (err) => {
-activeRips.delete(key);
-reject(err);
-});
-});
-
-activeRips.set(key, promise);
-return promise;
-}
-
 // ---------- six source ranking (server-side liveness probes) ----------
 // SRCS_PROBE mirrors watchPage's client SRCS array — same 11 sources,
 // same order, same URL shapes. Keep the two in sync: index i here is
@@ -16453,31 +16196,12 @@ function titleStrong(qn, cn) {
   return false;
 }
 async function streamResolve(tt, kind, s, e, title, yr) {
-const out = [];
-const jobs = [];
-
-// 1. Try real direct streams first
-jobs.push((async function () {
-const direct = await tryDirectStream(tt, kind, s, e);
-if (direct && direct.file) {
-out.push({
-id: direct.name || 'direct',
-name: direct.name || 'direct',
-mode: 'file',
-state: 'ready',
-file: direct.file,
-raw: direct.raw || null
-});
-}
-})().catch(() => {}));
-
-// 2. iframe family (fallback)
-jobs.push(resolveSources(tt, kind, s, e).then(function (r) {
-for (const ix of r.order) {
-out.push({ id: 'src' + ix, name: SRCS_PROBE[ix].n, mode: 'iframe', state: r.scores[ix] });
-}
-}).catch(() => {}));
-
+  const out = [];
+  const jobs = [];
+  // iframe family: probe states from the ranking engine (cached)
+  jobs.push(resolveSources(tt, kind, s, e).then(function (r) {
+    for (const ix of r.order) out.push({ id: 'src' + ix, name: SRCS_PROBE[ix].n, mode: 'iframe', state: r.scores[ix] });
+  }).catch(function () { }));
   if (title) {
     // the vault: claimed ONLY on a strong title match in the archive
     // index — never on a vague or partial resemblance. the hunt
@@ -18437,103 +18161,6 @@ const server = http.createServer(async (req, res) => {
     if (!rtt) return res.end(JSON.stringify({ ok: false, order: [], scores: {} }));
     return res.end(JSON.stringify(await resolveSources(rtt, rkind, rs, re)));
   }
-  // Dedicated Playwright rip endpoint
-if (u.pathname === '/api/pw' && req.method === 'GET') {
-const tt = String(u.searchParams.get('tt') || '').slice(0, 20);
-const kind = u.searchParams.get('kind') === 'series' ? 'series' : 'movie';
-const s = Math.max(1, parseInt(u.searchParams.get('s') || '1', 10) || 1);
-const e = Math.max(1, parseInt(u.searchParams.get('e') || '1', 10) || 1);
-
-res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-cache' });
-
-if (!/^tt\d{6,}$/.test(tt)) {
-return res.end(JSON.stringify({ ok: false, error: 'bad id' }));
-}
-
-try {
-const result = await tryDirectStream(tt, kind, s, e);
-if (result && result.file) {
-return res.end(JSON.stringify({
-ok: true,
-file: result.file,
-raw: result.raw || null,
-name: result.name || 'pw'
-}));
-}
-return res.end(JSON.stringify({ ok: false, error: 'no stream found' }));
-} catch (err) {
-return res.end(JSON.stringify({ ok: false, error: err.message }));
-}
-}
-  // Progressive rip + stream
-if (u.pathname === '/api/rip' && req.method === 'GET') {
-const tt = String(u.searchParams.get('tt') || '').slice(0, 20);
-const kind = u.searchParams.get('kind') === 'series' ? 'series' : 'movie';
-const s = Math.max(1, parseInt(u.searchParams.get('s') || '1', 10) || 1);
-const e = Math.max(1, parseInt(u.searchParams.get('e') || '1', 10) || 1);
-
-if (!/^tt\d{6,}$/.test(tt)) {
-res.writeHead(400, { 'content-type': 'application/json' });
-return res.end(JSON.stringify({ ok: false, error: 'bad id' }));
-}
-
-const filePath = getRipPath(tt, kind, s, e);
-
-// Start download
-startRip(tt, kind, s, e).catch(() => {});
-
-// Wait until we have some data
-const waitForData = async () => {
-const maxWait = 45000;
-const start = Date.now();
-while (Date.now() - start < maxWait) {
-if (fs.existsSync(filePath)) {
-const stats = fs.statSync(filePath);
-if (stats.size > 800000) return true;
-}
-await new Promise(r => setTimeout(r, 800));
-}
-return fs.existsSync(filePath);
-};
-
-const hasData = await waitForData();
-if (!hasData) {
-res.writeHead(200, { 'content-type': 'application/json' });
-return res.end(JSON.stringify({ ok: false, error: 'still downloading / failed' }));
-}
-
-const stats = fs.statSync(filePath);
-const range = req.headers.range;
-
-if (range) {
-const parts = range.replace(/bytes=/, '').split('-');
-let start = parseInt(parts[0], 10);
-let end = parts[1] ? parseInt(parts[1], 10) : stats.size - 1;
-
-if (start >= stats.size) start = Math.max(0, stats.size - 1);
-if (end >= stats.size) end = stats.size - 1;
-
-const chunkSize = (end - start) + 1;
-
-res.writeHead(206, {
-'content-range': `bytes ${start}-${end}/${stats.size}`,
-'accept-ranges': 'bytes',
-'content-length': chunkSize,
-'content-type': 'video/mp4',
-'cache-control': 'no-cache'
-});
-fs.createReadStream(filePath, { start, end }).pipe(res);
-} else {
-res.writeHead(200, {
-'content-length': stats.size,
-'content-type': 'video/mp4',
-'accept-ranges': 'bytes',
-'cache-control': 'no-cache'
-});
-fs.createReadStream(filePath).pipe(res);
-}
-return;
-}
   if (u.pathname === '/api/stream/resolve' && req.method === 'GET') {
     const stt = String(u.searchParams.get('tt') || '').slice(0, 20);
     const skind = u.searchParams.get('kind') === 'series' ? 'series' : 'movie';
@@ -20304,7 +19931,48 @@ server.on('upgrade', (req, socket, head) => {
 });
 server.keepAliveTimeout = 75000; server.headersTimeout = 80000;
 setInterval(() => { if (STORE_ON && (!storeHydrated || ACCOUNTS.size === 0)) hydrateStore().catch(() => {}); }, 60000);
-hydrateStore().then(() => hydrateChatStore()).then(() => tunSecretInit()).catch(() => {}).finally(() => server.listen(PORT, () => console.log('web proxy listening on ' + PORT)));
+// ---------- v433: built-in tunnel — `node server.js` is the whole host.
+// On boot the server launches cloudflared itself, so there is no second
+// window to babysit. A token tunnel wins when a token is on hand: env
+// TUNNEL_TOKEN, or tunnel-token.txt in the PARENT folder of the app dir
+// (next to updater.js / tunnel-home.bat — outside the git folder, so
+// auto-updates never wipe it). With no token, windows falls back to the
+// old named run (sixhome, local credentials). Any failure here is only
+// logged: the site still serves, the tunnel is just the door.
+let gxTunnelChild = null, gxTunnelExits = [];
+function startTunnel() {
+  try {
+    if (process.env.NO_TUNNEL) return;
+    const fsx = require('fs'), pathx = require('path'), cp = require('child_process');
+    let token = String(process.env.TUNNEL_TOKEN || '').trim();
+    if (!token) {
+      try { token = fsx.readFileSync(pathx.join(__dirname, '..', 'tunnel-token.txt'), 'utf8').trim(); } catch { token = ''; }
+    }
+    let args = null;
+    if (token && token.length > 20 && !/\s/.test(token)) args = ['tunnel', '--protocol', 'http2', '--no-autoupdate', 'run', '--token', token];
+    else if (process.platform === 'win32') args = ['tunnel', '--protocol', 'http2', '--no-autoupdate', '--url', 'http://localhost:' + PORT, 'run', 'sixhome'];
+    if (!args) return;
+    const child = cp.spawn('cloudflared', args, { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
+    gxTunnelChild = child;
+    let announced = false;
+    const onData = (d) => { if (!announced && /registered tunnel connection/i.test(String(d))) { announced = true; console.log('tunnel: connected'); } };
+    if (child.stdout) child.stdout.on('data', onData);
+    if (child.stderr) child.stderr.on('data', onData);
+    child.on('error', (e) => { console.log('tunnel: cloudflared could not start (' + e.message + ') - site is local-only until the tunnel runs'); gxTunnelChild = null; });
+    child.on('exit', (code) => {
+      gxTunnelChild = null;
+      const now = Date.now();
+      gxTunnelExits = gxTunnelExits.filter((t) => now - t < 600000);
+      gxTunnelExits.push(now);
+      if (gxTunnelExits.length > 5) { console.log('tunnel: cloudflared keeps exiting - leaving it down, check the token/credentials'); return; }
+      console.log('tunnel: cloudflared exited (' + code + ') - restarting in 15s');
+      setTimeout(() => { try { startTunnel(); } catch { } }, 15000).unref();
+    });
+    process.on('exit', () => { try { if (gxTunnelChild) gxTunnelChild.kill(); } catch { } });
+    console.log('tunnel: cloudflared launching (' + (args.indexOf('--token') >= 0 ? 'token' : 'sixhome') + ' mode)');
+  } catch (e) { try { console.log('tunnel: skipped (' + e.message + ')'); } catch { } }
+}
+hydrateStore().then(() => hydrateChatStore()).then(() => tunSecretInit()).catch(() => {}).finally(() => server.listen(PORT, () => { console.log('web proxy listening on ' + PORT); startTunnel(); }));
 loadGames().catch(() => {});
 // music prewarm: keep the default feed + for-you seed searches hot so
 // /music paints from cache instead of paying a cold innertube search.
