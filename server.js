@@ -11500,7 +11500,7 @@ async function fetchRescue(targetStr) {
   return null;
 }
 function sendCompressed(req, res, status, headers, buf) {
-  const h = Object.assign({}, headers);
+  const h = cleanHdrs(Object.assign({}, headers));
   const ae = req.headers['accept-encoding'] || '';
   if (buf.length > 1024 && ae.includes('gzip') && !h['content-encoding']) {
     const gz = zlib.gzipSync(buf, { level: 5 });
@@ -11514,7 +11514,30 @@ function sendCompressed(req, res, status, headers, buf) {
   res.writeHead(status, h);
   return res.end(buf);
 }
+// v431 VD hardening: a hostile or sloppy upstream must never kill the
+// response. Outbound header values are cleaned to the set node accepts,
+// and the wrapper below guarantees any unexpected throw inside the proxy
+// still ends in a real page instead of a dead socket — a dead socket is
+// what the tunnel surfaces as "error code: 502" (his "wont connect to
+// host"). The friendly text keeps the players' error regex matching so
+// their server-flip fallbacks still fire.
+function cleanHdrVal(v) { return String(v).replace(/[^\t\x20-\x7E\x80-\xFF]/g, ''); }
+function cleanHdrs(h) { const o = {}; for (const k of Object.keys(h || {})) { const v = h[k]; if (Array.isArray(v)) o[k] = v.map(cleanHdrVal); else if (v != null) o[k] = cleanHdrVal(v); } return o; }
 async function handleProxy(req, res, targetUrlStr, gameMode) {
+  try { return await handleProxyInner(req, res, targetUrlStr, gameMode); }
+  catch (e) {
+    try { console.error('handleProxy fumble:', (e && e.message) || e); } catch { }
+    try {
+      if (!res.headersSent && !res.writableEnded) {
+        const wantsHtml = (req.headers['accept'] || '').includes('text/html');
+        if (wantsHtml && req.method === 'GET') { const bp = Buffer.from(blockPage(String(targetUrlStr || '')), 'utf8'); res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'content-length': bp.length }); return res.end(bp); }
+        res.writeHead(502, { 'content-type': 'text/plain' });
+        return res.end('proxy could not reach that site');
+      }
+    } catch { try { res.destroy(); } catch { } }
+  }
+}
+async function handleProxyInner(req, res, targetUrlStr, gameMode) {
   let target;
   try { target = new URL(targetUrlStr); } catch {
     res.writeHead(400, { 'content-type': 'text/plain' });
@@ -11623,16 +11646,37 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
   }
 
   let upstream;
-  try {
-    upstream = await fetch(target.toString(), {
-      method: req.method,
-      headers,
-      body: ['GET', 'HEAD'].includes(req.method) ? undefined : body,
-      redirect: 'manual',
-    });
-  } catch (e) {
+  const mkOpts = () => ({
+    method: req.method,
+    headers,
+    body: ['GET', 'HEAD'].includes(req.method) ? undefined : body,
+    redirect: 'manual',
+    signal: AbortSignal.timeout(20000),
+  });
+  try { upstream = await fetch(target.toString(), mkOpts()); }
+  catch (e1) {
+    // v431: one fresh-connection retry — walled hosts reset first
+    // attempts from vpn egress all the time; the retry lands it.
+    try { upstream = await fetch(target.toString(), mkOpts()); } catch (e2) { upstream = null; }
+  }
+  if (!upstream) {
+    // v431: navigations fall back to the relay bench, then the friendly
+    // block page — never a bare-text or dead response.
+    if (isNav && req.method === 'GET') {
+      const relayed = await fetchViaRelay(target.toString());
+      if (relayed) {
+        let rw = rewriteHtml(relayed, target.toString(), pre);
+        rw = injectProxyShim(rw, target.toString(), pre);
+        const rb = Buffer.from(rw, 'utf8');
+        res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'content-length': rb.length, 'x-6ixnetworks-route': 'relay' });
+        return res.end(rb);
+      }
+      const bp = Buffer.from(blockPage(target.toString()), 'utf8');
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'content-length': bp.length });
+      return res.end(bp);
+    }
     res.writeHead(502, { 'content-type': 'text/plain' });
-    return res.end('proxy could not reach that site: ' + e.message);
+    return res.end('proxy could not reach that site');
   }
 
   // v233: walled SUBRESOURCES get the relay rescue too. before, only the
@@ -11676,9 +11720,10 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
 
   // redirects: send the browser to the proxied version of the new location
   if (status >= 300 && status < 400 && upstream.headers.get('location')) {
-    const loc = new URL(upstream.headers.get('location'), target).toString();
-    outHeaders['location'] = gameMode ? gproxied(loc) : proxied(loc);
-    res.writeHead(302, outHeaders);
+    let loc = null;
+    try { loc = new URL(upstream.headers.get('location'), target).toString(); } catch { loc = null; }
+    outHeaders['location'] = loc ? (gameMode ? gproxied(loc) : proxied(loc)) : cleanHdrVal(upstream.headers.get('location'));
+    res.writeHead(302, cleanHdrs(outHeaders));
     return res.end();
   }
 
@@ -11687,7 +11732,22 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
 
   if (isHtml || isCss) {
     let text;
-    try { text = await upstream.text(); } catch { res.writeHead(502, { 'content-type': 'text/plain' }); return res.end('upstream cut off'); }
+    try { text = await upstream.text(); } catch {
+      if (isNav && req.method === 'GET') {
+        const relayed2 = await fetchViaRelay(target.toString());
+        if (relayed2) {
+          let rw2 = rewriteHtml(relayed2, target.toString(), pre);
+          rw2 = injectProxyShim(rw2, target.toString(), pre);
+          const rb2 = Buffer.from(rw2, 'utf8');
+          res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'content-length': rb2.length, 'x-6ixnetworks-route': 'relay' });
+          return res.end(rb2);
+        }
+        const bp2 = Buffer.from(blockPage(target.toString()), 'utf8');
+        res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'content-length': bp2.length });
+        return res.end(bp2);
+      }
+      res.writeHead(502, { 'content-type': 'text/plain' }); return res.end('upstream cut off');
+    }
     if (isHtml && isNav && (status === 403 || status === 429 || CHAL_SIG.test(text.slice(0, 4000)))) {
       const relayed = await fetchViaRelay(target.toString());
       if (relayed) {
@@ -11773,11 +11833,11 @@ async function handleProxy(req, res, targetUrlStr, gameMode) {
     delete h2['content-length'];
     h2['content-encoding'] = 'gzip';
     h2['vary'] = 'accept-encoding';
-    res.writeHead(status, h2);
+    res.writeHead(status, cleanHdrs(h2));
     try { pipeline(Readable.fromWeb(upstream.body), zlib.createGzip({ level: 5 }), res, () => {}); } catch (e) { try { res.destroy(); } catch (e2) {} }
     return;
   }
-  res.writeHead(status, outHeaders);
+  res.writeHead(status, cleanHdrs(outHeaders));
   if (upstream.body) { try { pipeline(Readable.fromWeb(upstream.body), res, () => {}); } catch (e) { try { res.destroy(); } catch (e2) {} } }
   else res.end();
 }
