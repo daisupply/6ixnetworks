@@ -12154,6 +12154,7 @@ body.gx-extbar #gxBar{display:none!important}
       <button type="button" class="msnavb" data-nav="library"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12z"/></svg>your library</button>
       <button type="button" class="msnavb" data-nav="queue"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M15 6H3v2h12zm0 4H3v2h12zm-8 4H3v2h4zm12.36 2.36L22 19.92 17.08 15H15v4.24C14.65 19.1 14.35 19 13.97 19c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2v-3.64z"/></svg>queue</button>
     <button type="button" class="msnavb" data-nav="spotify"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8 10.2c2.8-.8 5.6-.5 8.2.7M8.2 13c2.3-.6 4.6-.4 6.7.6M8.4 15.7c1.8-.4 3.5-.3 5.1.4"/></svg>spotify</button>
+    <button type="button" class="msnavb" data-nav="radio"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4.9 19.1a10 10 0 0 1 0-14.2M7.8 16.2a6 6 0 0 1 0-8.4M19.1 4.9a10 10 0 0 1 0 14.2M16.2 7.8a6 6 0 0 1 0 8.4"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg>radio</button>
       </nav>
     <div class="msplhead"><span>playlists</span><button type="button" id="msPlAdd" aria-label="new playlist">+</button></div>
     <div id="msPlList"></div>
@@ -12574,6 +12575,19 @@ function renderPlaylist(i) {
 }
 
 /* ---------- SPOTIFY ---------- */
+function renderRadio() {
+  VIEW = { name: 'radio' }; navOn('radio');
+  main.innerHTML = '<div class="mssec" style="margin-top:2px">six radio</div>'
+    + '<p class="mssub" style="margin:0 2px 12px">lofi on loop — the station never stops, just press play</p>'
+    + '<div id="rdBody"><div class="msempty">tuning the station…</div></div>';
+  fetch('/api/radio').then(function (r) { return r.json(); }).then(function (j) {
+    var b = $('rdBody'); if (!b) return;
+    if (!j.ok || !j.tracks || !j.tracks.length) { b.innerHTML = '<div class="msempty">' + escA(j.err || 'radio is off air rn') + '</div>'; return; }
+    CTX.radio = j.tracks;
+    b.innerHTML = '<button type="button" id="rdPlay" style="background:#8b7cff;border:0;color:#fff;font:inherit;font-weight:800;font-size:15px;border-radius:999px;padding:12px 26px;cursor:pointer;margin:2px 2px 14px">play the station</button>' + rowsHtml(j.tracks, 'radio');
+    $('rdPlay').addEventListener('click', function () { playList(CTX.radio, 0); });
+  }).catch(function () { var b = $('rdBody'); if (b) b.innerHTML = '<div class="msempty">radio is off air rn</div>'; });
+}
 function renderSpotify() {
   VIEW = { name: 'spotify' }; navOn('spotify');
   main.innerHTML = '<div class="mssec" style="margin-top:2px">spotify</div>'
@@ -12745,6 +12759,7 @@ document.querySelectorAll('.msnavb').forEach(function(b) {
     else if (n === 'library') renderLibrary();
     else if (n === 'queue') renderQueue();
     else if (n === 'spotify') renderSpotify();
+    else if (n === 'radio') renderRadio();
   });
 });
 document.querySelector('[data-nav="liked"]').addEventListener('click', function() { renderLibrary(); });
@@ -16296,6 +16311,73 @@ async function socialApi(req, res, u) {
     return true;
   }
   return false;
+}
+
+// ---- six radio + status page (v460) ----
+let RADIO_CACHE = { at: 0, tracks: [] };
+async function radioApi(req, res, u) {
+  if (u.pathname !== '/api/radio' || req.method !== 'GET') return false;
+  if (Date.now() - RADIO_CACHE.at < 1800000 && RADIO_CACHE.tracks.length) { jres(res, 200, { ok: true, tracks: RADIO_CACHE.tracks }); return true; }
+  try {
+    const a = await ytmSearchAll('lofi hip hop beats to study to');
+    const b = await ytmSearchAll('chillhop lofi mix');
+    const seen = new Set(); const tracks = [];
+    for (const s of [...((a && a.songs) || []), ...((b && b.songs) || [])]) { if (s && s.id && !seen.has(s.id)) { seen.add(s.id); tracks.push({ id: s.id, t: s.t, a: s.a, img: s.img, len: s.len }); } }
+    if (tracks.length) RADIO_CACHE = { at: Date.now(), tracks };
+    jres(res, 200, { ok: tracks.length > 0, tracks, err: tracks.length ? '' : 'radio source unreachable rn' });
+  } catch (e) { jres(res, 200, { ok: false, err: 'radio source unreachable rn', tracks: [] }); }
+  return true;
+}
+function statusPage() {
+  const up = Math.floor(process.uptime());
+  const uh = Math.floor(up / 3600), um = Math.floor((up % 3600) / 60), us = up % 60;
+  const tun = process.env.NO_TUNNEL ? 'off (local mode)' : ((typeof gxTunnelChild !== 'undefined' && gxTunnelChild) ? 'running' : 'down');
+  const rows = [
+    ['server', 'up — ' + uh + 'h ' + um + 'm ' + us + 's'],
+    ['account store', STORE_ON ? 'on' : 'off'],
+    ['store hydrated', storeHydrated ? 'yes' : 'no'],
+    ['accounts', String(ACCOUNTS.size)],
+    ['sessions', String(SESSIONS.size)],
+    ['game requests', String(GAME_REQUESTS.size)],
+    ['tunnel (cloudflared)', tun],
+    ['build', 'v460'],
+  ];
+  const rowsHtml = rows.map((r) => '<div style="display:flex;justify-content:space-between;gap:16px;padding:9px 2px;border-bottom:1px solid rgba(255,255,255,.07)"><span style="color:#9a93b8;font-weight:700">' + r[0] + '</span><b>' + r[1] + '</b></div>').join('');
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>status — 6ix</title>
+${FONT_LINKS}
+<style>${GALAXY_CSS}</style>
+</head>
+<body>
+<main style="max-width:640px;margin:0 auto;padding:26px 16px 130px">
+  <h1 style="font-size:24px;margin:6px 0 2px">is six up?</h1>
+  <p style="color:#9a93b8;margin:0 0 16px">if this page loaded, the server is up. the rest of the board:</p>
+  <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:8px 16px">${rowsHtml}</div>
+  <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:14px 16px;margin-top:14px">
+    <div style="font-weight:800;letter-spacing:.06em;font-size:12px;color:#bdb4e4;margin-bottom:6px">LIVE CHECKS</div>
+    <div id="stLive" style="font-size:14px;line-height:1.6;color:#d8d2f0">checking…</div>
+  </div>
+</main>
+${SIDEBAR_HTML}
+<script>
+function stCheck(){
+  var t0 = Date.now();
+  fetch('/healthz').then(function(r){return r.text()}).then(function(t){
+    var el = document.getElementById('stLive');
+    el.innerHTML = 'health endpoint: <b>ok</b> (' + (Date.now()-t0) + 'ms)<br>' + t.replace(/</g,'&lt;');
+  }).catch(function(){ document.getElementById('stLive').textContent = 'health endpoint unreachable'; });
+  fetch('/api/daily').then(function(r){return r.json()}).then(function(d){
+    if (d && d.ok) { var el = document.getElementById('stLive'); el.innerHTML += '<br>today\\'s daily challenge: <b>' + d.title + '</b>'; }
+  }).catch(function(){});
+}
+stCheck(); setInterval(stCheck, 15000);
+</script>
+</body>
+</html>`;
 }
 async function spToken() {
   if (SPTOK.t && Date.now() < SPTOK.exp) return SPTOK.t;
@@ -21155,6 +21237,7 @@ const server = http.createServer(async (req, res) => {
     }
     res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('no game');
   }
+  if (u.pathname === '/status') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(statusPage()); }
   if (u.pathname === '/tiktok') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(tikPage()); }
   if (u.pathname === '/tiktok/watch') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(tikWatchPage()); }
   if (u.pathname === '/tk/file') {
@@ -21256,6 +21339,7 @@ const server = http.createServer(async (req, res) => {
   if (await spApi(req, res, u)) return;
   if (await scoresApi(req, res, u)) return;
   if (await socialApi(req, res, u)) return;
+  if (await radioApi(req, res, u)) return;
   if (u.pathname.startsWith('/api/tube/')) {
     const me = voterUser(req);
     const jout = (o, code) => { res.writeHead(code || 200, { 'content-type': 'application/json' }); return res.end(JSON.stringify(o)); };
