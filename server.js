@@ -1098,7 +1098,7 @@ const CLOAK_BAR = `<div style="margin-top:26px;display:flex;gap:8px;flex-wrap:wr
 <button onclick="cloakTab('docs')" style="background:rgba(255,255,255,.07);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">docs</button>
 <button onclick="cloakTab('drive')" style="background:rgba(255,255,255,.07);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">drive</button><button onclick="cloakOpen()" style="background:rgba(255,255,255,.07);color:#f4f4f5;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 13px;cursor:pointer">open in a tab</button><button type="button" data-clickoff onclick="gxClickoff()">clickoff: off</button></div>`;
 const TABBAR_HTML = `<nav id="tabbar"><a href="/home"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg><span>home</span></a><a href="/yt"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg><span>6ixtube</span></a><a href="/movies"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg><span>6ixflix</span></a><a href="/chat"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span>6ixchat</span></a><button id="tabMore" type="button"><svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg><span>menu</span></button></nav>
-<div id="tabSheet"><a href="/home"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>home</span></a><a href="/yt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48" fill="currentColor" stroke="none"/></svg><span>6ixtube</span></a><a href="/fyp"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><polygon points="10.5 9.5 15 12 10.5 14.5 10.5 9.5"/></svg><span>fyp</span></a><a href="/movies"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg><span>6ixflix</span></a><a href="/chat"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span>6ixchat</span></a><a href="/news"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>news</span></a><a href="/gs"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg><span>games</span></a><a href="/ai"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>six ai</span></a><a href="/music"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg><span>6ixmusic</span></a><a href="/search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span>search</span></a><a href="/apps"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M12 18h.01"/></svg><span>apps</span></a><a href="/hw"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>hw helper</span></a><a href="/emu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="16.5" cy="11" r=".4" fill="currentColor"/><circle cx="18.5" cy="14" r=".4" fill="currentColor"/></svg><span>emulator</span></a><a href="/tools"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>tools</span></a><a href="/download"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>download</span></a><a href="/account"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>account</span></a><a href="/vault"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg><span>the vault</span></a><a href="/apks"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 9.4L7.55 4.24"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg><span>apks</span></a><a href="/requests"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span>requests</span></a><a href="/confess"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>confess</span></a><a href="/forge"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span>forge</span></a><a href="/customize"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><span>customize</span></a><a href="/space"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><span>space</span></a><a href="/sites"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span>sites</span></a><div class="tsh-sec">tab style</div><div class="tsh-cloak"><button onclick="cloakTab('google')">google</button><button onclick="cloakTab('classroom')">classroom</button><button onclick="cloakTab('docs')">docs</button><button onclick="cloakTab('drive')">drive</button><button onclick="cloakOpen()">open in a tab</button><button type="button" data-clickoff onclick="gxClickoff()">clickoff: off</button></div></div>
+<div id="tabSheet"><a href="/home"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>home</span></a><a href="/yt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48" fill="currentColor" stroke="none"/></svg><span>6ixtube</span></a><a href="/movies"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg><span>6ixflix</span></a><a href="/chat"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span>6ixchat</span></a><a href="/news"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>news</span></a><a href="/gs"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg><span>games</span></a><a href="/ai"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>six ai</span></a><a href="/music"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg><span>6ixmusic</span></a><a href="/search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span>search</span></a><a href="/apps"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M12 18h.01"/></svg><span>apps</span></a><a href="/hw"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>hw helper</span></a><a href="/emu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="16.5" cy="11" r=".4" fill="currentColor"/><circle cx="18.5" cy="14" r=".4" fill="currentColor"/></svg><span>emulator</span></a><a href="/tools"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>tools</span></a><a href="/download"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>download</span></a><a href="/account"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>account</span></a><a href="/vault"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg><span>the vault</span></a><a href="/apks"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 9.4L7.55 4.24"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg><span>apks</span></a><a href="/requests"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span>requests</span></a><a href="/confess"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>confess</span></a><a href="/forge"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span>forge</span></a><a href="/customize"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><span>customize</span></a><a href="/space"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><span>space</span></a><a href="/sites"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span>sites</span></a><div class="tsh-sec">tab style</div><div class="tsh-cloak"><button onclick="cloakTab('google')">google</button><button onclick="cloakTab('classroom')">classroom</button><button onclick="cloakTab('docs')">docs</button><button onclick="cloakTab('drive')">drive</button><button onclick="cloakOpen()">open in a tab</button><button type="button" data-clickoff onclick="gxClickoff()">clickoff: off</button></div></div>
 <script>
 (function(){ if (window.parent !== window) { document.documentElement.classList.add('gx-framed'); var bar0 = document.getElementById('tabbar'); if (bar0) bar0.style.bottom = '6px'; var sh0 = document.getElementById('tabSheet'); if (sh0) sh0.style.bottom = '80px'; } var p = location.pathname; document.querySelectorAll('#tabbar a, #tabSheet a').forEach(function(a){ if (a.getAttribute('href') === p) a.classList.add('on'); }); document.querySelectorAll('#tabbar a').forEach(function(a){ a.addEventListener('click', function(e){ if (a.getAttribute('href') === p) { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }); }); var tm = document.getElementById('tabMore'), sh = document.getElementById('tabSheet'); if (tm && sh) { tm.addEventListener('click', function(){ sh.classList.toggle('open'); }); document.addEventListener('click', function(e){ if (sh.classList.contains('open') && !sh.contains(e.target) && !tm.contains(e.target)) sh.classList.remove('open'); }); } })();
 </script>`;
@@ -1189,7 +1189,7 @@ button{border-radius:8px!important}
 #tabbar{border-radius:16px!important;transition:transform .28s ease,opacity .28s ease}
 
 #gxArt{cursor:pointer}
-</style><header id=\"topbar\"><a class=\"tb-logo\" href=\"/home\">6ix<span>networks</span></a><nav class=\"tb-links\"><a href=\"/home\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg>home</a><a href=\"/gs\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>games</a><a href=\"/chat\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg>6ixchat</a><a href=\"/ai\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>six ai</a><a href=\"/movies\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"2\" width=\"20\" height=\"20\" rx=\"2.18\"/><path d=\"M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5\"/></svg>6ixflix</a><a href=\"/news\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2\"/><path d=\"M18 14h-8\"/><path d=\"M15 18h-5\"/><path d=\"M10 6h8v4h-8V6Z\"/></svg>news</a><a href=\"/people\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/></svg>people</a><a href=\"/confess\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 10h.01\"/><path d=\"M15 10h.01\"/><path d=\"M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z\"/></svg>confessions</a></nav><a class=\"tb-search\" href=\"/search\" aria-label=\"search\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m21 21-4.3-4.3\"/></svg></a><a id=\"tbMe\" href=\"/account\" hidden></a><div class=\"tb-menuwrap\"><button id=\"menuBtn\" type=\"button\" aria-label=\"menu\">menu<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\"/></svg></button><div id=\"dropmenu\"><div class=\"dm-grid\"><a href=\"/home\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg>home</a><a href=\"/gs\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>games</a><a href=\"/blox\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z\"/><polyline points=\"3.27 6.96 12 12.01 20.73 6.96\"/><line x1=\"12\" y1=\"22.08\" x2=\"12\" y2=\"12\"/></svg>6ixblox</a><a href=\"/chat\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg>6ixchat</a><a href=\"/ai\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>six ai</a><a href=\"/yt\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"4\"/><path d=\"m10 9 5 3-5 3z\" fill=\"currentColor\" stroke=\"none\"/></svg>6ixtube</a><a href=\"/fyp\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2\" width=\"10\" height=\"20\" rx=\"2\"/><polygon points=\"10.5 9.5 15 12 10.5 14.5 10.5 9.5\"/></svg>fyp</a><a href=\"/music\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18V5l12-2v13\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><circle cx=\"18\" cy=\"16\" r=\"3\"/></svg>6ixmusic</a><a href=\"/movies\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"2\" width=\"20\" height=\"20\" rx=\"2.18\"/><path d=\"M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5\"/></svg>6ixflix</a><a href=\"/search\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m21 21-4.3-4.3\"/></svg>search</a><a href=\"/apps\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2\" width=\"10\" height=\"20\" rx=\"2\"/><path d=\"M12 18h.01\"/></svg>apps</a><a href=\"/hw\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\"/><path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"/></svg>hw helper</a><a href=\"/emu\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"7\" width=\"20\" height=\"11\" rx=\"5\"/><path d=\"M7.5 10.5v4M5.5 12.5h4\"/><circle cx=\"16.5\" cy=\"11\" r=\".4\" fill=\"currentColor\"/><circle cx=\"18.5\" cy=\"14\" r=\".4\" fill=\"currentColor\"/></svg>emulator</a><a href=\"/news\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2\"/><path d=\"M18 14h-8\"/><path d=\"M15 18h-5\"/><path d=\"M10 6h8v4h-8V6Z\"/></svg>news</a><a href=\"/requests\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 17 6-6 4 4 8-8\"/><path d=\"M14 7h7v7\"/></svg>requests</a><a href=\"/people\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/></svg>people</a><a href=\"/confess\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 10h.01\"/><path d=\"M15 10h.01\"/><path d=\"M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z\"/></svg>confessions</a><a href=\"/forge\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"6\" y1=\"12\" x2=\"10\" y2=\"12\"/><line x1=\"8\" y1=\"10\" x2=\"8\" y2=\"14\"/><line x1=\"15\" y1=\"13\" x2=\"15.01\" y2=\"13\"/><line x1=\"18\" y1=\"11\" x2=\"18.01\" y2=\"11\"/><path d=\"M17.32 5H6.68a4 4 0 0 0-3.978 3.59C2.62 9.42 2 14.46 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.62-6.584-.685-7.258A4 4 0 0 0 17.32 5z\"/></svg>forge</a><a href=\"/tools\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1\"/><circle cx=\"16\" cy=\"6\" r=\"2\"/><circle cx=\"10\" cy=\"12\" r=\"2\"/><circle cx=\"18\" cy=\"18\" r=\"2\"/></svg>tools</a><a href=\"/space\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"3.2\" fill=\"currentColor\" stroke=\"none\"/><ellipse cx=\"12\" cy=\"12\" rx=\"10\" ry=\"4.2\" transform=\"rotate(-18 12 12)\"/></svg>space</a><a href=\"/download\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" y1=\"15\" x2=\"12\" y2=\"3\"/></svg>download</a><a href=\"/account\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg>account</a></div><div class=\"dm-sec\">ask six</div><form id=\"dmAsk\"><input id=\"dmQ\" type=\"text\" placeholder=\"ask six anything...\" autocomplete=\"off\"><button type=\"submit\">ask</button></form><div id=\"dmAns\" hidden></div><div class=\"dm-sec\">tab style</div><div class=\"sb-cloak\"><button onclick=\"cloakTab('google')\">google</button><button onclick=\"cloakTab('classroom')\">classroom</button><button onclick=\"cloakTab('docs')\">docs</button><button onclick=\"cloakTab('drive')\">drive</button><button onclick=\"cloakOpen()\">open in a tab</button><button type="button" data-clickoff onclick="gxClickoff()">clickoff: off</button></div><div class=\"dm-sec\">sky</div><div class=\"sb-cloak dm-sky\"><button type=\"button\" data-sky=\"nebula\" onclick=\"gxSetSky('nebula')\">nebula</button><button type=\"button\" data-sky=\"amber\" onclick=\"gxSetSky('amber')\">amber</button><button type=\"button\" data-sky=\"violet\" onclick=\"gxSetSky('violet')\">violet</button><button type=\"button\" data-sky=\"ice\" onclick=\"gxSetSky('ice')\">ice</button><button type=\"button\" data-sky=\"blood\" onclick=\"gxSetSky('blood')\">blood moon</button></div><div class=\"dm-sec\">personalize</div><div class=\"sb-cloak dm-pers\"><button type=\"button\" data-navm=\"bar\" onclick=\"gxSetNav('bar')\">top bar</button><button type=\"button\" data-navm=\"side\" onclick=\"gxSetNav('side')\">sidebar</button><button type=\"button\" data-accm=\"\" onclick=\"gxSetAcc('')\">accent: sky</button><button type=\"button\" data-accm=\"crimson\" onclick=\"gxSetAcc('crimson')\">crimson</button><button type=\"button\" data-accm=\"azure\" onclick=\"gxSetAcc('azure')\">azure</button><button type=\"button\" data-accm=\"toxic\" onclick=\"gxSetAcc('toxic')\">toxic</button><button type=\"button\" data-accm=\"gold\" onclick=\"gxSetAcc('gold')\">gold</button><button type=\"button\" data-accm=\"rose\" onclick=\"gxSetAcc('rose')\">rose</button><button type=\"button\" data-motion onclick=\"gxToggleMotion()\">animations: on</button><button type=\"button\" data-lights onclick=\"gxToggleLights()\">christmas lights: on</button><a href=\"/customize\" style=\"flex:1 1 100%;text-align:center;background:rgba(var(--acc),.18);border:1px solid rgba(var(--star),.4);color:#fff;border-radius:999px;padding:8px 11px;font-size:12.5px;font-weight:700;text-decoration:none\">make it urs \u2014 full builder</a></div></div></div></header><aside id=\"siderail\"><a class=\"rl-logo\" href=\"/home\">6ix<span>networks</span></a><nav class=\"rl\"><a href=\"/home\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg><span>home</span></a><a href=\"/gs\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg><span>games</span></a><a href=\"/blox\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z\"/><polyline points=\"3.27 6.96 12 12.01 20.73 6.96\"/><line x1=\"12\" y1=\"22.08\" x2=\"12\" y2=\"12\"/></svg><span>6ixblox</span></a><a href=\"/chat\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg><span>6ixchat</span></a><a href=\"/ai\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg><span>six ai</span></a><a href=\"/yt\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"4\"/><path d=\"m10 9 5 3-5 3z\" fill=\"currentColor\" stroke=\"none\"/></svg><span>6ixtube</span></a><a href=\"/fyp\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2\" width=\"10\" height=\"20\" rx=\"2\"/><polygon points=\"10.5 9.5 15 12 10.5 14.5 10.5 9.5\"/></svg><span>fyp</span></a><a href=\"/music\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18V5l12-2v13\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><circle cx=\"18\" cy=\"16\" r=\"3\"/></svg><span>6ixmusic</span></a><a href=\"/movies\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"2\" width=\"20\" height=\"20\" rx=\"2.18\"/><path d=\"M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5\"/></svg><span>6ixflix</span></a><a href=\"/search\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m21 21-4.3-4.3\"/></svg><span>search</span></a><a href=\"/apps\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2\" width=\"10\" height=\"20\" rx=\"2\"/><path d=\"M12 18h.01\"/></svg><span>apps</span></a><a href=\"/hw\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\"/><path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"/></svg><span>hw helper</span></a><a href=\"/emu\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"7\" width=\"20\" height=\"11\" rx=\"5\"/><path d=\"M7.5 10.5v4M5.5 12.5h4\"/><circle cx=\"16.5\" cy=\"11\" r=\".4\" fill=\"currentColor\"/><circle cx=\"18.5\" cy=\"14\" r=\".4\" fill=\"currentColor\"/></svg><span>emulator</span></a><a href=\"/news\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2\"/><path d=\"M18 14h-8\"/><path d=\"M15 18h-5\"/><path d=\"M10 6h8v4h-8V6Z\"/></svg><span>news</span></a><a href=\"/requests\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 17 6-6 4 4 8-8\"/><path d=\"M14 7h7v7\"/></svg><span>requests</span></a><a href=\"/people\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/></svg><span>people</span></a><a href=\"/confess\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 10h.01\"/><path d=\"M15 10h.01\"/><path d=\"M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z\"/></svg><span>confessions</span></a><a href=\"/forge\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"6\" y1=\"12\" x2=\"10\" y2=\"12\"/><line x1=\"8\" y1=\"10\" x2=\"8\" y2=\"14\"/><line x1=\"15\" y1=\"13\" x2=\"15.01\" y2=\"13\"/><line x1=\"18\" y1=\"11\" x2=\"18.01\" y2=\"11\"/><path d=\"M17.32 5H6.68a4 4 0 0 0-3.978 3.59C2.62 9.42 2 14.46 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.62-6.584-.685-7.258A4 4 0 0 0 17.32 5z\"/></svg><span>forge</span></a><a href=\"/tools\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1\"/><circle cx=\"16\" cy=\"6\" r=\"2\"/><circle cx=\"10\" cy=\"12\" r=\"2\"/><circle cx=\"18\" cy=\"18\" r=\"2\"/></svg><span>tools</span></a><a href=\"/space\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"3.2\" fill=\"currentColor\" stroke=\"none\"/><ellipse cx=\"12\" cy=\"12\" rx=\"10\" ry=\"4.2\" transform=\"rotate(-18 12 12)\"/></svg><span>space</span></a><a href=\"/download\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" y1=\"15\" x2=\"12\" y2=\"3\"/></svg><span>download</span></a></nav><div class=\"rl-foot\"><a href=\"/account\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg><span>account</span></a><button id=\"railMenu\" type=\"button\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1\"/><circle cx=\"16\" cy=\"6\" r=\"2\"/><circle cx=\"10\" cy=\"12\" r=\"2\"/><circle cx=\"18\" cy=\"18\" r=\"2\"/></svg><span>more</span></button></div></aside><div class=\"xlights xsite\" aria-hidden=\"true\"></div>${TABBAR_HTML}<div id="gxBar" hidden><img id="gxArt" alt=""><div class="gxb-meta"><b id="gxT"></b><span id="gxA"></span></div><div class="gxb-mid"><div class="gxb-btns"><button type="button" class="gxb-btn" id="gxShuf" aria-label="shuffle"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="m15 15 6 6"/><path d="M4 4l5 5"/></svg></button><button type="button" class="gxb-btn" id="gxPrev" aria-label="previous"><svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M7 6h2.4v12H7zM19 6v12L9.8 12z"/></svg></button><button type="button" class="gxb-btn gxb-main" id="gxPlay" aria-label="play or pause"><svg width="23" height="23" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button><button type="button" class="gxb-btn" id="gxNext" aria-label="next"><svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M14.6 6H17v12h-2.4zM5 6v12l9.2-6z"/></svg></button><button type="button" class="gxb-btn" id="gxRep" aria-label="repeat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg><span id="gxRepN"></span></button></div><div class="gxb-prog" id="gxProg"><span id="gxCur">0:00</span><div class="gxb-tr"><div id="gxFill"></div></div><span id="gxDur">0:00</span></div></div><div class="gxb-end"><button type="button" class="gxb-btn" id="gxLike" aria-label="like"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></button><button type="button" class="gxb-btn" id="gxDl" aria-label="download mp3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button><button type="button" class="gxb-btn" id="gxQB" aria-label="queue"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h13"/><path d="M4 12h13"/><path d="M4 18h9"/><path d="M18 15l5 3-5 3z" fill="currentColor" stroke="none"/></svg></button><span class="gxb-volwrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg><input type="range" id="gxVolR" min="0" max="100" value="85"></span><button type="button" class="gxb-btn" id="gxClose" aria-label="close player"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div><audio id="gxAu" preload="auto"></audio></div><script>(function(){
+</style><header id=\"topbar\"><a class=\"tb-logo\" href=\"/home\">6ix<span>networks</span></a><nav class=\"tb-links\"><a href=\"/home\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg>home</a><a href=\"/gs\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>games</a><a href=\"/chat\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg>6ixchat</a><a href=\"/ai\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>six ai</a><a href=\"/movies\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"2\" width=\"20\" height=\"20\" rx=\"2.18\"/><path d=\"M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5\"/></svg>6ixflix</a><a href=\"/news\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2\"/><path d=\"M18 14h-8\"/><path d=\"M15 18h-5\"/><path d=\"M10 6h8v4h-8V6Z\"/></svg>news</a><a href=\"/people\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/></svg>people</a><a href=\"/confess\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 10h.01\"/><path d=\"M15 10h.01\"/><path d=\"M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z\"/></svg>confessions</a></nav><a class=\"tb-search\" href=\"/search\" aria-label=\"search\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m21 21-4.3-4.3\"/></svg></a><a id=\"tbMe\" href=\"/account\" hidden></a><div class=\"tb-menuwrap\"><button id=\"menuBtn\" type=\"button\" aria-label=\"menu\">menu<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\"/></svg></button><div id=\"dropmenu\"><div class=\"dm-grid\"><a href=\"/home\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg>home</a><a href=\"/gs\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>games</a><a href=\"/blox\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z\"/><polyline points=\"3.27 6.96 12 12.01 20.73 6.96\"/><line x1=\"12\" y1=\"22.08\" x2=\"12\" y2=\"12\"/></svg>6ixblox</a><a href=\"/chat\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg>6ixchat</a><a href=\"/ai\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>six ai</a><a href=\"/yt\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"4\"/><path d=\"m10 9 5 3-5 3z\" fill=\"currentColor\" stroke=\"none\"/></svg>6ixtube</a><a href=\"/music\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18V5l12-2v13\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><circle cx=\"18\" cy=\"16\" r=\"3\"/></svg>6ixmusic</a><a href=\"/movies\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"2\" width=\"20\" height=\"20\" rx=\"2.18\"/><path d=\"M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5\"/></svg>6ixflix</a><a href=\"/search\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m21 21-4.3-4.3\"/></svg>search</a><a href=\"/apps\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2\" width=\"10\" height=\"20\" rx=\"2\"/><path d=\"M12 18h.01\"/></svg>apps</a><a href=\"/hw\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\"/><path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"/></svg>hw helper</a><a href=\"/emu\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"7\" width=\"20\" height=\"11\" rx=\"5\"/><path d=\"M7.5 10.5v4M5.5 12.5h4\"/><circle cx=\"16.5\" cy=\"11\" r=\".4\" fill=\"currentColor\"/><circle cx=\"18.5\" cy=\"14\" r=\".4\" fill=\"currentColor\"/></svg>emulator</a><a href=\"/news\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2\"/><path d=\"M18 14h-8\"/><path d=\"M15 18h-5\"/><path d=\"M10 6h8v4h-8V6Z\"/></svg>news</a><a href=\"/requests\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 17 6-6 4 4 8-8\"/><path d=\"M14 7h7v7\"/></svg>requests</a><a href=\"/people\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/></svg>people</a><a href=\"/confess\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 10h.01\"/><path d=\"M15 10h.01\"/><path d=\"M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z\"/></svg>confessions</a><a href=\"/forge\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"6\" y1=\"12\" x2=\"10\" y2=\"12\"/><line x1=\"8\" y1=\"10\" x2=\"8\" y2=\"14\"/><line x1=\"15\" y1=\"13\" x2=\"15.01\" y2=\"13\"/><line x1=\"18\" y1=\"11\" x2=\"18.01\" y2=\"11\"/><path d=\"M17.32 5H6.68a4 4 0 0 0-3.978 3.59C2.62 9.42 2 14.46 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.62-6.584-.685-7.258A4 4 0 0 0 17.32 5z\"/></svg>forge</a><a href=\"/tools\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1\"/><circle cx=\"16\" cy=\"6\" r=\"2\"/><circle cx=\"10\" cy=\"12\" r=\"2\"/><circle cx=\"18\" cy=\"18\" r=\"2\"/></svg>tools</a><a href=\"/space\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"3.2\" fill=\"currentColor\" stroke=\"none\"/><ellipse cx=\"12\" cy=\"12\" rx=\"10\" ry=\"4.2\" transform=\"rotate(-18 12 12)\"/></svg>space</a><a href=\"/download\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" y1=\"15\" x2=\"12\" y2=\"3\"/></svg>download</a><a href=\"/account\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg>account</a></div><div class=\"dm-sec\">ask six</div><form id=\"dmAsk\"><input id=\"dmQ\" type=\"text\" placeholder=\"ask six anything...\" autocomplete=\"off\"><button type=\"submit\">ask</button></form><div id=\"dmAns\" hidden></div><div class=\"dm-sec\">tab style</div><div class=\"sb-cloak\"><button onclick=\"cloakTab('google')\">google</button><button onclick=\"cloakTab('classroom')\">classroom</button><button onclick=\"cloakTab('docs')\">docs</button><button onclick=\"cloakTab('drive')\">drive</button><button onclick=\"cloakOpen()\">open in a tab</button><button type="button" data-clickoff onclick="gxClickoff()">clickoff: off</button></div><div class=\"dm-sec\">sky</div><div class=\"sb-cloak dm-sky\"><button type=\"button\" data-sky=\"nebula\" onclick=\"gxSetSky('nebula')\">nebula</button><button type=\"button\" data-sky=\"amber\" onclick=\"gxSetSky('amber')\">amber</button><button type=\"button\" data-sky=\"violet\" onclick=\"gxSetSky('violet')\">violet</button><button type=\"button\" data-sky=\"ice\" onclick=\"gxSetSky('ice')\">ice</button><button type=\"button\" data-sky=\"blood\" onclick=\"gxSetSky('blood')\">blood moon</button></div><div class=\"dm-sec\">personalize</div><div class=\"sb-cloak dm-pers\"><button type=\"button\" data-navm=\"bar\" onclick=\"gxSetNav('bar')\">top bar</button><button type=\"button\" data-navm=\"side\" onclick=\"gxSetNav('side')\">sidebar</button><button type=\"button\" data-accm=\"\" onclick=\"gxSetAcc('')\">accent: sky</button><button type=\"button\" data-accm=\"crimson\" onclick=\"gxSetAcc('crimson')\">crimson</button><button type=\"button\" data-accm=\"azure\" onclick=\"gxSetAcc('azure')\">azure</button><button type=\"button\" data-accm=\"toxic\" onclick=\"gxSetAcc('toxic')\">toxic</button><button type=\"button\" data-accm=\"gold\" onclick=\"gxSetAcc('gold')\">gold</button><button type=\"button\" data-accm=\"rose\" onclick=\"gxSetAcc('rose')\">rose</button><button type=\"button\" data-motion onclick=\"gxToggleMotion()\">animations: on</button><button type=\"button\" data-lights onclick=\"gxToggleLights()\">christmas lights: on</button><a href=\"/customize\" style=\"flex:1 1 100%;text-align:center;background:rgba(var(--acc),.18);border:1px solid rgba(var(--star),.4);color:#fff;border-radius:999px;padding:8px 11px;font-size:12.5px;font-weight:700;text-decoration:none\">make it urs \u2014 full builder</a></div></div></div></header><aside id=\"siderail\"><a class=\"rl-logo\" href=\"/home\">6ix<span>networks</span></a><nav class=\"rl\"><a href=\"/home\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></svg><span>home</span></a><a href=\"/gs\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg><span>games</span></a><a href=\"/blox\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z\"/><polyline points=\"3.27 6.96 12 12.01 20.73 6.96\"/><line x1=\"12\" y1=\"22.08\" x2=\"12\" y2=\"12\"/></svg><span>6ixblox</span></a><a href=\"/chat\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg><span>6ixchat</span></a><a href=\"/ai\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg><span>six ai</span></a><a href=\"/yt\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"4\"/><path d=\"m10 9 5 3-5 3z\" fill=\"currentColor\" stroke=\"none\"/></svg><span>6ixtube</span></a><a href=\"/music\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18V5l12-2v13\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><circle cx=\"18\" cy=\"16\" r=\"3\"/></svg><span>6ixmusic</span></a><a href=\"/movies\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"2\" width=\"20\" height=\"20\" rx=\"2.18\"/><path d=\"M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5\"/></svg><span>6ixflix</span></a><a href=\"/search\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m21 21-4.3-4.3\"/></svg><span>search</span></a><a href=\"/apps\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2\" width=\"10\" height=\"20\" rx=\"2\"/><path d=\"M12 18h.01\"/></svg><span>apps</span></a><a href=\"/hw\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\"/><path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"/></svg><span>hw helper</span></a><a href=\"/emu\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"7\" width=\"20\" height=\"11\" rx=\"5\"/><path d=\"M7.5 10.5v4M5.5 12.5h4\"/><circle cx=\"16.5\" cy=\"11\" r=\".4\" fill=\"currentColor\"/><circle cx=\"18.5\" cy=\"14\" r=\".4\" fill=\"currentColor\"/></svg><span>emulator</span></a><a href=\"/news\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2\"/><path d=\"M18 14h-8\"/><path d=\"M15 18h-5\"/><path d=\"M10 6h8v4h-8V6Z\"/></svg><span>news</span></a><a href=\"/requests\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 17 6-6 4 4 8-8\"/><path d=\"M14 7h7v7\"/></svg><span>requests</span></a><a href=\"/people\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/></svg><span>people</span></a><a href=\"/confess\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 10h.01\"/><path d=\"M15 10h.01\"/><path d=\"M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z\"/></svg><span>confessions</span></a><a href=\"/forge\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"6\" y1=\"12\" x2=\"10\" y2=\"12\"/><line x1=\"8\" y1=\"10\" x2=\"8\" y2=\"14\"/><line x1=\"15\" y1=\"13\" x2=\"15.01\" y2=\"13\"/><line x1=\"18\" y1=\"11\" x2=\"18.01\" y2=\"11\"/><path d=\"M17.32 5H6.68a4 4 0 0 0-3.978 3.59C2.62 9.42 2 14.46 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.62-6.584-.685-7.258A4 4 0 0 0 17.32 5z\"/></svg><span>forge</span></a><a href=\"/tools\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1\"/><circle cx=\"16\" cy=\"6\" r=\"2\"/><circle cx=\"10\" cy=\"12\" r=\"2\"/><circle cx=\"18\" cy=\"18\" r=\"2\"/></svg><span>tools</span></a><a href=\"/space\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"3.2\" fill=\"currentColor\" stroke=\"none\"/><ellipse cx=\"12\" cy=\"12\" rx=\"10\" ry=\"4.2\" transform=\"rotate(-18 12 12)\"/></svg><span>space</span></a><a href=\"/download\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" y1=\"15\" x2=\"12\" y2=\"3\"/></svg><span>download</span></a></nav><div class=\"rl-foot\"><a href=\"/account\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg><span>account</span></a><button id=\"railMenu\" type=\"button\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1\"/><circle cx=\"16\" cy=\"6\" r=\"2\"/><circle cx=\"10\" cy=\"12\" r=\"2\"/><circle cx=\"18\" cy=\"18\" r=\"2\"/></svg><span>more</span></button></div></aside><div class=\"xlights xsite\" aria-hidden=\"true\"></div>${TABBAR_HTML}<div id="gxBar" hidden><img id="gxArt" alt=""><div class="gxb-meta"><b id="gxT"></b><span id="gxA"></span></div><div class="gxb-mid"><div class="gxb-btns"><button type="button" class="gxb-btn" id="gxShuf" aria-label="shuffle"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="m15 15 6 6"/><path d="M4 4l5 5"/></svg></button><button type="button" class="gxb-btn" id="gxPrev" aria-label="previous"><svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M7 6h2.4v12H7zM19 6v12L9.8 12z"/></svg></button><button type="button" class="gxb-btn gxb-main" id="gxPlay" aria-label="play or pause"><svg width="23" height="23" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button><button type="button" class="gxb-btn" id="gxNext" aria-label="next"><svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M14.6 6H17v12h-2.4zM5 6v12l9.2-6z"/></svg></button><button type="button" class="gxb-btn" id="gxRep" aria-label="repeat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg><span id="gxRepN"></span></button></div><div class="gxb-prog" id="gxProg"><span id="gxCur">0:00</span><div class="gxb-tr"><div id="gxFill"></div></div><span id="gxDur">0:00</span></div></div><div class="gxb-end"><button type="button" class="gxb-btn" id="gxLike" aria-label="like"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></button><button type="button" class="gxb-btn" id="gxDl" aria-label="download mp3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button><button type="button" class="gxb-btn" id="gxQB" aria-label="queue"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h13"/><path d="M4 12h13"/><path d="M4 18h9"/><path d="M18 15l5 3-5 3z" fill="currentColor" stroke="none"/></svg></button><span class="gxb-volwrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg><input type="range" id="gxVolR" min="0" max="100" value="85"></span><button type="button" class="gxb-btn" id="gxClose" aria-label="close player"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div><audio id="gxAu" preload="auto"></audio></div><script>(function(){
   if (window.gxMusic) return;
   if (window.top !== window) { try { if (window.top.gxMusic) return; } catch (e) {} }
   var bar = document.getElementById('gxBar'); if (!bar) return;
@@ -7047,12 +7047,13 @@ function adminPage() {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
-.nwrap{width:100%;max-width:860px;margin:0 auto;text-align:left}
+.nwrap{width:100%;max-width:860px;margin:0 auto;text-align:left;padding-bottom:120px}
 .nwrap h1{text-align:left;margin:2px 0 10px}
 .asec{font-size:16px;margin:24px 0 8px}
 .acard{background:rgba(13,11,26,.72);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:12px 16px}
 .arow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:9px 0;border-top:1px solid rgba(255,255,255,.07)}
 .arow:first-child{border-top:0}
+.vchat{background:rgba(0,0,0,.32);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:9px 12px;font-size:13px;line-height:1.6;word-break:break-word;margin:4px 0 8px;flex-basis:100%;box-sizing:border-box}
 .aname{font-weight:700}
 .asub{color:#8e8aa0;font-size:12.5px}
 .admbtn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#f4f4f5;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
@@ -7079,6 +7080,8 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <div class="acard" id="adIps"></div>
 <h2 class="asec">game requests</h2>
 <div class="acard" id="adReqs"></div>
+<h2 class="asec">6ixvid reports</h2>
+<div class="acard" id="adVid"></div>
 </div>
 ${SIDEBAR_HTML}
 </div>
@@ -7128,6 +7131,22 @@ function render(){
   });
   if ((S.reqs || []).length) qh += '<div class="arow">' + btn('req-clear', 'clear all requests', '', 'danger') + '</div>';
   document.getElementById('adReqs').innerHTML = qh || '<div class="asub">no requests</div>';
+  var vh = '';
+  var byAgainst = {};
+  (S.vidReports || []).forEach(function (r) { (byAgainst[r.against] = byAgainst[r.against] || []).push(r); });
+  if ((S.vidBans || []).length) vh += '<div class="arow"><span class="asub">banned from 6ixvid:</span>' + S.vidBans.map(function (x) { return '<span style="font-size:12.5px">@' + escA(x) + '</span>' + btn('vid-unban', 'unban', ' data-u="' + escA(x) + '"'); }).join('') + '</div>';
+  Object.keys(byAgainst).forEach(function (ag) {
+    var list = byAgainst[ag];
+    var isB = (S.vidBans || []).indexOf(ag) >= 0;
+    vh += '<div class="arow"><span class="aname">@' + escA(ag) + '</span><span class="asub">' + list.length + ' report' + (list.length > 1 ? 's' : '') + '</span>' + (isB ? btn('vid-unban', 'unban', ' data-u="' + escA(ag) + '"') : btn('vid-ban', 'ban from 6ixvid', ' data-u="' + escA(ag) + '"', 'danger')) + '</div>';
+    list.forEach(function (r) {
+      var when = r.at ? new Date(r.at).toLocaleString() : '';
+      var chat = (r.msgs && r.msgs.length) ? r.msgs.map(function (m) { return '<b>@' + escA(m.u || '') + ':</b> ' + escA(m.text || ''); }).join('<br>') : '(no chat saved)';
+      vh += '<div class="arow"><span class="asub">reported by @' + escA(r.by) + ' · ' + escA(when) + ' · ' + ((r.msgs || []).length) + ' msgs saved</span>' + btn('vid-chat', 'view chat', ' data-id="' + escA(r.id) + '"') + btn('vid-dismiss', 'dismiss', ' data-id="' + escA(r.id) + '"') + '<div class="vchat" id="vc-' + escA(r.id) + '" hidden>' + chat + '</div></div>';
+    });
+  });
+  if ((S.vidReports || []).length) vh += '<div class="arow">' + btn('vid-clear', 'clear all reports', '', 'danger') + '</div>';
+  document.getElementById('adVid').innerHTML = vh || '<div class="asub">no reports</div>';
 }
 function load(){
   fetch('/api/admin/state').then(function (r) { return r.json(); }).then(function (o) { S = o; render(); }).catch(function () {});
@@ -7138,6 +7157,11 @@ document.addEventListener('click', function (ev) {
   if (!b) return;
   var act = b.getAttribute('data-act'), u = b.getAttribute('data-u'), room = b.getAttribute('data-room'), id = b.getAttribute('data-id'), ip = b.getAttribute('data-ip');
   if (act === 'conf-clear') { if (!confirm('wipe ALL confessions?')) return; post('/api/admin/confess/clear').then(function () { note('confessions wiped'); confCount = 0; render(); }); }
+  else if (act === 'vid-chat') { var vc = document.getElementById('vc-' + id); if (vc) vc.hidden = !vc.hidden; }
+  else if (act === 'vid-dismiss') { post('/api/admin/vid/dismiss', { id: id }).then(function () { note('report dismissed'); load(); }); }
+  else if (act === 'vid-clear') { if (!confirm('clear ALL 6ixvid reports?')) return; post('/api/admin/vid/clear').then(function () { note('reports cleared'); load(); }); }
+  else if (act === 'vid-ban') { if (!confirm('ban @' + u + ' from 6ixvid?')) return; post('/api/admin/vid/ban', { user: u }).then(function () { note('banned ' + u + ' from 6ixvid'); load(); }); }
+  else if (act === 'vid-unban') { post('/api/admin/vid/unban', { user: u }).then(function () { note('unbanned ' + u); load(); }); }
   else if (act === 'room-clear') { if (!confirm('clear room ' + room + '?')) return; post('/api/admin/chat/clear', { room: room }).then(function () { note('cleared ' + room); load(); }); }
   else if (act === 'room-purge') { var un2 = prompt('delete ALL messages from who in ' + room + '?'); if (!un2) return; post('/api/admin/chat/purgeuser', { room: room, user: un2 }).then(function (o) { note('purged ' + ((o && o.removed) || 0) + ' msgs'); load(); }); }
   else if (act === 'u-mute') { var mins = parseInt(prompt('mute @' + u + ' for how many minutes?', '10') || '10', 10) || 10; post('/api/admin/chat/mute', { user: u, mins: mins }).then(function () { note('muted ' + u + ' for ' + mins + 'm'); load(); }); }
@@ -12081,7 +12105,8 @@ body.gx-extbar #gxBar{display:none!important}
       <button type="button" class="msnavb on" data-nav="home"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>home</button>
       <button type="button" class="msnavb" data-nav="library"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12z"/></svg>your library</button>
       <button type="button" class="msnavb" data-nav="queue"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M15 6H3v2h12zm0 4H3v2h12zm-8 4H3v2h4zm12.36 2.36L22 19.92 17.08 15H15v4.24C14.65 19.1 14.35 19 13.97 19c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2v-3.64z"/></svg>queue</button>
-    </nav>
+    <button type="button" class="msnavb" data-nav="spotify"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8 10.2c2.8-.8 5.6-.5 8.2.7M8.2 13c2.3-.6 4.6-.4 6.7.6M8.4 15.7c1.8-.4 3.5-.3 5.1.4"/></svg>spotify</button>
+      </nav>
     <div class="msplhead"><span>playlists</span><button type="button" id="msPlAdd" aria-label="new playlist">+</button></div>
     <div id="msPlList"></div>
     <button type="button" class="mspin" data-nav="liked"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>liked songs</button>
@@ -12110,6 +12135,7 @@ body.gx-extbar #gxBar{display:none!important}
     <button type="button" id="msNpLike"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></button>
     <button type="button" id="msNpLyr"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21H8v2h8v-2h-3v-3.08A7 7 0 0 0 19 11z"/></svg><span>lyrics</span></button>
     <button type="button" id="msNpQueue"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M15 6H3v2h12zm0 4H3v2h12zm-8 4H3v2h4zm12.36 2.36L22 19.92 17.08 15H15v4.24C14.65 19.1 14.35 19 13.97 19c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2v-3.64z"/></svg><span>queue</span></button>
+    <button type="button" id="msNpFyp"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2z"/></svg><span>fyp</span></button>
     <label class="msnpvol"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.05A4.5 4.5 0 0 0 16.5 12z"/></svg><input type="range" id="msNpVol" min="0" max="100" value="85"></label>
   </div>
   <div class="msnplyr" id="msNpLyrics" hidden></div>
@@ -12449,6 +12475,14 @@ function renderLibrary() {
   h += '<div class="mssec">liked songs <span>' + L.length + '</span></div>';
   CTX.libLiked = L;
   h += L.length ? rowsHtml(L.slice(0, 30), 'libLiked') : '<div class="msempty">tap the heart on any song</div>';
+  h += '<div class="mssec">fyp saves</div><div id="libFyp"><div class="msempty">loading\u2026</div></div>';
+  fetch('/api/fyp/list').then(function(r) { return r.json(); }).then(function(j) {
+    var box = document.getElementById('libFyp'); if (!box) return;
+    var songs = (j.items || []).filter(function(x) { return x.kind === 'song'; }).map(function(x) { return { id: x.id, t: x.title, a: x.sub || '', img: x.img || '', len: 0 }; });
+    if (!songs.length) { box.innerHTML = '<div class="msempty">tap fyp on any song to save it here</div>'; return; }
+    CTX.fypSongs = songs;
+    box.innerHTML = rowsHtml(songs.slice(0, 30), 'fypSongs');
+  }).catch(function() { var box = document.getElementById('libFyp'); if (box) box.innerHTML = ''; });
   if (SAVED_ALB.length) h += '<div class="mssec">saved albums</div><div class="msrail">' + SAVED_ALB.map(function(a) { return cardHtml({ kind: 'album', bid: a.bid, aname: a.a, img: a.img, t: a.t, sub: a.a }, ''); }).join('') + '</div>';
   if (FOLLOWS.length) h += '<div class="mssec">followed artists</div><div class="msrail">' + FOLLOWS.map(function(f) { return '<div class="mscard round" data-fol="' + escA(f.id) + '" role="button" tabindex="0"><b>' + escA(f.name) + '</b><span>artist</span></div>'; }).join('') + '</div>';
   if (PLAYLISTS.length) {
@@ -12489,6 +12523,37 @@ function renderPlaylist(i) {
   bindRows(main);
   $('plPlay').addEventListener('click', function() { if (CTX.plTracks.length) playList(CTX.plTracks, 0); });
   $('plDel').addEventListener('click', function() { PLAYLISTS.splice(i, 1); lsSet('gx_mus_plists', PLAYLISTS); syncSide(); renderLibrary(); });
+}
+
+/* ---------- SPOTIFY ---------- */
+function renderSpotify() {
+  VIEW = { name: 'spotify' }; navOn('spotify');
+  main.innerHTML = '<div class="mssec" style="margin-top:2px">spotify</div>'
+    + '<p class="mssub" style="margin:0 2px 12px">charts + search from spotify — everything plays right here like normal</p>'
+    + '<form class="mssearch" id="spForm"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg><input id="spQ" type="text" placeholder="search spotify" autocomplete="off"><button type="submit" aria-label="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button></form>'
+    + '<div id="spBody"><div class="msempty">loading charts…</div></div>';
+  window.scrollTo(0, 0);
+  $('spForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var qq = $('spQ').value.trim(); if (!qq) return;
+    $('spBody').innerHTML = '<div class="msempty">searching spotify…</div>';
+    fetch('/api/sp/search?q=' + encodeURIComponent(qq)).then(function(r) { return r.json(); }).then(function(j) {
+      if (!j.ok) { $('spBody').innerHTML = '<div class="msempty">' + escA(j.err || 'spotify search failed') + '</div>'; return; }
+      if (!j.tracks || !j.tracks.length) { $('spBody').innerHTML = '<div class="msempty">no playable matches for that</div>'; return; }
+      CTX.spq = j.tracks;
+      $('spBody').innerHTML = '<div class="mssec">results</div>' + rowsHtml(j.tracks, 'spq');
+    }).catch(function() { $('spBody').innerHTML = '<div class="msempty">spotify search failed</div>'; });
+  });
+  fetch('/api/sp/charts').then(function(r) { return r.json(); }).then(function(j) {
+    if (!j.ok) { $('spBody').innerHTML = '<div class="msempty">' + escA(j.err || 'spotify is unreachable rn') + '</div>'; return; }
+    var h = '';
+    (j.charts || []).forEach(function(c, ci) {
+      var key = 'sp' + ci;
+      CTX[key] = c.tracks;
+      h += '<div class="mssec">' + escA(c.name) + '</div>' + rowsHtml(c.tracks, key);
+    });
+    $('spBody').innerHTML = h || '<div class="msempty">charts came back empty</div>';
+  }).catch(function() { $('spBody').innerHTML = '<div class="msempty">spotify is unreachable rn</div>'; });
 }
 
 /* ---------- NOW PLAYING ---------- */
@@ -12580,8 +12645,21 @@ function brainFlow() {
   });
 }
 
+/* ---------- FYP SAVE (v445) ---------- */
+(function() {
+  var btn = $('msNpFyp'); if (!btn) return;
+  function curTr() { var g = gx(); if (!g) return null; var st = g.state(); if (!st || !st.queue || !st.queue.length) return null; return st.queue[st.idx || 0] || null; }
+  function paint() { var t = curTr(); if (!t) return; fetch('/api/fyp/list').then(function(r) { return r.json(); }).then(function(j) { var on = j.ok && (j.items || []).some(function(x) { return x.kind === 'song' && x.id === t.id; }); btn.querySelector('span').textContent = on ? 'fyp \u2713' : 'fyp'; }).catch(function() {}); }
+  btn.addEventListener('click', function() {
+    var t = curTr(); if (!t) { showToast('play a song first'); return; }
+    fetch('/api/fyp/save', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind: 'song', id: t.id, title: t.t || '', img: t.img || '', sub: t.a || '' }) }).then(function(r) { return r.json(); }).then(function(j) { if (j.ok) { btn.querySelector('span').textContent = j.saved ? 'fyp \u2713' : 'fyp'; showToast(j.saved ? 'saved to ur fyp' : 'removed from ur fyp'); } else showToast(j.err || 'log in first'); }).catch(function() {});
+  });
+  setInterval(paint, 4000);
+})();
+
 /* ---------- ONBOARDING ---------- */
 function maybeOnboard() {
+  return; // v445: fyp buttons replaced the taste popup
   var done = lsGet('gx_onboard_v1', null);
   var b = brain();
   var has = Object.keys(b.artists || {}).length > 0 || likedList().length > 0;
@@ -12618,6 +12696,7 @@ document.querySelectorAll('.msnavb').forEach(function(b) {
     if (n === 'home') renderHome();
     else if (n === 'library') renderLibrary();
     else if (n === 'queue') renderQueue();
+    else if (n === 'spotify') renderSpotify();
   });
 });
 document.querySelector('[data-nav="liked"]').addEventListener('click', function() { renderLibrary(); });
@@ -14629,6 +14708,7 @@ const TSUBS = new Map();
 const TPLS = new Map();
 const THIST = new Map();
 const TOKTAGS = new Map();
+const FYPV = new Map();
 const TWL = new Map();
 const TPOSTS = new Map();
 const TREPORTS = [];
@@ -14636,9 +14716,9 @@ const TCHAN = new Map();
 const TVIEWCOOL = new Map();
 const TEXT = new Map();
 const TEXTMETA = new Map();
-(async () => { try { const got = await storeCmd([['GET', 'cfg:tube']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); (o.v || []).forEach(x => TVIDEOS.set(x.id, x)); Object.entries(o.c || {}).forEach(([k, v]) => TCOMMENTS.set(k, v)); Object.entries(o.s || {}).forEach(([k, v]) => TSUBS.set(k, v)); (o.pl || []).forEach(x => TPLS.set(x.id, x)); Object.entries(o.h || {}).forEach(([k, v]) => THIST.set(k, v)); Object.entries(o.w || {}).forEach(([k, v]) => TWL.set(k, v)); (o.po || []).forEach(x => TPOSTS.set(x.id, x)); (o.rp || []).forEach(x => TREPORTS.push(x)); Object.entries(o.ch || {}).forEach(([k, v]) => TCHAN.set(k, v)); Object.entries(o.x || {}).forEach(([k, v]) => TEXT.set(k, v)); Object.entries(o.xm || {}).forEach(([k, v]) => TEXTMETA.set(k, v)); Object.entries(o.tk || {}).forEach(([k, v]) => TOKTAGS.set(k, v)); } } catch (e) {} })();
+(async () => { try { const got = await storeCmd([['GET', 'cfg:tube']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); (o.v || []).forEach(x => TVIDEOS.set(x.id, x)); Object.entries(o.c || {}).forEach(([k, v]) => TCOMMENTS.set(k, v)); Object.entries(o.s || {}).forEach(([k, v]) => TSUBS.set(k, v)); (o.pl || []).forEach(x => TPLS.set(x.id, x)); Object.entries(o.h || {}).forEach(([k, v]) => THIST.set(k, v)); Object.entries(o.w || {}).forEach(([k, v]) => TWL.set(k, v)); (o.po || []).forEach(x => TPOSTS.set(x.id, x)); (o.rp || []).forEach(x => TREPORTS.push(x)); Object.entries(o.ch || {}).forEach(([k, v]) => TCHAN.set(k, v)); Object.entries(o.x || {}).forEach(([k, v]) => TEXT.set(k, v)); Object.entries(o.xm || {}).forEach(([k, v]) => TEXTMETA.set(k, v)); Object.entries(o.tk || {}).forEach(([k, v]) => TOKTAGS.set(k, v)); Object.entries(o.fv || {}).forEach(([k, v]) => FYPV.set(k, v)); } } catch (e) {} })();
 let tubeSaveT = null;
-function tubePersist() { clearTimeout(tubeSaveT); tubeSaveT = setTimeout(() => { try { storeSet('cfg:tube', JSON.stringify({ v: [...TVIDEOS.values()], c: Object.fromEntries(TCOMMENTS), s: Object.fromEntries(TSUBS), pl: [...TPLS.values()], h: Object.fromEntries(THIST), w: Object.fromEntries(TWL), po: [...TPOSTS.values()], rp: TREPORTS.slice(-200), ch: Object.fromEntries(TCHAN), x: Object.fromEntries(TEXT), xm: Object.fromEntries(TEXTMETA), tk: Object.fromEntries(TOKTAGS) })); } catch (e) {} }, 800); }
+function tubePersist() { clearTimeout(tubeSaveT); tubeSaveT = setTimeout(() => { try { storeSet('cfg:tube', JSON.stringify({ v: [...TVIDEOS.values()], c: Object.fromEntries(TCOMMENTS), s: Object.fromEntries(TSUBS), pl: [...TPLS.values()], h: Object.fromEntries(THIST), w: Object.fromEntries(TWL), po: [...TPOSTS.values()], rp: TREPORTS.slice(-200), ch: Object.fromEntries(TCHAN), x: Object.fromEntries(TEXT), xm: Object.fromEntries(TEXTMETA), tk: Object.fromEntries(TOKTAGS), fv: Object.fromEntries(FYPV) })); } catch (e) {} }, 800); }
 function tubeId(p) { return (p || 't') + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function chanOf(user) { const c = TCHAN.get(user) || {}; let subs = 0; for (const m of TSUBS.values()) if (m && m[user]) subs++; return { user, name: c.name || user, bio: c.bio || '', banner: c.banner || '', avatar: c.avatar || '', subs }; }
 function vidView(v, me) { if (!v) return null; return { id: v.id, owner: v.owner, chan: chanOf(v.owner).name, title: v.title, desc: v.desc, tags: v.tags || [], cat: v.cat || '', vis: v.vis, thumb: v.thumb || '', dur: v.dur || 0, vertical: !!v.vertical, views: v.views || 0, likes: (v.likedBy || []).length, dislikes: (v.dislikedBy || []).length, my: me ? ((v.likedBy || []).includes(me) ? 'like' : ((v.dislikedBy || []).includes(me) ? 'dislike' : '')) : '', created: v.created, captions: !!v.cap, mine: !!me && v.owner === me, file: v.file }; }
@@ -14735,7 +14815,7 @@ function tubeSocialWidget(vidId, meta) {
 .tgfeat-s{font-size:12.5px;color:rgba(236,234,246,.6);width:100%}
 .tgfeat button{margin-left:auto;font-size:13.5px;font-weight:800;padding:10px 18px;border-radius:999px;border:0;background:#8b7cff;color:#fff;cursor:pointer;font-family:inherit}
 </style>
-<div id="gxSoc"><div class="hd"><b>6IXTUBE</b><button id="gsLike" type="button">▲ 0</button><button id="gsDis" type="button">▼ 0</button><button id="gsSave" type="button">save</button><button id="gsSub" type="button">subscribe</button><button id="gsCm" type="button">comments 0</button><button id="gsHistB" type="button">watched</button><button id="gsParty" type="button">watch party</button></div><div class="bd"><div id="gsHist"></div><div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1"><textarea id="gsBox" rows="2" placeholder="add a comment…"></textarea></div><button id="gsPost" type="button">post</button></div><div id="gsList"></div></div></div>
+<div id="gxSoc"><div class="hd"><b>6IXTUBE</b><button id="gsLike" type="button">▲ 0</button><button id="gsDis" type="button">▼ 0</button><button id="gsSave" type="button">save</button><button id="gsFyp" type="button">fyp</button><button id="gsSub" type="button">subscribe</button><button id="gsCm" type="button">comments 0</button><button id="gsHistB" type="button">watched</button><button id="gsParty" type="button">watch party</button></div><div class="bd"><div id="gsHist"></div><div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1"><textarea id="gsBox" rows="2" placeholder="add a comment…"></textarea></div><button id="gsPost" type="button">post</button></div><div id="gsList"></div></div></div>
 <script>
 (function(){
 var D = ${data};
@@ -14755,6 +14835,9 @@ try {
     tgCard.innerHTML = '<div class="tgfeat-t"><svg viewBox="0 0 24 24" width="17" height="17" fill="#ffd257" aria-hidden="true"><path d="M3 8.2l4.2 3.6L12 5.4l4.8 6.4L21 8.2l-1.7 9.3H4.7L3 8.2z"/></svg>watch together</div><button id="tgYtBtn" type="button">start watch party</button><div class="tgfeat-s">watch this in sync with friends — u start as the leader, hand the crown off whenever</div>';
     tgHost.insertAdjacentElement('afterend', tgCard);
     document.getElementById('tgYtBtn').addEventListener('click', function(){ jp('/api/party/create', { type: 'watch', media: { kind: 'yt', id: D.raw, title: D.t, img: D.th } }).then(function(r){ if (r.ok && r.code) location.href = '/party/' + r.code; else alert(r.err || 'log in first'); }); });
+    var gfyp = document.getElementById('gsFyp');
+    if (gfyp) { fetch('/api/fyp/list').then(function(r){ return r.json(); }).then(function(j){ if (j.ok && (j.items || []).some(function(x){ return x.kind === 'yt' && x.id === D.raw; })) gfyp.classList.add('on'); }).catch(function(){});
+    gfyp.addEventListener('click', function(){ fetch('/api/fyp/save', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind: 'yt', id: D.raw, title: D.t, img: D.th, sub: D.c || '' }) }).then(function(r){ return r.json(); }).then(function(j){ if (j.ok) gfyp.classList.toggle('on', j.saved); else alert(j.err || 'log in first'); }); }); }
   }
 } catch (e) {}
 jg('/api/tube/extstate?id=' + encodeURIComponent(XID)).then(paint);
@@ -15108,6 +15191,7 @@ h3.pt{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:rgba(236
 .vctrl input[type=range]{flex:1;accent-color:#8b7cff;min-width:60px}
 .vstage:fullscreen{background:#000}
 .vstage:fullscreen video{height:100%;aspect-ratio:auto}
+@media(min-width:1100px){.phead{padding-right:128px}}
 `;
 
 function partyBtnHtml(kind, id, title) {
@@ -15442,6 +15526,11 @@ const VIDOF = new Map();
 const VIDLAST = new Map();
 const VIDNOTE = new Map();
 const VIDREPORTS = [];
+const VIDBANS = new Set();
+let vidDataLoaded = false;
+let vidReportSeq = 1;
+async function vidDataLoad() { if (vidDataLoaded) return; vidDataLoaded = true; try { const got = await storeCmd([['GET', 'cfg:vid']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o && Array.isArray(o.reports)) { VIDREPORTS.length = 0; for (const r of o.reports) VIDREPORTS.push(r); } if (o && Array.isArray(o.bans)) for (const x of o.bans) VIDBANS.add(String(x).toLowerCase()); } } catch { } }
+function vidDataSave() { try { storeSet('cfg:vid', JSON.stringify({ reports: VIDREPORTS.slice(-60), bans: [...VIDBANS] })); } catch { } }
 let vidPairSeq = 1;
 function vidPartner(p, me) { return p.a === me ? p.b : p.a; }
 function vidDissolve(p, whyA, whyB) {
@@ -15501,6 +15590,7 @@ async function vidApi(req, res, u) {
   if (!u.pathname.startsWith('/api/vid/')) return false;
   const me = voterUser(req);
   if (!me) { partyJson(res, 401, { ok: false, err: 'log in first' }); return true; }
+  await vidDataLoad();
   let b = {};
   if (req.method === 'POST') { try { b = (await readJsonBody(req)) || {}; } catch { b = {}; } }
   const myPair = () => { const st = VIDOF.get(me); return st && st.mode === 'pair' ? VIDPAIRS.get(st.id) : null; };
@@ -15511,6 +15601,7 @@ async function vidApi(req, res, u) {
   }
   if (u.pathname === '/api/vid/state') { partyJson(res, 200, vidState(me)); return true; }
   if (u.pathname === '/api/vid/queue') {
+    if (VIDBANS.has(me)) { partyJson(res, 403, { ok: false, err: 'u are banned from 6ixvid', banned: true }); return true; }
     const st = VIDOF.get(me);
     if (st && st.mode === 'pair') { partyJson(res, 200, vidState(me)); return true; }
     const ex = VIDQ.find((q) => q.u === me);
@@ -15528,6 +15619,7 @@ async function vidApi(req, res, u) {
     return true;
   }
   if (u.pathname === '/api/vid/next') {
+    if (VIDBANS.has(me)) { partyJson(res, 403, { ok: false, err: 'u are banned from 6ixvid', banned: true }); return true; }
     const p = myPair();
     if (p) vidDissolve(p, null, 'stranger skipped');
     if (!VIDQ.find((q) => q.u === me)) { VIDQ.push({ u: me, at: Date.now() }); VIDOF.set(me, { mode: 'queue' }); }
@@ -15561,8 +15653,9 @@ async function vidApi(req, res, u) {
     const p = myPair();
     const against = p ? vidPartner(p, me) : (VIDLAST.get(me) || '');
     if (against) {
-      VIDREPORTS.push({ by: me, against: against, at: Date.now() });
-      if (VIDREPORTS.length > 100) VIDREPORTS.splice(0, VIDREPORTS.length - 100);
+      VIDREPORTS.push({ id: 'vr' + Date.now().toString(36) + (vidReportSeq++), by: me, against: against, at: Date.now(), msgs: p ? p.msgs.slice(-60) : [] });
+      if (VIDREPORTS.length > 60) VIDREPORTS.splice(0, VIDREPORTS.length - 60);
+      vidDataSave();
       try { pushNotif('deion', { type: 'vidreport', from: me, text: me + ' reported ' + against + ' on 6ixvid' }); } catch { }
     }
     if (p) vidDissolve(p, null, 'stranger left');
@@ -15854,6 +15947,121 @@ function tkNorm(v) {
   if (TKCACHE.size > 500) TKCACHE.delete(TKCACHE.keys().next().value);
   return item;
 }
+// ================= v444: spotify brain for 6ixmusic =================
+// Spotify supplies charts + search metadata (anonymous web-player token, no account).
+// Every track is matched to the site's own stream lane before it is served — playback never touches spotify.
+let SPTOK = { t: '', exp: 0 };
+const SPCACHE = new Map();
+const SP_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+function jres(res, code, o) { try { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); } catch (e) {} }
+async function spToken() {
+  if (SPTOK.t && Date.now() < SPTOK.exp) return SPTOK.t;
+  const r = await fetch('https://open.spotify.com/get_access_token?reason=transport&productType=web_player', { headers: { 'user-agent': SP_UA }, signal: AbortSignal.timeout(12000) });
+  if (!r.ok) throw new Error('sp token ' + r.status);
+  const j = await r.json();
+  if (!j || !j.accessToken) throw new Error('sp token shape');
+  const expMs = Number(j.accessTokenExpirationTimestampMs) || (Date.now() + 1800000);
+  SPTOK = { t: j.accessToken, exp: Date.now() + Math.max(60000, expMs - Date.now() - 300000) };
+  return SPTOK.t;
+}
+async function spGet(path) {
+  const tok = await spToken();
+  const r = await fetch('https://api.spotify.com/v1' + path, { headers: { 'user-agent': SP_UA, authorization: 'Bearer ' + tok }, signal: AbortSignal.timeout(15000) });
+  if (!r.ok) throw new Error('sp api ' + r.status);
+  return r.json();
+}
+function spNormTrack(t) {
+  if (!t || !t.name) return null;
+  const imgs = (t.album && t.album.images) || [];
+  const img = imgs.length ? (imgs[1] || imgs[0]).url : '';
+  return { t: t.name, a: (t.artists || []).map((x) => x.name).join(', '), img: img || '', len: Math.round((t.duration_ms || 0) / 1000) };
+}
+async function spMatch(list, cap) {
+  const out = [];
+  for (const s of list) {
+    if (!s) continue;
+    try {
+      const r = await ytmSearchAll(s.t + ' ' + s.a);
+      const hit = r && r.songs && r.songs[0];
+      if (hit && hit.id) out.push({ id: hit.id, t: s.t, a: s.a, img: s.img || hit.img || '', len: s.len || hit.len || 0, plays: '' });
+    } catch (e) { /* unmatched tracks are dropped — rows must play */ }
+    if (out.length >= cap) break;
+  }
+  return out;
+}
+async function spApi(req, res, u) {
+  const p = u.pathname;
+  if (!p.startsWith('/api/sp/')) return false;
+  try {
+    if (p === '/api/sp/charts') {
+      const hit = SPCACHE.get('charts');
+      if (hit && Date.now() - hit.at < 1800000) { jres(res, 200, { ok: true, charts: hit.v }); return true; }
+      const defs = [['top 50 — global', '37i9dQZEVXbMDoHDwVN2tF'], ['viral 50 — global', '37i9dQZEVXbLiRSasKsNU9']];
+      const charts = [];
+      for (const d of defs) {
+        try {
+          const j = await spGet('/playlists/' + d[1] + '/tracks?limit=50&fields=items(track(id,name,duration_ms,artists(name),album(images)))');
+          const raw = (j.items || []).map((x) => spNormTrack(x && x.track)).filter(Boolean);
+          const tracks = await spMatch(raw.slice(0, 24), 24);
+          if (tracks.length) charts.push({ name: d[0], tracks });
+        } catch (e) { /* one chart failing does not sink the other */ }
+      }
+      if (!charts.length) { jres(res, 200, { ok: false, err: 'spotify is unreachable rn' }); return true; }
+      SPCACHE.set('charts', { at: Date.now(), v: charts });
+      jres(res, 200, { ok: true, charts });
+      return true;
+    }
+    if (p === '/api/sp/search') {
+      const qq = (u.searchParams.get('q') || '').trim().slice(0, 80);
+      if (!qq) { jres(res, 400, { ok: false, err: 'empty' }); return true; }
+      const key = 'q:' + qq.toLowerCase();
+      const hit = SPCACHE.get(key);
+      if (hit && Date.now() - hit.at < 600000) { jres(res, 200, { ok: true, tracks: hit.v }); return true; }
+      const j = await spGet('/search?type=track&limit=20&q=' + encodeURIComponent(qq));
+      const raw = ((j.tracks && j.tracks.items) || []).map(spNormTrack).filter(Boolean);
+      const tracks = await spMatch(raw.slice(0, 14), 14);
+      SPCACHE.set(key, { at: Date.now(), v: tracks });
+      jres(res, 200, { ok: true, tracks });
+      return true;
+    }
+  } catch (e) { try { jres(res, 200, { ok: false, err: 'spotify is unreachable rn' }); } catch (e2) {} return true; }
+  return false;
+}
+
+async function tkRefresh(id, item) {
+  try {
+    if (!item || !item.author) return null;
+    const r = await fetch('https://www.tikwm.com/api/?url=' + encodeURIComponent('https://www.tiktok.com/@' + item.author + '/video/' + id), { headers: { 'user-agent': TK_UA } });
+    const j = await r.json();
+    if (j && j.code === 0 && j.data) { const it = tkNorm(j.data); if (it) return TKCACHE.get(it.id) || null; }
+  } catch (e) {}
+  return null;
+}
+
+// ---------- fyp saves (v445): the fyp button on tiktok / 6ixtube / 6ixmusic saves to the account ----------
+async function fypApi(req, res, u) {
+  if (!u.pathname.startsWith('/api/fyp/')) return false;
+  const me = voterUser(req);
+  if (!me) { jres(res, 401, { ok: false, err: 'log in first' }); return true; }
+  if (u.pathname === '/api/fyp/list') { jres(res, 200, { ok: true, items: FYPV.get(me) || [] }); return true; }
+  if (u.pathname === '/api/fyp/save' && req.method === 'POST') {
+    const b = await readJsonBody(req);
+    const kind = String((b && b.kind) || '').slice(0, 8);
+    const id = String((b && b.id) || '').slice(0, 80);
+    if (!id || ['tk', 'tube', 'yt', 'song'].indexOf(kind) < 0) { jres(res, 400, { ok: false, err: 'bad save' }); return true; }
+    const list = FYPV.get(me) || [];
+    const ix = list.findIndex((x) => x.kind === kind && x.id === id);
+    let saved = false;
+    if (ix >= 0) list.splice(ix, 1);
+    else { list.unshift({ kind, id, title: String(b.title || '').slice(0, 200), img: String(b.img || '').slice(0, 500), sub: String(b.sub || '').slice(0, 120), author: String(b.author || '').slice(0, 60), at: Date.now() }); saved = true; }
+    FYPV.set(me, list.slice(0, 200));
+    tubePersist();
+    jres(res, 200, { ok: true, saved });
+    return true;
+  }
+  return false;
+}
+
 async function tkApi(req, res, u) {
   if (!u.pathname.startsWith('/api/tk/')) return false;
   const J = (o) => { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); };
@@ -15903,29 +16111,54 @@ async function tkApi(req, res, u) {
 }
 
 const TK_CSS = `
-.tkwrap{max-width:1200px;margin:0 auto;padding:64px 16px 130px}
-.tkh{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
-.tkh h1{font-size:30px;font-weight:900;color:#fff;margin:0}
-.tkh span{color:#9d97b8;font-size:13.5px}
-.tkbar{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 20px}
-.tkbar form{display:flex;gap:8px;flex:1;min-width:min(420px,100%)}
-.tkbar input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:999px;color:#eceaf6;padding:11px 16px;font-size:16px;font-family:inherit;min-width:0}
-.tkbar button{background:#8b7cff;color:#fff;border:0;border-radius:999px;padding:11px 20px;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit}
-.tkgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
-.tkcard{display:block;text-decoration:none;color:inherit;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden}
-.tkcard .cv{position:relative;aspect-ratio:3/4;background:#000}
-.tkcard .cv img{width:100%;height:100%;object-fit:cover;display:block}
-.tkcard .du{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.72);color:#fff;font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:999px}
-.tkcard .tt{font-size:13.5px;font-weight:600;line-height:1.35;padding:10px 11px 2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.tkcard .tm{font-size:12px;color:#9d97b8;padding:2px 11px 11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tkmsg{color:#9d97b8;font-size:14.5px;padding:26px 4px}
-.tkw2{max-width:560px;margin:0 auto;padding:60px 14px 130px}
-.tkw2 video{width:100%;max-height:76dvh;border-radius:16px;background:#000}
-.tkw2 h1{font-size:17.5px;line-height:1.4;color:#fff;margin:14px 0 4px}
-.tkw2 .au{color:#c9b8ff;font-weight:700;font-size:14px}
-.tkw2 .st{color:#9d97b8;font-size:13px;margin-top:6px}
-.tkback{display:inline-block;color:#c9b8ff;text-decoration:none;font-weight:700;font-size:14px;margin-bottom:12px}
-@media(max-width:640px){.tkgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}}
+.tkapp{position:fixed;left:0;right:0;top:50px;bottom:0;background:#000;overflow:hidden}
+@media(max-width:820px){.tkapp{bottom:80px}}
+@media(min-width:1100px){body[data-nav="side"] .tkapp{left:232px;top:0}}
+.tkhead{position:absolute;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;gap:10px;padding:12px 14px;background:linear-gradient(180deg,rgba(0,0,0,.55),transparent)}
+.tklogo{font-weight:900;font-size:17px;letter-spacing:.02em;color:#fff}
+.tktabs{display:flex;gap:4px;margin:0 auto}
+.tktabs button{background:none;border:0;color:rgba(255,255,255,.65);font-size:14.5px;font-weight:800;padding:7px 12px;border-radius:999px;cursor:pointer;font-family:inherit}
+.tktabs button.on{color:#fff;background:rgba(255,255,255,.14)}
+.tkacts{display:flex;gap:8px}
+.tkacts button{width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.35);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#tkFeed{height:100%;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none}
+#tkFeed::-webkit-scrollbar{display:none}
+.tkslide{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000;overflow:hidden}
+.tkslide video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.tkposter{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.5;filter:blur(2px)}
+.tkshade{position:absolute;left:0;right:0;bottom:0;height:180px;background:linear-gradient(0deg,rgba(0,0,0,.62),transparent);pointer-events:none}
+.tkmeta{position:absolute;left:14px;bottom:26px;right:86px;color:#fff;z-index:5}
+.tkmeta .au{font-weight:800;font-size:15.5px;margin-bottom:5px}
+.tkmeta .ti{font-size:13.5px;line-height:1.45;opacity:.94}
+.tkmeta .mu{font-size:12.5px;opacity:.75;margin-top:5px}
+.tkrail{position:absolute;right:10px;bottom:70px;z-index:6;display:flex;flex-direction:column;gap:15px;align-items:center}
+.tkstat{display:flex;flex-direction:column;align-items:center;gap:2px;color:#fff;font-size:11.5px;font-weight:700}
+.tkstat .ic{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.13);display:flex;align-items:center;justify-content:center}
+.tkfyp{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit}
+.tkfyp .ic{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.13);display:flex;align-items:center;justify-content:center}
+.tkfyp.on{color:#ffd257}
+.tkfyp.on .ic{background:rgba(255,210,87,.25)}
+.tkprog{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.18);z-index:7}
+.tkprog i{display:block;height:100%;width:0;background:#8b7cff}
+.tkretry{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;background:rgba(10,9,20,.9);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:999px;padding:11px 18px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit}
+.tkflash{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;pointer-events:none;opacity:0;transition:opacity .25s}
+.tkflash.go{opacity:.9;transition:none}
+.tksound{position:absolute;left:50%;bottom:110px;transform:translateX(-50%);z-index:21;background:#8b7cff;border:0;color:#fff;font-weight:800;font-size:13.5px;border-radius:999px;padding:10px 18px;cursor:pointer;font-family:inherit;box-shadow:0 10px 26px rgba(0,0,0,.5)}
+.tkempty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.75);font-size:14.5px;text-align:center;padding:30px;z-index:4}
+.tksheet[hidden]{display:none}
+.tksheet{position:absolute;inset:0;z-index:30;background:rgba(4,3,10,.72);display:flex;align-items:flex-end;justify-content:center}
+.tksbox{background:#14121f;border:1px solid rgba(255,255,255,.14);border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:82%;overflow:auto;padding:18px;box-sizing:border-box}
+.tksbox form{display:flex;gap:8px;margin-bottom:10px}
+.tksbox input{flex:1;min-width:0;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);border-radius:11px;color:#eceaf6;padding:11px 12px;font-size:16px}
+.tksbox form button{background:rgba(139,124,255,.32);border:1px solid rgba(139,124,255,.6);color:#fff;border-radius:11px;padding:0 16px;font-weight:800;cursor:pointer;font-family:inherit}
+.tkres{display:flex;gap:11px;align-items:center;padding:8px;border-radius:12px;cursor:pointer}
+.tkres:hover{background:rgba(255,255,255,.06)}
+.tkres img{width:52px;height:66px;object-fit:cover;border-radius:9px;background:#000;flex:0 0 auto}
+.tkres .rt{flex:1;min-width:0}
+.tkres .rt b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tkres .rt span{font-size:12px;color:rgba(236,234,246,.55)}
+.tkx{width:100%;background:none;border:0;color:rgba(236,234,246,.7);font-weight:700;padding:11px;cursor:pointer;font-family:inherit;font-size:14px}
+.tkmsg2{color:rgba(236,234,246,.6);font-size:13px;padding:6px 2px}
 `;
 function tikPage() {
   return `<!DOCTYPE html>
@@ -15939,292 +16172,223 @@ ${FONT_LINKS}
 <style>${TK_CSS}</style>
 </head>
 <body>
-${SIDEBAR_HTML}
-<div class="tkwrap">
-  <div class="tkh"><h1>tiktok</h1><span>trending + search — streamed thru the network, nothing saved</span></div>
-  <div class="tkbar">
-    <form id="tkSearchF"><input id="tkQ" placeholder="search tiktok" autocomplete="off"><button type="submit">search</button></form>
-    <form id="tkLinkF"><input id="tkLink" placeholder="paste a tiktok link" autocomplete="off"><button type="submit">open</button></form>
-  </div>
-  <div class="tkmsg" id="tkMsg">loading trending…</div>
-  <div class="tkgrid" id="tkGrid"></div>
-</div>
-<script>
-function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-function fmtN(n){n=+n||0; if(n>=1000000) return (n/1000000).toFixed(1).replace('.0','')+'M'; if(n>=1000) return (n/1000).toFixed(1).replace('.0','')+'k'; return ''+n}
-function mmss(s){s=+s||0; var m=Math.floor(s/60), r=s%60; return m+':'+(r<10?'0':'')+r}
-function card(v){ return '<a class="tkcard" href="/tiktok/watch?id='+v.id+'"><div class="cv"><img loading="lazy" src="'+esc(v.cover)+'" alt="">'+(v.dur?'<span class="du">'+mmss(v.dur)+'</span>':'')+'</div><div class="tt">'+esc(v.title||'untitled')+'</div><div class="tm">@'+esc(v.author)+' · '+fmtN(v.plays)+' plays</div></a>'; }
-function paint(j, label){
-  var g=document.getElementById('tkGrid'), m=document.getElementById('tkMsg');
-  if(!j.ok){ m.textContent=j.err||'something went wrong'; g.innerHTML=''; return; }
-  if(!j.vids.length){ m.textContent='nothing found'; g.innerHTML=''; return; }
-  m.textContent=label||'';
-  g.innerHTML=j.vids.map(card).join('');
-}
-function loadFeed(){ document.getElementById('tkMsg').textContent='loading trending…'; fetch('/api/tk/feed').then(function(r){return r.json()}).then(function(j){ paint(j,'trending in the US'); }).catch(function(){ document.getElementById('tkMsg').textContent='could not reach the tiktok source'; }); }
-document.getElementById('tkSearchF').addEventListener('submit', function(e){ e.preventDefault(); var q=document.getElementById('tkQ').value.trim(); if(!q){ loadFeed(); return; } document.getElementById('tkMsg').textContent='searching…'; fetch('/api/tk/search?q='+encodeURIComponent(q)).then(function(r){return r.json()}).then(function(j){ paint(j, j.ok?('results for "'+q+'"'):''); }).catch(function(){ document.getElementById('tkMsg').textContent='search failed'; }); });
-document.getElementById('tkLinkF').addEventListener('submit', function(e){ e.preventDefault(); var url=document.getElementById('tkLink').value.trim(); if(!url) return; document.getElementById('tkMsg').textContent='opening…'; fetch('/api/tk/resolve',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url:url})}).then(function(r){return r.json()}).then(function(j){ if(j.ok&&j.vid) location.href='/tiktok/watch?id='+j.vid.id; else document.getElementById('tkMsg').textContent=j.err||'could not open that link'; }).catch(function(){ document.getElementById('tkMsg').textContent='could not open that link'; }); });
-loadFeed();
-</script>
-<script>${NOTIF_JS}</script>
-</body>
-</html>`;
-}
-function tikWatchPage() {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>tiktok — 6ix</title>
-${FONT_LINKS}
-<style>${GALAXY_CSS}</style>
-<style>${TK_CSS}</style>
-</head>
-<body>
-${SIDEBAR_HTML}
-<div class="tkw2">
-  <a class="tkback" href="/tiktok">← back to tiktok</a>
-  <video id="tkVid" controls autoplay playsinline></video>
-  <h1 id="tkTitle"></h1>
-  <div class="au" id="tkAuthor"></div>
-  <div class="st" id="tkStats"></div>
-  <div class="tkmsg" id="tkMsg"></div>
-  <div class="tkgrid" id="tkMore" style="margin-top:26px"></div>
-</div>
-<script>
-function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-function fmtN(n){n=+n||0; if(n>=1000000) return (n/1000000).toFixed(1).replace('.0','')+'M'; if(n>=1000) return (n/1000).toFixed(1).replace('.0','')+'k'; return ''+n}
-function mmss(s){s=+s||0; var m=Math.floor(s/60), r=s%60; return m+':'+(r<10?'0':'')+r}
-function card(v){ return '<a class="tkcard" href="/tiktok/watch?id='+v.id+'"><div class="cv"><img loading="lazy" src="'+esc(v.cover)+'" alt="">'+(v.dur?'<span class="du">'+mmss(v.dur)+'</span>':'')+'</div><div class="tt">'+esc(v.title||'untitled')+'</div><div class="tm">@'+esc(v.author)+' · '+fmtN(v.plays)+' plays</div></a>'; }
-var id=(new URLSearchParams(location.search)).get('id')||'';
-fetch('/api/tk/get?id='+encodeURIComponent(id)).then(function(r){return r.json()}).then(function(j){
-  if(!j.ok||!j.vid){ document.getElementById('tkMsg').textContent=j.err||'video not found'; return; }
-  var v=j.vid;
-  document.title=(v.title||'tiktok')+' — 6ix';
-  document.getElementById('tkVid').src='/tk/file?id='+v.id;
-  document.getElementById('tkTitle').textContent=v.title||'';
-  document.getElementById('tkAuthor').textContent='@'+v.author+(v.nick&&v.nick!==v.author?' · '+v.nick:'');
-  document.getElementById('tkStats').textContent=fmtN(v.plays)+' plays · '+fmtN(v.likes)+' likes · '+fmtN(v.comments)+' comments'+(v.music?' · ♪ '+v.music:'');
-}).catch(function(){ document.getElementById('tkMsg').textContent='could not load this video'; });
-fetch('/api/tk/feed').then(function(r){return r.json()}).then(function(j){ if(j.ok) document.getElementById('tkMore').innerHTML=j.vids.filter(function(x){return x.id!==id}).slice(0,12).map(card).join(''); }).catch(function(){});
-</script>
-<script>${NOTIF_JS}</script>
-</body>
-</html>`;
-}
-
-async function tokApi(req, res, u) {
-  if (!u.pathname.startsWith('/api/tok/')) return false;
-  const me = voterUser(req);
-  let b = {};
-  if (req.method === 'POST') { try { b = (await readJsonBody(req)) || {}; } catch { b = {}; } }
-  if (u.pathname === '/api/tok/feed') {
-    const mode = u.searchParams.get('mode') === 'trending' ? 'trending' : 'fyp';
-    const picks = me ? (TOKTAGS.get(me) || []) : [];
-    const vids = [...TVIDEOS.values()].filter((v) => canSee(v, me) && v.vis === 'pub');
-    vids.sort((x, y) => (mode === 'trending' ? tubeScore(y, null) - tubeScore(x, null) : tokScoreFyp(y, me, picks) - tokScoreFyp(x, me, picks)));
-    partyJson(res, 200, { ok: true, mode: mode, vids: vids.slice(0, 40).map((v) => vidView(v, me)), tags: tokTagsAll(), myTags: picks });
-    return true;
-  }
-  if (u.pathname === '/api/tok/tags') {
-    if (!me) { partyJson(res, 401, { ok: false, err: 'log in first' }); return true; }
-    const clean = [...new Set((Array.isArray(b.tags) ? b.tags : []).map((t) => String(t).toLowerCase().trim().slice(0, 24)).filter(Boolean))].slice(0, 12);
-    TOKTAGS.set(me, clean);
-    tubePersist();
-    partyJson(res, 200, { ok: true, myTags: clean });
-    return true;
-  }
-  partyJson(res, 404, { ok: false, err: 'unknown' });
-  return true;
-}
-
-const TOK_CSS = `
-.tokapp{position:fixed;left:0;right:0;top:50px;bottom:0;display:flex;flex-direction:column;background:#050508;text-align:left}
-@media (max-width:820px){ .tokapp{bottom:80px} }
-@media (min-width:1100px){ body[data-nav="side"] .tokapp{left:232px;top:0} }
-.tokhead{display:flex;align-items:center;gap:8px;padding:10px 14px;flex:none}
-.toktab{font-size:14px;font-weight:800;padding:8px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:rgba(236,234,246,.75);cursor:pointer;font-family:inherit}
-.toktab.on{background:#8b7cff;border-color:#8b7cff;color:#fff}
-.toktune{margin-left:auto;font-size:13px;font-weight:800;padding:8px 14px;border-radius:999px;border:1px solid rgba(139,124,255,.4);background:rgba(139,124,255,.13);color:#b7a8ff;cursor:pointer;font-family:inherit}
-#tokFeed{flex:1;min-height:0;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none}
-#tokFeed::-webkit-scrollbar{display:none}
-.tslide{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000;overflow:hidden}
-.tslide video{width:100%;height:100%;object-fit:contain;display:block;background:#000}
-.tmeta{position:absolute;left:14px;bottom:16px;right:84px;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.7)}
-.tchan{font-weight:900;font-size:15.5px;color:#fff;text-decoration:none}
-.ttitle{font-size:14px;line-height:1.4;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.ttags{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
-.ttag{font-size:12px;font-weight:800;padding:5px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.4);color:#fff;cursor:pointer;font-family:inherit}
-.ttag.on{background:#8b7cff;border-color:#8b7cff}
-.trail2{position:absolute;right:10px;bottom:18px;display:flex;flex-direction:column;gap:16px;align-items:center}
-.tact{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;color:#fff;cursor:pointer;font-family:inherit;text-decoration:none;text-shadow:0 1px 8px rgba(0,0,0,.7)}
-.tact .tic{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.13);display:flex;align-items:center;justify-content:center}
-.tact svg{width:23px;height:23px}
-.tact span{font-size:11.5px;font-weight:800}
-.tact.liked .tic{background:rgba(244,63,94,.85)}
-.tempty{height:100%;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;color:rgba(236,234,246,.6);font-size:15px;text-align:center;padding:30px}
-.tsheet{position:fixed;inset:0;background:rgba(4,4,10,.72);z-index:300;display:none;align-items:flex-end;justify-content:center}
-.tsheet.on{display:flex}
-.tsheet-in{background:#12121c;border:1px solid rgba(255,255,255,.12);border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:78dvh;overflow:auto;padding:20px 18px 26px;box-sizing:border-box}
-.tchip2{font-size:13.5px;font-weight:800;padding:9px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:#eceaf6;cursor:pointer;font-family:inherit;margin:0 6px 8px 0}
-.tchip2.on{background:#8b7cff;border-color:#8b7cff;color:#fff}
-.ttoast{position:fixed;left:50%;transform:translateX(-50%);bottom:110px;z-index:320;background:rgba(18,18,28,.95);border:1px solid rgba(139,124,255,.45);color:#eceaf6;font-size:13px;font-weight:700;border-radius:999px;padding:9px 16px;display:none}
-`;
-
-function tokPage() {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>fyp — 6ix</title>
-${FONT_LINKS}
-<style>${GALAXY_CSS}</style>
-<style>${TOK_CSS}</style>
-</head>
-<body>
 ${STAR_CANVAS}
 ${SIDEBAR_HTML}
-<div class="tokapp">
-  <div class="tokhead">
-    <button class="toktab on" id="tabFyp" type="button">for you</button>
-    <button class="toktab" id="tabTrend" type="button">trending</button>
-    <button class="toktune" id="tuneBtn" type="button">tune ur fyp</button>
+<div class="tkapp">
+  <div class="tkhead">
+    <div class="tklogo">tiktok</div>
+    <div class="tktabs"><button type="button" id="tabFeed" class="on">for you</button><button type="button" id="tabSaved">saved</button></div>
+    <div class="tkacts">
+      <button type="button" id="tkSearchB" aria-label="search"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
+      <button type="button" id="tkLinkB" aria-label="open a link"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 10a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></button>
+    </div>
   </div>
-  <div id="tokFeed"></div>
-</div>
-<div class="tsheet" id="tuneSheet">
-  <div class="tsheet-in">
-    <div style="font-weight:900;font-size:17px;color:#eceaf6">tune ur fyp</div>
-    <p style="color:rgba(236,234,246,.6);font-size:13.5px;line-height:1.55;margin:8px 0 14px">pick the tags u wanna see more of. ur for-you feed boosts those hard n cools off everything else. it also learns from what u watch n like.</p>
-    <div id="tagPool"></div>
-    <div style="display:flex;gap:8px;margin-top:16px">
-      <button class="toktab on" id="tuneDone" type="button" style="flex:1">done</button>
-      <button class="toktab" id="tuneClear" type="button">clear all</button>
+  <div id="tkFeed"></div>
+  <div class="tkempty" id="tkEmpty">loading ur feed…</div>
+  <button type="button" class="tksound" id="tkSound" hidden>tap for sound</button>
+  <div class="tksheet" id="tkSheet" hidden>
+    <div class="tksbox">
+      <form id="tkSearchF"><input id="tkQ" placeholder="search tiktok" autocomplete="off"><button type="submit">search</button></form>
+      <form id="tkLinkF"><input id="tkLink" placeholder="paste a tiktok link" autocomplete="off"><button type="submit">open</button></form>
+      <div class="tkmsg2" id="tkSheetMsg"></div>
+      <div id="tkResults"></div>
+      <button type="button" class="tkx" id="tkSheetX">close</button>
     </div>
   </div>
 </div>
-<div class="ttoast" id="tToast"></div>
 <script>
-var MODE='fyp', PICKS=[], ALLTAGS=[], SOUND=false, seenView=new Set();
 function $(i){return document.getElementById(i)}
-function jp(u,b){return fetch(u,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b||{})}).then(function(r){return r.json()})}
-function jg(u){return fetch(u).then(function(r){return r.json()})}
 function esc(s){s=String(s==null?'':s);return s.split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('"').join('&quot;')}
-function fmtN(n){ n=+n||0; if(n>=1000000) return (n/1000000).toFixed(1)+'M'; if(n>=1000) return (n/1000).toFixed(1)+'k'; return String(n); }
-function toast(t){ var el=$('tToast'); el.textContent=t; el.style.display='block'; setTimeout(function(){ el.style.display='none'; },1800); }
-var HEART='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>';
-var CMT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>';
-var SHR='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>';
-function slideHtml(v){
-  var tags=(v.tags||[]).map(function(t){ var on=PICKS.indexOf(String(t).toLowerCase())>=0; return '<button class="ttag'+(on?' on':'')+'" data-tag="'+esc(t)+'" type="button">#'+esc(t)+'</button>'; }).join('');
-  return '<section class="tslide" data-id="'+v.id+'">'
-    + '<video src="/tube-file/'+encodeURIComponent(v.file||'')+'" poster="'+esc(v.thumb||'')+'" loop playsinline muted preload="metadata"></video>'
-    + '<div class="tmeta"><a class="tchan" href="/yt/channel/'+encodeURIComponent(v.owner)+'">@'+esc(v.chan)+'</a>'
-    + '<div class="ttitle">'+esc(v.title)+'</div>'
-    + (tags?'<div class="ttags">'+tags+'</div>':'')
-    + '</div>'
-    + '<div class="trail2">'
-    + '<button class="tact like'+(v.my==='like'?' liked':'')+'" type="button"><span class="tic">'+HEART+'</span><span class="lc">'+fmtN(v.likes)+'</span></button>'
-    + '<a class="tact" href="/yt/watch?v='+v.id+'"><span class="tic">'+CMT+'</span><span>watch</span></a>'
-    + '<button class="tact share" type="button"><span class="tic">'+SHR+'</span><span>share</span></button>'
-    + '</div></section>';
+function fmtN(n){n=+n||0;if(n>=1000000)return (n/1000000).toFixed(1).replace(/\.0$/,'')+'M';if(n>=1000)return (n/1000).toFixed(1).replace(/\.0$/,'')+'k';return ''+n}
+var HEART='<svg viewBox="0 0 24 24" width="23" height="23" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
+var CMT='<svg viewBox="0 0 24 24" width="23" height="23" fill="currentColor"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>';
+var EYE='<svg viewBox="0 0 24 24" width="23" height="23" fill="currentColor"><path d="M12 4.5C7 4.5 2.7 7.6 1 12c1.7 4.4 6 7.5 11 7.5s9.3-3.1 11-7.5c-1.7-4.4-6-7.5-11-7.5zM12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>';
+var BM='<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2z"/></svg>';
+var items=[], cur=-1, soundOn=false, savedSet={}, mode='feed', loadingMore=false, startedAt={};
+function slideHtml(v,i){
+  var sv = savedSet['tk:'+v.id] ? ' on' : '';
+  return '<section class="tkslide" data-i="'+i+'" data-id="'+esc(v.id)+'">'
+  + '<img class="tkposter" src="'+esc(v.cover||'')+'" alt="">'
+  + '<video playsinline loop preload="none" poster="'+esc(v.cover||'')+'"></video>'
+  + '<div class="tkshade"></div>'
+  + '<div class="tkflash" data-flash><svg viewBox="0 0 24 24" width="74" height="74" fill="rgba(255,255,255,.92)"><path d="M8 5v14l11-7z"/></svg></div>'
+  + '<div class="tkmeta"><div class="au">@'+esc(v.author||'')+'</div><div class="ti">'+esc(v.title||'')+'</div>'+(v.music?'<div class="mu">♪ '+esc(v.music)+'</div>':'')+'</div>'
+  + '<div class="tkrail">'
+  + '<div class="tkstat"><span class="ic">'+HEART+'</span>'+fmtN(v.likes)+'</div>'
+  + '<div class="tkstat"><span class="ic">'+CMT+'</span>'+fmtN(v.comments)+'</div>'
+  + '<div class="tkstat"><span class="ic">'+EYE+'</span>'+fmtN(v.plays)+'</div>'
+  + '<button type="button" class="tkfyp'+sv+'" data-fyp="'+esc(v.id)+'"><span class="ic">'+BM+'</span>fyp</button>'
+  + '</div>'
+  + '<div class="tkprog"><i data-prog></i></div>'
+  + '<button type="button" class="tkretry" data-retry hidden>couldnt load — tap to retry</button>'
+  + '</section>';
+}
+function buildFeed(list, keepScroll){
+  items=list;
+  $('tkFeed').innerHTML=items.map(slideHtml).join('');
+  $('tkEmpty').style.display=items.length?'none':'flex';
+  if(!items.length)$('tkEmpty').textContent = mode==='saved' ? 'nothing saved yet — tap fyp on any video' : 'feed is empty rn';
+  cur=-1;
+  observeAll();
+  if(!keepScroll)$('tkFeed').scrollTop=0;
+}
+function vidOf(i){var s=$('tkFeed').children[i];return s?s.querySelector('video'):null}
+function ensureSrc(i){
+  var v=vidOf(i);if(!v)return;
+  var want='/tk/file?id='+items[i].id;
+  if(v.getAttribute('src')!==want && !v.getAttribute('src')){v.src=want;v.muted=!soundOn}
+}
+function activate(i){
+  if(i===cur||i<0||i>=items.length)return;
+  cur=i;startedAt[i]=Date.now();
+  for(var k=0;k<items.length;k++){
+    var v=vidOf(k);if(!v)continue;
+    if(Math.abs(k-i)<=1)ensureSrc(k);
+    if(k===i){v.muted=!soundOn;var p=v.play();if(p&&p.catch)p.catch(function(){})}
+    else if(!v.paused){v.pause()}
+    if(Math.abs(k-i)>2&&v.getAttribute('src')){v.removeAttribute('src');v.load()}
+  }
+  if(i>=items.length-4)loadMore();
+  updSoundChip();
 }
 var io=null;
-function wireFeed(){
-  if(io) io.disconnect();
+function observeAll(){
+  if(io)io.disconnect();
   io=new IntersectionObserver(function(es){
-    es.forEach(function(en){
-      var sec=en.target; var vid=sec.querySelector('video'); if(!vid) return;
-      var id=sec.getAttribute('data-id');
-      if(en.intersectionRatio>=0.55){
-        vid.muted=!SOUND;
-        var p=vid.play(); if(p&&p.catch)p.catch(function(){});
-        if(!seenView.has(id)){ seenView.add(id); jp('/api/tube/view',{id:id}).catch(function(){}); }
-      } else { vid.pause(); }
-    });
-  },{root:$('tokFeed'),threshold:[0.55]});
-  document.querySelectorAll('.tslide').forEach(function(s){ io.observe(s); });
-  document.querySelectorAll('.tslide video').forEach(function(vid){
-    vid.addEventListener('click',function(){ SOUND=!SOUND; document.querySelectorAll('.tslide video').forEach(function(x){ x.muted=!SOUND; }); toast(SOUND?'sound on':'muted'); });
-  });
-  document.querySelectorAll('.tslide .like').forEach(function(btn){
-    btn.addEventListener('click',function(){
-      var sec=btn.closest('.tslide'); var id=sec.getAttribute('data-id');
-      var liked=btn.classList.contains('liked');
-      jp('/api/tube/like',{id:id,kind:liked?'':'like'}).then(function(r){
-        if(!r.ok){ toast(r.err||'log in first'); return; }
-        btn.classList.toggle('liked', r.my==='like');
-        btn.querySelector('.lc').textContent=fmtN(r.likes);
-      });
-    });
-  });
-  document.querySelectorAll('.tslide .share').forEach(function(btn){
-    btn.addEventListener('click',function(){
-      var sec=btn.closest('.tslide'); var id=sec.getAttribute('data-id');
-      var url=location.origin+'/yt/watch?v='+id;
-      if(navigator.clipboard) navigator.clipboard.writeText(url).then(function(){ toast('link copied'); }).catch(function(){});
-    });
-  });
-  document.querySelectorAll('.ttag').forEach(function(chip){
-    chip.addEventListener('click',function(){
-      var t=chip.getAttribute('data-tag').toLowerCase();
-      var i=PICKS.indexOf(t);
-      if(i>=0) PICKS.splice(i,1); else { if(PICKS.length>=12){ toast('max 12 tags'); return; } PICKS.push(t); }
-      saveTags(true);
-    });
-  });
+    es.forEach(function(e){if(e.isIntersecting)activate(Number(e.target.getAttribute('data-i')))});
+  },{root:$('tkFeed'),threshold:0.55});
+  Array.prototype.forEach.call($('tkFeed').children,function(s){io.observe(s)});
 }
-function saveTags(refetch){
-  jp('/api/tok/tags',{tags:PICKS}).then(function(r){
-    if(!r.ok){ toast(r.err||'log in first'); return; }
-    PICKS=r.myTags||PICKS;
-    toast('fyp tuned');
-    if(refetch&&MODE==='fyp') loadFeed();
-    renderTagPool();
-  });
+function updSoundChip(){$('tkSound').hidden=soundOn}
+$('tkSound').addEventListener('click',function(){soundOn=true;var v=vidOf(cur);if(v){v.muted=false;var p=v.play();if(p&&p.catch)p.catch(function(){})}updSoundChip()});
+setInterval(function(){
+  if(cur<0)return;
+  var s=$('tkFeed').children[cur];if(!s)return;
+  var v=s.querySelector('video');if(!v)return;
+  var bar=s.querySelector('[data-prog]');
+  if(bar&&v.duration)bar.style.width=(v.currentTime/v.duration*100)+'%';
+  var rt=s.querySelector('[data-retry]');
+  if(rt&&startedAt[cur]&&Date.now()-startedAt[cur]>8000&&v.readyState<2&&v.networkState!==1){rt.hidden=false}
+},600);
+$('tkFeed').addEventListener('click',function(e){
+  var fyp=e.target.closest?e.target.closest('[data-fyp]'):null;
+  if(fyp){toggleFyp(fyp);return}
+  var rt=e.target.closest?e.target.closest('[data-retry]'):null;
+  if(rt){retrySlide(rt);return}
+  var sl=e.target.closest?e.target.closest('.tkslide'):null;
+  if(!sl)return;
+  var v=sl.querySelector('video');if(!v)return;
+  if(v.paused){var p=v.play();if(p&&p.catch)p.catch(function(){})}
+  else{v.pause();var fl=sl.querySelector('[data-flash]');if(fl){fl.classList.add('go');setTimeout(function(){fl.classList.remove('go')},260)}}
+});
+function retrySlide(btn){
+  var sl=btn.closest('.tkslide');var i=Number(sl.getAttribute('data-i'));var v=sl.querySelector('video');
+  btn.hidden=true;startedAt[i]=Date.now();
+  fetch('/api/tk/get?id='+encodeURIComponent(items[i].id)).then(function(r){return r.json()}).then(function(){
+    v.removeAttribute('src');v.load();v.src='/tk/file?id='+items[i].id;v.muted=!soundOn;var p=v.play();if(p&&p.catch)p.catch(function(){});
+  }).catch(function(){btn.hidden=false});
 }
-function renderTagPool(){
-  var h='';
-  if(!ALLTAGS.length) h='<div style="color:rgba(236,234,246,.5);font-size:13.5px">no tags in the library yet — they come from video uploads</div>';
-  ALLTAGS.forEach(function(t){ h+='<button class="tchip2'+(PICKS.indexOf(t)>=0?' on':'')+'" data-t="'+esc(t)+'" type="button">#'+esc(t)+'</button>'; });
-  $('tagPool').innerHTML=h;
-  document.querySelectorAll('.tchip2').forEach(function(c){ c.addEventListener('click',function(){ var t=c.getAttribute('data-t'); var i=PICKS.indexOf(t); if(i>=0)PICKS.splice(i,1); else { if(PICKS.length>=12){ toast('max 12 tags'); return; } PICKS.push(t); } c.classList.toggle('on'); }); });
+function toggleFyp(btn){
+  var id=btn.getAttribute('data-fyp');var v=null;
+  items.forEach(function(x){if(x.id===id)v=x});
+  if(!v)return;
+  fetch('/api/fyp/save',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({kind:'tk',id:v.id,title:v.title||'',img:v.cover||'',sub:'@'+(v.author||''),author:v.author||''})}).then(function(r){return r.json()}).then(function(j){
+    if(!j.ok){alert(j.err||'log in first');return}
+    if(j.saved)savedSet['tk:'+id]=1;else delete savedSet['tk:'+id];
+    btn.classList.toggle('on',!!j.saved);
+  }).catch(function(){});
 }
 function loadFeed(){
-  jg('/api/tok/feed?mode='+MODE).then(function(j){
-    if(!j.ok) return;
-    ALLTAGS=j.tags||[]; PICKS=j.myTags||[];
-    var feed=$('tokFeed');
-    if(!j.vids||!j.vids.length){
-      feed.innerHTML='<div class="tempty"><div style="font-weight:900;font-size:19px;color:#eceaf6">nothing here yet</div><div>no public videos on 6ixtube rn — be the first</div><a class="toktab on" href="/yt/upload" style="text-decoration:none">upload a video</a></div>';
-      return;
+  mode='feed';$('tabFeed').classList.add('on');$('tabSaved').classList.remove('on');
+  $('tkEmpty').style.display='flex';$('tkEmpty').textContent='loading ur feed…';
+  fetch('/api/tk/feed').then(function(r){return r.json()}).then(function(j){
+    if(!j.ok){$('tkEmpty').textContent=j.err||'tiktok source is down rn — try again in a bit';buildFeed([]);return}
+    buildFeed(j.vids||[]);
+    setTimeout(function(){activate(0)},350);
+  }).catch(function(){$('tkEmpty').textContent='could not load the feed'});
+}
+function loadMore(){
+  if(mode!=='feed'||loadingMore)return;loadingMore=true;
+  fetch('/api/tk/feed').then(function(r){return r.json()}).then(function(j){
+    loadingMore=false;
+    if(!j.ok||!j.vids)return;
+    var seen={};items.forEach(function(x){seen[x.id]=1});
+    var fresh=j.vids.filter(function(x){return !seen[x.id]});
+    var add=fresh.length?fresh:j.vids.slice();
+    if(!add.length)return;
+    var base=items.length;items=items.concat(add);
+    var html=add.map(function(v,k){return slideHtml(v,base+k)}).join('');
+    $('tkFeed').insertAdjacentHTML('beforeend',html);
+    Array.prototype.forEach.call($('tkFeed').children,function(s){if(Number(s.getAttribute('data-i'))>=base)io.observe(s)});
+  }).catch(function(){loadingMore=false});
+}
+function loadSaved(){
+  mode='saved';$('tabSaved').classList.add('on');$('tabFeed').classList.remove('on');
+  fetch('/api/fyp/list').then(function(r){return r.json()}).then(function(j){
+    var list=(j.items||[]).filter(function(x){return x.kind==='tk'}).map(function(x){return {id:x.id,title:x.title||'',cover:x.img||'',author:(x.sub||'').replace(/^@/,'')||x.author||'',music:'',likes:0,comments:0,plays:0}});
+    if(list.length){
+      list.forEach(function(v){fetch('/api/tk/resolve',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url:'https://www.tiktok.com/@'+(v.author||'')+'/video/'+v.id})}).catch(function(){})});
     }
-    feed.innerHTML=j.vids.map(slideHtml).join('');
-    feed.scrollTop=0;
-    wireFeed();
-    renderTagPool();
-  });
+    buildFeed(list);
+    setTimeout(function(){activate(0)},350);
+  }).catch(function(){buildFeed([])});
 }
-function setMode(m){
-  MODE=m;
-  $('tabFyp').classList.toggle('on', m==='fyp');
-  $('tabTrend').classList.toggle('on', m==='trending');
-  loadFeed();
-}
-$('tabFyp').addEventListener('click',function(){ setMode('fyp'); });
-$('tabTrend').addEventListener('click',function(){ setMode('trending'); });
-$('tuneBtn').addEventListener('click',function(){ renderTagPool(); $('tuneSheet').classList.add('on'); });
-$('tuneDone').addEventListener('click',function(){ $('tuneSheet').classList.remove('on'); saveTags(true); });
-$('tuneClear').addEventListener('click',function(){ PICKS=[]; renderTagPool(); });
-$('tuneSheet').addEventListener('click',function(e){ if(e.target===$('tuneSheet')) $('tuneSheet').classList.remove('on'); });
-loadFeed();
+$('tabFeed').addEventListener('click',loadFeed);
+$('tabSaved').addEventListener('click',loadSaved);
+function openSheet(){$('tkSheet').hidden=false}
+function closeSheet(){$('tkSheet').hidden=true;$('tkResults').innerHTML='';$('tkSheetMsg').textContent=''}
+$('tkSearchB').addEventListener('click',openSheet);
+$('tkLinkB').addEventListener('click',openSheet);
+$('tkSheetX').addEventListener('click',closeSheet);
+$('tkSheet').addEventListener('click',function(e){if(e.target===$('tkSheet'))closeSheet()});
+$('tkSearchF').addEventListener('submit',function(e){
+  e.preventDefault();var q=$('tkQ').value.trim();if(!q)return;
+  $('tkSheetMsg').textContent='searching…';
+  fetch('/api/tk/search?q='+encodeURIComponent(q)).then(function(r){return r.json()}).then(function(j){
+    if(!j.ok){$('tkSheetMsg').textContent=j.err||'search is blocked rn — paste a link instead';$('tkResults').innerHTML='';return}
+    $('tkSheetMsg').textContent='';
+    $('tkResults').innerHTML=(j.vids||[]).map(function(v){return '<div class="tkres" data-pick="'+esc(v.id)+'"><img src="'+esc(v.cover||'')+'" alt=""><div class="rt"><b>'+esc(v.title||'')+'</b><span>@'+esc(v.author||'')+'</span></div></div>'}).join('')||'<div class="tkmsg2">nothing found</div>';
+    window.__tkRes=j.vids||[];
+  }).catch(function(){$('tkSheetMsg').textContent='search failed'});
+});
+$('tkResults').addEventListener('click',function(e){
+  var n=e.target.closest?e.target.closest('[data-pick]'):null;if(!n)return;
+  var list=window.__tkRes||[];var id=n.getAttribute('data-pick');
+  list.sort(function(a,b){return (b.id===id)-(a.id===id)});
+  closeSheet();mode='feed';$('tabFeed').classList.add('on');$('tabSaved').classList.remove('on');
+  buildFeed(list);setTimeout(function(){activate(0)},350);
+});
+$('tkLinkF').addEventListener('submit',function(e){
+  e.preventDefault();var url=$('tkLink').value.trim();if(!url)return;
+  $('tkSheetMsg').textContent='opening…';
+  fetch('/api/tk/resolve',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url:url})}).then(function(r){return r.json()}).then(function(j){
+    if(!j.ok||!j.vid){$('tkSheetMsg').textContent=j.err||'could not open that link';return}
+    closeSheet();mode='feed';
+    fetch('/api/tk/feed').then(function(r){return r.json()}).then(function(f){
+      var list=[j.vid];if(f.ok)(f.vids||[]).forEach(function(x){if(x.id!==j.vid.id)list.push(x)});
+      buildFeed(list);setTimeout(function(){activate(0)},350);
+    }).catch(function(){buildFeed([j.vid]);setTimeout(function(){activate(0)},350)});
+  }).catch(function(){$('tkSheetMsg').textContent='could not open that link'});
+});
+fetch('/api/fyp/list').then(function(r){return r.json()}).then(function(j){(j.items||[]).forEach(function(x){savedSet[x.kind+':'+x.id]=1})}).catch(function(){});
+var startId=(new URLSearchParams(location.search)).get('id')||'';
+if(startId){
+  fetch('/api/tk/get?id='+encodeURIComponent(startId)).then(function(r){return r.json()}).then(function(j){
+    if(j.ok&&j.vid){fetch('/api/tk/feed').then(function(r){return r.json()}).then(function(f){var list=[j.vid];if(f.ok)(f.vids||[]).forEach(function(x){if(x.id!==j.vid.id)list.push(x)});buildFeed(list);setTimeout(function(){activate(0)},350)}).catch(function(){buildFeed([j.vid]);setTimeout(function(){activate(0)},350)})}
+    else loadFeed();
+  }).catch(function(){loadFeed()});
+} else loadFeed();
+document.addEventListener('keydown',function(e){
+  if(e.key==='ArrowDown'&&items.length){var n=Math.min(items.length-1,cur+1);var s=$('tkFeed').children[n];if(s)s.scrollIntoView({behavior:'smooth'})}
+  if(e.key==='ArrowUp'&&items.length){var p2=Math.max(0,cur-1);var s2=$('tkFeed').children[p2];if(s2)s2.scrollIntoView({behavior:'smooth'})}
+});
 </script>
 <script>${NOTIF_JS}</script>
 </body>
 </html>`;
 }
+function tikWatchPage() { return tikPage(); }
+
 function tubeWatchPage(id) {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -16282,7 +16446,7 @@ function render() {
   '<h1 class="wtitle">' + esc(v.title) + '</h1>' +
   '<div class="wrow">' + ava(v.owner, 40) + '<div style="min-width:0"><a href="/yt/channel/' + encodeURIComponent(v.owner) + '" style="color:var(--ink);text-decoration:none;font-weight:700">' + esc(ch.name) + '</a><div class="tm">' + fmtN(ch.subs) + ' subscribers</div></div>' +
   (v.mine ? '<span class="tm">ur video</span>' : '<button class="tbtn" id="bSub" type="button">' + (V.subbed ? 'subscribed' : 'subscribe') + '</button><button class="tbtn ghost sm" id="bBell" type="button">' + (V.bell ? 'bell on' : 'bell off') + '</button>') +
-  '<span style="flex:1"></span><button class="tbtn ghost" id="bLike" type="button">▲ ' + fmtN(v.likes) + '</button><button class="tbtn ghost" id="bDis" type="button">▼ ' + fmtN(v.dislikes) + '</button><button class="tbtn ghost" id="bSave" type="button">save</button><button class="tbtn ghost" id="bShare" type="button">share</button><button class="tbtn ghost" id="bRep" type="button">report</button></div>' +
+  '<span style="flex:1"></span><button class="tbtn ghost" id="bLike" type="button">▲ ' + fmtN(v.likes) + '</button><button class="tbtn ghost" id="bDis" type="button">▼ ' + fmtN(v.dislikes) + '</button><button class="tbtn ghost" id="bSave" type="button">save</button><button class="tbtn ghost" id="bFyp" type="button">fyp</button><button class="tbtn ghost" id="bShare" type="button">share</button><button class="tbtn ghost" id="bRep" type="button">report</button></div>' +
   '<div class="wdesc"><b>' + fmtN(v.views) + ' views · ' + fmtT(v.created) + '</b>\\n' + tsHtml(esc(v.desc || '')) + (v.tags && v.tags.length ? '\\n\\n' + v.tags.map(function(t){return '#'+t}).join(' ') : '') + '</div>' +
   '<div class="tsec" style="margin-top:20px">comments <span class="tm" id="cCount"></span></div>' +
   '<div class="wrow" style="align-items:flex-start"><div style="flex:1"><textarea class="tin" id="cBox" rows="2" placeholder="add a comment…"></textarea></div><button class="tbtn" id="cPost" type="button">comment</button></div>' +
@@ -16333,6 +16497,10 @@ function wireActions(v, ch) {
       jget('/api/tube/library').catch(function(){});
       alert(r.err || 'log in first'); });
   });
+  $('bFyp').addEventListener('click', function(){
+    jpost('/api/fyp/save', { kind: 'tube', id: v.id, title: v.title || '', img: v.thumb || '', sub: v.chan || '' }).then(function(r){ if (r.ok) { $('bFyp').textContent = r.saved ? 'fyp \u2713' : 'fyp'; } else alert(r.err || 'log in first'); });
+  });
+  jget('/api/fyp/list').then(function(r){ if (r.ok && (r.items || []).some(function(x){ return x.kind === 'tube' && x.id === v.id; })) $('bFyp').textContent = 'fyp \u2713'; }).catch(function(){});
   $('bShare').addEventListener('click', function(){ var url = location.origin + '/yt/watch?v=' + v.id; if (navigator.share) navigator.share({ title: v.title, url: url }).catch(function(){}); else if (navigator.clipboard) { navigator.clipboard.writeText(url); $('bShare').textContent = 'copied ✓'; } });
   $('bRep').addEventListener('click', function(){ var why = prompt('report this video — why?'); if (why) jpost('/api/tube/report', { kind: 'video', ref: v.id, reason: why }).then(function(r){ alert(r.ok ? 'reported — mods will look' : (r.err || 'log in first')); }); });
   $('cPost').addEventListener('click', function(){ var t = $('cBox').value.trim(); if (!t) return; jpost('/api/tube/comment', { vid: v.id, text: t }).then(function(r){ if (r.ok) { $('cBox').value = ''; CMTS.unshift(r.comment); drawComments(); } else alert(r.err || 'log in first'); }); });
@@ -16701,15 +16869,27 @@ function tubeLibraryPage() {
 ${SIDEBAR_HTML}
 <script>${TUBE_JS}
 $('tNav').innerHTML = navHtml('library'); wireSearch();
+function fillFyp() {
+  fetch('/api/fyp/list').then(function(r) { return r.json(); }).then(function(j) {
+    var box = document.getElementById('lFyp'); if (!box) return;
+    var list = (j.items || []);
+    if (!list.length) { box.innerHTML = '<p class="tempty">nothing saved yet \u2014 tap fyp on any video or song</p>'; return; }
+    box.innerHTML = '<div class="tgrid">' + list.map(function(x) {
+      var href = x.kind === 'song' ? '/music' : (x.kind === 'tk' ? '/tiktok/watch?id=' + encodeURIComponent(x.id) : '/yt/watch?v=' + encodeURIComponent(x.id));
+      return '<a href="' + href + '" style="color:var(--ink);text-decoration:none"><img loading="lazy" src="' + esc(x.img || '') + '" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;background:#000;display:block" alt=""><div style="font-size:13.5px;font-weight:600;margin-top:6px;line-height:1.35">' + esc(x.title || '') + '</div><div class="tm">' + esc(x.sub || x.kind) + '</div></a>';
+    }).join('') + '</div>';
+  }).catch(function() {});
+}
 function render(d) {
   var h = '';
+  h += '<div class="tsec">fyp saves</div><div id="lFyp"><p class="tempty">loading\u2026</p></div>';
   h += '<div class="tsec">subscriptions</div>' + (d.subs.length ? '<div style="display:flex;gap:14px;flex-wrap:wrap">' + d.subs.map(function(c){ return '<a href="/yt/channel/' + encodeURIComponent(c.user) + '" style="text-align:center;color:var(--ink);text-decoration:none">' + ava(c.user, 52) + '<div class="tm" style="margin-top:4px">@' + esc(c.user) + '</div></a>'; }).join('') + '</div>' : '<p class="tempty">no subscriptions yet</p>');
   h += '<div class="tsec">watch later</div>' + (d.later.length ? '<div class="tgrid">' + d.later.map(card).join('') + '</div>' : '<p class="tempty">nothing saved — hit save on any video</p>');
   h += '<div class="tsec">liked videos</div>' + (d.liked.length ? '<div class="tgrid">' + d.liked.map(card).join('') + '</div>' : '<p class="tempty">no liked videos yet</p>');
   h += '<div class="tsec">history</div>' + (d.history.length ? '<div class="tgrid">' + d.history.map(card).join('') + '</div>' : '<p class="tempty">nothing watched yet</p>');
   h += '<div class="tsec">ur playlists</div><div class="wrow"><input class="tin" id="npTitle" placeholder="new playlist name" style="max-width:280px"><select class="tin" id="npVis" style="max-width:140px"><option value="pub">public</option><option value="unl">unlisted</option><option value="priv">private</option></select><button class="tbtn" id="npGo" type="button">create</button></div>';
   h += d.playlists.length ? '<div class="tgrid" style="margin-top:12px">' + d.playlists.map(function(p){ return '<a class="tcard" href="/yt/pl/' + p.id + '"><div class="tthumb">' + (p.cover ? '<img src="' + esc(p.cover) + '">' : '') + '<span class="dur">' + p.n + ' videos</span></div><div class="tt">' + esc(p.title) + '</div><div class="tm">' + esc(p.vis) + '</div></a>'; }).join('') + '</div>' : '<p class="tempty">no playlists yet</p>';
-  $('lMain').innerHTML = h;
+  $('lMain').innerHTML = h; fillFyp();
   $('npGo').addEventListener('click', function(){ var t = $('npTitle').value.trim(); if (!t) return; jpost('/api/tube/plmod', { act: 'create', title: t, vis: $('npVis').value }).then(function(r){ if (r.ok) load(); else alert(r.err || 'failed'); }); });
 }
 function load() { jpost('/api/tube/library', {}).then(function(r){ if (!r.ok) { $('lMain').innerHTML = '<p class="tempty">log in first to see ur library.</p>'; return; } render(r); }); }
@@ -19435,6 +19615,7 @@ const server = http.createServer(async (req, res) => {
     return res.end(JSON.stringify({ ok: true, hot: it ? it.hot : 0 }));
   }
   if (u.pathname === '/api/admin/state' && req.method === 'GET') {
+    await vidDataLoad();
     const adm = isAdminReq(req);
     if (!adm) { res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-cache' }); return res.end(JSON.stringify({ ok: true, admin: false })); }
     await confAutoLoad(); await chatBansLoad(); await ipBansLoad();
@@ -19446,7 +19627,7 @@ const server = http.createServer(async (req, res) => {
     const reqs = [...GAME_REQUESTS.values()].map(r => ({ id: r.id, name: r.name, by: r.by || '', votes: r.voters ? r.voters.size : 0, ts: r.ts || 0 })).sort((x, y) => y.votes - x.votes);
     const mutes = [...CHAT_MUTES.entries()].map(([user, exp]) => ({ user, left: Math.max(0, Math.round((exp - nowMs) / 60000)) })).filter(m => m.left > 0);
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-cache' });
-    return res.end(JSON.stringify({ ok: true, admin: true, confessAuto: confAuto.mins, mutes, bans: [...CHAT_BANS], ipbans: [...IP_BANS], rooms: roomsPub, dmRooms, privRooms, users, reqs, stats: { accounts: ACCOUNTS.size, sessions: SESSIONS.size, requests: GAME_REQUESTS.size, online } }));
+    return res.end(JSON.stringify({ ok: true, admin: true, confessAuto: confAuto.mins, mutes, vidReports: VIDREPORTS.slice(-50).reverse(), vidBans: [...VIDBANS], bans: [...CHAT_BANS], ipbans: [...IP_BANS], rooms: roomsPub, dmRooms, privRooms, users, reqs, stats: { accounts: ACCOUNTS.size, sessions: SESSIONS.size, requests: GAME_REQUESTS.size, online } }));
   }
   if (u.pathname.startsWith('/api/admin/') && req.method === 'POST') {
     if (!isAdminReq(req)) { res.writeHead(403, { 'content-type': 'application/json' }); return res.end('{"ok":false,"error":"not admin"}'); }
@@ -19470,6 +19651,10 @@ const server = http.createServer(async (req, res) => {
     if (u.pathname === '/api/admin/chat/ipunban') { await ipBansLoad(); IP_BANS.delete(String(b.ip || '').trim()); ipBansSave(); return done(); }
     if (u.pathname === '/api/admin/req/del') { const rawId = b.id; const key = GAME_REQUESTS.has(rawId) ? rawId : (GAME_REQUESTS.has(+rawId) ? +rawId : String(rawId)); const had = GAME_REQUESTS.delete(key); if (had) { try { storeDel('greq:' + key); } catch {} } return done({ ok: had }); }
     if (u.pathname === '/api/admin/req/clear') { for (const id of [...GAME_REQUESTS.keys()]) { GAME_REQUESTS.delete(id); try { storeDel('greq:' + id); } catch {} } return done(); }
+    if (u.pathname === '/api/admin/vid/dismiss') { await vidDataLoad(); const rid = String(b.id || ''); const ix = VIDREPORTS.findIndex(r => r.id === rid); if (ix >= 0) { VIDREPORTS.splice(ix, 1); vidDataSave(); } return done({ ok: ix >= 0 }); }
+    if (u.pathname === '/api/admin/vid/clear') { await vidDataLoad(); VIDREPORTS.length = 0; vidDataSave(); return done(); }
+    if (u.pathname === '/api/admin/vid/ban') { await vidDataLoad(); const un = String(b.user || '').toLowerCase().replace(/[^a-z0-9_]/g, ''); if (un && !ADMIN_USERS.has(un)) { VIDBANS.add(un); vidDataSave(); const qi = VIDQ.findIndex(q => q.u === un); if (qi >= 0) { VIDQ.splice(qi, 1); VIDOF.delete(un); } const st2 = VIDOF.get(un); if (st2 && st2.mode === 'pair') { const pr = VIDPAIRS.get(st2.id); if (pr) vidDissolve(pr, pr.a === un ? null : 'stranger left', pr.a === un ? 'stranger left' : null); } VIDNOTE.set(un, 'u were banned from 6ixvid'); } return done({ ok: !!un && !ADMIN_USERS.has(un) }); }
+    if (u.pathname === '/api/admin/vid/unban') { await vidDataLoad(); const un = String(b.user || '').toLowerCase(); VIDBANS.delete(un); vidDataSave(); return done(); }
     res.writeHead(404, { 'content-type': 'application/json' }); return res.end('{"ok":false}');
   }
   if (u.pathname === '/api/splash/next' && req.method === 'GET') {
@@ -20461,16 +20646,19 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/party') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(partyPage()); }
   if (u.pathname.startsWith('/party/')) { const pcode = u.pathname.slice(7).toLowerCase(); if (/^[a-z0-9]{5}$/.test(pcode)) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(partyRoomPage(pcode)); } }
   if (u.pathname === '/vid') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(vidPage()); }
-  if (u.pathname === '/fyp') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(tokPage()); }
+  if (u.pathname === '/fyp') { res.writeHead(302, { location: '/tiktok' }); return res.end(); }
   if (u.pathname === '/tiktok') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(tikPage()); }
   if (u.pathname === '/tiktok/watch') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(tikWatchPage()); }
   if (u.pathname === '/tk/file') {
-    const tkC = TKCACHE.get((u.searchParams.get('id') || '').trim());
-    if (!tkC || Date.now() > tkC.exp || !tkHostOk(tkC.play)) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('gone'); }
+    const tkId = (u.searchParams.get('id') || '').trim();
+    let tkC = TKCACHE.get(tkId);
+    if (!tkC || !tkHostOk(tkC.play)) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('gone'); }
+    if (Date.now() > tkC.exp) { const tkRf0 = await tkRefresh(tkId, tkC.item); if (tkRf0) tkC = tkRf0; }
+    const tkFetch = (play) => { const h = { 'user-agent': TK_UA, referer: 'https://www.tiktok.com/' }; if (req.headers.range) h.range = req.headers.range; return fetch(play, { headers: h }); };
     try {
-      const tkH = { 'user-agent': TK_UA, referer: 'https://www.tiktok.com/' };
-      if (req.headers.range) tkH.range = req.headers.range;
-      const tkUp = await fetch(tkC.play, { headers: tkH });
+      let tkUp = await tkFetch(tkC.play);
+      if (!tkUp.ok) { const tkRf = await tkRefresh(tkId, tkC.item); if (tkRf) { tkC = tkRf; tkUp = await tkFetch(tkC.play); } }
+      if (!tkUp.ok) { res.writeHead(502, { 'content-type': 'text/plain' }); return res.end('stream failed'); }
       const tkOh = { 'content-type': tkUp.headers.get('content-type') || 'video/mp4', 'accept-ranges': 'bytes', 'cache-control': 'no-store' };
       const tkCl = tkUp.headers.get('content-length'); if (tkCl) tkOh['content-length'] = tkCl;
       const tkCr = tkUp.headers.get('content-range'); if (tkCr) tkOh['content-range'] = tkCr;
@@ -20511,8 +20699,9 @@ const server = http.createServer(async (req, res) => {
   }
   if (await partyApi(req, res, u)) return;
   if (await vidApi(req, res, u)) return;
-  if (await tokApi(req, res, u)) return;
   if (await tkApi(req, res, u)) return;
+  if (await fypApi(req, res, u)) return;
+  if (await spApi(req, res, u)) return;
   if (u.pathname.startsWith('/api/tube/')) {
     const me = voterUser(req);
     const jout = (o, code) => { res.writeHead(code || 200, { 'content-type': 'application/json' }); return res.end(JSON.stringify(o)); };
