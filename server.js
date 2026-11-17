@@ -14713,7 +14713,7 @@ function tubeSocialWidget(vidId, meta) {
 #gxSoc .cm button{padding:2px 8px;font-size:11.5px}
 .tsl{color:#c9b8ff;font-weight:700;cursor:pointer}.tsl:hover{text-decoration:underline}
 </style>
-<div id="gxSoc"><div class="hd"><b>6IXTUBE</b><button id="gsLike" type="button">▲ 0</button><button id="gsDis" type="button">▼ 0</button><button id="gsSave" type="button">save</button><button id="gsSub" type="button">subscribe</button><button id="gsCm" type="button">comments 0</button><button id="gsHistB" type="button">watched</button></div><div class="bd"><div id="gsHist"></div><div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1"><textarea id="gsBox" rows="2" placeholder="add a comment…"></textarea></div><button id="gsPost" type="button">post</button></div><div id="gsList"></div></div></div>
+<div id="gxSoc"><div class="hd"><b>6IXTUBE</b><button id="gsLike" type="button">▲ 0</button><button id="gsDis" type="button">▼ 0</button><button id="gsSave" type="button">save</button><button id="gsSub" type="button">subscribe</button><button id="gsCm" type="button">comments 0</button><button id="gsHistB" type="button">watched</button><button id="gsParty" type="button">watch party</button></div><div class="bd"><div id="gsHist"></div><div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1"><textarea id="gsBox" rows="2" placeholder="add a comment…"></textarea></div><button id="gsPost" type="button">post</button></div><div id="gsList"></div></div></div>
 <script>
 (function(){
 var D = ${data};
@@ -14726,6 +14726,7 @@ var MYK = '';
 function paint(s){ if(!s) return; $('gsLike').innerHTML = '▲ ' + (s.likes||0); $('gsDis').innerHTML = '▼ ' + (s.dislikes||0); $('gsLike').classList.toggle('on', s.my==='like'); $('gsDis').classList.toggle('on', s.my==='dislike'); MYK = s.my||''; if (s.prog != null) { window.__gsProg = s.prog; if (window.__gsTryResume) window.__gsTryResume(); } if (s.comments != null) $('gsCm').textContent = 'comments ' + s.comments; if (s.chan) $('gsSub').textContent = s.subbed ? 'subscribed' : 'subscribe'; $('gsSub').classList.toggle('on', !!s.subbed); }
 jp('/api/tube/view', { id: XID, prog: 0, meta: { t: D.t, th: D.th, c: D.c } }).catch(function(){});
 jg('/api/tube/extstate?id=' + encodeURIComponent(XID)).then(paint);
+$('gsParty').addEventListener('click', function(){ jp('/api/party/create', { type: 'watch', media: { kind: 'yt', id: D.raw, title: D.t } }).then(function(r){ if (r.ok) location.href = '/party/' + r.code; else alert(r.err || 'log in first'); }); });
 $('gsLike').addEventListener('click', function(){ jp('/api/tube/like', { id: XID, kind: MYK==='like' ? '' : 'like' }).then(function(r){ if (r.ok) paint({ likes: r.likes, dislikes: r.dislikes, my: r.my, comments: null }); else alert(r.err || 'log in first'); }); });
 $('gsDis').addEventListener('click', function(){ jp('/api/tube/like', { id: XID, kind: MYK==='dislike' ? '' : 'dislike' }).then(function(r){ if (r.ok) paint({ likes: r.likes, dislikes: r.dislikes, my: r.my, comments: null }); else alert(r.err || 'log in first'); }); });
 $('gsSave').addEventListener('click', function(){
@@ -14860,6 +14861,469 @@ function draw(d) {
 function load() { jget('/api/tube/feed').then(function(d){ if (d.ok) draw(d); else $('tMain').innerHTML = '<p class="tempty">feed failed to load</p>'; }); }
 load();
 </script>
+</body>
+</html>`;
+}
+
+// ================= v434: party rooms (watch party + music room) =================
+// Live-synced group sessions on the 6ixTube / 6ixMusic players. State is
+// in-memory only (rooms are ephemeral; no store writes). The creator is
+// the leader (crown): only the leader can hand off the crown, kick, or
+// end the room — and the crown auto-passes if the leader goes silent.
+// Playback control is shared: anyone in the room can play, pause, seek
+// or switch media; last action wins (seq counter).
+const PARTY = new Map();
+const PARTY_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789';
+function partyCode() { let c = ''; for (let i = 0; i < 5; i++) c += PARTY_ALPHABET[Math.floor(Math.random() * PARTY_ALPHABET.length)]; return PARTY.has(c) ? partyCode() : c; }
+function partyTarget(r) { return r.playing ? Math.max(0, r.pos + (Date.now() - r.ts) / 1000) : r.pos; }
+function partySys(r, text) { r.chat.push({ sys: 1, text: text, at: Date.now() }); if (r.chat.length > 60) r.chat.splice(0, r.chat.length - 60); }
+function partyPrune(r) {
+  const now = Date.now();
+  let changed = false;
+  for (const [u, seen] of r.members) { if (now - seen > 25000) { r.members.delete(u); partySys(r, u + ' left'); changed = true; } }
+  if (r.members.size && !r.members.has(r.leader)) { r.leader = r.members.keys().next().value; partySys(r, r.leader + ' has the crown now'); changed = true; }
+  if (changed) r.seq++;
+  return r.members.size > 0;
+}
+function partyShape(r, me) {
+  const members = [];
+  for (const [u, seen] of r.members) members.push({ u: u, leader: u === r.leader, here: Date.now() - seen < 8000 });
+  return { ok: true, code: r.code, type: r.type, leader: r.leader, me: me, isLeader: me === r.leader, members: members, media: r.media, queue: r.queue, qi: r.qi, playing: r.playing, pos: partyTarget(r), ts: Date.now(), seq: r.seq, chat: r.chat.slice(-40) };
+}
+function partyJson(res, code, obj) { res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(JSON.stringify(obj)); }
+async function partyApi(req, res, u) {
+  if (!u.pathname.startsWith('/api/party/')) return false;
+  const me = voterUser(req);
+  if (!me) { partyJson(res, 401, { ok: false, err: 'log in first' }); return true; }
+  let b = {};
+  if (req.method === 'POST') { try { b = (await readJsonBody(req)) || {}; } catch { b = {}; } }
+  const code = String(u.searchParams.get('code') || b.code || '').toLowerCase();
+  if (u.pathname === '/api/party/list') {
+    const out = [];
+    for (const r of PARTY.values()) { if (partyPrune(r)) out.push({ code: r.code, type: r.type, leader: r.leader, n: r.members.size, title: r.type === 'music' ? (r.queue[r.qi] ? (r.queue[r.qi].title || r.queue[r.qi].id) : '') : (r.media ? (r.media.title || r.media.id) : '') }); else PARTY.delete(r.code); }
+    partyJson(res, 200, { ok: true, rooms: out });
+    return true;
+  }
+  if (u.pathname === '/api/party/create') {
+    if (PARTY.size > 200) { partyJson(res, 200, { ok: false, err: 'too many rooms rn' }); return true; }
+    const type = b.type === 'music' ? 'music' : 'watch';
+    const r = { code: partyCode(), type: type, leader: me, members: new Map([[me, Date.now()]]), kicked: new Set(), media: null, queue: [], qi: 0, playing: false, pos: 0, ts: Date.now(), seq: 1, chat: [], created: Date.now() };
+    if (type === 'watch' && b.media && b.media.id) { r.media = { kind: b.media.kind === 'tube' ? 'tube' : 'yt', id: String(b.media.id), title: String(b.media.title || ''), img: String(b.media.img || '') }; r.playing = true; }
+    if (type === 'music' && b.track && b.track.id) { r.queue = [{ id: String(b.track.id), title: String(b.track.title || ''), artist: String(b.track.artist || ''), img: String(b.track.img || '') }]; r.playing = true; }
+    partySys(r, me + ' started the room');
+    PARTY.set(r.code, r);
+    partyJson(res, 200, { ok: true, code: r.code });
+    return true;
+  }
+  const r = PARTY.get(code);
+  if (!r) { partyJson(res, 200, { ok: false, err: 'room not found', gone: true }); return true; }
+  if (u.pathname === '/api/party/join') {
+    if (r.kicked.has(me)) { partyJson(res, 200, { ok: false, err: 'u were kicked from this room', kicked: true }); return true; }
+    if (!r.members.has(me) && r.members.size >= 30) { partyJson(res, 200, { ok: false, err: 'room is full' }); return true; }
+    if (!r.members.has(me)) { r.members.set(me, Date.now()); partySys(r, me + ' joined'); r.seq++; }
+    else r.members.set(me, Date.now());
+    partyJson(res, 200, partyShape(r, me));
+    return true;
+  }
+  if (!r.members.has(me)) {
+    if (r.kicked.has(me)) { partyJson(res, 200, { ok: false, err: 'u were kicked from this room', kicked: true }); return true; }
+    partyJson(res, 200, { ok: false, err: 'join the room first' });
+    return true;
+  }
+  r.members.set(me, Date.now());
+  partyPrune(r);
+  if (!PARTY.has(code)) { partyJson(res, 200, { ok: false, gone: true }); return true; }
+  if (u.pathname === '/api/party/state') { partyJson(res, 200, partyShape(r, me)); return true; }
+  if (u.pathname === '/api/party/leave') {
+    r.members.delete(me); partySys(r, me + ' left'); r.seq++;
+    if (!r.members.size) PARTY.delete(code);
+    else if (r.leader === me) { r.leader = r.members.keys().next().value; partySys(r, r.leader + ' has the crown now'); }
+    partyJson(res, 200, { ok: true });
+    return true;
+  }
+  if (u.pathname === '/api/party/crown') {
+    if (r.leader !== me) { partyJson(res, 200, { ok: false, err: 'only the leader can hand off the crown' }); return true; }
+    const t = String(b.user || '');
+    if (!r.members.has(t)) { partyJson(res, 200, { ok: false, err: 'they are not in the room' }); return true; }
+    r.leader = t; partySys(r, me + ' gave the crown to ' + t); r.seq++;
+    partyJson(res, 200, partyShape(r, me));
+    return true;
+  }
+  if (u.pathname === '/api/party/kick') {
+    if (r.leader !== me) { partyJson(res, 200, { ok: false, err: 'only the leader can kick' }); return true; }
+    const t = String(b.user || '');
+    if (t === me) { partyJson(res, 200, { ok: false, err: 'not yourself' }); return true; }
+    if (r.members.delete(t)) { r.kicked.add(t); partySys(r, t + ' was kicked'); r.seq++; }
+    partyJson(res, 200, partyShape(r, me));
+    return true;
+  }
+  if (u.pathname === '/api/party/end') {
+    if (r.leader !== me) { partyJson(res, 200, { ok: false, err: 'only the leader can end the room' }); return true; }
+    PARTY.delete(code);
+    partyJson(res, 200, { ok: true });
+    return true;
+  }
+  if (u.pathname === '/api/party/act') {
+    const a = String(b.a || '');
+    const now = Date.now();
+    if (a === 'chat') {
+      const text = String(b.text || '').slice(0, 300).trim();
+      if (text) { r.chat.push({ u: me, text: text, at: now }); if (r.chat.length > 60) r.chat.splice(0, r.chat.length - 60); r.seq++; }
+    } else if (a === 'play') { r.pos = partyTarget(r); r.ts = now; r.playing = true; r.seq++; }
+    else if (a === 'pause') { r.pos = partyTarget(r); r.ts = now; r.playing = false; r.seq++; }
+    else if (a === 'seek') { r.pos = Math.max(0, Number(b.pos) || 0); r.ts = now; r.seq++; }
+    else if (a === 'setmedia') {
+      if (r.type === 'watch' && b.media && b.media.id) {
+        r.media = { kind: b.media.kind === 'tube' ? 'tube' : 'yt', id: String(b.media.id), title: String(b.media.title || ''), img: String(b.media.img || '') };
+        r.pos = 0; r.ts = now; r.playing = true; r.seq++;
+        partySys(r, me + ' switched the video');
+      } else if (r.type === 'music' && b.track && b.track.id) {
+        const t = { id: String(b.track.id), title: String(b.track.title || ''), artist: String(b.track.artist || ''), img: String(b.track.img || '') };
+        const ix = r.queue.findIndex((x) => x.id === t.id);
+        if (ix >= 0) r.qi = ix; else { r.queue.splice(r.qi + 1, 0, t); r.qi = r.queue.length ? r.qi + 1 : 0; if (r.queue.length === 1) r.qi = 0; }
+        r.pos = 0; r.ts = now; r.playing = true; r.seq++;
+        partySys(r, me + ' is playing ' + (t.title || t.id));
+      }
+    } else if (a === 'addq') {
+      if (r.type === 'music' && b.track && b.track.id) {
+        const t = { id: String(b.track.id), title: String(b.track.title || ''), artist: String(b.track.artist || ''), img: String(b.track.img || '') };
+        const wasEmpty = r.queue.length === 0;
+        r.queue.push(t);
+        if (wasEmpty) { r.qi = 0; r.pos = 0; r.ts = now; r.playing = true; }
+        r.seq++;
+        partySys(r, me + ' added ' + (t.title || t.id) + ' to the queue');
+      }
+    } else if (a === 'playq') {
+      const i = Math.max(0, Math.min(r.queue.length - 1, parseInt(b.i, 10) || 0));
+      if (r.queue.length) { r.qi = i; r.pos = 0; r.ts = now; r.playing = true; r.seq++; }
+    } else if (a === 'next') {
+      if (r.qi < r.queue.length - 1) { r.qi++; r.pos = 0; r.ts = now; r.playing = true; r.seq++; }
+    } else if (a === 'prev') {
+      if (r.qi > 0) { r.qi--; r.pos = 0; r.ts = now; r.playing = true; r.seq++; }
+    } else if (a === 'ended') {
+      if (b.seq === r.seq) {
+        if (r.type === 'music' && r.qi < r.queue.length - 1) { r.qi++; r.pos = 0; r.ts = now; r.playing = true; }
+        else { r.pos = partyTarget(r); r.ts = now; r.playing = false; }
+        r.seq++;
+      }
+    }
+    partyJson(res, 200, partyShape(r, me));
+    return true;
+  }
+  partyJson(res, 404, { ok: false, err: 'unknown' });
+  return true;
+}
+
+const PARTY_CSS = `
+.pwrap2{max-width:1180px;margin:0 auto;padding:18px 14px 110px;box-sizing:border-box}
+.pcard{background:rgba(13,12,20,.72);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:16px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);margin-bottom:14px}
+.phead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.ptype{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#b7a8ff}
+.phead h1,.psec h1{font-size:24px;margin:4px 0 6px}
+.pcode{font-size:13.5px;color:rgba(236,234,246,.65)}
+.pcode b{color:#eceaf6;letter-spacing:.12em;font-size:15px}
+.pbtn{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#eceaf6;border-radius:999px;padding:8px 14px;font-size:13.5px;font-weight:700;cursor:pointer}
+.pbtn:hover{background:rgba(255,255,255,.13)}
+.pbtn.acc{background:rgba(139,124,255,.32);border-color:rgba(139,124,255,.6)}
+.pbtn.danger{background:rgba(255,80,80,.16);border-color:rgba(255,80,80,.4)}
+.pbtn svg{flex:0 0 auto}
+.pgrid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:start}
+@media(max-width:900px){.pgrid{grid-template-columns:1fr}}
+.pgrid .pcard{margin-bottom:14px}
+video#rpVid{width:100%;display:block;border-radius:14px;background:#000;aspect-ratio:16/9}
+.prow{display:flex;gap:8px;margin-top:10px}
+.prow input{flex:1;min-width:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:10px;color:#eceaf6;padding:9px 11px;font-size:16px}
+.picks{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:12px}
+.pick{cursor:pointer;border-radius:12px;overflow:hidden;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+.pick img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:#000}
+.pick .pt{font-size:12px;font-weight:600;padding:7px 8px;line-height:1.35}
+.mrow{display:flex;align-items:center;gap:9px;padding:7px 6px;border-radius:10px;font-size:14px}
+.mrow:hover{background:rgba(255,255,255,.05)}
+.mrow .dot{width:8px;height:8px;border-radius:50%;background:#3ddc84;flex:0 0 auto}
+.mrow .dot.off{background:rgba(255,255,255,.25)}
+.mrow .who{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mrow .mini{background:none;border:0;color:rgba(236,234,246,.6);cursor:pointer;padding:4px 6px;border-radius:7px;font-size:12px;font-weight:700}
+.mrow .mini:hover{background:rgba(255,255,255,.1);color:#eceaf6}
+#cList{height:260px;overflow:auto;display:flex;flex-direction:column;gap:7px;padding-right:2px}
+.cm2{font-size:13.5px;line-height:1.4;word-break:break-word}
+.cm2 .wh{font-size:11.5px;color:rgba(236,234,246,.5);font-weight:700}
+.cm2.sys{color:#b7a8ff;font-size:12.5px;font-style:italic}
+#mStage{display:flex;gap:14px;align-items:center}
+#mArt{width:92px;height:92px;border-radius:14px;object-fit:cover;background:#000;flex:0 0 auto}
+#mTitle{font-size:18px;font-weight:800;line-height:1.3}
+#mArtist{font-size:13.5px;color:rgba(236,234,246,.6);margin-top:3px}
+.mctrl{display:flex;align-items:center;gap:10px;margin-top:14px}
+.mctrl input[type=range]{flex:1;accent-color:#8b7cff;min-width:60px}
+.mtime{font-size:12px;color:rgba(236,234,246,.6);font-variant-numeric:tabular-nums;min-width:38px;text-align:center}
+.qrow{display:flex;gap:10px;align-items:center;padding:8px;border-radius:12px;cursor:pointer}
+.qrow:hover{background:rgba(255,255,255,.05)}
+.qrow.on{background:rgba(139,124,255,.18);border:1px solid rgba(139,124,255,.4)}
+.qrow img{width:52px;height:38px;object-fit:cover;border-radius:8px;background:#000;flex:0 0 auto}
+.qrow .qt{flex:1;min-width:0}
+.qrow .qt b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qrow .qt span{font-size:12px;color:rgba(236,234,246,.55)}
+.sres{margin-top:8px}
+#rMsg{display:none;background:rgba(255,80,80,.14);border:1px solid rgba(255,80,80,.4);color:#ffd7d7;border-radius:14px;padding:13px 15px;font-size:14.5px;font-weight:600}
+.rooms{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.room2{cursor:pointer}
+.room2 .rt{font-weight:800;font-size:15px;margin:3px 0}
+.room2 .rm{font-size:12.5px;color:rgba(236,234,246,.6)}
+h3.pt{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:rgba(236,234,246,.55);margin:0 0 10px}
+`;
+
+function partyBtnHtml(kind, id, title) {
+  const payload = kind === 'music' ? { type: 'music' } : { type: 'watch', media: { kind: kind, id: id, title: title || '' } };
+  return `<style>#gxParty{position:fixed;left:12px;bottom:96px;z-index:119;display:inline-flex;align-items:center;gap:8px;background:rgba(13,12,20,.92);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(139,124,255,.55);color:#eceaf6;border-radius:999px;padding:10px 16px;font-size:13.5px;font-weight:800;cursor:pointer;box-shadow:0 14px 34px rgba(0,0,0,.5);font-family:system-ui,sans-serif}@media(min-width:1100px){#gxParty{bottom:20px}}</style>`
+    + `<button id="gxParty" type="button"><svg viewBox="0 0 24 24" width="15" height="15" fill="#ffd257" aria-hidden="true"><path d="M3 8.2l4.2 3.6L12 5.4l4.8 6.4L21 8.2l-1.7 9.3H4.7L3 8.2z"/></svg>` + (kind === 'music' ? 'music room' : 'watch party') + `</button>`
+    + `<script>(function(){var P=${JSON.stringify(payload)};document.getElementById('gxParty').addEventListener('click',function(){fetch('/api/party/create',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(P)}).then(function(r){return r.json()}).then(function(j){if(j.ok)location.href='/party/'+j.code;else alert(j.err||'log in first')}).catch(function(){alert('could not start the room')})})})();</script>`;
+}
+
+function partyPage() {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>party rooms — 6ix</title>
+${FONT_LINKS}
+<style>${GALAXY_CSS}</style>
+<style>${PARTY_CSS}</style>
+</head>
+<body>
+${STAR_CANVAS}
+${SIDEBAR_HTML}
+<main class="pwrap2">
+  <section class="pcard psec">
+    <div class="ptype">6ixtube + 6ixmusic, together</div>
+    <h1>party rooms</h1>
+    <p style="color:rgba(236,234,246,.7);font-size:14.5px;line-height:1.55;margin:6px 0 0">start a room, send the code, everybody watches or listens in sync. anyone in the room can control playback — the one who started it holds the crown and can hand it off.</p>
+  </section>
+  <div class="pgrid">
+    <div>
+      <section class="pcard">
+        <h3 class="pt">start a watch party</h3>
+        <div class="prow"><input id="wUrl" placeholder="paste a youtube link or a 6ixtube id (t_...)"><button class="pbtn acc" id="wGo" type="button">start</button></div>
+        <div class="picks" id="tubePicks"></div>
+      </section>
+      <section class="pcard">
+        <h3 class="pt">start a music room</h3>
+        <div class="prow"><input id="mQ" placeholder="search a first song (optional)"><button class="pbtn" id="mSearch" type="button">search</button><button class="pbtn acc" id="mGo" type="button">start empty room</button></div>
+        <div class="sres" id="mRes"></div>
+      </section>
+    </div>
+    <div>
+      <section class="pcard">
+        <h3 class="pt">join with a code</h3>
+        <div class="prow"><input id="jCode" placeholder="room code" maxlength="5" style="text-transform:lowercase"><button class="pbtn acc" id="jGo" type="button">join</button></div>
+      </section>
+      <section class="pcard">
+        <h3 class="pt">live rooms</h3>
+        <div class="rooms" id="roomList"><div style="color:rgba(236,234,246,.5);font-size:13.5px">loading…</div></div>
+      </section>
+    </div>
+  </div>
+</main>
+<script>
+function $(i){return document.getElementById(i)}
+function jp(u,b){return fetch(u,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b||{})}).then(function(r){return r.json()})}
+function jg(u){return fetch(u).then(function(r){return r.json()})}
+function esc(s){s=String(s==null?'':s);return s.split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('"').join('&quot;')}
+function ytId(v){v=String(v||'').trim();if(!v)return '';if(v.indexOf('t_')===0)return v;var k=v.indexOf('v=');if(k>=0)v=v.slice(k+2);else{var s=v.lastIndexOf('/');if(s>=0)v=v.slice(s+1)}var cut=v.length;var a=v.indexOf('&');if(a>=0&&a<cut)cut=a;var q=v.indexOf('?');if(q>=0&&q<cut)cut=q;var h=v.indexOf('#');if(h>=0&&h<cut)cut=h;return v.slice(0,cut)}
+function createWatch(media){jp('/api/party/create',{type:'watch',media:media}).then(function(j){if(j.ok)location.href='/party/'+j.code;else alert(j.err||'log in first')})}
+function createMusic(track){var b={type:'music'};if(track)b.track=track;jp('/api/party/create',b).then(function(j){if(j.ok)location.href='/party/'+j.code;else alert(j.err||'log in first')})}
+$('wGo').addEventListener('click',function(){var id=ytId($('wUrl').value);if(!id){alert('paste a link or id first');return}createWatch({kind:id.indexOf('t_')===0?'tube':'yt',id:id,title:''})});
+$('mGo').addEventListener('click',function(){createMusic(null)});
+$('mSearch').addEventListener('click',function(){var q=$('mQ').value.trim();if(!q)return;jg('/api/msearch?q='+encodeURIComponent(q)).then(function(j){var h='';(j.songs||[]).slice(0,8).forEach(function(s){h+='<div class="qrow" data-id="'+esc(s.id)+'" data-t="'+esc(s.t)+'" data-a="'+esc(s.a)+'" data-img="'+esc(s.img||'')+'"><img src="'+esc(s.img||'')+'" alt=""><div class="qt"><b>'+esc(s.t)+'</b><span>'+esc(s.a)+'</span></div><span class="pbtn acc" style="pointer-events:none">start</span></div>'});$('mRes').innerHTML=h||'<div style="color:rgba(236,234,246,.5);font-size:13.5px">no songs found</div>'})});
+$('mRes').addEventListener('click',function(e){var n=e.target;while(n&&n!==$('mRes')&&!n.getAttribute('data-id'))n=n.parentNode;if(n&&n.getAttribute('data-id'))createMusic({id:n.getAttribute('data-id'),title:n.getAttribute('data-t'),artist:n.getAttribute('data-a'),img:n.getAttribute('data-img')})});
+$('jGo').addEventListener('click',function(){var c=$('jCode').value.trim().toLowerCase();if(c)location.href='/party/'+c});
+jg('/api/tube/feed').then(function(j){var h='';(j.feed||[]).slice(0,8).forEach(function(v){h+='<div class="pick" data-id="'+esc(v.id)+'" data-t="'+esc(v.title)+'"><img src="'+esc(v.thumb||'')+'" alt=""><div class="pt">'+esc(v.title)+'</div></div>'});$('tubePicks').innerHTML=h}).catch(function(){});
+$('tubePicks').addEventListener('click',function(e){var n=e.target;while(n&&n!==$('tubePicks')&&!n.getAttribute('data-id'))n=n.parentNode;if(n&&n.getAttribute('data-id'))createWatch({kind:'tube',id:n.getAttribute('data-id'),title:n.getAttribute('data-t')})});
+function rooms(){jg('/api/party/list').then(function(j){var h='';(j.rooms||[]).forEach(function(r){h+='<div class="pcard room2" data-c="'+esc(r.code)+'" style="margin:0"><div class="ptype">'+(r.type==='music'?'music room':'watch party')+'</div><div class="rt">'+esc(r.title||'open room')+'</div><div class="rm">code '+esc(r.code)+' · '+r.n+' in · led by '+esc(r.leader)+'</div></div>'});$('roomList').innerHTML=h||'<div style="color:rgba(236,234,246,.5);font-size:13.5px">no rooms live rn — start one</div>'})}
+$('roomList').addEventListener('click',function(e){var n=e.target;while(n&&n!==$('roomList')&&!n.getAttribute('data-c'))n=n.parentNode;if(n&&n.getAttribute('data-c'))location.href='/party/'+n.getAttribute('data-c')});
+rooms();setInterval(rooms,6000);
+</script>
+${NOTIF_JS}
+</body>
+</html>`;
+}
+
+function partyRoomPage(code) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>party room — 6ix</title>
+${FONT_LINKS}
+<style>${GALAXY_CSS}</style>
+<style>${PARTY_CSS}</style>
+</head>
+<body>
+${STAR_CANVAS}
+${SIDEBAR_HTML}
+<main class="pwrap2">
+  <section class="pcard phead">
+    <div>
+      <div class="ptype" id="rType">party room</div>
+      <h1 id="rTitle" style="font-size:22px;margin:4px 0 6px">loading the room…</h1>
+      <div class="pcode">code <b>${String(code).replace(/[^a-z0-9]/g, '')}</b> · anyone with the link can join</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="pbtn" id="cpBtn" type="button">copy link</button>
+      <button class="pbtn" id="leaveBtn" type="button">leave</button>
+      <button class="pbtn danger" id="endBtn" type="button" hidden>end room</button>
+    </div>
+  </section>
+  <div id="rMsg"></div>
+  <div class="pgrid">
+    <div>
+      <section class="pcard" id="stageWatch" hidden>
+        <video id="rpVid" controls playsinline preload="auto"></video>
+        <div id="wMeta" style="font-size:15px;font-weight:700;margin-top:10px"></div>
+        <div class="prow"><input id="wUrl" placeholder="switch video: youtube link or 6ixtube id (t_...)"><button class="pbtn acc" id="wGo" type="button">switch</button></div>
+        <div class="picks" id="tubePicks"></div>
+      </section>
+      <section class="pcard" id="stageMusic" hidden>
+        <div id="mStage"><img id="mArt" alt=""><div style="min-width:0"><div id="mTitle">nothing playing</div><div id="mArtist">search a song and add it to the queue</div></div></div>
+        <audio id="rpAu" preload="auto"></audio>
+        <div class="mctrl">
+          <button class="pbtn" id="prevBtn" type="button" aria-label="previous"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M18 6l-8.5 6L18 18V6zM6 6h2v12H6z"/></svg></button>
+          <button class="pbtn acc" id="ppBtn" type="button" aria-label="play or pause"><svg id="ppIco" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+          <button class="pbtn" id="nextBtn" type="button" aria-label="next"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M6 6l8.5 6L6 18V6zM16 6h2v12h-2z"/></svg></button>
+          <span class="mtime" id="tCur">0:00</span>
+          <input type="range" id="seek" min="0" max="1000" value="0">
+          <span class="mtime" id="tDur">0:00</span>
+        </div>
+        <div class="prow"><input id="mQ" placeholder="search 6ixmusic"><button class="pbtn" id="mSearch" type="button">search</button></div>
+        <div class="sres" id="mRes"></div>
+        <h3 class="pt" style="margin-top:16px">queue</h3>
+        <div id="qList"><div style="color:rgba(236,234,246,.5);font-size:13.5px">queue is empty</div></div>
+      </section>
+    </div>
+    <div>
+      <section class="pcard">
+        <h3 class="pt">in the room · <span id="mCount">0</span></h3>
+        <div id="mList"></div>
+      </section>
+      <section class="pcard">
+        <h3 class="pt">chat</h3>
+        <div id="cList"></div>
+        <div class="prow"><input id="cIn" placeholder="say something" maxlength="300"><button class="pbtn acc" id="cGo" type="button">send</button></div>
+      </section>
+    </div>
+  </div>
+</main>
+<script>
+var CODE = ${JSON.stringify(code)};
+var CROWN = '<svg viewBox="0 0 24 24" width="13" height="13" fill="#ffd257" aria-hidden="true"><path d="M3 8.2l4.2 3.6L12 5.4l4.8 6.4L21 8.2l-1.7 9.3H4.7L3 8.2z"/></svg>';
+var TYPE = '', el = null, mediaKey = '', lastSeq = -1, myActAt = 0, applying = false, dead = false, lastChatN = -1, pendSt = null, ST = null;
+function $(i){return document.getElementById(i)}
+function jp(u,b){return fetch(u,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b||{})}).then(function(r){return r.json()})}
+function jg(u){return fetch(u).then(function(r){return r.json()})}
+function esc(s){s=String(s==null?'':s);return s.split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('"').join('&quot;')}
+function fmtT(s){s=Math.max(0,Math.floor(Number(s)||0));var m=Math.floor(s/60),h=Math.floor(m/60);var ss=('0'+(s%60)).slice(-2);if(h)return h+':'+('0'+(m%60)).slice(-2)+':'+ss;return m+':'+ss}
+function ytId(v){v=String(v||'').trim();if(!v)return '';if(v.indexOf('t_')===0)return v;var k=v.indexOf('v=');if(k>=0)v=v.slice(k+2);else{var s=v.lastIndexOf('/');if(s>=0)v=v.slice(s+1)}var cut=v.length;var a=v.indexOf('&');if(a>=0&&a<cut)cut=a;var q=v.indexOf('?');if(q>=0&&q<cut)cut=q;var h=v.indexOf('#');if(h>=0&&h<cut)cut=h;return v.slice(0,cut)}
+function livePos(st){return st.pos + (Date.now()-st.ts)/1000}
+function showMsg(t){var m=$('rMsg');m.textContent=t;m.style.display='block';dead=true}
+function act(a,extra){myActAt=Date.now();var b={code:CODE,a:a};if(extra)for(var k in extra)b[k]=extra[k];return jp('/api/party/act',b).then(function(j){if(j&&j.ok)apply(j);return j})}
+function loadMedia(st){
+  pendSt = st;
+  if(st.type==='watch'){
+    if(!st.media){el.removeAttribute('src');el.load();return}
+    if(st.media.kind==='tube'){
+      jg('/api/tube/video?id='+encodeURIComponent(st.media.id)).then(function(j){
+        if(!j.ok||!j.video){showMsg('that 6ixtube video is not available');return}
+        el.poster=j.video.thumb||'';el.src='/tube-file/'+j.video.file;
+        $('wMeta').textContent=j.video.title||st.media.title||'';
+      });
+    } else {
+      el.poster='https://i.ytimg.com/vi/'+st.media.id+'/hqdefault.jpg';
+      el.src='/yt/stream?v='+encodeURIComponent(st.media.id)+'&kind=v';
+      $('wMeta').textContent=st.media.title||'youtube video';
+    }
+  } else {
+    var t=st.queue[st.qi];
+    if(!t){el.removeAttribute('src');el.load();$('mTitle').textContent='nothing playing';$('mArtist').textContent='search a song and add it to the queue';$('mArt').removeAttribute('src');return}
+    el.src='/yt/stream?v='+encodeURIComponent(t.id)+'&kind=a';
+    $('mTitle').textContent=t.title||t.id;$('mArtist').textContent=t.artist||'';
+    if(t.img)$('mArt').src=t.img;
+  }
+}
+function syncTo(st){
+  if(!el||dead)return;
+  var target=livePos(st);
+  if(Date.now()-myActAt<1200)return;
+  try{
+    applying=true;
+    if(st.playing&&el.paused){var p=el.play();if(p&&p.catch)p.catch(function(){})}
+    if(!st.playing&&!el.paused)el.pause();
+    if(el.readyState>0&&Math.abs(el.currentTime-target)>2.5)el.currentTime=target;
+    setTimeout(function(){applying=false},60);
+  }catch(e){applying=false}
+}
+function apply(st){
+  if(!st||!st.ok){if(st&&(st.gone||st.kicked))showMsg(st.kicked?'u were kicked from this room':'this room has ended');return}
+  ST=st;lastSeq=st.seq;
+  if(!TYPE){
+    TYPE=st.type;
+    if(TYPE==='watch'){$('stageWatch').hidden=false;el=$('rpVid');wireEl()}
+    else{$('stageMusic').hidden=false;el=$('rpAu');wireEl()}
+    $('rType').textContent=TYPE==='music'?'music room':'watch party';
+  }
+  $('rTitle').textContent=TYPE==='music'?((st.queue[st.qi]&&(st.queue[st.qi].title||st.queue[st.qi].id))||'music room'):((st.media&&(st.media.title||st.media.id))||'watch party');
+  $('endBtn').hidden=!st.isLeader;
+  var key=TYPE==='music'?('m:'+st.qi+':'+(st.queue[st.qi]?st.queue[st.qi].id:'')):('w:'+(st.media?st.media.kind+':'+st.media.id:''));
+  if(key!==mediaKey){mediaKey=key;loadMedia(st)}
+  else syncTo(st);
+  var mh='';st.members.forEach(function(m){mh+='<div class="mrow"><span class="dot'+(m.here?'':' off')+'"></span><span class="who">'+esc(m.u)+(m.u===st.me?' (you)':'')+'</span>'+(m.leader?CROWN:'')+(st.isLeader&&m.u!==st.me?'<button class="mini" data-crown="'+esc(m.u)+'" type="button">give crown</button><button class="mini" data-kick="'+esc(m.u)+'" type="button">kick</button>':'')+'</div>'});
+  $('mList').innerHTML=mh;$('mCount').textContent=st.members.length;
+  if(TYPE==='music'){
+    var qh='';st.queue.forEach(function(t,i){qh+='<div class="qrow'+(i===st.qi?' on':'')+'" data-qi="'+i+'"><img src="'+esc(t.img||'')+'" alt=""><div class="qt"><b>'+esc(t.title||t.id)+'</b><span>'+esc(t.artist||'')+'</span></div>'+(i===st.qi?'<span style="font-size:11px;color:#b7a8ff;font-weight:800">PLAYING</span>':'')+'</div>'});
+    $('qList').innerHTML=qh||'<div style="color:rgba(236,234,246,.5);font-size:13.5px">queue is empty</div>';
+    $('ppIco').innerHTML=st.playing?'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>':'<path d="M8 5v14l11-7z"/>';
+  }
+  if(st.chat.length!==lastChatN){
+    lastChatN=st.chat.length;
+    var box=$('cList');var near=box.scrollHeight-box.scrollTop-box.clientHeight<70;
+    var ch='';st.chat.forEach(function(c){ch+=c.sys?'<div class="cm2 sys">'+esc(c.text)+'</div>':'<div class="cm2"><span class="wh">'+esc(c.u)+'</span><br>'+esc(c.text)+'</div>'});
+    box.innerHTML=ch;if(near)box.scrollTop=box.scrollHeight;
+  }
+}
+function wireEl(){
+  el.addEventListener('loadedmetadata',function(){if(pendSt){try{el.currentTime=livePos(pendSt)}catch(e){}if(pendSt.playing){var p=el.play();if(p&&p.catch)p.catch(function(){})}pendSt=null}});
+  el.addEventListener('play',function(){if(!applying&&TYPE==='watch')act('play')});
+  el.addEventListener('pause',function(){if(!applying&&TYPE==='watch')act('pause')});
+  el.addEventListener('seeked',function(){if(!applying&&TYPE==='watch')act('seek',{pos:el.currentTime})});
+  el.addEventListener('ended',function(){act('ended',{seq:lastSeq})});
+  el.addEventListener('timeupdate',function(){
+    if(TYPE==='music'&&el.duration){$('seek').value=Math.round(el.currentTime/el.duration*1000);$('tCur').textContent=fmtT(el.currentTime);$('tDur').textContent=fmtT(el.duration)}
+  });
+}
+function poll(){if(dead)return;jg('/api/party/state?code='+encodeURIComponent(CODE)).then(function(j){if(j&&j.ok)apply(j);else if(j&&(j.gone||j.kicked))showMsg(j.kicked?'u were kicked from this room':'this room has ended')}).catch(function(){})}
+jp('/api/party/join',{code:CODE}).then(function(j){
+  if(!j.ok){showMsg(j.err||'could not join — log in first');return}
+  apply(j);
+  setInterval(poll,1500);
+}).catch(function(){showMsg('could not join the room')});
+$('cpBtn').addEventListener('click',function(){var u=location.href;if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(u).then(function(){$('cpBtn').textContent='copied';setTimeout(function(){$('cpBtn').textContent='copy link'},1500)});else prompt('copy this link',u)});
+$('leaveBtn').addEventListener('click',function(){jp('/api/party/leave',{code:CODE}).then(function(){location.href='/party'})});
+$('endBtn').addEventListener('click',function(){if(confirm('end the room for everyone?'))jp('/api/party/end',{code:CODE}).then(function(){location.href='/party'})});
+$('mList').addEventListener('click',function(e){var c=e.target.getAttribute('data-crown'),k=e.target.getAttribute('data-kick');if(c)jp('/api/party/crown',{code:CODE,user:c}).then(function(j){if(j.ok)apply(j);else alert(j.err||'nope')});if(k)jp('/api/party/kick',{code:CODE,user:k}).then(function(j){if(j.ok)apply(j);else alert(j.err||'nope')})});
+function sendChat(){var v=$('cIn').value.trim();if(!v)return;$('cIn').value='';act('chat',{text:v})}
+$('cGo').addEventListener('click',sendChat);
+$('cIn').addEventListener('keydown',function(e){if(e.key==='Enter')sendChat()});
+$('wGo').addEventListener('click',function(){var id=ytId($('wUrl').value);if(!id)return;act('setmedia',{media:{kind:id.indexOf('t_')===0?'tube':'yt',id:id,title:''}})});
+jg('/api/tube/feed').then(function(j){var h='';(j.feed||[]).slice(0,6).forEach(function(v){h+='<div class="pick" data-id="'+esc(v.id)+'" data-t="'+esc(v.title)+'"><img src="'+esc(v.thumb||'')+'" alt=""><div class="pt">'+esc(v.title)+'</div></div>'});$('tubePicks').innerHTML=h}).catch(function(){});
+$('tubePicks').addEventListener('click',function(e){var n=e.target;while(n&&n!==$('tubePicks')&&!n.getAttribute('data-id'))n=n.parentNode;if(n&&n.getAttribute('data-id'))act('setmedia',{media:{kind:'tube',id:n.getAttribute('data-id'),title:n.getAttribute('data-t')}})});
+$('ppBtn').addEventListener('click',function(){if(!el)return;if(el.paused)act('play');else act('pause')});
+$('nextBtn').addEventListener('click',function(){act('next')});
+$('prevBtn').addEventListener('click',function(){act('prev')});
+$('seek').addEventListener('change',function(){if(el&&el.duration)act('seek',{pos:el.duration*Number($('seek').value)/1000})});
+$('mSearch').addEventListener('click',function(){var q=$('mQ').value.trim();if(!q)return;jg('/api/msearch?q='+encodeURIComponent(q)).then(function(j){var h='';(j.songs||[]).slice(0,8).forEach(function(s){h+='<div class="qrow" data-id="'+esc(s.id)+'" data-t="'+esc(s.t)+'" data-a="'+esc(s.a)+'" data-img="'+esc(s.img||'')+'"><img src="'+esc(s.img||'')+'" alt=""><div class="qt"><b>'+esc(s.t)+'</b><span>'+esc(s.a)+'</span></div><button class="pbtn" data-add="1" type="button">+ queue</button><button class="pbtn acc" data-now="1" type="button">play now</button></div>'});$('mRes').innerHTML=h||'<div style="color:rgba(236,234,246,.5);font-size:13.5px">no songs found</div>'})});
+$('mRes').addEventListener('click',function(e){var n=e.target;var row=n;while(row&&row!==$('mRes')&&!row.getAttribute('data-id'))row=row.parentNode;if(!row||!row.getAttribute('data-id'))return;var t={id:row.getAttribute('data-id'),title:row.getAttribute('data-t'),artist:row.getAttribute('data-a'),img:row.getAttribute('data-img')};if(n.getAttribute('data-now'))act('setmedia',{track:t});else if(n.getAttribute('data-add'))act('addq',{track:t})});
+$('qList').addEventListener('click',function(e){var n=e.target;while(n&&n!==$('qList')&&!n.getAttribute('data-qi'))n=n.parentNode;if(n&&n.getAttribute('data-qi')!=null)act('playq',{i:Number(n.getAttribute('data-qi'))})});
+</script>
+${NOTIF_JS}
 </body>
 </html>`;
 }
@@ -19095,9 +19559,12 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(JSON.stringify(dout || { ok: false }));
   }
+  if (u.pathname === '/party') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(partyPage()); }
+  if (u.pathname.startsWith('/party/')) { const pcode = u.pathname.slice(7).toLowerCase(); if (/^[a-z0-9]{5}$/.test(pcode)) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(partyRoomPage(pcode)); } }
   if (u.pathname === '/music') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
-    return res.end(await musicPage(u.searchParams.get('q') || ''));
+    const mp434 = await musicPage(u.searchParams.get('q') || '');
+    return res.end(mp434.includes('</body>') ? mp434.replace('</body>', partyBtnHtml('music') + '</body>') : mp434 + partyBtnHtml('music'));
   }
   const tfm = /^\/tube-file\/([a-z0-9._-]+)$/i.exec(u.pathname);
   if (tfm) {
@@ -19122,6 +19589,7 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': ct, 'content-length': st.size, 'accept-ranges': 'bytes', 'cache-control': 'public, max-age=3600' });
     return SITES_FS.createReadStream(fp).pipe(res);
   }
+  if (await partyApi(req, res, u)) return;
   if (u.pathname.startsWith('/api/tube/')) {
     const me = voterUser(req);
     const jout = (o, code) => { res.writeHead(code || 200, { 'content-type': 'application/json' }); return res.end(JSON.stringify(o)); };
@@ -19431,7 +19899,7 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/yt/watch') {
     const vidId = (u.searchParams.get('v') || '').trim();
     if (!vidId) { res.writeHead(302, { location: '/yt' }); return res.end(); }
-    if (vidId.startsWith('t_')) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(tubeWatchPage(vidId)); }
+    if (vidId.startsWith('t_')) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); const tw434 = tubeWatchPage(vidId); return res.end(tw434.includes('</body>') ? tw434.replace('</body>', partyBtnHtml('tube', vidId) + '</body>') : tw434 + partyBtnHtml('tube', vidId)); }
     // metadata is decoration now (title, poster, up next) — the embed
     // player does not need it, so a dead metadata backend no longer
     // kills the watch page; it renders with whatever resolved
