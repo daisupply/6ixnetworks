@@ -15101,6 +15101,13 @@ video#rpVid{width:100%;display:block;border-radius:14px;background:#000;aspect-r
 .room2 .rt{font-weight:800;font-size:15px;margin:3px 0}
 .room2 .rm{font-size:12.5px;color:rgba(236,234,246,.6)}
 h3.pt{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:rgba(236,234,246,.55);margin:0 0 10px}
+.vstage{position:relative}
+.vbadges{position:absolute;left:10px;bottom:10px;display:flex;gap:8px;z-index:3}
+.vbadge{background:rgba(0,0,0,.72);color:#fff;font-size:12px;font-weight:700;padding:6px 11px;border-radius:999px}
+.vctrl{display:flex;align-items:center;gap:10px;margin-top:10px}
+.vctrl input[type=range]{flex:1;accent-color:#8b7cff;min-width:60px}
+.vstage:fullscreen{background:#000}
+.vstage:fullscreen video{height:100%;aspect-ratio:auto}
 `;
 
 function partyBtnHtml(kind, id, title) {
@@ -15211,7 +15218,21 @@ ${SIDEBAR_HTML}
   <div class="pgrid">
     <div>
       <section class="pcard" id="stageWatch" hidden>
-        <video id="rpVid" controls playsinline preload="auto"></video>
+        <div class="vstage" id="vStageWrap">
+          <video id="rpVid" playsinline preload="auto"></video>
+          <div class="vbadges">
+            <span class="vbadge" id="bufBadge" hidden>buffering…</span>
+            <button class="pbtn acc" id="sndChipW" type="button" hidden>tap for sound</button>
+          </div>
+        </div>
+        <div class="vctrl">
+          <button class="pbtn acc" id="wppBtn" type="button" aria-label="play or pause"><svg id="wppIco" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+          <span class="mtime" id="wCur">0:00</span>
+          <input type="range" id="wSeek" min="0" max="1000" value="0">
+          <span class="mtime" id="wDur">0:00</span>
+          <button class="pbtn" id="wMuteBtn" type="button" aria-label="mute or unmute"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3l3-3-1.4-1.4-3 3-3-3L10.7 9l3 3-3 3 1.4 1.4 3-3 3 3 1.4-1.4-3-3z"/></svg></button>
+          <button class="pbtn" id="wFsBtn" type="button" aria-label="fullscreen"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
+        </div>
         <div id="wMeta" style="font-size:15px;font-weight:700;margin-top:10px"></div>
         <div class="prow"><input id="wUrl" placeholder="switch video: youtube link or 6ixtube id (t_...)"><button class="pbtn acc" id="wGo" type="button">switch</button></div>
         <div class="picks" id="tubePicks"></div>
@@ -15219,6 +15240,7 @@ ${SIDEBAR_HTML}
       <section class="pcard" id="stageMusic" hidden>
         <div id="mStage"><img id="mArt" alt=""><div style="min-width:0"><div id="mTitle">nothing playing</div><div id="mArtist">search a song and add it to the queue</div></div></div>
         <audio id="rpAu" preload="auto"></audio>
+        <div style="margin-top:10px"><button class="pbtn acc" id="sndChipM" type="button" hidden>tap for sound</button></div>
         <div class="mctrl">
           <button class="pbtn" id="prevBtn" type="button" aria-label="previous"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M18 6l-8.5 6L18 18V6zM6 6h2v12H6z"/></svg></button>
           <button class="pbtn acc" id="ppBtn" type="button" aria-label="play or pause"><svg id="ppIco" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
@@ -15226,6 +15248,7 @@ ${SIDEBAR_HTML}
           <span class="mtime" id="tCur">0:00</span>
           <input type="range" id="seek" min="0" max="1000" value="0">
           <span class="mtime" id="tDur">0:00</span>
+          <span class="mtime" id="mLoad" hidden>loading…</span>
         </div>
         <div class="prow"><input id="mQ" placeholder="search 6ixmusic"><button class="pbtn" id="mSearch" type="button">search</button></div>
         <div class="sres" id="mRes"></div>
@@ -15249,7 +15272,10 @@ ${SIDEBAR_HTML}
 <script>
 var CODE = ${JSON.stringify(code)};
 var CROWN = '<svg viewBox="0 0 24 24" width="13" height="13" fill="#ffd257" aria-hidden="true"><path d="M3 8.2l4.2 3.6L12 5.4l4.8 6.4L21 8.2l-1.7 9.3H4.7L3 8.2z"/></svg>';
-var TYPE = '', el = null, mediaKey = '', lastSeq = -1, myActAt = 0, applying = false, dead = false, lastChatN = -1, pendSt = null, ST = null;
+var ICO_PLAY = '<path d="M8 5v14l11-7z"/>';
+var ICO_PAUSE = '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
+var TYPE = '', el = null, mediaKey = '', lastSeq = -1, myActAt = 0, applyingUntil = 0, dead = false, lastChatN = -1, ST = null;
+var scrubbing = false, pendSync = false, sndLocked = false;
 function $(i){return document.getElementById(i)}
 function jp(u,b){return fetch(u,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b||{})}).then(function(r){return r.json()})}
 function jg(u){return fetch(u).then(function(r){return r.json()})}
@@ -15259,10 +15285,26 @@ function ytId(v){v=String(v||'').trim();if(!v)return '';if(v.indexOf('t_')===0)r
 function livePos(st){return st.pos + (Date.now()-st.ts)/1000}
 function showMsg(t){var m=$('rMsg');m.textContent=t;m.style.display='block';dead=true}
 function act(a,extra){myActAt=Date.now();var b={code:CODE,a:a};if(extra)for(var k in extra)b[k]=extra[k];return jp('/api/party/act',b).then(function(j){if(j&&j.ok)apply(j);return j})}
+function showSndChip(on){['sndChipW','sndChipM'].forEach(function(id){var c=$(id);if(c)c.hidden=!on})}
+function tryPlay(){
+  if(!el)return;
+  var p=el.play();
+  if(p&&p.catch)p.catch(function(){
+    if(!sndLocked){ sndLocked=true; el.muted=true; showSndChip(true); var p2=el.play(); if(p2&&p2.catch)p2.catch(function(){}); }
+  });
+}
+function unlockSound(){
+  if(!el)return;
+  el.muted=false; sndLocked=false; showSndChip(false);
+  if(ST&&ST.playing&&el.paused)tryPlay();
+}
+function setBuf(on){
+  if(TYPE==='watch'){var b=$('bufBadge');if(b)b.hidden=!on}
+  else{var l=$('mLoad');if(l)l.hidden=!on}
+}
 function loadMedia(st){
-  pendSt = st;
   if(st.type==='watch'){
-    if(!st.media){el.removeAttribute('src');el.load();return}
+    if(!st.media){el.removeAttribute('src');el.load();$('wMeta').textContent='no video yet — paste a link or pick one below';return}
     if(st.media.kind==='tube'){
       jg('/api/tube/video?id='+encodeURIComponent(st.media.id)).then(function(j){
         if(!j.ok||!j.video){showMsg('that 6ixtube video is not available');return}
@@ -15283,24 +15325,29 @@ function loadMedia(st){
   }
 }
 function syncTo(st){
-  if(!el||dead)return;
-  var target=livePos(st);
+  if(!el||dead||scrubbing)return;
   if(Date.now()-myActAt<1200)return;
+  if(el.readyState<2){pendSync=true;return}
+  var target=livePos(st);
   try{
-    applying=true;
-    if(st.playing&&el.paused){var p=el.play();if(p&&p.catch)p.catch(function(){})}
-    if(!st.playing&&!el.paused)el.pause();
-    if(el.readyState>0&&Math.abs(el.currentTime-target)>2.5)el.currentTime=target;
-    setTimeout(function(){applying=false},60);
-  }catch(e){applying=false}
+    applyingUntil=Date.now()+600;
+    if(st.playing&&el.paused)tryPlay();
+    if(!st.playing&&!el.paused){el.pause();el.playbackRate=1}
+    if(st.playing&&!el.paused){
+      var drift=target-el.currentTime;
+      if(Math.abs(drift)>2.5){el.currentTime=target;el.playbackRate=1}
+      else if(Math.abs(drift)>0.35){el.playbackRate=drift>0?1.07:0.93}
+      else if(el.playbackRate!==1)el.playbackRate=1;
+    }
+  }catch(e){}
 }
 function apply(st){
   if(!st||!st.ok){if(st&&(st.gone||st.kicked))showMsg(st.kicked?'u were kicked from this room':'this room has ended');return}
   ST=st;lastSeq=st.seq;
   if(!TYPE){
     TYPE=st.type;
-    if(TYPE==='watch'){$('stageWatch').hidden=false;el=$('rpVid');wireEl()}
-    else{$('stageMusic').hidden=false;el=$('rpAu');wireEl()}
+    if(TYPE==='watch'){$('stageWatch').hidden=false;el=$('rpVid');wireEl();wireWatch()}
+    else{$('stageMusic').hidden=false;el=$('rpAu');wireEl();wireMusic()}
     $('rType').textContent=TYPE==='music'?'music room':'watch party';
   }
   $('rTitle').textContent=TYPE==='music'?((st.queue[st.qi]&&(st.queue[st.qi].title||st.queue[st.qi].id))||'music room'):((st.media&&(st.media.title||st.media.id))||'watch party');
@@ -15308,12 +15355,13 @@ function apply(st){
   var key=TYPE==='music'?('m:'+st.qi+':'+(st.queue[st.qi]?st.queue[st.qi].id:'')):('w:'+(st.media?st.media.kind+':'+st.media.id:''));
   if(key!==mediaKey){mediaKey=key;loadMedia(st)}
   else syncTo(st);
+  if(TYPE==='watch')$('wppIco').innerHTML=st.playing?ICO_PAUSE:ICO_PLAY;
   var mh='';st.members.forEach(function(m){mh+='<div class="mrow"><span class="dot'+(m.here?'':' off')+'"></span><span class="who">'+esc(m.u)+(m.u===st.me?' (you)':'')+'</span>'+(m.leader?CROWN:'')+(st.isLeader&&m.u!==st.me?'<button class="mini" data-crown="'+esc(m.u)+'" type="button">give crown</button><button class="mini" data-kick="'+esc(m.u)+'" type="button">kick</button>':'')+'</div>'});
   $('mList').innerHTML=mh;$('mCount').textContent=st.members.length;
   if(TYPE==='music'){
     var qh='';st.queue.forEach(function(t,i){qh+='<div class="qrow'+(i===st.qi?' on':'')+'" data-qi="'+i+'"><img src="'+esc(t.img||'')+'" alt=""><div class="qt"><b>'+esc(t.title||t.id)+'</b><span>'+esc(t.artist||'')+'</span></div>'+(i===st.qi?'<span style="font-size:11px;color:#b7a8ff;font-weight:800">PLAYING</span>':'')+'</div>'});
     $('qList').innerHTML=qh||'<div style="color:rgba(236,234,246,.5);font-size:13.5px">queue is empty</div>';
-    $('ppIco').innerHTML=st.playing?'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>':'<path d="M8 5v14l11-7z"/>';
+    $('ppIco').innerHTML=st.playing?ICO_PAUSE:ICO_PLAY;
   }
   if(st.chat.length!==lastChatN){
     lastChatN=st.chat.length;
@@ -15323,14 +15371,39 @@ function apply(st){
   }
 }
 function wireEl(){
-  el.addEventListener('loadedmetadata',function(){if(pendSt){try{el.currentTime=livePos(pendSt)}catch(e){}if(pendSt.playing){var p=el.play();if(p&&p.catch)p.catch(function(){})}pendSt=null}});
-  el.addEventListener('play',function(){if(!applying&&TYPE==='watch')act('play')});
-  el.addEventListener('pause',function(){if(!applying&&TYPE==='watch')act('pause')});
-  el.addEventListener('seeked',function(){if(!applying&&TYPE==='watch')act('seek',{pos:el.currentTime})});
+  el.addEventListener('loadedmetadata',function(){if(ST){applyingUntil=Date.now()+600;try{el.currentTime=Math.min(livePos(ST),Math.max(0,(el.duration||0)-0.3))}catch(e){}if(ST.playing)tryPlay()}});
+  el.addEventListener('canplay',function(){setBuf(false);if(ST){if(pendSync){pendSync=false}syncTo(ST)}});
+  el.addEventListener('waiting',function(){setBuf(true)});
+  el.addEventListener('playing',function(){setBuf(false)});
+  el.addEventListener('play',function(){if(Date.now()>=applyingUntil)act('play')});
+  el.addEventListener('pause',function(){if(Date.now()>=applyingUntil&&!el.ended)act('pause')});
+  el.addEventListener('seeked',function(){if(Date.now()>=applyingUntil&&!scrubbing)act('seek',{pos:el.currentTime})});
   el.addEventListener('ended',function(){act('ended',{seq:lastSeq})});
-  el.addEventListener('timeupdate',function(){
-    if(TYPE==='music'&&el.duration){$('seek').value=Math.round(el.currentTime/el.duration*1000);$('tCur').textContent=fmtT(el.currentTime);$('tDur').textContent=fmtT(el.duration)}
-  });
+}
+function wireWatch(){
+  $('sndChipW').addEventListener('click',unlockSound);
+  $('wppBtn').addEventListener('click',function(){if(ST)act(ST.playing?'pause':'play')});
+  $('rpVid').addEventListener('click',function(){if(ST)act(ST.playing?'pause':'play')});
+  $('wMuteBtn').addEventListener('click',function(){if(!el)return;if(sndLocked){unlockSound();return}el.muted=!el.muted;$('wMuteBtn').style.opacity=el.muted?'.45':'1'});
+  $('wFsBtn').addEventListener('click',function(){var w=$('vStageWrap');if(document.fullscreenElement){if(document.exitFullscreen)document.exitFullscreen()}else if(w.requestFullscreen)w.requestFullscreen()});
+  $('wSeek').addEventListener('input',function(){scrubbing=true;if(el&&el.duration)$('wCur').textContent=fmtT(el.duration*Number($('wSeek').value)/1000)});
+  $('wSeek').addEventListener('change',function(){scrubbing=false;if(el&&el.duration)act('seek',{pos:el.duration*Number($('wSeek').value)/1000})});
+  setInterval(function(){
+    if(!el||TYPE!=='watch'||scrubbing)return;
+    if(el.duration){$('wSeek').value=Math.round(el.currentTime/el.duration*1000);$('wCur').textContent=fmtT(el.currentTime);$('wDur').textContent=fmtT(el.duration)}
+  },300);
+}
+function wireMusic(){
+  $('sndChipM').addEventListener('click',unlockSound);
+  $('ppBtn').addEventListener('click',function(){if(ST)act(ST.playing?'pause':'play')});
+  $('nextBtn').addEventListener('click',function(){act('next')});
+  $('prevBtn').addEventListener('click',function(){act('prev')});
+  $('seek').addEventListener('input',function(){scrubbing=true;if(el&&el.duration)$('tCur').textContent=fmtT(el.duration*Number($('seek').value)/1000)});
+  $('seek').addEventListener('change',function(){scrubbing=false;if(el&&el.duration)act('seek',{pos:el.duration*Number($('seek').value)/1000})});
+  setInterval(function(){
+    if(!el||TYPE!=='music'||scrubbing)return;
+    if(el.duration){$('seek').value=Math.round(el.currentTime/el.duration*1000);$('tCur').textContent=fmtT(el.currentTime);$('tDur').textContent=fmtT(el.duration)}
+  },300);
 }
 function poll(){if(dead)return;jg('/api/party/state?code='+encodeURIComponent(CODE)).then(function(j){if(j&&j.ok)apply(j);else if(j&&(j.gone||j.kicked))showMsg(j.kicked?'u were kicked from this room':'this room has ended')}).catch(function(){})}
 jp('/api/party/join',{code:CODE}).then(function(j){
@@ -15348,10 +15421,6 @@ $('cIn').addEventListener('keydown',function(e){if(e.key==='Enter')sendChat()});
 $('wGo').addEventListener('click',function(){var id=ytId($('wUrl').value);if(!id)return;act('setmedia',{media:{kind:id.indexOf('t_')===0?'tube':'yt',id:id,title:''}})});
 jg('/api/tube/feed').then(function(j){var h='';(j.feed||[]).slice(0,6).forEach(function(v){h+='<div class="pick" data-id="'+esc(v.id)+'" data-t="'+esc(v.title)+'"><img src="'+esc(v.thumb||'')+'" alt=""><div class="pt">'+esc(v.title)+'</div></div>'});$('tubePicks').innerHTML=h}).catch(function(){});
 $('tubePicks').addEventListener('click',function(e){var n=e.target;while(n&&n!==$('tubePicks')&&!n.getAttribute('data-id'))n=n.parentNode;if(n&&n.getAttribute('data-id'))act('setmedia',{media:{kind:'tube',id:n.getAttribute('data-id'),title:n.getAttribute('data-t')}})});
-$('ppBtn').addEventListener('click',function(){if(!el)return;if(el.paused)act('play');else act('pause')});
-$('nextBtn').addEventListener('click',function(){act('next')});
-$('prevBtn').addEventListener('click',function(){act('prev')});
-$('seek').addEventListener('change',function(){if(el&&el.duration)act('seek',{pos:el.duration*Number($('seek').value)/1000})});
 $('mSearch').addEventListener('click',function(){var q=$('mQ').value.trim();if(!q)return;jg('/api/msearch?q='+encodeURIComponent(q)).then(function(j){var h='';(j.songs||[]).slice(0,8).forEach(function(s){h+='<div class="qrow" data-id="'+esc(s.id)+'" data-t="'+esc(s.t)+'" data-a="'+esc(s.a)+'" data-img="'+esc(s.img||'')+'"><img src="'+esc(s.img||'')+'" alt=""><div class="qt"><b>'+esc(s.t)+'</b><span>'+esc(s.a)+'</span></div><button class="pbtn" data-add="1" type="button">+ queue</button><button class="pbtn acc" data-now="1" type="button">play now</button></div>'});$('mRes').innerHTML=h||'<div style="color:rgba(236,234,246,.5);font-size:13.5px">no songs found</div>'})});
 $('mRes').addEventListener('click',function(e){var n=e.target;var row=n;while(row&&row!==$('mRes')&&!row.getAttribute('data-id'))row=row.parentNode;if(!row||!row.getAttribute('data-id'))return;var t={id:row.getAttribute('data-id'),title:row.getAttribute('data-t'),artist:row.getAttribute('data-a'),img:row.getAttribute('data-img')};if(n.getAttribute('data-now'))act('setmedia',{track:t});else if(n.getAttribute('data-add'))act('addq',{track:t})});
 $('qList').addEventListener('click',function(e){var n=e.target;while(n&&n!==$('qList')&&!n.getAttribute('data-qi'))n=n.parentNode;if(n&&n.getAttribute('data-qi')!=null)act('playq',{i:Number(n.getAttribute('data-qi'))})});
