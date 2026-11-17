@@ -16076,12 +16076,45 @@ async function fypApi(req, res, u) {
   return false;
 }
 
+// ================= tiktok social layer: site likes + comments on tiktok vids =================
+const TKX = { l: {}, c: {}, ready: false };
+function tkxSave() { try { storeSet('cfg:tkx', JSON.stringify({ l: TKX.l, c: TKX.c })); } catch (e) {} }
+async function tkxLoad() { if (TKX.ready) return; TKX.ready = true; try { const got = await storeCmd([['GET', 'cfg:tkx']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o && o.l) TKX.l = o.l; if (o && o.c) TKX.c = o.c; } } catch (e) {} }
+function tkxFor(v, me) { const L = TKX.l[v.id] || []; return { lk: L.length, liked: !!(me && L.indexOf(me) >= 0), cc: (TKX.c[v.id] || []).length }; }
+
 async function tkApi(req, res, u) {
   if (!u.pathname.startsWith('/api/tk/')) return false;
   const J = (o) => { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); };
   try {
+    await tkxLoad();
+    const meTk = voterUser(req);
+    const tkxShape = (arr) => arr.map((v) => Object.assign({}, v, tkxFor(v, meTk)));
+    if (u.pathname === '/api/tk/like' && req.method === 'POST') {
+      if (!meTk) { J({ ok: false, err: 'login first' }); return true; }
+      const b = await readJsonBody(req); const id = String((b && b.id) || '');
+      if (!id) { J({ ok: false, err: 'no id' }); return true; }
+      if (!TKX.l[id]) TKX.l[id] = [];
+      const ix = TKX.l[id].indexOf(meTk); let liked;
+      if (ix >= 0) { TKX.l[id].splice(ix, 1); liked = false; } else { TKX.l[id].push(meTk); liked = true; }
+      const lkKeys = Object.keys(TKX.l); if (lkKeys.length > 3000) delete TKX.l[lkKeys[0]];
+      tkxSave(); J({ ok: true, liked, count: TKX.l[id].length }); return true;
+    }
+    if (u.pathname === '/api/tk/comments') {
+      if (req.method === 'POST') {
+        if (!meTk) { J({ ok: false, err: 'login first' }); return true; }
+        const b = await readJsonBody(req); const id = String((b && b.id) || ''); const x = String((b && b.x) || '').trim().slice(0, 300);
+        if (!id || !x) { J({ ok: false, err: 'empty comment' }); return true; }
+        if (!TKX.c[id]) TKX.c[id] = [];
+        TKX.c[id].push({ u: meTk, x, at: Date.now() });
+        if (TKX.c[id].length > 200) TKX.c[id] = TKX.c[id].slice(-200);
+        const ccKeys = Object.keys(TKX.c); if (ccKeys.length > 1000) delete TKX.c[ccKeys[0]];
+        tkxSave(); J({ ok: true, items: TKX.c[id].slice(-80) }); return true;
+      }
+      const cid = u.searchParams.get('id') || '';
+      J({ ok: true, items: (TKX.c[cid] || []).slice(-80) }); return true;
+    }
     if (u.pathname === '/api/tk/feed') {
-      if (TKFEED.items && Date.now() - TKFEED.at < 60000) { J({ ok: true, vids: TKFEED.items }); return true; }
+      if (TKFEED.items && Date.now() - TKFEED.at < 60000) { J({ ok: true, vids: tkxShape(TKFEED.items) }); return true; }
       let j = null;
       for (let att = 0; att < 2 && !j; att++) {
         try { const r = await fetch('https://www.tikwm.com/api/feed/list?region=US&count=30', { headers: { 'user-agent': TK_UA } }); const jj = await r.json(); if (jj && jj.code === 0) j = jj; } catch (e) {}
@@ -16090,7 +16123,7 @@ async function tkApi(req, res, u) {
       if (!j) { J({ ok: false, err: 'tiktok source is down rn' }); return true; }
       const vids = (j.data || []).map(tkNorm).filter(Boolean);
       TKFEED = { at: Date.now(), items: vids };
-      J({ ok: true, vids }); return true;
+      J({ ok: true, vids: tkxShape(vids) }); return true;
     }
     if (u.pathname === '/api/tk/search') {
       const q = (u.searchParams.get('q') || '').trim().slice(0, 80);
@@ -16101,7 +16134,7 @@ async function tkApi(req, res, u) {
       let j = null; try { j = JSON.parse(tx); } catch (e) {}
       if (!j || j.code !== 0) { J({ ok: false, blocked: true, err: 'search is blocked rn — trending still works' }); return true; }
       const arr = Array.isArray(j.data) ? j.data : ((j.data && (j.data.videos || j.data.data)) || []);
-      J({ ok: true, vids: arr.map(tkNorm).filter(Boolean) }); return true;
+      J({ ok: true, vids: tkxShape(arr.map(tkNorm).filter(Boolean)) }); return true;
     }
     if (u.pathname === '/api/tk/resolve') {
       const b = await readJsonBody(req);
@@ -16112,13 +16145,13 @@ async function tkApi(req, res, u) {
       if (!j || j.code !== 0) { J({ ok: false, err: 'could not load that one' }); return true; }
       const it = tkNorm(j.data);
       if (!it) { J({ ok: false, err: 'that one has no playable video' }); return true; }
-      J({ ok: true, vid: it }); return true;
+      J({ ok: true, vid: Object.assign({}, it, tkxFor(it, meTk)) }); return true;
     }
     if (u.pathname === '/api/tk/get') {
       const id = (u.searchParams.get('id') || '').trim();
       const c = TKCACHE.get(id);
       if (!c) { J({ ok: false, err: 'gone — find it again from the feed' }); return true; }
-      J({ ok: true, vid: c.item }); return true;
+      J({ ok: true, vid: Object.assign({}, c.item, tkxFor(c.item, meTk)) }); return true;
     }
   } catch (e) { J({ ok: false, err: 'tiktok source unreachable rn' }); return true; }
   return false;
@@ -16134,7 +16167,7 @@ const TK_CSS = `
 .tktabs button{background:none;border:0;color:rgba(255,255,255,.65);font-size:14.5px;font-weight:800;padding:7px 12px;border-radius:999px;cursor:pointer;font-family:inherit}
 .tktabs button.on{color:#fff;background:rgba(255,255,255,.14)}
 .tkacts{display:flex;gap:8px}
-.tkacts button{width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.35);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.tkacts button{width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.55);background:rgba(8,6,16,.82);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.5)}
 #tkFeed{height:100%;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none}
 #tkFeed::-webkit-scrollbar{display:none}
 .tkslide{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000;overflow:hidden}
@@ -16158,6 +16191,17 @@ const TK_CSS = `
 .tkflash{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;pointer-events:none;opacity:0;transition:opacity .25s}
 .tkflash.go{opacity:.9;transition:none}
 .tksound{position:absolute;left:50%;bottom:110px;transform:translateX(-50%);z-index:21;background:#8b7cff;border:0;color:#fff;font-weight:800;font-size:13.5px;border-radius:999px;padding:10px 18px;cursor:pointer;font-family:inherit;box-shadow:0 10px 26px rgba(0,0,0,.5)}
+.tkstat{font:inherit;background:none;border:0;padding:0;cursor:pointer}
+.tkstat:hover,.tkfyp:hover,.tkacts button:hover,.tktabs button:hover{transform:none}
+.tklike.on .ic{color:#ff3b5c;background:rgba(255,59,92,.22)}
+.tkacts button svg{width:20px;height:20px;flex:0 0 auto}
+.tksound:hover{transform:translateX(-50%)}
+.tkretry:hover{transform:translate(-50%,-50%)}
+@media(min-width:1100px){body[data-nav=\"side\"] .tkhead{padding-right:124px}}
+.tkcmtlist{max-height:44vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
+.tkcmt b{color:#c9bfff;font-size:12.5px}
+.tkcmt p{margin:2px 0 0;color:#fff;font-size:14px;word-break:break-word}
+.tkcmtmsg{color:rgba(255,255,255,.6);text-align:center;padding:14px;font-size:13.5px}
 .tkempty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.75);font-size:14.5px;text-align:center;padding:30px;z-index:4}
 .tksheet[hidden]{display:none}
 .tksheet{position:absolute;inset:0;z-index:30;background:rgba(4,3,10,.72);display:flex;align-items:flex-end;justify-content:center}
@@ -16193,8 +16237,8 @@ ${SIDEBAR_HTML}
     <div class="tklogo">tiktok</div>
     <div class="tktabs"><button type="button" id="tabFeed" class="on">for you</button><button type="button" id="tabSaved">saved</button></div>
     <div class="tkacts">
-      <button type="button" id="tkSearchB" aria-label="search"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
-      <button type="button" id="tkLinkB" aria-label="open a link"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 10a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></button>
+      <button type="button" id="tkSearchB" aria-label="search"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
+      <button type="button" id="tkLinkB" aria-label="open a link"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 10a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></button>
     </div>
   </div>
   <div id="tkFeed"></div>
@@ -16207,6 +16251,13 @@ ${SIDEBAR_HTML}
       <div class="tkmsg2" id="tkSheetMsg"></div>
       <div id="tkResults"></div>
       <button type="button" class="tkx" id="tkSheetX">close</button>
+    </div>
+  </div>
+  <div class="tksheet" id="tkCmtSheet" hidden>
+    <div class="tksbox">
+      <div class="tkcmtlist" id="tkCmtList"></div>
+      <form id="tkCmtF"><input id="tkCmtQ" placeholder="add a comment" autocomplete="off" maxlength="300"><button type="submit">post</button></form>
+      <button type="button" class="tkx" id="tkCmtX">close</button>
     </div>
   </div>
 </div>
@@ -16228,8 +16279,8 @@ function slideHtml(v,i){
   + '<div class="tkflash" data-flash><svg viewBox="0 0 24 24" width="74" height="74" fill="rgba(255,255,255,.92)"><path d="M8 5v14l11-7z"/></svg></div>'
   + '<div class="tkmeta"><div class="au">@'+esc(v.author||'')+'</div><div class="ti">'+esc(v.title||'')+'</div>'+(v.music?'<div class="mu">♪ '+esc(v.music)+'</div>':'')+'</div>'
   + '<div class="tkrail">'
-  + '<div class="tkstat"><span class="ic">'+HEART+'</span>'+fmtN(v.likes)+'</div>'
-  + '<div class="tkstat"><span class="ic">'+CMT+'</span>'+fmtN(v.comments)+'</div>'
+  + '<button type="button" class="tkstat tklike'+(v.liked?' on':'')+'" data-like="'+esc(v.id)+'"><span class="ic">'+HEART+'</span><span data-lkct>'+fmtN((v.likes||0)+(v.lk||0))+'</span></button>'
+  + '<button type="button" class="tkstat" data-cmt="'+esc(v.id)+'"><span class="ic">'+CMT+'</span><span data-cct>'+fmtN((v.comments||0)+(v.cc||0))+'</span></button>'
   + '<div class="tkstat"><span class="ic">'+EYE+'</span>'+fmtN(v.plays)+'</div>'
   + '<button type="button" class="tkfyp'+sv+'" data-fyp="'+esc(v.id)+'"><span class="ic">'+BM+'</span>fyp</button>'
   + '</div>'
@@ -16285,6 +16336,10 @@ setInterval(function(){
   if(rt&&startedAt[cur]&&Date.now()-startedAt[cur]>8000&&v.readyState<2&&v.networkState!==1){rt.hidden=false}
 },600);
 $('tkFeed').addEventListener('click',function(e){
+  var lk=e.target.closest?e.target.closest('[data-like]'):null;
+  if(lk){toggleLike(lk);return}
+  var cm=e.target.closest?e.target.closest('[data-cmt]'):null;
+  if(cm){openCmt(cm.getAttribute('data-cmt'));return}
   var fyp=e.target.closest?e.target.closest('[data-fyp]'):null;
   if(fyp){toggleFyp(fyp);return}
   var rt=e.target.closest?e.target.closest('[data-retry]'):null;
@@ -16294,6 +16349,36 @@ $('tkFeed').addEventListener('click',function(e){
   var v=sl.querySelector('video');if(!v)return;
   if(v.paused){var p=v.play();if(p&&p.catch)p.catch(function(){})}
   else{v.pause();var fl=sl.querySelector('[data-flash]');if(fl){fl.classList.add('go');setTimeout(function(){fl.classList.remove('go')},260)}}
+});
+function toggleLike(btn){
+  var id=btn.getAttribute('data-like');
+  fetch('/api/tk/like',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:id})}).then(function(r){return r.json()}).then(function(j){
+    if(!j.ok){alert(j.err||'login first');return}
+    btn.classList.toggle('on',j.liked);
+    var it=null;for(var k=0;k<items.length;k++)if(items[k].id===id)it=items[k];
+    if(it){it.lk=j.count;it.liked=j.liked}
+    var ct=btn.querySelector('[data-lkct]');if(ct&&it)ct.textContent=fmtN((it.likes||0)+j.count);
+  }).catch(function(){});
+}
+var cmtId=null;
+function openCmt(id){
+  cmtId=id;$('tkCmtSheet').hidden=false;$('tkCmtList').innerHTML='<div class=\"tkcmtmsg\">loading comments…</div>';
+  fetch('/api/tk/comments?id='+encodeURIComponent(id)).then(function(r){return r.json()}).then(function(j){renderCmt(j.items||[])}).catch(function(){renderCmt([])});
+}
+function renderCmt(list){
+  $('tkCmtList').innerHTML=list.length?list.map(function(c){return '<div class=\"tkcmt\"><b>@'+esc(c.u)+'</b><p>'+esc(c.x)+'</p></div>'}).join(''):'<div class=\"tkcmtmsg\">no comments yet — be the first</div>';
+  $('tkCmtList').scrollTop=$('tkCmtList').scrollHeight;
+}
+$('tkCmtX').addEventListener('click',function(){$('tkCmtSheet').hidden=true});
+$('tkCmtF').addEventListener('submit',function(e){
+  e.preventDefault();var x=$('tkCmtQ').value.trim();if(!x||!cmtId)return;
+  fetch('/api/tk/comments',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:cmtId,x:x})}).then(function(r){return r.json()}).then(function(j){
+    if(!j.ok){alert(j.err||'login first');return}
+    $('tkCmtQ').value='';renderCmt(j.items||[]);
+    var it=null;for(var k=0;k<items.length;k++)if(items[k].id===cmtId)it=items[k];
+    if(it)it.cc=(j.items||[]).length;
+    for(var k2=0;k2<$('tkFeed').children.length;k2++){var s2=$('tkFeed').children[k2];if(s2.getAttribute('data-id')===cmtId){var ct2=s2.querySelector('[data-cct]');if(ct2&&it)ct2.textContent=fmtN((it.comments||0)+it.cc)}}
+  }).catch(function(){});
 });
 function retrySlide(btn){
   var sl=btn.closest('.tkslide');var i=Number(sl.getAttribute('data-i'));var v=sl.querySelector('video');
