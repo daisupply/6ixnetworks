@@ -57,6 +57,7 @@
     var overlap = right - left;
     if (overlap <= 0) {
       falling.push({ x: cur.x, w: cur.w, y: tower.length, vy: 0, hue: cur.hue, alpha: 1 });
+      if (window.gxSubmit) gxSubmit(score);
       state = 'over'; overAt = Date.now();
       best = Math.max(best, score); localStorage.setItem('gx_stack_best', best); syncHud();
       return;
@@ -149,5 +150,7 @@
   requestAnimationFrame(loop);
 })();
 </script>
+<script>window.GXLB = { game: 'stack' };</script>
+<script src="/games/lb.js"></script>
 </body>
 </html>

@@ -53,6 +53,7 @@
   }
   function die() {
     if (state === 'dead') return;
+    if (window.gxSubmit) gxSubmit(score);
     state = 'dead'; deadAt = Date.now();
     best = Math.max(best, score); localStorage.setItem('gx_flap_best', best); syncHud();
   }
@@ -170,5 +171,7 @@
   requestAnimationFrame(loop);
 })();
 </script>
+<script>window.GXLB = { game: 'flappy' };</script>
+<script src="/games/lb.js"></script>
 </body>
 </html>

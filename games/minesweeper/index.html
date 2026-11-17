@@ -99,6 +99,7 @@
   }
   function endGame(win, boomCell) {
     over = true; won = win; stopTimer();
+    if (win && window.gxSubmit) { var secs = parseInt(document.getElementById('mTime').textContent, 10); if (secs > 0) gxSubmit(secs); }
     cells.forEach(function (cell) {
       if (cell.mine && !cell.flag) { cell.el.innerHTML = '<span class="mine"></span>'; cell.el.classList.add('open'); }
       if (cell.flag && !cell.mine) cell.el.textContent = '✕';
@@ -165,5 +166,7 @@
   setup();
 })();
 </script>
+<script>window.GXLB = { game: 'mines' };</script>
+<script src="/games/lb.js"></script>
 </body>
 </html>

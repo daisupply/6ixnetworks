@@ -144,7 +144,7 @@
     balls = balls.filter(function (b) { return b.y - b.r <= H + 10; });
     if (!balls.length) {
       lives--;
-      if (lives <= 0) { state = 'over'; best = Math.max(best, score); localStorage.setItem('gx_breakout_best', best); syncHud(); showMsg('game over', 'score <b>' + score + '</b> — best <b>' + best + '</b>', 'play again'); return; }
+      if (lives <= 0) { if (window.gxSubmit) gxSubmit(score); state = 'over'; best = Math.max(best, score); localStorage.setItem('gx_breakout_best', best); syncHud(); showMsg('game over', 'score <b>' + score + '</b> — best <b>' + best + '</b>', 'play again'); return; }
       balls = [{ x: paddle.x, y: H - 44, vx: 0, vy: 0, r: 7, stuck: true }]; state = 'ready';
     }
     if (bricks.every(function (b) { return !b.alive; })) {
@@ -237,5 +237,7 @@
   requestAnimationFrame(loop);
 })();
 </script>
+<script>window.GXLB = { game: 'breakout' };</script>
+<script src="/games/lb.js"></script>
 </body>
 </html>
