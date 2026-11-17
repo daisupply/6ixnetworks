@@ -4301,6 +4301,10 @@ body.frview .hcall{display:none}
 .hue-dot.on{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.35)}
 .hue-auto{border-radius:999px;padding:0 13px;height:32px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#e4e4e7;font-weight:700;cursor:pointer;font-family:inherit;font-size:12.5px}
 .hue-auto.on{border-color:#fff}
+.fxglow{text-shadow:0 0 8px rgba(139,124,255,.95),0 0 2px rgba(255,255,255,.6)}
+.fxgrad{background:linear-gradient(90deg,#8b7cff,#ff5ea8,#ffd257);-webkit-background-clip:text;background-clip:text;color:transparent}
+.fxrain{background:linear-gradient(90deg,#ff5a5a,#ffb52e,#3ddc84,#38b6ff,#c86bff,#ff5a5a);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:fxslide 3.2s linear infinite}
+@keyframes fxslide{to{background-position:300% 0}}
 /* ---------- mobile ---------- */
 @media(max-width:820px){
 .app6 .chatrail{position:fixed;left:0;top:0;bottom:0;height:100dvh;width:276px;z-index:120;transform:translateX(-106%);transition:transform .22s ease;box-shadow:0 0 44px rgba(0,0,0,.55);padding-top:max(18px,env(safe-area-inset-top))}
@@ -4672,7 +4676,7 @@ function line(m){
   var body = document.createElement('div'); body.className = 'mbody';
   if (!grouped) {
     var head = document.createElement('div'); head.className = 'mhead';
-    var b = document.createElement('b'); b.textContent = m.bot ? 'six ✦ ai' : (m.disp || m.name || 'anon'); b.addEventListener('click', function(){ openUser(m.name || 'anon', !!m.bot); }); head.appendChild(b);
+    var b = document.createElement('b'); b.textContent = m.bot ? 'six ✦ ai' : (m.disp || m.name || 'anon'); if (m.fx) b.classList.add('fx' + m.fx); b.addEventListener('click', function(){ openUser(m.name || 'anon', !!m.bot); }); head.appendChild(b);
     if (!m.bot && (m.name || '').toLowerCase() === 'deion') { var at = document.createElement('span'); at.textContent = '✦ admin'; at.setAttribute('style', 'font-size:10.5px;font-weight:800;color:#f0abfc;border:1px solid rgba(240,171,252,.4);border-radius:999px;padding:1px 7px;letter-spacing:.04em'); head.appendChild(at); }
     if (m.ts) { var tm = document.createElement('span'); tm.className = 'mtime'; tm.textContent = msgTime(m.ts); head.appendChild(tm); }
     body.appendChild(head);
@@ -11371,7 +11375,28 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style>
   });
 })();
 </script>
-<div class="starfield" aria-hidden="true"><i class="tw tv" style="left:82%;top:15%;width:2px;height:2px;animation-duration:3.4s;animation-delay:1.0s"></i><i class="tw" style="left:18%;top:14%;width:3px;height:3px;animation-duration:3.4s;animation-delay:2.2s"></i><i class="tw" style="left:76%;top:55%;width:2px;height:2px;animation-duration:2.0s;animation-delay:0.9s"></i><i class="tw" style="left:65%;top:78%;width:2px;height:2px;animation-duration:3.0s;animation-delay:2.9s"></i><i class="tw tv" style="left:90%;top:70%;width:2px;height:2px;animation-duration:2.3s;animation-delay:2.4s"></i><i class="tw" style="left:1%;top:21%;width:3px;height:3px;animation-duration:2.7s;animation-delay:1.1s"></i><i class="tw" style="left:28%;top:44%;width:2px;height:2px;animation-duration:2.1s;animation-delay:0.4s"></i><i class="tw" style="left:45%;top:78%;width:2px;height:2px;animation-duration:3.5s;animation-delay:2.9s"></i><i class="tw tv" style="left:69%;top:16%;width:2px;height:2px;animation-duration:2.1s;animation-delay:1.2s"></i><i class="tw" style="left:81%;top:80%;width:2px;height:2px;animation-duration:3.1s;animation-delay:2.8s"></i><i class="tw" style="left:6%;top:85%;width:2px;height:2px;animation-duration:3.4s;animation-delay:3.9s"></i><i class="tw" style="left:30%;top:13%;width:2px;height:2px;animation-duration:2.5s;animation-delay:2.5s"></i><i class="tw tv" style="left:47%;top:21%;width:2px;height:2px;animation-duration:2.6s;animation-delay:2.7s"></i><i class="tw" style="left:90%;top:88%;width:3px;height:3px;animation-duration:2.0s;animation-delay:2.5s"></i><i class="tw" style="left:69%;top:32%;width:2px;height:2px;animation-duration:2.8s;animation-delay:1.1s"></i><i class="tw" style="left:82%;top:89%;width:3px;height:3px;animation-duration:2.3s;animation-delay:1.3s"></i></div><a class="dcord" href="https://discord.gg/bY5Dhk6dQZ" target="_blank" rel="noopener"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.32 4.37a19.8 19.8 0 0 0-4.93-1.51 13.8 13.8 0 0 0-.64 1.28 18.3 18.3 0 0 0-5.5 0 12.6 12.6 0 0 0-.64-1.28h-.05A19.7 19.7 0 0 0 3.64 4.37C.53 9.05-.32 13.58.1 18.06a19.9 19.9 0 0 0 6.04 3.03c.24-.33.47-.68.66-1.03a12.9 12.9 0 0 1-1.04-.5c.09-.07.18-.14.26-.21a14.2 14.2 0 0 0 12.06 0c.08.07.17.14.26.21-.33.2-.68.37-1.04.5.19.35.42.7.66 1.03a19.8 19.8 0 0 0 6.05-3.03c.5-5.18-.84-9.68-3.69-13.69ZM8.02 15.33c-1.18 0-2.16-1.08-2.16-2.42s.95-2.42 2.16-2.42 2.18 1.09 2.16 2.42c0 1.34-.95 2.42-2.16 2.42Zm7.97 0c-1.18 0-2.15-1.08-2.15-2.42s.95-2.42 2.15-2.42 2.18 1.09 2.16 2.42c0 1.34-.95 2.42-2.16 2.42Z"/></svg><span><b>join the discord</b></span></a>\n<div class="launch">
+<div class="starfield" aria-hidden="true"><i class="tw tv" style="left:82%;top:15%;width:2px;height:2px;animation-duration:3.4s;animation-delay:1.0s"></i><i class="tw" style="left:18%;top:14%;width:3px;height:3px;animation-duration:3.4s;animation-delay:2.2s"></i><i class="tw" style="left:76%;top:55%;width:2px;height:2px;animation-duration:2.0s;animation-delay:0.9s"></i><i class="tw" style="left:65%;top:78%;width:2px;height:2px;animation-duration:3.0s;animation-delay:2.9s"></i><i class="tw tv" style="left:90%;top:70%;width:2px;height:2px;animation-duration:2.3s;animation-delay:2.4s"></i><i class="tw" style="left:1%;top:21%;width:3px;height:3px;animation-duration:2.7s;animation-delay:1.1s"></i><i class="tw" style="left:28%;top:44%;width:2px;height:2px;animation-duration:2.1s;animation-delay:0.4s"></i><i class="tw" style="left:45%;top:78%;width:2px;height:2px;animation-duration:3.5s;animation-delay:2.9s"></i><i class="tw tv" style="left:69%;top:16%;width:2px;height:2px;animation-duration:2.1s;animation-delay:1.2s"></i><i class="tw" style="left:81%;top:80%;width:2px;height:2px;animation-duration:3.1s;animation-delay:2.8s"></i><i class="tw" style="left:6%;top:85%;width:2px;height:2px;animation-duration:3.4s;animation-delay:3.9s"></i><i class="tw" style="left:30%;top:13%;width:2px;height:2px;animation-duration:2.5s;animation-delay:2.5s"></i><i class="tw tv" style="left:47%;top:21%;width:2px;height:2px;animation-duration:2.6s;animation-delay:2.7s"></i><i class="tw" style="left:90%;top:88%;width:3px;height:3px;animation-duration:2.0s;animation-delay:2.5s"></i><i class="tw" style="left:69%;top:32%;width:2px;height:2px;animation-duration:2.8s;animation-delay:1.1s"></i><i class="tw" style="left:82%;top:89%;width:3px;height:3px;animation-duration:2.3s;animation-delay:1.3s"></i></div><a class="dcord" href="https://discord.gg/bY5Dhk6dQZ" target="_blank" rel="noopener"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.32 4.37a19.8 19.8 0 0 0-4.93-1.51 13.8 13.8 0 0 0-.64 1.28 18.3 18.3 0 0 0-5.5 0 12.6 12.6 0 0 0-.64-1.28h-.05A19.7 19.7 0 0 0 3.64 4.37C.53 9.05-.32 13.58.1 18.06a19.9 19.9 0 0 0 6.04 3.03c.24-.33.47-.68.66-1.03a12.9 12.9 0 0 1-1.04-.5c.09-.07.18-.14.26-.21a14.2 14.2 0 0 0 12.06 0c.08.07.17.14.26.21-.33.2-.68.37-1.04.5.19.35.42.7.66 1.03a19.8 19.8 0 0 0 6.05-3.03c.5-5.18-.84-9.68-3.69-13.69ZM8.02 15.33c-1.18 0-2.16-1.08-2.16-2.42s.95-2.42 2.16-2.42 2.18 1.09 2.16 2.42c0 1.34-.95 2.42-2.16 2.42Zm7.97 0c-1.18 0-2.15-1.08-2.15-2.42s.95-2.42 2.15-2.42 2.18 1.09 2.16 2.42c0 1.34-.95 2.42-2.16 2.42Z"/></svg><span><b>join the discord</b></span></a>\n<div id="socWrap" style="width:100%;max-width:1120px;margin:0 auto 18px;display:none;gap:14px;flex-wrap:wrap"><div style="flex:1 1 320px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:14px 16px"><div style="font-weight:800;letter-spacing:.06em;font-size:12px;color:#bdb4e4;margin-bottom:8px">HAPPENING ON 6IX</div><div id="socFeed" style="font-size:13.5px;line-height:1.5;color:#d8d2f0">loading…</div></div><div id="socMe" style="flex:1 1 320px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:14px 16px;display:none"><div style="font-weight:800;letter-spacing:.06em;font-size:12px;color:#bdb4e4;margin-bottom:8px">UR STUFF</div><div id="socMeBody" style="font-size:13.5px;line-height:1.55;color:#d8d2f0"></div></div></div>
+<script>
+(function(){
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function ago(t){var s=((Date.now()-t)/1000)|0;if(s<60)return 'now';if(s<3600)return ((s/60)|0)+'m';if(s<86400)return ((s/3600)|0)+'h';return ((s/86400)|0)+'d'}
+  fetch('/api/feed').then(function(r){return r.json()}).then(function(d){
+    if(!d||!d.ok||!d.items||!d.items.length)return;
+    document.getElementById('socWrap').style.display='flex';
+    document.getElementById('socFeed').innerHTML=d.items.slice(0,8).map(function(i){return '<div style="padding:2.5px 0"><b>'+esc(i.u||'six')+'</b> '+esc(i.x)+' <span style="color:#8a81ad">'+ago(i.at)+' ago</span></div>'}).join('');
+  }).catch(function(){});
+  fetch('/api/me/social').then(function(r){return r.json()}).then(function(d){
+    if(!d||!d.ok)return;
+    document.getElementById('socWrap').style.display='flex';
+    var m=document.getElementById('socMe');m.style.display='block';
+    var badges=d.badges.length?d.badges.map(function(b){return '<span title="'+esc(b.desc)+'" style="display:inline-block;background:rgba(139,124,255,.18);border:1px solid rgba(139,124,255,.45);border-radius:999px;padding:2px 9px;margin:2px 3px 2px 0;font-size:12px;font-weight:700">'+esc(b.name)+'</span>'}).join(''):'<span style="color:#8a81ad">no badges yet — play games, chat, win trivia</span>';
+    var shop=Object.keys(d.shop).map(function(k){var s=d.shop[k];var owned=d.coins.own.indexOf(k)>=0;var on=d.coins.fx===k;return '<button type="button" data-fx="'+k+'" style="background:'+(on?'#8b7cff':'rgba(255,255,255,.07)')+';border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:999px;padding:5px 12px;font-weight:700;font-size:12.5px;cursor:pointer;margin:2px 3px 2px 0;font-family:inherit">'+esc(s.n)+(owned?(on?' — on':' — equip'):' — '+s.p+' coins')+'</button>'}).join('');
+    document.getElementById('socMeBody').innerHTML='<div style="font-size:15px"><b>'+d.coins.bal+'</b> coins'+(d.coins.fx?' · name fx: <b>'+esc(d.coins.fx)+'</b>':'')+'</div><div style="margin-top:7px">'+badges+'</div><div style="margin-top:9px;color:#bdb4e4;font-size:12px;font-weight:800;letter-spacing:.06em">CHAT NAME FX SHOP</div><div style="margin-top:4px">'+shop+'</div>';
+    m.querySelectorAll('[data-fx]').forEach(function(b){b.addEventListener('click',function(){fetch('/api/coins/buy',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({fx:b.getAttribute('data-fx')})}).then(function(r){return r.json()}).then(function(x){if(x.ok)location.reload();else alert(x.err||'cant buy that')}).catch(function(){})})});
+  }).catch(function(){});
+})();
+</script>
+<div class="launch">
 <a class="lcard" href="/search"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><b>search</b></a>
 <a class="lcard" href="/gs"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg><b>games</b></a>
 <a class="lcard" href="/blox"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg><b>6ixblox</b></a>
@@ -16007,6 +16032,7 @@ async function scoresApi(req, res, u) {
     const yday = new Date(Date.now() - 86400000).toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
     const yd = SCORES.d[yday];
     const yb = yd ? scoreBoard(yd.m, SCORE_GAMES[yd.game].low) : [];
+    if (yd && !yd.crowned && yb[0]) { yd.crowned = yb[0].u; scoresSave(); badgesGrant(yb[0].u, 'daily'); feedPush('crown', yb[0].u, 'won the daily challenge on ' + SCORE_GAMES[yd.game].t + ' — ' + yb[0].s); }
     jres(res, 200, { ok: true, game: gk, title: SCORE_GAMES[gk].t, day, top: scoreBoard((SCORES.d[day] || {}).m, SCORE_GAMES[gk].low), ywin: yb[0] || null, ygame: yd ? SCORE_GAMES[yd.game].t : '' });
     return true;
   }
@@ -16048,12 +16074,225 @@ async function scoresApi(req, res, u) {
       }
     }
     scoresSave();
+    bumpStat(me.toLowerCase(), 'plays', { game: gk, score: s });
     const board = scoreBoard(SCORES.g[gk], def.low);
     const ri = board.findIndex((x) => x.u === me);
     const rank = ri >= 0 ? ri + 1 : null;
     if (better && rank === 1) feedPush('top', me, 'took #1 on ' + def.t + ' — ' + s);
     if (dNewTop) feedPush('daily', me, 'leads the daily challenge on ' + def.t + ' — ' + s);
     jres(res, 200, { ok: true, best: SCORES.g[gk][me].s, rank, dailyTop: dNewTop });
+    return true;
+  }
+  return false;
+}
+
+// ---- social layer: badges, coins, name fx, chat trivia (v459) ----
+const FXSHOP = { glow: { n: 'glow name', p: 50 }, grad: { n: 'gradient name', p: 120 }, rain: { n: 'rainbow name', p: 300 } };
+const BADGES = [
+  { id: 'plays1', n: 'first drop', d: 'submit ur first game score', test: (r) => (r.cnt.plays || 0) >= 1 },
+  { id: 'plays25', n: 'grinder', d: 'submit 25 game scores', test: (r) => (r.cnt.plays || 0) >= 25 },
+  { id: 'games4', n: 'well rounded', d: 'score in 4 different folder games', test: (r) => Object.keys(r.games || {}).length >= 4 },
+  { id: 'stack30', n: 'tower boss', d: 'hit 30 on stack', test: (r, ev) => !!ev && ev.game === 'stack' && ev.score >= 30 },
+  { id: 'n2048', n: 'number god', d: 'hit 10,000 on 2048', test: (r, ev) => !!ev && ev.game === 'g2048' && ev.score >= 10000 },
+  { id: 'hex5000', n: 'hex head', d: 'hit 5,000 on hextris', test: (r, ev) => !!ev && ev.game === 'hextris' && ev.score >= 5000 },
+  { id: 'chat100', n: 'yapper', d: 'send 100 chat messages', test: (r) => (r.cnt.msgs || 0) >= 100 },
+  { id: 'chat500', n: 'loudmouth', d: 'send 500 chat messages', test: (r) => (r.cnt.msgs || 0) >= 500 },
+  { id: 'watch25', n: 'glued', d: 'watch 25 videos', test: (r) => (r.cnt.views || 0) >= 25 },
+  { id: 'up1', n: 'creator', d: 'upload ur first video', test: (r) => (r.cnt.uploads || 0) >= 1 },
+  { id: 'trivia1', n: 'quick brain', d: 'win a trivia round', test: (r) => (r.cnt.trivia || 0) >= 1 },
+  { id: 'trivia10', n: 'professor', d: 'win 10 trivia rounds', test: (r) => (r.cnt.trivia || 0) >= 10 },
+  { id: 'rich200', n: 'coin lord', d: 'hold 200 coins at once', test: (r, ev, bal) => (bal || 0) >= 200 },
+  { id: 'daily', n: 'daily champ', d: 'win a daily challenge', test: () => false },
+];
+const BADATA = { u: {}, ready: false };
+let baDirty = false;
+async function badgesLoad() { if (BADATA.ready) return; BADATA.ready = true; try { const got = await storeCmd([['GET', 'cfg:badges']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o && o.u) BADATA.u = o.u; } } catch (e) {} }
+function badgesSave() { if (baDirty) return; baDirty = true; setTimeout(() => { baDirty = false; try { storeSet('cfg:badges', JSON.stringify({ u: BADATA.u })); } catch (e) {} }, 800); }
+function baRec(user) { if (!BADATA.u[user]) BADATA.u[user] = { got: {}, cnt: {}, games: {} }; return BADATA.u[user]; }
+function evalBadges(user, ev) {
+  const r = baRec(user);
+  let changed = false;
+  for (const b of BADGES) {
+    if (r.got[b.id]) continue;
+    let hit = false;
+    try { hit = b.test(r, ev, COINS.bal[user] || 0); } catch (e) {}
+    if (hit) { r.got[b.id] = Date.now(); changed = true; feedPush('badge', user, 'earned the "' + b.n + '" badge'); }
+  }
+  if (changed) badgesSave();
+  return changed;
+}
+async function badgesGrant(user, id) {
+  await badgesLoad();
+  const r = baRec(user);
+  if (!r.got[id]) { r.got[id] = Date.now(); badgesSave(); }
+}
+async function bumpStat(user, key, ev) {
+  try {
+    if (!user) return;
+    user = String(user).toLowerCase();
+    await badgesLoad();
+    const r = baRec(user);
+    r.cnt[key] = (r.cnt[key] || 0) + 1;
+    if (key === 'plays' && ev && ev.game) r.games[ev.game] = 1;
+    badgesSave();
+    evalBadges(user, ev);
+  } catch (e) {}
+}
+async function badgeCheck(user) { try { if (!user) return; await badgesLoad(); evalBadges(String(user).toLowerCase(), null); } catch (e) {} }
+const COINS = { bal: {}, fx: {}, own: {}, ready: false };
+let coinsDirty = false;
+async function coinsLoad() { if (COINS.ready) return; COINS.ready = true; try { const got = await storeCmd([['GET', 'cfg:coins']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o) { if (o.bal) COINS.bal = o.bal; if (o.fx) COINS.fx = o.fx; if (o.own) COINS.own = o.own; } } } catch (e) {} }
+function coinsSave() { if (coinsDirty) return; coinsDirty = true; setTimeout(() => { coinsDirty = false; try { storeSet('cfg:coins', JSON.stringify({ bal: COINS.bal, fx: COINS.fx, own: COINS.own })); } catch (e) {} }, 800); }
+async function coinsAward(user, n) {
+  try {
+    if (!user) return 0;
+    user = String(user).toLowerCase();
+    await coinsLoad();
+    COINS.bal[user] = (COINS.bal[user] || 0) + n;
+    coinsSave();
+    badgeCheck(user);
+    return COINS.bal[user];
+  } catch (e) { return 0; }
+}
+function fxStamp(msg, user) {
+  try {
+    if (!user) return;
+    coinsLoad();
+    const f = COINS.fx[String(user).toLowerCase()];
+    if (f && FXSHOP[f]) msg.fx = f;
+  } catch (e) {}
+}
+const TRIVIA_BANK = [
+  { q: 'what planet is called the red planet?', a: ['mars'] },
+  { q: 'how many sides does a hexagon have?', a: ['6', 'six'] },
+  { q: 'what is the capital of france?', a: ['paris'] },
+  { q: 'what is the biggest ocean on earth?', a: ['pacific'] },
+  { q: 'who wrote romeo and juliet?', a: ['shakespeare'] },
+  { q: 'at what temperature celsius does water boil?', a: ['100'] },
+  { q: 'what is the chemical symbol for gold?', a: ['au'] },
+  { q: 'how many continents are there?', a: ['7', 'seven'] },
+  { q: 'what gas do plants absorb from the air?', a: ['carbon dioxide', 'co2'] },
+  { q: 'what is the fastest land animal?', a: ['cheetah'] },
+  { q: 'how many rings are on the olympic flag?', a: ['5', 'five'] },
+  { q: 'what is the main ingredient in guacamole?', a: ['avocado'] },
+  { q: 'who wrote the harry potter books?', a: ['rowling', 'jk rowling', 'j k rowling'] },
+  { q: 'what is the smallest planet in our solar system?', a: ['mercury'] },
+  { q: 'what is the longest river in the world?', a: ['nile', 'the nile'] },
+  { q: 'how many hearts does an octopus have?', a: ['3', 'three'] },
+  { q: 'what is the currency of japan?', a: ['yen'] },
+  { q: 'who painted the mona lisa?', a: ['da vinci', 'leonardo', 'leonardo da vinci'] },
+  { q: 'how many bones are in an adult human body?', a: ['206'] },
+  { q: 'who was the first president of the united states?', a: ['washington', 'george washington'] },
+  { q: 'what nba team plays in chicago?', a: ['bulls', 'the bulls'] },
+  { q: 'what nfl team plays in minnesota?', a: ['vikings', 'the vikings'] },
+  { q: 'how many keys does a standard piano have?', a: ['88'] },
+  { q: 'in what year was minecraft released?', a: ['2011'] },
+  { q: 'in what year was fortnite released?', a: ['2017'] },
+  { q: 'in what year did roblox launch?', a: ['2006'] },
+  { q: 'who sings blinding lights?', a: ['the weeknd', 'weeknd'] },
+  { q: 'who played jack in titanic?', a: ['dicaprio', 'leonardo dicaprio'] },
+  { q: 'what is the pokemon mascot?', a: ['pikachu'] },
+  { q: 'what is the biggest mammal in the world?', a: ['blue whale'] },
+  { q: 'how many players does a soccer team field at once?', a: ['11', 'eleven'] },
+  { q: 'what does h2o stand for — just name the substance', a: ['water'] },
+];
+const TRIVIA = { q: null, until: 0, nextAt: Date.now() + 25000 };
+function triviaTick() {
+  try {
+    const now = Date.now();
+    if (TRIVIA.q && now > TRIVIA.until) {
+      chatPost('lobby', { name: 'six ✦ ai', text: 'time — nobody got it. answer was "' + TRIVIA.q.a[0] + '"', ts: now, bot: true });
+      TRIVIA.q = null; TRIVIA.nextAt = now + 180000;
+    }
+    if (!TRIVIA.q && now > TRIVIA.nextAt) {
+      const room = CHAT_ROOMS.get('lobby');
+      const active = room && (room.socks.size > 0 || (room.pollAct && now - room.pollAct < 600000));
+      if (active) {
+        const pick = TRIVIA_BANK[(Math.random() * TRIVIA_BANK.length) | 0];
+        TRIVIA.q = pick; TRIVIA.until = now + 90000;
+        chatPost('lobby', { name: 'six ✦ ai', text: 'trivia time — first right answer gets 25 coins: ' + pick.q, ts: now, bot: true });
+      } else TRIVIA.nextAt = now + 60000;
+    }
+  } catch (e) {}
+}
+setInterval(triviaTick, 20000);
+function triviaCheck(room, user, text) {
+  try {
+    if (room !== 'lobby' || !TRIVIA.q || !user || !text) return;
+    const norm = ' ' + String(text).toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim() + ' ';
+    const hit = TRIVIA.q.a.some((a) => norm.includes(' ' + a + ' '));
+    if (!hit) return;
+    const ans = TRIVIA.q.a[0];
+    TRIVIA.q = null; TRIVIA.nextAt = Date.now() + 150000;
+    const u = String(user).toLowerCase();
+    coinsAward(u, 25).then((bal) => {
+      chatPost('lobby', { name: 'six ✦ ai', text: u + ' got it — "' + ans + '" — +25 coins (balance: ' + bal + ')', ts: Date.now(), bot: true });
+    }).catch(() => {});
+    bumpStat(u, 'trivia');
+    feedPush('trivia', u, 'won trivia in chat — +25 coins');
+  } catch (e) {}
+}
+function socialOnChat(room, user, text) {
+  try {
+    if (!user || !room || room.startsWith('dm-') || room.startsWith('p-')) return;
+    const u = String(user).toLowerCase();
+    bumpStat(u, 'msgs');
+    triviaCheck(room, u, text);
+  } catch (e) {}
+}
+async function socialApi(req, res, u) {
+  if (u.pathname !== '/api/coins' && u.pathname !== '/api/coins/buy' && u.pathname !== '/api/coins/grant' && u.pathname !== '/api/badges' && u.pathname !== '/api/me/social') return false;
+  const me = voterUser(req);
+  if (u.pathname === '/api/coins' && req.method === 'GET') {
+    if (!me) { jres(res, 401, { ok: false, err: 'login first' }); return true; }
+    await coinsLoad();
+    const k = me.toLowerCase();
+    jres(res, 200, { ok: true, bal: COINS.bal[k] || 0, fx: COINS.fx[k] || '', own: COINS.own[k] || [], shop: FXSHOP });
+    return true;
+  }
+  if (u.pathname === '/api/coins/buy' && req.method === 'POST') {
+    if (!me) { jres(res, 401, { ok: false, err: 'login first' }); return true; }
+    const b = await readJsonBody(req, 2048).then((x) => x).catch(() => null);
+    const fx = b && String(b.fx || '');
+    if (!FXSHOP[fx]) { jres(res, 400, { ok: false, err: 'bad fx' }); return true; }
+    await coinsLoad();
+    const k = me.toLowerCase();
+    const own = COINS.own[k] || (COINS.own[k] = []);
+    if (!own.includes(fx)) {
+      if ((COINS.bal[k] || 0) < FXSHOP[fx].p) { jres(res, 200, { ok: false, err: 'not enough coins — win trivia in chat' }); return true; }
+      COINS.bal[k] -= FXSHOP[fx].p;
+      own.push(fx);
+    }
+    COINS.fx[k] = fx;
+    coinsSave();
+    jres(res, 200, { ok: true, bal: COINS.bal[k] || 0, fx: COINS.fx[k], own });
+    return true;
+  }
+  if (u.pathname === '/api/coins/grant' && req.method === 'POST') {
+    if (!isAdminReq(req)) { jres(res, 403, { ok: false, err: 'admin only' }); return true; }
+    const b = await readJsonBody(req, 2048).then((x) => x).catch(() => null);
+    const who = b && String(b.u || '').toLowerCase(); const n = b ? Math.floor(Number(b.n)) : NaN;
+    if (!who || !isFinite(n) || n <= 0 || n > 100000) { jres(res, 400, { ok: false, err: 'bad grant' }); return true; }
+    const bal = await coinsAward(who, n);
+    jres(res, 200, { ok: true, bal });
+    return true;
+  }
+  if (u.pathname === '/api/badges' && req.method === 'GET') {
+    const who = String(u.searchParams.get('u') || (me || '')).toLowerCase();
+    if (!who) { jres(res, 400, { ok: false, err: 'who' }); return true; }
+    await badgesLoad();
+    const r = BADATA.u[who] || { got: {}, cnt: {} };
+    const list = BADGES.filter((b) => r.got[b.id]).map((b) => ({ id: b.id, name: b.n, desc: b.d, at: r.got[b.id] }));
+    jres(res, 200, { ok: true, user: who, badges: list, cnt: r.cnt || {} });
+    return true;
+  }
+  if (u.pathname === '/api/me/social' && req.method === 'GET') {
+    if (!me) { jres(res, 401, { ok: false, err: 'login first' }); return true; }
+    await coinsLoad(); await badgesLoad();
+    const k = me.toLowerCase();
+    const r = BADATA.u[k] || { got: {}, cnt: {} };
+    const list = BADGES.filter((b) => r.got[b.id]).map((b) => ({ id: b.id, name: b.n, desc: b.d, at: r.got[b.id] }));
+    jres(res, 200, { ok: true, user: me, coins: { bal: COINS.bal[k] || 0, fx: COINS.fx[k] || '', own: COINS.own[k] || [] }, shop: FXSHOP, badges: list, cnt: r.cnt || {} });
     return true;
   }
   return false;
@@ -19289,7 +19528,10 @@ function chatUpgrade(req, socket) {
       const muteLeft = Math.max(chatMuteLeft(name), chatMuteLeft(voterUser(req)));
       if (muteLeft > 0) { try { socket.write(wsEncode(JSON.stringify({ type: 'sys', text: 'ur muted — ' + Math.ceil(muteLeft / 60000) + ' min left' }))); } catch {} return; }
       const text = cleanText(b.text); if (!text) return;
-      chatPost(roomName, stampMsg({ name, text, ts: now, bot: false }, prof));
+      const wsMsg = stampMsg({ name, text, ts: now, bot: false }, prof);
+      fxStamp(wsMsg, voterUser(req));
+      chatPost(roomName, wsMsg);
+      socialOnChat(roomName, voterUser(req), text);
       if (roomName.indexOf('dm-') === 0) { const vu = voterUser(req); const pr = String(u.searchParams.get('peer') || '').toLowerCase(); if (vu && pr) pushNotif(pr, { type: 'dm', from: vu.toLowerCase(), fromName: (ACCOUNTS.get(vu.toLowerCase()) || {}).disp || vu, room: roomName, text: text }); }
   };
   let fragBuf = null;
@@ -20450,7 +20692,7 @@ const server = http.createServer(async (req, res) => {
     const text = cleanText(b.text);
     let img = null;
     if (typeof b.img === 'string' && b.img.startsWith('data:image/') && b.img.length <= 2800000) img = b.img;
-    if (text || img) { const rn = cleanRoom(b.room); const msg = stampMsg({ name: cleanName(chatProfileNode(req, b.name, b.hue).name), text, ts: Date.now(), bot: false }, chatProfileNode(req, b.name, b.hue)); if (img) msg.img = img; chatPost(rn, msg); if (rn.indexOf('dm-') === 0 && b.peer) { const vu = voterUser(req); if (vu) pushNotif(String(b.peer).toLowerCase(), { type: 'dm', from: vu.toLowerCase(), fromName: (ACCOUNTS.get(vu.toLowerCase()) || {}).disp || vu, room: rn, text: msg.text || (msg.img ? 'sent an image' : '') }); } chatRoomOf(rn).pollAct = Date.now(); }
+    if (text || img) { const rn = cleanRoom(b.room); const msg = stampMsg({ name: cleanName(chatProfileNode(req, b.name, b.hue).name), text, ts: Date.now(), bot: false }, chatProfileNode(req, b.name, b.hue)); if (img) msg.img = img; fxStamp(msg, voterUser(req)); chatPost(rn, msg); socialOnChat(rn, voterUser(req), text); if (rn.indexOf('dm-') === 0 && b.peer) { const vu = voterUser(req); if (vu) pushNotif(String(b.peer).toLowerCase(), { type: 'dm', from: vu.toLowerCase(), fromName: (ACCOUNTS.get(vu.toLowerCase()) || {}).disp || vu, room: rn, text: msg.text || (msg.img ? 'sent an image' : '') }); } chatRoomOf(rn).pollAct = Date.now(); }
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end('{"ok":true}');
   }
@@ -21013,6 +21255,7 @@ const server = http.createServer(async (req, res) => {
   if (await fypApi(req, res, u)) return;
   if (await spApi(req, res, u)) return;
   if (await scoresApi(req, res, u)) return;
+  if (await socialApi(req, res, u)) return;
   if (u.pathname.startsWith('/api/tube/')) {
     const me = voterUser(req);
     const jout = (o, code) => { res.writeHead(code || 200, { 'content-type': 'application/json' }); return res.end(JSON.stringify(o)); };
@@ -21096,6 +21339,7 @@ const server = http.createServer(async (req, res) => {
       const id = tubeId('t');
       const v = { id, owner: me, title, desc: String(b.desc || '').slice(0, 3000), tags: String(b.tags || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean).slice(0, 12), cat: String(b.cat || '').slice(0, 24), vis: ['pub', 'unl', 'priv'].includes(b.vis) ? b.vis : 'pub', vertical: !!b.vertical, dur: Math.max(0, Math.min(43200, +b.dur || 0)), views: 0, likedBy: [], dislikedBy: [], created: Date.now(), status: 'uploading', file: '', thumb: '', cap: false };
       TVIDEOS.set(id, v); tubePersist();
+      bumpStat(me.toLowerCase(), 'uploads'); feedPush('upload', me, 'uploaded  + title + ');
       return jout({ ok: true, id });
     }
     if (u.pathname === '/api/tube/uploadfile') {
@@ -21170,6 +21414,7 @@ const server = http.createServer(async (req, res) => {
         const xkey = xid + '|' + clientIp(req);
         if (Date.now() - (TVIEWCOOL.get(xkey) || 0) > 600000) { xe.views = (xe.views || 0) + 1; TVIEWCOOL.set(xkey, Date.now()); }
         TEXT.set(xid, xe);
+        if (me) bumpStat(me.toLowerCase(), 'views');
         if (me) { const hist = THIST.get(me) || []; const ex = hist.find(h => h.v === xid); if (ex) { ex.ts = Date.now(); ex.prog = Math.max(ex.prog || 0, +b.prog || 0); } else hist.unshift({ v: xid, ts: Date.now(), prog: +b.prog || 0 }); THIST.set(me, hist.slice(0, 80)); }
         tubePersist();
         return jout({ ok: true, views: xe.views });
