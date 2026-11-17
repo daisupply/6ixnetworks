@@ -14730,6 +14730,10 @@ function tubeSocialWidget(vidId, meta) {
 #gxSoc .cm .wh{font-size:11.5px;opacity:.55}
 #gxSoc .cm button{padding:2px 8px;font-size:11.5px}
 .tsl{color:#c9b8ff;font-weight:700;cursor:pointer}.tsl:hover{text-decoration:underline}
+.tgfeat{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:linear-gradient(120deg, rgba(139,124,255,.20), rgba(139,124,255,.06));border:1px solid rgba(139,124,255,.45);border-radius:16px;padding:14px 16px;margin:16px 0 4px}
+.tgfeat-t{font-weight:900;font-size:15.5px;color:#eceaf6;display:flex;align-items:center;gap:8px}
+.tgfeat-s{font-size:12.5px;color:rgba(236,234,246,.6);width:100%}
+.tgfeat button{margin-left:auto;font-size:13.5px;font-weight:800;padding:10px 18px;border-radius:999px;border:0;background:#8b7cff;color:#fff;cursor:pointer;font-family:inherit}
 </style>
 <div id="gxSoc"><div class="hd"><b>6IXTUBE</b><button id="gsLike" type="button">▲ 0</button><button id="gsDis" type="button">▼ 0</button><button id="gsSave" type="button">save</button><button id="gsSub" type="button">subscribe</button><button id="gsCm" type="button">comments 0</button><button id="gsHistB" type="button">watched</button><button id="gsParty" type="button">watch party</button></div><div class="bd"><div id="gsHist"></div><div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1"><textarea id="gsBox" rows="2" placeholder="add a comment…"></textarea></div><button id="gsPost" type="button">post</button></div><div id="gsList"></div></div></div>
 <script>
@@ -14743,6 +14747,16 @@ function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'
 var MYK = '';
 function paint(s){ if(!s) return; $('gsLike').innerHTML = '▲ ' + (s.likes||0); $('gsDis').innerHTML = '▼ ' + (s.dislikes||0); $('gsLike').classList.toggle('on', s.my==='like'); $('gsDis').classList.toggle('on', s.my==='dislike'); MYK = s.my||''; if (s.prog != null) { window.__gsProg = s.prog; if (window.__gsTryResume) window.__gsTryResume(); } if (s.comments != null) $('gsCm').textContent = 'comments ' + s.comments; if (s.chan) $('gsSub').textContent = s.subbed ? 'subscribed' : 'subscribe'; $('gsSub').classList.toggle('on', !!s.subbed); }
 jp('/api/tube/view', { id: XID, prog: 0, meta: { t: D.t, th: D.th, c: D.c } }).catch(function(){});
+try {
+  var tgHost = document.getElementById('ytembed') || document.getElementById('vid');
+  if (tgHost && !document.getElementById('tgFeatYt')) {
+    var tgCard = document.createElement('div');
+    tgCard.className = 'tgfeat'; tgCard.id = 'tgFeatYt';
+    tgCard.innerHTML = '<div class="tgfeat-t"><svg viewBox="0 0 24 24" width="17" height="17" fill="#ffd257" aria-hidden="true"><path d="M3 8.2l4.2 3.6L12 5.4l4.8 6.4L21 8.2l-1.7 9.3H4.7L3 8.2z"/></svg>watch together</div><button id="tgYtBtn" type="button">start watch party</button><div class="tgfeat-s">watch this in sync with friends — u start as the leader, hand the crown off whenever</div>';
+    tgHost.insertAdjacentElement('afterend', tgCard);
+    document.getElementById('tgYtBtn').addEventListener('click', function(){ jp('/api/party/create', { type: 'watch', media: { kind: 'yt', id: D.raw, title: D.t, img: D.th } }).then(function(r){ if (r.ok && r.code) location.href = '/party/' + r.code; else alert(r.err || 'log in first'); }); });
+  }
+} catch (e) {}
 jg('/api/tube/extstate?id=' + encodeURIComponent(XID)).then(paint);
 $('gsParty').addEventListener('click', function(){ jp('/api/party/create', { type: 'watch', media: { kind: 'yt', id: D.raw, title: D.t } }).then(function(r){ if (r.ok) location.href = '/party/' + r.code; else alert(r.err || 'log in first'); }); });
 $('gsLike').addEventListener('click', function(){ jp('/api/tube/like', { id: XID, kind: MYK==='like' ? '' : 'like' }).then(function(r){ if (r.ok) paint({ likes: r.likes, dislikes: r.dislikes, my: r.my, comments: null }); else alert(r.err || 'log in first'); }); });
