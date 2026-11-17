@@ -11,6 +11,14 @@
   card.innerHTML = '<div style="font-weight:800;letter-spacing:.08em;font-size:11px;color:#bdb4e4">LEADERBOARD</div><div class="gx-lb-body">loading…</div>';
   document.body.appendChild(card);
   var body = card.querySelector('.gx-lb-body');
+  var head = card.firstChild;
+  head.style.cursor = 'pointer';
+  var arrow = document.createElement('span');
+  head.appendChild(arrow);
+  var lbOpen = window.innerWidth > 640;
+  function lbPaint() { body.style.display = lbOpen ? '' : 'none'; arrow.textContent = lbOpen ? ' \u25be' : ' \u25b8'; }
+  head.addEventListener('click', function () { lbOpen = !lbOpen; lbPaint(); });
+  lbPaint();
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function render(d) {
     if (!d || !d.ok) { body.textContent = 'scores unavailable rn'; return; }

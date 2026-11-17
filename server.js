@@ -2982,7 +2982,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style><style>.card{p
 #jumpRow .card{flex:0 0 168px}
 .lgwrap{width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 120% at 30% 18%,#1e1e28,#0b0b0f);overflow:hidden}.lgwrap img{width:74%;height:74%;object-fit:contain;aspect-ratio:auto;background:transparent;border-radius:14%;filter:drop-shadow(0 8px 16px rgba(0,0,0,.5))}.ltile{font-size:46px;font-weight:900;color:rgba(255,255,255,.94);letter-spacing:-.02em;text-shadow:0 2px 14px rgba(0,0,0,.4)}
 #grid{gap:16px}
-#pager{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;margin:22px 0 8px;width:100%;max-width:1120px}
+#pager{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;margin:22px 0 130px;width:100%;max-width:1120px}
 .pgbtn{flex:none;min-width:42px}
 .pgbtn[disabled]{opacity:.35;cursor:default}
 .pgdots{color:#8a7a5c;padding:0 2px}
@@ -3310,6 +3310,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .bxrow input:focus{outline:none;border-color:rgba(var(--star),.55)}
 .bxrow button{flex:none;background:linear-gradient(120deg,rgb(var(--star)),rgb(var(--acc3)));color:#0d0a18;border:0;border-radius:13px;padding:13px 22px;font-weight:800;font-family:inherit;font-size:15px;cursor:pointer}
 .bxmsg{font-size:13.5px;color:#fda4af;min-height:18px;margin-top:9px}
+@media(min-width:821px){body[data-nav="bar"] .wrap{padding-top:66px}}
 .bxhub{display:flex;align-items:center;gap:14px;width:100%;max-width:760px;box-sizing:border-box;margin-top:14px;background:#0d0b1a;border:1px solid rgba(var(--star),.16);border-radius:20px;padding:16px 18px;text-decoration:none;color:#f4f4f5;transition:transform .15s,border-color .15s}
 .bxhub:hover{transform:translateY(-2px);border-color:rgba(var(--star),.45)}
 .bxhub b{font-size:16px}
@@ -9519,6 +9520,7 @@ function peoplePage() {
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .pp-wrap{max-width:860px;margin:0 auto;width:100%;text-align:left}
 .pp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:18px}
+.wrap{padding-bottom:130px}
 .ppcard{display:flex;gap:12px;align-items:flex-start;background:#0d0b1a;border:1px solid rgba(var(--star),.14);border-radius:16px;padding:14px;text-decoration:none;color:#e9e4f5}
 .ppcard:hover{border-color:rgba(var(--star),.42)}
 .ppcard .av{position:relative;width:50px;height:50px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;color:#fff}
@@ -10740,6 +10742,7 @@ body{height:100dvh;height:var(--gx-vh,100dvh);display:flex;flex-direction:column
 .btab .bx{flex:none;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
 #newtab{flex:none;width:38px;height:38px;height:38px;border-radius:11px;align-self:center}
 #toolbar{display:flex;gap:8px;align-items:center;width:100%;max-width:none;margin:6px 0 0;padding:8px;background:linear-gradient(180deg,rgba(var(--acc),.14),rgba(10,9,20,.92) 72%);border:1px solid rgba(var(--star),.13);border-top:1px solid rgba(255,236,200,.13);border-radius:16px;flex:none}
+@media(max-width:640px){#toolbar{flex-wrap:wrap}#toolbar .engt{order:9;flex-basis:100%;justify-content:center}}
 #omni{display:flex;gap:6px;flex:1 1 0%;min-width:0}
 #omni input{flex:1 1 0%;min-width:0;width:0}
 #stage{flex:1;min-height:0;width:100%;max-width:none;padding:0}
