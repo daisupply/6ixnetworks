@@ -4403,6 +4403,7 @@ body[data-sky] .app6 .cr-item.on,body[data-sky] .app6 .cr-item.on:hover,body[dat
 <button class="chip cr-item" id="frnav" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> friends<span id="frbadge" style="display:none;margin-left:auto;background:#dc2626;color:#fff;font-size:10.5px;font-weight:700;border-radius:999px;min-width:18px;height:18px;align-items:center;justify-content:center;padding:0 5px"></span></button>
 <div class="cr-sec">random</div>
 <button class="chip cr-item" type="button" onclick="location.href='/vid'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg> 6ixvid</button>
+<button class="chip cr-item" type="button" onclick="location.href='/party'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg> party rooms<span id="ptybadge" style="display:none;margin-left:auto;background:#8b7cff;color:#fff;font-size:10.5px;font-weight:700;border-radius:999px;min-width:18px;height:18px;align-items:center;justify-content:center;padding:0 5px"></span></button>
 <div class="cr-sec">voice</div>
 
 
@@ -5206,6 +5207,7 @@ connect();
 </script>
 <script>(function(){ var t = document.getElementById("roomtitle"); var badge = document.getElementById("privbadge"); function setT(x){ if (t) t.textContent = x; if (badge) badge.style.display = (x === "private room") ? "inline-flex" : "none"; } document.querySelectorAll(".room").forEach(function(b){ b.addEventListener("click", function(){ setT(b.getAttribute("data-room")); }); }); var mk = document.getElementById("mkpriv"); if (mk) mk.addEventListener("click", function(){ setT("private room"); }); var jp = document.getElementById("joinpriv"); if (jp) jp.addEventListener("click", function(){ setT("private room"); }); var stage = document.getElementById("vstage"), timer = document.getElementById("vtimer"), iv = null; function fmt(ms){ var s = Math.floor(ms / 1000); var m = Math.floor(s / 60); var r = s % 60; return (m < 10 ? "0" : "") + m + ":" + (r < 10 ? "0" : "") + r; } if (stage && timer) { new MutationObserver(function(){ if (stage.style.display === "flex") { document.body.style.overflow = "hidden"; if (!iv) { var t0 = Date.now(); timer.textContent = "00:00"; iv = setInterval(function(){ timer.textContent = fmt(Date.now() - t0); }, 1000); } } else { document.body.style.overflow = ""; if (iv) { clearInterval(iv); iv = null; } timer.textContent = "00:00"; } }).observe(stage, { attributes: true, attributeFilter: ["style"] }); } })();</script>
 <script>(function(){ var app = document.querySelector(".app6"); if (!app || !window.visualViewport) return; function fit(){ var w = window.innerWidth; var off = 50; if (w <= 820) off += 80; if (w >= 1100 && document.body.getAttribute("data-nav") === "side") off = 0; app.style.height = Math.max(240, window.visualViewport.height - off) + "px"; } window.visualViewport.addEventListener("resize", fit); window.addEventListener("orientationchange", fit); window.addEventListener("resize", fit); document.addEventListener("click", function(e){ if (e.target && e.target.closest && e.target.closest("[data-navm]")) setTimeout(fit, 80); }); fit(); })();</script>
+<script>(function(){ var b=document.getElementById('ptybadge'); if(!b) return; function tick(){ fetch('/api/party/list').then(function(r){ return r.json(); }).then(function(j){ var n=(j&&j.rooms)?j.rooms.length:0; if(n>0){ b.style.display='inline-flex'; b.textContent=String(n); } else { b.style.display='none'; } }).catch(function(){}); } tick(); setInterval(tick, 15000); })();</script>
 <script>${NOTIF_JS}</script>
 </body>
 </html>`;
@@ -15145,7 +15147,7 @@ function rooms(){jg('/api/party/list').then(function(j){var h='';(j.rooms||[]).f
 $('roomList').addEventListener('click',function(e){var n=e.target;while(n&&n!==$('roomList')&&!n.getAttribute('data-c'))n=n.parentNode;if(n&&n.getAttribute('data-c'))location.href='/party/'+n.getAttribute('data-c')});
 rooms();setInterval(rooms,6000);
 </script>
-${NOTIF_JS}
+<script>${NOTIF_JS}</script>
 </body>
 </html>`;
 }
@@ -15326,7 +15328,7 @@ $('mSearch').addEventListener('click',function(){var q=$('mQ').value.trim();if(!
 $('mRes').addEventListener('click',function(e){var n=e.target;var row=n;while(row&&row!==$('mRes')&&!row.getAttribute('data-id'))row=row.parentNode;if(!row||!row.getAttribute('data-id'))return;var t={id:row.getAttribute('data-id'),title:row.getAttribute('data-t'),artist:row.getAttribute('data-a'),img:row.getAttribute('data-img')};if(n.getAttribute('data-now'))act('setmedia',{track:t});else if(n.getAttribute('data-add'))act('addq',{track:t})});
 $('qList').addEventListener('click',function(e){var n=e.target;while(n&&n!==$('qList')&&!n.getAttribute('data-qi'))n=n.parentNode;if(n&&n.getAttribute('data-qi')!=null)act('playq',{i:Number(n.getAttribute('data-qi'))})});
 </script>
-${NOTIF_JS}
+<script>${NOTIF_JS}</script>
 </body>
 </html>`;
 }
@@ -15477,15 +15479,51 @@ async function vidApi(req, res, u) {
 }
 
 const VID_CSS = `
-.vidwrap{max-width:980px;margin:0 auto;padding:18px 14px 110px;box-sizing:border-box}
-.vidstage{position:relative;border-radius:18px;overflow:hidden;background:#000;border:1px solid rgba(255,255,255,.1);aspect-ratio:16/10}
-.vidstage video{width:100%;height:100%;object-fit:cover;display:block;background:#000}
-#vLocal{position:absolute;right:10px;bottom:10px;width:26%;aspect-ratio:4/3;object-fit:cover;border-radius:12px;border:1px solid rgba(255,255,255,.3);background:#111}
-.vidph{position:absolute;inset:0;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;color:rgba(236,234,246,.55);font-size:14.5px;text-align:center;padding:20px}
-.vidbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-#vMsgs{height:250px;overflow:auto;display:flex;flex-direction:column;gap:7px;padding-right:2px}
-.vidspin{width:44px;height:44px;border-radius:50%;border:4px solid rgba(139,124,255,.25);border-top-color:#8b7cff;animation:vspin 0.9s linear infinite;margin:6px auto}
+.v2wrap{max-width:1060px;margin:0 auto;padding:16px 14px 110px;box-sizing:border-box}
+.v2head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.v2logo{font-size:21px;font-weight:900;letter-spacing:-.02em;color:#eceaf6}
+.v2logo span{color:#8b7cff}
+.v2online{margin-left:auto;font-size:12px;font-weight:700;color:rgba(236,234,246,.75);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:6px 11px}
+.v2back{font-size:12.5px;font-weight:800;color:#b7a8ff;text-decoration:none;background:rgba(139,124,255,.13);border:1px solid rgba(139,124,255,.35);border-radius:999px;padding:7px 13px}
+.v2view{display:none}
+.v2view.on{display:block}
+.v2hero{text-align:center;padding:9vh 10px 0}
+.v2big{font-size:34px;font-weight:900;letter-spacing:-.02em;color:#eceaf6;line-height:1.12}
+.v2sub{color:rgba(236,234,246,.62);font-size:14.5px;line-height:1.55;max-width:430px;margin:12px auto 0}
+.v2start{margin-top:26px;font-size:16.5px;font-weight:800;padding:14px 30px;border-radius:999px;border:0;background:#8b7cff;color:#fff;cursor:pointer;font-family:inherit}
+.v2ghost{margin-top:12px;font-size:13.5px;font-weight:700;padding:10px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:#eceaf6;cursor:pointer;font-family:inherit}
+.v2rules{margin-top:20px;font-size:12px;color:rgba(236,234,246,.42);line-height:1.6}
+.v2wait{text-align:center;padding:11vh 10px 0}
+.v2spin{width:46px;height:46px;border-radius:50%;border:4px solid rgba(139,124,255,.25);border-top-color:#8b7cff;animation:vspin 0.9s linear infinite;margin:0 auto 16px}
 @keyframes vspin{to{transform:rotate(360deg)}}
+.v2pair{display:none}
+.v2pair.on{display:flex;flex-direction:column;gap:12px}
+.v2stagecol{display:flex;flex-direction:column;gap:12px;min-width:0}
+.v2stage{position:relative;border-radius:18px;overflow:hidden;background:#000;border:1px solid rgba(255,255,255,.1);height:min(48vh,430px)}
+.v2stage video.rv{width:100%;height:100%;object-fit:cover;display:block;background:#000}
+#vLocal{position:absolute;right:10px;bottom:10px;width:27%;max-width:170px;aspect-ratio:4/3;object-fit:cover;border-radius:12px;border:1px solid rgba(255,255,255,.3);background:#111}
+.v2ph{position:absolute;inset:0;display:flex;flex-direction:column;gap:7px;align-items:center;justify-content:center;color:rgba(236,234,246,.55);font-size:14px;text-align:center;padding:20px}
+.v2ph b{color:#eceaf6;font-size:16px}
+.v2bar{display:flex;gap:8px;flex-wrap:wrap}
+.v2btn{flex:1;min-width:100px;font-size:14px;font-weight:800;padding:12px 10px;border-radius:13px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#eceaf6;cursor:pointer;font-family:inherit}
+.v2btn.acc{background:#8b7cff;border-color:#8b7cff;color:#fff}
+.v2btn.danger{background:rgba(220,38,38,.14);border-color:rgba(220,38,38,.4);color:#fca5a5}
+.v2chat{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);border-radius:18px;padding:14px;display:flex;flex-direction:column;min-width:0}
+.v2chat h3{margin:0 0 10px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,234,246,.55)}
+#vMsgs{overflow:auto;display:flex;flex-direction:column;gap:7px;height:230px;padding-right:2px}
+.v2cm{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:8px 11px;font-size:14px;line-height:1.45;color:#eceaf6;word-break:break-word}
+.v2cm .wh{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#b7a8ff}
+.v2cm.sys{background:transparent;border:0;color:rgba(236,234,246,.5);font-size:12.5px;text-align:center;padding:2px}
+.v2row{display:flex;gap:8px;margin-top:12px}
+.v2row input{flex:1;min-width:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:#eceaf6;padding:11px 13px;font-size:16px;font-family:inherit;outline:none}
+.v2row button{flex:none;font-size:14px;font-weight:800;padding:11px 18px;border-radius:12px;border:0;background:#8b7cff;color:#fff;cursor:pointer;font-family:inherit}
+@media (min-width:900px){
+  .v2pair.on{flex-direction:row;align-items:stretch}
+  .v2stagecol{flex:1.45}
+  .v2stage{height:min(66vh,560px)}
+  .v2chat{flex:1}
+  #vMsgs{height:auto;flex:1;min-height:0}
+}
 `;
 
 function vidPage() {
@@ -15497,55 +15535,57 @@ function vidPage() {
 <title>6ixvid — random chat</title>
 ${FONT_LINKS}
 <style>${GALAXY_CSS}</style>
-<style>${PARTY_CSS}</style>
 <style>${VID_CSS}</style>
 </head>
 <body>
 ${STAR_CANVAS}
 ${SIDEBAR_HTML}
-<main class="vidwrap">
-  <section class="pcard psec">
-    <div class="ptype">random chat · accounts only</div>
-    <h1>6ixvid</h1>
-    <p style="color:rgba(236,234,246,.7);font-size:14.5px;line-height:1.55;margin:6px 0 0">omegle energy, but everybody here has a 6ix account — so if someone acts weird, the report button actually does something. text first, cam only if u both turn it on. chats are never saved.</p>
-    <div class="pcode" id="vOnline" style="margin-top:8px">…</div>
-  </section>
-  <div id="rMsg"></div>
+<main class="v2wrap">
+  <div class="v2head">
+    <div class="v2logo">6ix<span>vid</span></div>
+    <div class="v2online" id="vOnline">…</div>
+    <a class="v2back" href="/chat">back to chat</a>
+  </div>
+  <div id="vMsg" style="display:none;background:rgba(220,38,38,.14);border:1px solid rgba(220,38,38,.4);color:#fca5a5;border-radius:12px;padding:10px 13px;font-size:13.5px;margin-bottom:12px"></div>
 
-  <section class="pcard" id="vIdle">
-    <div style="text-align:center;padding:16px 6px">
-      <button class="pbtn acc" id="startBtn" type="button" style="font-size:16.5px;padding:13px 26px">find a stranger</button>
-      <div style="margin-top:12px"><button class="pbtn" id="camPref" type="button">cam: off</button></div>
-      <p style="color:rgba(236,234,246,.5);font-size:12.5px;margin-top:12px">u can flip ur cam on any time, even mid-chat. it only connects when the stranger has theirs on too.</p>
-    </div>
-  </section>
-
-  <section class="pcard" id="vWait" hidden>
-    <div style="text-align:center;padding:18px 6px">
-      <div class="vidspin"></div>
-      <div style="font-weight:800;font-size:16.5px">looking for a stranger…</div>
-      <div class="pcode" id="waitInfo" style="margin-top:6px"></div>
-      <button class="pbtn" id="cancelBtn" type="button" style="margin-top:14px">cancel</button>
+  <section class="v2view on" id="viewIdle">
+    <div class="v2hero">
+      <div class="v2big">talk to a stranger</div>
+      <p class="v2sub">random matches with ppl on 6ix. text first — cam only if u both turn it on. everyone here's on an account, so reports actually do something.</p>
+      <button class="v2start" id="startBtn" type="button">find a stranger</button>
+      <div><button class="v2ghost" id="camPref" type="button">cam: off</button></div>
+      <p class="v2rules">chats are never saved · be decent · the report button works</p>
     </div>
   </section>
 
-  <section id="vPair" hidden>
-    <div class="vidstage">
-      <video id="vRemote" autoplay playsinline></video>
-      <div class="vidph" id="vPh"><div style="font-weight:800;font-size:16px;color:#eceaf6">stranger is text-only rn</div><div>say hi below — or turn ur cam on n see if they match u</div></div>
-      <video id="vLocal" autoplay playsinline muted hidden></video>
+  <section class="v2view" id="viewWait">
+    <div class="v2wait">
+      <div class="v2spin"></div>
+      <div style="font-weight:800;font-size:17px;color:#eceaf6">looking for a stranger…</div>
+      <div id="waitInfo" style="color:rgba(236,234,246,.55);font-size:13px;margin-top:7px"></div>
+      <div><button class="v2ghost" id="cancelBtn" type="button">cancel</button></div>
     </div>
-    <div class="vidbar">
-      <button class="pbtn" id="camBtn" type="button">cam: off</button>
-      <button class="pbtn acc" id="nextBtn" type="button">next stranger</button>
-      <button class="pbtn" id="reportBtn" type="button">report</button>
-      <button class="pbtn danger" id="leaveBtn2" type="button">leave</button>
+  </section>
+
+  <section class="v2pair" id="viewPair">
+    <div class="v2stagecol">
+      <div class="v2stage">
+        <video class="rv" id="vRemote" autoplay playsinline></video>
+        <div class="v2ph" id="vPh"><b>stranger is text-only rn</b><span>say hi below — or turn ur cam on n see if they match u</span></div>
+        <video id="vLocal" autoplay playsinline muted hidden></video>
+      </div>
+      <div class="v2bar">
+        <button class="v2btn" id="camBtn" type="button">cam: off</button>
+        <button class="v2btn acc" id="nextBtn" type="button">next stranger</button>
+        <button class="v2btn" id="reportBtn" type="button">report</button>
+        <button class="v2btn danger" id="leaveBtn" type="button">leave</button>
+      </div>
     </div>
-    <section class="pcard" style="margin-top:14px">
-      <h3 class="pt">chat with stranger</h3>
+    <div class="v2chat">
+      <h3>chat</h3>
       <div id="vMsgs"></div>
-      <div class="prow"><input id="vIn" placeholder="say something" maxlength="300"><button class="pbtn acc" id="vSend" type="button">send</button></div>
-    </section>
+      <div class="v2row"><input id="vIn" placeholder="say something" maxlength="300"><button id="vSend" type="button">send</button></div>
+    </div>
   </section>
 </main>
 <script>
@@ -15556,12 +15596,12 @@ function $(i){return document.getElementById(i)}
 function jp(u,b){return fetch(u,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b||{})}).then(function(r){return r.json()})}
 function jg(u){return fetch(u).then(function(r){return r.json()})}
 function esc(s){s=String(s==null?'':s);return s.split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('"').join('&quot;')}
-function showMsg(t){var m=$('rMsg');m.textContent=t;m.style.display='block'}
+function showMsg(t){var m=$('vMsg');m.textContent=t;m.style.display='block'}
 function setMode(m){
   MODE=m;
-  $('vIdle').hidden=m!=='idle';
-  $('vWait').hidden=m!=='waiting';
-  $('vPair').hidden=m!=='paired';
+  $('viewIdle').classList.toggle('on', m==='idle');
+  $('viewWait').classList.toggle('on', m==='waiting');
+  $('viewPair').classList.toggle('on', m==='paired');
   if(m!=='paired'){ closePc(); PAIR=null; lastMsgN=-1; }
 }
 function closePc(){
@@ -15633,14 +15673,14 @@ function renderMsgs(msgs){
   lastMsgN=msgs.length;
   var box=$('vMsgs'); var near=box.scrollHeight-box.scrollTop-box.clientHeight<70;
   var h='';
-  sysLines.forEach(function(s){ h+='<div class="cm2 sys">'+esc(s)+'</div>' });
-  msgs.forEach(function(c){ h+='<div class="cm2"><span class="wh">'+(c.u===window.__vidMe?'you':'stranger')+'</span><br>'+esc(c.text)+'</div>' });
+  sysLines.forEach(function(s){ h+='<div class="v2cm sys">'+esc(s)+'</div>' });
+  msgs.forEach(function(c){ h+='<div class="v2cm"><span class="wh">'+(c.u===window.__vidMe?'you':'stranger')+'</span><br>'+esc(c.text)+'</div>' });
   box.innerHTML=h; if(near) box.scrollTop=box.scrollHeight;
 }
 function apply(st){
   if(!st||!st.ok) return;
   if(st.me) window.__vidMe=st.me;
-  $('vOnline').textContent=st.online+' online rn · '+st.inQueue+' in line';
+  $('vOnline').textContent=st.online+' online · '+st.inQueue+' in line';
   if(st.note){ sysLines.push(st.note); if(sysLines.length>5)sysLines.shift(); lastMsgN=-1; }
   if(st.mode!==MODE){
     if(st.mode==='paired'&&camPref&&!camOn) startCam();
@@ -15660,7 +15700,7 @@ function apply(st){
 function poll(){ jg('/api/vid/state').then(apply).catch(function(){}) }
 $('startBtn').addEventListener('click',function(){ jp('/api/vid/queue',{}).then(function(j){ if(j.ok===false){ showMsg(j.err||'log in first'); return; } apply(j); }); });
 $('cancelBtn').addEventListener('click',function(){ jp('/api/vid/leave',{}).then(function(){ setMode('idle'); }); });
-$('leaveBtn2').addEventListener('click',function(){ stopCam(); jp('/api/vid/leave',{}).then(function(){ setMode('idle'); }); });
+$('leaveBtn').addEventListener('click',function(){ stopCam(); jp('/api/vid/leave',{}).then(function(){ setMode('idle'); }); });
 $('nextBtn').addEventListener('click',function(){ closePc(); jp('/api/vid/next',{}).then(function(j){ apply(j); }); });
 $('reportBtn').addEventListener('click',function(){ if(confirm('report this stranger? u will be matched with someone new')){ closePc(); jp('/api/vid/report',{}).then(function(j){ apply(j); }); } });
 $('camPref').addEventListener('click',function(){ camPref=!camPref; $('camPref').textContent='cam: '+(camPref?'on':'off'); });
@@ -15668,11 +15708,11 @@ $('camBtn').addEventListener('click',function(){ if(camOn) stopCam(); else start
 function send(){ var v=$('vIn').value.trim(); if(!v) return; $('vIn').value=''; jp('/api/vid/send',{text:v}).then(function(j){ if(j.pair) renderMsgs(j.pair.msgs); }); }
 $('vSend').addEventListener('click',send);
 $('vIn').addEventListener('keydown',function(e){ if(e.key==='Enter') send(); });
-jg('/api/vid/state').then(function(j){ if(j.ok){ window.__vidMe=j.me; apply(j); } });
+jg('/api/vid/state').then(function(j){ apply(j); });
 setInterval(poll,2000);
 window.addEventListener('beforeunload',function(){ try{ navigator.sendBeacon('/api/vid/leave','{}'); }catch(e){} });
 </script>
-${NOTIF_JS}
+<script>${NOTIF_JS}</script>
 </body>
 </html>`;
 }
