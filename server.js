@@ -2966,7 +2966,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style><style>.card{p
 #gchips::-webkit-scrollbar{display:none}
 #gchips .chip{flex:none;padding:7px 13px;font-size:13.5px}\n.gtop{display:flex;flex-direction:column;align-items:center;gap:8px;flex-wrap:wrap;margin:1px 2px 10px;text-align:center}\n.gname{font-size:19px;font-weight:800;letter-spacing:-.01em;color:#f4f4f5}\n.gname #gcount{font-size:13px;font-weight:500;color:#9c9ca5;margin-left:9px}\n.gutils{margin:0 auto;display:flex;gap:7px;flex-wrap:wrap;justify-content:center}\n.gutils .chip{padding:6px 11px;font-size:12.5px}
 .sec-h{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8a7a5c;margin:0 2px 9px}
-#popWrap,#newWrap{width:100%;max-width:1120px;margin:0 0 18px}
+#popWrap,#newWrap,#dailyWrap{width:100%;max-width:1120px;margin:0 0 18px}
 #popRow,#newRow{display:flex;gap:12px;overflow-x:auto;padding:2px 2px 10px;scroll-snap-type:x mandatory;scrollbar-width:none}
 #popRow::-webkit-scrollbar,#newRow::-webkit-scrollbar{display:none}
 .pop{flex:0 0 252px;aspect-ratio:16/10;scroll-snap-align:start;border-radius:16px}
@@ -2997,6 +2997,19 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style><style>.card{p
 
 
 <a id="feat" hidden></a>
+<div id="dailyWrap" hidden><div class="sec-h">daily challenge</div><div id="dailyRow"></div></div>
+<script>
+fetch('/api/daily').then(function(r){return r.json()}).then(function(d){
+  if(!d||!d.ok)return;
+  var w=document.getElementById('dailyWrap'),row=document.getElementById('dailyRow');
+  var links={stack:'/games/stack/',breakout:'/games/breakout/',flappy:'/games/flappy/',mines:'/games/minesweeper/',g2048:'/games/2048/',hextris:'/games/hextris/'};
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  var top=(d.top||[]).slice(0,3).map(function(x,i){return '<div style="display:flex;justify-content:space-between;padding:2px 0"><span>'+(i+1)+'. '+esc(x.u)+'</span><b>'+x.s+'</b></div>'}).join('');
+  var yw=d.ywin?'<div style="margin-top:8px;color:#9a93b8;font-size:12.5px">yesterday: <b style="color:#ffd257">'+esc(d.ywin.u)+'</b> won on '+esc(d.ygame)+' ('+d.ywin.s+')</div>':'';
+  row.innerHTML='<a href="'+links[d.game]+'" style="display:block;background:linear-gradient(135deg,rgba(139,124,255,.25),rgba(255,94,168,.18));border:1px solid rgba(255,210,87,.5);border-radius:14px;padding:14px 16px;color:#eceaf6;text-decoration:none;max-width:430px"><div style="font-weight:800;font-size:16px">today: '+esc(d.title)+'</div><div style="color:#c9c2e8;font-size:13px;margin-top:2px">top score today takes the crown — tap to play</div>'+(top?'<div style="margin-top:8px;font-size:13px">'+top+'</div>':'<div style="margin-top:8px;font-size:13px;color:#9a93b8">no scores yet today — be first</div>')+yw+'</a>';
+  w.hidden=false;
+}).catch(function(){});
+</script>
 <div id="popWrap" hidden><div class="sec-h">popular rn</div><div id="popRow"></div></div>
 <div id="newWrap" hidden><div class="sec-h">recently added</div><div id="newRow"></div></div>
 <div id="jumpWrap" hidden><div class="sec-h">jump back in</div><div id="jumpRow"></div></div>
@@ -4091,6 +4104,7 @@ const FEATURED_GAMES = [
   { t: 'Flap Wing', ad: 20261117, u: '/games/flappy/', loc: 1, img: '', icon: '<svg viewBox="0 0 120 90" aria-hidden="true"><rect width="120" height="90" fill="#4a3a8f"/><rect x="84" y="0" width="18" height="34" fill="#3ddc84"/><rect x="84" y="58" width="18" height="32" fill="#3ddc84"/><circle cx="42" cy="45" r="11" fill="#ffb52e"/><circle cx="46" cy="41" r="3.4" fill="#fff"/><circle cx="47.5" cy="41" r="1.7" fill="#14101f"/><path d="M51 45l8 2.4-8 2.4z" fill="#ff5a3d"/></svg>', c: 'Arcade', w: 400, h: 640 },
   { t: 'Minesweeper', ad: 20261117, u: '/games/minesweeper/', loc: 1, img: '', icon: '<svg viewBox="0 0 120 90" aria-hidden="true"><rect width="120" height="90" fill="#100c22"/><path d="M0 30h120M0 60h120M40 0v90M80 0v90" stroke="#2b2450" stroke-width="3"/><circle cx="20" cy="15" r="8" fill="#17171f"/><circle cx="20" cy="15" r="3" fill="#8a8a9e"/><path d="M100 38v26M100 40l14 5-14 5" stroke="#ff5a5a" stroke-width="3" fill="none"/><text x="58" y="52" font-family="Arial" font-size="15" font-weight="bold" fill="#38b6ff">1</text><text x="18" y="82" font-family="Arial" font-size="15" font-weight="bold" fill="#3ddc84">2</text></svg>', c: 'Puzzle', w: 800, h: 600 },
   { t: 'Stack', ad: 20261117, u: '/games/stack/', loc: 1, img: '', icon: '<svg viewBox="0 0 120 90" aria-hidden="true"><rect width="120" height="90" fill="#0b0620"/><rect x="30" y="64" width="56" height="12" fill="#38b6ff"/><rect x="36" y="50" width="56" height="12" fill="#3ddc84"/><rect x="30" y="36" width="56" height="12" fill="#ffd257"/><rect x="40" y="22" width="56" height="12" fill="#ff9f43"/><rect x="34" y="8" width="56" height="12" fill="#ff5ea8"/></svg>', c: 'Arcade', w: 420, h: 640 },
+  { t: 'A Dark Room', ad: 20261117, u: '/games/adarkroom/', loc: 1, img: '', icon: '<svg viewBox="0 0 120 90" aria-hidden="true"><rect width="120" height="90" fill="#0d0b09"/><path d="M60 62c-8-8-13-13-13-21 5 3 7 6 8 9 2-6 6-11 12-14-1 6 1 9 4 12 3 4 4 8 1 14-2 5-7 8-12 8z" fill="#ff9f43"/><path d="M60 62c-4-4-6-7-6-11 3 2 4 4 5 6 1-3 3-6 6-8 0 4 1 6 2 8 1 3 0 6-2 8-1 2-3 3-5 3z" fill="#ffd257"/><path d="M38 74h44" stroke="#5b4632" stroke-width="4" stroke-linecap="round"/></svg>', c: 'RPG', w: 800, h: 600 },
   { t: 'Roblox', u: 'https://www.roblox.com/home', img: '', icon: '<svg viewBox="0 0 120 90" aria-hidden="true"><g transform="rotate(12 60 45)"><path fill="#e9e9ec" fill-rule="evenodd" d="M37 22h46v46H37zM49.5 34.5h21v21h-21z"/></g></svg>', c: 'Featured', w: 800, h: 600 },
   { t: 'Minecraft Classic', u: 'https://classic.minecraft.net', img: '', icon: '<svg viewBox="0 0 120 90" aria-hidden="true"><rect width="120" height="90" fill="#5da23c"/><rect x="8" y="8" width="12" height="12" fill="#6fb54c"/><rect x="98" y="62" width="12" height="12" fill="#6fb54c"/><rect x="90" y="8" width="10" height="10" fill="#4c8f31"/><rect x="10" y="64" width="10" height="10" fill="#4c8f31"/><g fill="#16240f"><rect x="36" y="24" width="18" height="18"/><rect x="66" y="24" width="18" height="18"/><rect x="51" y="42" width="18" height="12"/><rect x="42" y="50" width="12" height="22"/><rect x="66" y="50" width="12" height="22"/></g></svg>', c: 'Featured', w: 800, h: 600 },
   { t: 'Krunker', u: 'https://krunker.io', img: '', icon: '<svg viewBox="0 0 120 90" aria-hidden="true"><g stroke="#f5c531" stroke-width="6" stroke-linecap="round" fill="none"><circle cx="60" cy="45" r="17"/><path d="M60 10v14M60 66v14M25 45h14M81 45h14"/></g><circle cx="60" cy="45" r="3.5" fill="#f5c531"/></svg>', c: 'Featured', w: 800, h: 600 },
@@ -15967,6 +15981,83 @@ let SPTOK = { t: '', exp: 0 };
 const SPCACHE = new Map();
 const SP_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 function jres(res, code, o) { try { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); } catch (e) {} }
+
+// ---- site scores: leaderboards, daily challenge, activity feed (v458) ----
+const SCORE_GAMES = { stack: { t: 'Stack', max: 100000, low: 0 }, breakout: { t: 'Neon Breakout', max: 999999, low: 0 }, flappy: { t: 'Flap Wing', max: 100000, low: 0 }, mines: { t: 'Minesweeper', max: 86400, low: 1 }, g2048: { t: '2048', max: 99999999, low: 0 }, hextris: { t: 'Hextris', max: 999999999, low: 0 } };
+const SCORE_ORDER = ['stack', 'breakout', 'flappy', 'mines', 'g2048', 'hextris'];
+const SCORES = { g: {}, d: {}, ready: false };
+let scoresDirty = false;
+async function scoresLoad() { if (SCORES.ready) return; SCORES.ready = true; try { const got = await storeCmd([['GET', 'cfg:scores']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o) { if (o.g) SCORES.g = o.g; if (o.d) SCORES.d = o.d; } } } catch (e) {} }
+function scoresSave() { if (scoresDirty) return; scoresDirty = true; setTimeout(() => { scoresDirty = false; try { storeSet('cfg:scores', JSON.stringify({ g: SCORES.g, d: SCORES.d })); } catch (e) {} }, 800); }
+function scoreDay() { return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' }); }
+function dailyGameKey() { const day = scoreDay(); let h = 0; for (let i = 0; i < day.length; i++) h = (h * 31 + day.charCodeAt(i)) >>> 0; return SCORE_ORDER[h % SCORE_ORDER.length]; }
+function scoreBoard(map, low) { return Object.keys(map || {}).map((u) => ({ u, s: map[u].s, at: map[u].at })).sort((a, b) => low ? a.s - b.s : b.s - a.s).slice(0, 20); }
+const FEED = { items: [], ready: false };
+let feedDirty = false;
+async function feedLoad() { if (FEED.ready) return; FEED.ready = true; try { const got = await storeCmd([['GET', 'cfg:feed']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o && Array.isArray(o.items)) FEED.items = o.items.slice(0, 200); } } catch (e) {} }
+function feedSave() { if (feedDirty) return; feedDirty = true; setTimeout(() => { feedDirty = false; try { storeSet('cfg:feed', JSON.stringify({ items: FEED.items.slice(0, 200) })); } catch (e) {} }, 800); }
+function feedPush(kind, user, text) { FEED.items.unshift({ k: kind, u: user || '', x: String(text || '').slice(0, 140), at: Date.now() }); if (FEED.items.length > 200) FEED.items.length = 200; feedSave(); }
+async function scoresApi(req, res, u) {
+  if (u.pathname !== '/api/scores' && u.pathname !== '/api/daily' && u.pathname !== '/api/feed') return false;
+  await scoresLoad(); await feedLoad();
+  const me = voterUser(req);
+  if (u.pathname === '/api/feed' && req.method === 'GET') { jres(res, 200, { ok: true, items: FEED.items.slice(0, 40) }); return true; }
+  if (u.pathname === '/api/daily' && req.method === 'GET') {
+    const gk = dailyGameKey(), day = scoreDay();
+    const yday = new Date(Date.now() - 86400000).toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
+    const yd = SCORES.d[yday];
+    const yb = yd ? scoreBoard(yd.m, SCORE_GAMES[yd.game].low) : [];
+    jres(res, 200, { ok: true, game: gk, title: SCORE_GAMES[gk].t, day, top: scoreBoard((SCORES.d[day] || {}).m, SCORE_GAMES[gk].low), ywin: yb[0] || null, ygame: yd ? SCORE_GAMES[yd.game].t : '' });
+    return true;
+  }
+  if (u.pathname === '/api/scores' && req.method === 'GET') {
+    const gk = String(u.searchParams.get('game') || '');
+    const def = SCORE_GAMES[gk];
+    if (!def) { jres(res, 400, { ok: false, err: 'bad game' }); return true; }
+    const day = scoreDay();
+    const top = scoreBoard(SCORES.g[gk], def.low);
+    const dmap = (SCORES.d[day] && SCORES.d[day].game === gk) ? SCORES.d[day].m : {};
+    let mine = null;
+    if (me && SCORES.g[gk] && SCORES.g[gk][me]) { const all = scoreBoard(SCORES.g[gk], def.low); const ri = all.findIndex((x) => x.u === me); mine = { s: SCORES.g[gk][me].s, rank: ri >= 0 ? ri + 1 : null }; }
+    jres(res, 200, { ok: true, game: gk, title: def.t, low: !!def.low, top, daily: scoreBoard(dmap, def.low), dailyGame: dailyGameKey(), mine });
+    return true;
+  }
+  if (u.pathname === '/api/scores' && req.method === 'POST') {
+    if (!me) { jres(res, 401, { ok: false, err: 'login first' }); return true; }
+    const b = await readJsonBody(req, 4096).then((x) => x).catch(() => null);
+    const gk = b && String(b.game || ''); const def = SCORE_GAMES[gk];
+    const s = b ? Math.floor(Number(b.score)) : NaN;
+    if (!def || !isFinite(s) || s <= 0 || s > def.max) { jres(res, 400, { ok: false, err: 'bad score' }); return true; }
+    if (!SCORES.g[gk]) SCORES.g[gk] = {};
+    const prev = SCORES.g[gk][me];
+    const better = !prev || (def.low ? s < prev.s : s > prev.s);
+    if (better) SCORES.g[gk][me] = { s, at: Date.now() };
+    const day = scoreDay();
+    if (!SCORES.d[day] || SCORES.d[day].game !== dailyGameKey()) SCORES.d[day] = { game: dailyGameKey(), m: {} };
+    const cutoff = new Date(Date.now() - 3 * 86400000).toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
+    for (const dk of Object.keys(SCORES.d)) if (dk < cutoff) delete SCORES.d[dk];
+    let dNewTop = false;
+    if (gk === SCORES.d[day].game) {
+      const dm = SCORES.d[day].m;
+      const dprev = dm[me];
+      if (!dprev || (def.low ? s < dprev.s : s > dprev.s)) {
+        const topBefore = scoreBoard(dm, def.low)[0];
+        dm[me] = { s, at: Date.now() };
+        const topAfter = scoreBoard(dm, def.low)[0];
+        if (topAfter && topAfter.u === me && (!topBefore || topBefore.u !== me)) dNewTop = true;
+      }
+    }
+    scoresSave();
+    const board = scoreBoard(SCORES.g[gk], def.low);
+    const ri = board.findIndex((x) => x.u === me);
+    const rank = ri >= 0 ? ri + 1 : null;
+    if (better && rank === 1) feedPush('top', me, 'took #1 on ' + def.t + ' — ' + s);
+    if (dNewTop) feedPush('daily', me, 'leads the daily challenge on ' + def.t + ' — ' + s);
+    jres(res, 200, { ok: true, best: SCORES.g[gk][me].s, rank, dailyTop: dNewTop });
+    return true;
+  }
+  return false;
+}
 async function spToken() {
   if (SPTOK.t && Date.now() < SPTOK.exp) return SPTOK.t;
   try {
@@ -20921,6 +21012,7 @@ const server = http.createServer(async (req, res) => {
   if (await tkApi(req, res, u)) return;
   if (await fypApi(req, res, u)) return;
   if (await spApi(req, res, u)) return;
+  if (await scoresApi(req, res, u)) return;
   if (u.pathname.startsWith('/api/tube/')) {
     const me = voterUser(req);
     const jout = (o, code) => { res.writeHead(code || 200, { 'content-type': 'application/json' }); return res.end(JSON.stringify(o)); };
