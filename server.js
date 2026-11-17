@@ -4404,6 +4404,7 @@ body[data-sky] .app6 .cr-item.on,body[data-sky] .app6 .cr-item.on:hover,body[dat
 <div class="cr-sec">random</div>
 <button class="chip cr-item" type="button" onclick="location.href='/vid'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg> 6ixvid</button>
 <button class="chip cr-item" type="button" onclick="location.href='/party'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg> party rooms<span id="ptybadge" style="display:none;margin-left:auto;background:#8b7cff;color:#fff;font-size:10.5px;font-weight:700;border-radius:999px;min-width:18px;height:18px;align-items:center;justify-content:center;padding:0 5px"></span></button>
+<button class="chip cr-item" type="button" onclick="location.href='/fyp'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><polygon points="10.5 9.5 15 12 10.5 14.5 10.5 9.5"/></svg> fyp</button>
 <div class="cr-sec">voice</div>
 
 
@@ -14620,6 +14621,7 @@ const TCOMMENTS = new Map();
 const TSUBS = new Map();
 const TPLS = new Map();
 const THIST = new Map();
+const TOKTAGS = new Map();
 const TWL = new Map();
 const TPOSTS = new Map();
 const TREPORTS = [];
@@ -14627,9 +14629,9 @@ const TCHAN = new Map();
 const TVIEWCOOL = new Map();
 const TEXT = new Map();
 const TEXTMETA = new Map();
-(async () => { try { const got = await storeCmd([['GET', 'cfg:tube']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); (o.v || []).forEach(x => TVIDEOS.set(x.id, x)); Object.entries(o.c || {}).forEach(([k, v]) => TCOMMENTS.set(k, v)); Object.entries(o.s || {}).forEach(([k, v]) => TSUBS.set(k, v)); (o.pl || []).forEach(x => TPLS.set(x.id, x)); Object.entries(o.h || {}).forEach(([k, v]) => THIST.set(k, v)); Object.entries(o.w || {}).forEach(([k, v]) => TWL.set(k, v)); (o.po || []).forEach(x => TPOSTS.set(x.id, x)); (o.rp || []).forEach(x => TREPORTS.push(x)); Object.entries(o.ch || {}).forEach(([k, v]) => TCHAN.set(k, v)); Object.entries(o.x || {}).forEach(([k, v]) => TEXT.set(k, v)); Object.entries(o.xm || {}).forEach(([k, v]) => TEXTMETA.set(k, v)); } } catch (e) {} })();
+(async () => { try { const got = await storeCmd([['GET', 'cfg:tube']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); (o.v || []).forEach(x => TVIDEOS.set(x.id, x)); Object.entries(o.c || {}).forEach(([k, v]) => TCOMMENTS.set(k, v)); Object.entries(o.s || {}).forEach(([k, v]) => TSUBS.set(k, v)); (o.pl || []).forEach(x => TPLS.set(x.id, x)); Object.entries(o.h || {}).forEach(([k, v]) => THIST.set(k, v)); Object.entries(o.w || {}).forEach(([k, v]) => TWL.set(k, v)); (o.po || []).forEach(x => TPOSTS.set(x.id, x)); (o.rp || []).forEach(x => TREPORTS.push(x)); Object.entries(o.ch || {}).forEach(([k, v]) => TCHAN.set(k, v)); Object.entries(o.x || {}).forEach(([k, v]) => TEXT.set(k, v)); Object.entries(o.xm || {}).forEach(([k, v]) => TEXTMETA.set(k, v)); Object.entries(o.tk || {}).forEach(([k, v]) => TOKTAGS.set(k, v)); } } catch (e) {} })();
 let tubeSaveT = null;
-function tubePersist() { clearTimeout(tubeSaveT); tubeSaveT = setTimeout(() => { try { storeSet('cfg:tube', JSON.stringify({ v: [...TVIDEOS.values()], c: Object.fromEntries(TCOMMENTS), s: Object.fromEntries(TSUBS), pl: [...TPLS.values()], h: Object.fromEntries(THIST), w: Object.fromEntries(TWL), po: [...TPOSTS.values()], rp: TREPORTS.slice(-200), ch: Object.fromEntries(TCHAN), x: Object.fromEntries(TEXT), xm: Object.fromEntries(TEXTMETA) })); } catch (e) {} }, 800); }
+function tubePersist() { clearTimeout(tubeSaveT); tubeSaveT = setTimeout(() => { try { storeSet('cfg:tube', JSON.stringify({ v: [...TVIDEOS.values()], c: Object.fromEntries(TCOMMENTS), s: Object.fromEntries(TSUBS), pl: [...TPLS.values()], h: Object.fromEntries(THIST), w: Object.fromEntries(TWL), po: [...TPOSTS.values()], rp: TREPORTS.slice(-200), ch: Object.fromEntries(TCHAN), x: Object.fromEntries(TEXT), xm: Object.fromEntries(TEXTMETA), tk: Object.fromEntries(TOKTAGS) })); } catch (e) {} }, 800); }
 function tubeId(p) { return (p || 't') + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function chanOf(user) { const c = TCHAN.get(user) || {}; let subs = 0; for (const m of TSUBS.values()) if (m && m[user]) subs++; return { user, name: c.name || user, bio: c.bio || '', banner: c.banner || '', avatar: c.avatar || '', subs }; }
 function vidView(v, me) { if (!v) return null; return { id: v.id, owner: v.owner, chan: chanOf(v.owner).name, title: v.title, desc: v.desc, tags: v.tags || [], cat: v.cat || '', vis: v.vis, thumb: v.thumb || '', dur: v.dur || 0, vertical: !!v.vertical, views: v.views || 0, likes: (v.likedBy || []).length, dislikes: (v.dislikedBy || []).length, my: me ? ((v.likedBy || []).includes(me) ? 'like' : ((v.dislikedBy || []).includes(me) ? 'dislike' : '')) : '', created: v.created, captions: !!v.cap, mine: !!me && v.owner === me, file: v.file }; }
@@ -15717,6 +15719,241 @@ window.addEventListener('beforeunload',function(){ try{ navigator.sendBeacon('/a
 </html>`;
 }
 
+// ================= v438: fyp — tiktok-style feed over 6ixTube =================
+// Vertical snap feed of 6ixTube uploads. "trending" is pure popularity;
+// "for you" runs tubeScore (subs + watch-history tag affinity) plus a
+// strong boost for the tags the user explicitly picked in the tuner.
+// Picks persist in cfg:tube as tk.
+function tokTagsAll() {
+  const counts = {};
+  for (const v of TVIDEOS.values()) {
+    if (v.vis !== 'pub' || v.status !== 'ready') continue;
+    (v.tags || []).forEach((t) => { const k = String(t).toLowerCase().trim(); if (k) counts[k] = (counts[k] || 0) + 1; });
+  }
+  return Object.entries(counts).sort((a, b) => b[1] - a[1]).map((e) => e[0]).slice(0, 60);
+}
+function tokScoreFyp(v, me, picks) {
+  let s = tubeScore(v, me);
+  if (picks && picks.length) {
+    const vt = (v.tags || []).map((t) => String(t).toLowerCase());
+    let hit = 0;
+    for (const p of picks) if (vt.includes(p)) hit++;
+    if (hit) s += 45 * hit + 25;
+    else s *= 0.35;
+  }
+  return s;
+}
+async function tokApi(req, res, u) {
+  if (!u.pathname.startsWith('/api/tok/')) return false;
+  const me = voterUser(req);
+  let b = {};
+  if (req.method === 'POST') { try { b = (await readJsonBody(req)) || {}; } catch { b = {}; } }
+  if (u.pathname === '/api/tok/feed') {
+    const mode = u.searchParams.get('mode') === 'trending' ? 'trending' : 'fyp';
+    const picks = me ? (TOKTAGS.get(me) || []) : [];
+    const vids = [...TVIDEOS.values()].filter((v) => canSee(v, me) && v.vis === 'pub');
+    vids.sort((x, y) => (mode === 'trending' ? tubeScore(y, null) - tubeScore(x, null) : tokScoreFyp(y, me, picks) - tokScoreFyp(x, me, picks)));
+    partyJson(res, 200, { ok: true, mode: mode, vids: vids.slice(0, 40).map((v) => vidView(v, me)), tags: tokTagsAll(), myTags: picks });
+    return true;
+  }
+  if (u.pathname === '/api/tok/tags') {
+    if (!me) { partyJson(res, 401, { ok: false, err: 'log in first' }); return true; }
+    const clean = [...new Set((Array.isArray(b.tags) ? b.tags : []).map((t) => String(t).toLowerCase().trim().slice(0, 24)).filter(Boolean))].slice(0, 12);
+    TOKTAGS.set(me, clean);
+    tubePersist();
+    partyJson(res, 200, { ok: true, myTags: clean });
+    return true;
+  }
+  partyJson(res, 404, { ok: false, err: 'unknown' });
+  return true;
+}
+
+const TOK_CSS = `
+.tokapp{position:fixed;left:0;right:0;top:50px;bottom:0;display:flex;flex-direction:column;background:#050508;text-align:left}
+@media (max-width:820px){ .tokapp{bottom:80px} }
+@media (min-width:1100px){ body[data-nav="side"] .tokapp{left:232px;top:0} }
+.tokhead{display:flex;align-items:center;gap:8px;padding:10px 14px;flex:none}
+.toktab{font-size:14px;font-weight:800;padding:8px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:rgba(236,234,246,.75);cursor:pointer;font-family:inherit}
+.toktab.on{background:#8b7cff;border-color:#8b7cff;color:#fff}
+.toktune{margin-left:auto;font-size:13px;font-weight:800;padding:8px 14px;border-radius:999px;border:1px solid rgba(139,124,255,.4);background:rgba(139,124,255,.13);color:#b7a8ff;cursor:pointer;font-family:inherit}
+#tokFeed{flex:1;min-height:0;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none}
+#tokFeed::-webkit-scrollbar{display:none}
+.tslide{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000;overflow:hidden}
+.tslide video{width:100%;height:100%;object-fit:contain;display:block;background:#000}
+.tmeta{position:absolute;left:14px;bottom:16px;right:84px;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.7)}
+.tchan{font-weight:900;font-size:15.5px;color:#fff;text-decoration:none}
+.ttitle{font-size:14px;line-height:1.4;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ttags{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.ttag{font-size:12px;font-weight:800;padding:5px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.4);color:#fff;cursor:pointer;font-family:inherit}
+.ttag.on{background:#8b7cff;border-color:#8b7cff}
+.trail2{position:absolute;right:10px;bottom:18px;display:flex;flex-direction:column;gap:16px;align-items:center}
+.tact{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;color:#fff;cursor:pointer;font-family:inherit;text-decoration:none;text-shadow:0 1px 8px rgba(0,0,0,.7)}
+.tact .tic{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.13);display:flex;align-items:center;justify-content:center}
+.tact svg{width:23px;height:23px}
+.tact span{font-size:11.5px;font-weight:800}
+.tact.liked .tic{background:rgba(244,63,94,.85)}
+.tempty{height:100%;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;color:rgba(236,234,246,.6);font-size:15px;text-align:center;padding:30px}
+.tsheet{position:fixed;inset:0;background:rgba(4,4,10,.72);z-index:300;display:none;align-items:flex-end;justify-content:center}
+.tsheet.on{display:flex}
+.tsheet-in{background:#12121c;border:1px solid rgba(255,255,255,.12);border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:78dvh;overflow:auto;padding:20px 18px 26px;box-sizing:border-box}
+.tchip2{font-size:13.5px;font-weight:800;padding:9px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:#eceaf6;cursor:pointer;font-family:inherit;margin:0 6px 8px 0}
+.tchip2.on{background:#8b7cff;border-color:#8b7cff;color:#fff}
+.ttoast{position:fixed;left:50%;transform:translateX(-50%);bottom:110px;z-index:320;background:rgba(18,18,28,.95);border:1px solid rgba(139,124,255,.45);color:#eceaf6;font-size:13px;font-weight:700;border-radius:999px;padding:9px 16px;display:none}
+`;
+
+function tokPage() {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>fyp — 6ix</title>
+${FONT_LINKS}
+<style>${GALAXY_CSS}</style>
+<style>${TOK_CSS}</style>
+</head>
+<body>
+${STAR_CANVAS}
+${SIDEBAR_HTML}
+<div class="tokapp">
+  <div class="tokhead">
+    <button class="toktab on" id="tabFyp" type="button">for you</button>
+    <button class="toktab" id="tabTrend" type="button">trending</button>
+    <button class="toktune" id="tuneBtn" type="button">tune ur fyp</button>
+  </div>
+  <div id="tokFeed"></div>
+</div>
+<div class="tsheet" id="tuneSheet">
+  <div class="tsheet-in">
+    <div style="font-weight:900;font-size:17px;color:#eceaf6">tune ur fyp</div>
+    <p style="color:rgba(236,234,246,.6);font-size:13.5px;line-height:1.55;margin:8px 0 14px">pick the tags u wanna see more of. ur for-you feed boosts those hard n cools off everything else. it also learns from what u watch n like.</p>
+    <div id="tagPool"></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="toktab on" id="tuneDone" type="button" style="flex:1">done</button>
+      <button class="toktab" id="tuneClear" type="button">clear all</button>
+    </div>
+  </div>
+</div>
+<div class="ttoast" id="tToast"></div>
+<script>
+var MODE='fyp', PICKS=[], ALLTAGS=[], SOUND=false, seenView=new Set();
+function $(i){return document.getElementById(i)}
+function jp(u,b){return fetch(u,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b||{})}).then(function(r){return r.json()})}
+function jg(u){return fetch(u).then(function(r){return r.json()})}
+function esc(s){s=String(s==null?'':s);return s.split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('"').join('&quot;')}
+function fmtN(n){ n=+n||0; if(n>=1000000) return (n/1000000).toFixed(1)+'M'; if(n>=1000) return (n/1000).toFixed(1)+'k'; return String(n); }
+function toast(t){ var el=$('tToast'); el.textContent=t; el.style.display='block'; setTimeout(function(){ el.style.display='none'; },1800); }
+var HEART='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>';
+var CMT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>';
+var SHR='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>';
+function slideHtml(v){
+  var tags=(v.tags||[]).map(function(t){ var on=PICKS.indexOf(String(t).toLowerCase())>=0; return '<button class="ttag'+(on?' on':'')+'" data-tag="'+esc(t)+'" type="button">#'+esc(t)+'</button>'; }).join('');
+  return '<section class="tslide" data-id="'+v.id+'">'
+    + '<video src="/tube-file/'+encodeURIComponent(v.file||'')+'" poster="'+esc(v.thumb||'')+'" loop playsinline muted preload="metadata"></video>'
+    + '<div class="tmeta"><a class="tchan" href="/yt/channel/'+encodeURIComponent(v.owner)+'">@'+esc(v.chan)+'</a>'
+    + '<div class="ttitle">'+esc(v.title)+'</div>'
+    + (tags?'<div class="ttags">'+tags+'</div>':'')
+    + '</div>'
+    + '<div class="trail2">'
+    + '<button class="tact like'+(v.my==='like'?' liked':'')+'" type="button"><span class="tic">'+HEART+'</span><span class="lc">'+fmtN(v.likes)+'</span></button>'
+    + '<a class="tact" href="/yt/watch?v='+v.id+'"><span class="tic">'+CMT+'</span><span>watch</span></a>'
+    + '<button class="tact share" type="button"><span class="tic">'+SHR+'</span><span>share</span></button>'
+    + '</div></section>';
+}
+var io=null;
+function wireFeed(){
+  if(io) io.disconnect();
+  io=new IntersectionObserver(function(es){
+    es.forEach(function(en){
+      var sec=en.target; var vid=sec.querySelector('video'); if(!vid) return;
+      var id=sec.getAttribute('data-id');
+      if(en.intersectionRatio>=0.55){
+        vid.muted=!SOUND;
+        var p=vid.play(); if(p&&p.catch)p.catch(function(){});
+        if(!seenView.has(id)){ seenView.add(id); jp('/api/tube/view',{id:id}).catch(function(){}); }
+      } else { vid.pause(); }
+    });
+  },{root:$('tokFeed'),threshold:[0.55]});
+  document.querySelectorAll('.tslide').forEach(function(s){ io.observe(s); });
+  document.querySelectorAll('.tslide video').forEach(function(vid){
+    vid.addEventListener('click',function(){ SOUND=!SOUND; document.querySelectorAll('.tslide video').forEach(function(x){ x.muted=!SOUND; }); toast(SOUND?'sound on':'muted'); });
+  });
+  document.querySelectorAll('.tslide .like').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var sec=btn.closest('.tslide'); var id=sec.getAttribute('data-id');
+      var liked=btn.classList.contains('liked');
+      jp('/api/tube/like',{id:id,kind:liked?'':'like'}).then(function(r){
+        if(!r.ok){ toast(r.err||'log in first'); return; }
+        btn.classList.toggle('liked', r.my==='like');
+        btn.querySelector('.lc').textContent=fmtN(r.likes);
+      });
+    });
+  });
+  document.querySelectorAll('.tslide .share').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var sec=btn.closest('.tslide'); var id=sec.getAttribute('data-id');
+      var url=location.origin+'/yt/watch?v='+id;
+      if(navigator.clipboard) navigator.clipboard.writeText(url).then(function(){ toast('link copied'); }).catch(function(){});
+    });
+  });
+  document.querySelectorAll('.ttag').forEach(function(chip){
+    chip.addEventListener('click',function(){
+      var t=chip.getAttribute('data-tag').toLowerCase();
+      var i=PICKS.indexOf(t);
+      if(i>=0) PICKS.splice(i,1); else { if(PICKS.length>=12){ toast('max 12 tags'); return; } PICKS.push(t); }
+      saveTags(true);
+    });
+  });
+}
+function saveTags(refetch){
+  jp('/api/tok/tags',{tags:PICKS}).then(function(r){
+    if(!r.ok){ toast(r.err||'log in first'); return; }
+    PICKS=r.myTags||PICKS;
+    toast('fyp tuned');
+    if(refetch&&MODE==='fyp') loadFeed();
+    renderTagPool();
+  });
+}
+function renderTagPool(){
+  var h='';
+  if(!ALLTAGS.length) h='<div style="color:rgba(236,234,246,.5);font-size:13.5px">no tags in the library yet — they come from video uploads</div>';
+  ALLTAGS.forEach(function(t){ h+='<button class="tchip2'+(PICKS.indexOf(t)>=0?' on':'')+'" data-t="'+esc(t)+'" type="button">#'+esc(t)+'</button>'; });
+  $('tagPool').innerHTML=h;
+  document.querySelectorAll('.tchip2').forEach(function(c){ c.addEventListener('click',function(){ var t=c.getAttribute('data-t'); var i=PICKS.indexOf(t); if(i>=0)PICKS.splice(i,1); else { if(PICKS.length>=12){ toast('max 12 tags'); return; } PICKS.push(t); } c.classList.toggle('on'); }); });
+}
+function loadFeed(){
+  jg('/api/tok/feed?mode='+MODE).then(function(j){
+    if(!j.ok) return;
+    ALLTAGS=j.tags||[]; PICKS=j.myTags||[];
+    var feed=$('tokFeed');
+    if(!j.vids||!j.vids.length){
+      feed.innerHTML='<div class="tempty"><div style="font-weight:900;font-size:19px;color:#eceaf6">nothing here yet</div><div>no public videos on 6ixtube rn — be the first</div><a class="toktab on" href="/yt/upload" style="text-decoration:none">upload a video</a></div>';
+      return;
+    }
+    feed.innerHTML=j.vids.map(slideHtml).join('');
+    feed.scrollTop=0;
+    wireFeed();
+    renderTagPool();
+  });
+}
+function setMode(m){
+  MODE=m;
+  $('tabFyp').classList.toggle('on', m==='fyp');
+  $('tabTrend').classList.toggle('on', m==='trending');
+  loadFeed();
+}
+$('tabFyp').addEventListener('click',function(){ setMode('fyp'); });
+$('tabTrend').addEventListener('click',function(){ setMode('trending'); });
+$('tuneBtn').addEventListener('click',function(){ renderTagPool(); $('tuneSheet').classList.add('on'); });
+$('tuneDone').addEventListener('click',function(){ $('tuneSheet').classList.remove('on'); saveTags(true); });
+$('tuneClear').addEventListener('click',function(){ PICKS=[]; renderTagPool(); });
+$('tuneSheet').addEventListener('click',function(e){ if(e.target===$('tuneSheet')) $('tuneSheet').classList.remove('on'); });
+loadFeed();
+</script>
+<script>${NOTIF_JS}</script>
+</body>
+</html>`;
+}
 function tubeWatchPage(id) {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -19951,6 +20188,7 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/party') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(partyPage()); }
   if (u.pathname.startsWith('/party/')) { const pcode = u.pathname.slice(7).toLowerCase(); if (/^[a-z0-9]{5}$/.test(pcode)) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(partyRoomPage(pcode)); } }
   if (u.pathname === '/vid') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(vidPage()); }
+  if (u.pathname === '/fyp') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(tokPage()); }
   if (u.pathname === '/music') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     const mp434 = await musicPage(u.searchParams.get('q') || '');
@@ -19981,6 +20219,7 @@ const server = http.createServer(async (req, res) => {
   }
   if (await partyApi(req, res, u)) return;
   if (await vidApi(req, res, u)) return;
+  if (await tokApi(req, res, u)) return;
   if (u.pathname.startsWith('/api/tube/')) {
     const me = voterUser(req);
     const jout = (o, code) => { res.writeHead(code || 200, { 'content-type': 'application/json' }); return res.end(JSON.stringify(o)); };
