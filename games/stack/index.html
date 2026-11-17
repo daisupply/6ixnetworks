@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Stack — 6ix games</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#07050f; color:#eceaf6; font-family:'Segoe UI',system-ui,sans-serif; min-height:100%; }
+  body { display:flex; flex-direction:column; align-items:center; padding:14px 10px 30px; }
+  h1 { font-size:20px; letter-spacing:.14em; font-weight:800; background:linear-gradient(90deg,#ffd257,#ff9f43); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .sub { font-size:12px; color:#9a93b8; margin:3px 0 10px; }
+  #wrap { position:relative; width:min(420px,96vw); }
+  canvas { width:100%; display:block; border:1px solid rgba(255,210,87,.3); border-radius:14px; touch-action:none; }
+  #hud { display:flex; justify-content:space-between; width:min(420px,96vw); margin-top:10px; font-size:13px; font-weight:700; color:#c9c2e8; }
+  #hud b { color:#fff; }
+</style>
+</head>
+<body>
+<h1>STACK</h1>
+<div class="sub">click, tap, or press space to drop the block — line it up or it gets sliced</div>
+<div id="wrap"><canvas id="cv" width="420" height="640"></canvas></div>
+<div id="hud"><span>height <b id="hScore">0</b></span><span>best <b id="hBest">0</b></span><span>perfects <b id="hCombo">0</b></span></div>
+<script>
+(function () {
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  var W = 420, H = 640, BH = 26, DEPTH = 12;
+  var dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = W * dpr; cv.height = H * dpr; ctx.scale(dpr, dpr);
+
+  var state = 'ready'; // ready | play | over
+  var tower, cur, falling, camY, camTarget, score, combo, best = +(localStorage.getItem('gx_stack_best') || 0), overAt = 0;
+
+  function reset() {
+    tower = [{ x: W / 2 - 70, w: 140, hue: 215 }];
+    score = 0; combo = 0;
+    camY = 0; camTarget = 0; falling = [];
+    spawn();
+    state = 'ready';
+    syncHud();
+  }
+  function spawn() {
+    var prev = tower[tower.length - 1];
+    var speed = Math.min(430, 215 + tower.length * 9);
+    cur = { x: -prev.w - 10, w: prev.w, dir: 1, speed: speed, hue: (prev.hue + 4.5) % 360 };
+  }
+  function syncHud() {
+    document.getElementById('hScore').textContent = score;
+    document.getElementById('hBest').textContent = best;
+    document.getElementById('hCombo').textContent = combo;
+  }
+  function yOf(level) { return H - 90 - (level + 1) * BH + camY; }
+  function place() {
+    if (state === 'ready') state = 'play';
+    var prev = tower[tower.length - 1];
+    var left = Math.max(cur.x, prev.x), right = Math.min(cur.x + cur.w, prev.x + prev.w);
+    var overlap = right - left;
+    if (overlap <= 0) {
+      falling.push({ x: cur.x, w: cur.w, y: tower.length, vy: 0, hue: cur.hue, alpha: 1 });
+      state = 'over'; overAt = Date.now();
+      best = Math.max(best, score); localStorage.setItem('gx_stack_best', best); syncHud();
+      return;
+    }
+    var off = Math.abs(cur.x - prev.x);
+    if (off <= 4) {
+      // perfect: snap; every 5th perfect regrows a little width
+      combo++;
+      var w = prev.w;
+      if (combo % 5 === 0) w = Math.min(140, w + 14);
+      tower.push({ x: prev.x - (w - prev.w) / 2, w: w, hue: cur.hue });
+    } else {
+      combo = 0;
+      var cutX = cur.x < prev.x ? cur.x : right, cutW = cur.w - overlap;
+      falling.push({ x: cutX, w: cutW, y: tower.length, vy: 0, hue: cur.hue, alpha: 1 });
+      tower.push({ x: left, w: overlap, hue: cur.hue });
+    }
+    score = tower.length - 1;
+    camTarget = Math.max(0, (tower.length - 9) * BH);
+    syncHud();
+    spawn();
+  }
+  function press() {
+    if (state === 'over') { if (Date.now() - overAt > 650) reset(); return; }
+    place();
+  }
+  function step(dt) {
+    if (state !== 'over') {
+      cur.x += cur.dir * cur.speed * dt;
+      if (cur.x > W + 6) { cur.x = W + 6; cur.dir = -1; }
+      if (cur.x + cur.w < -6) { cur.x = -6 - cur.w; cur.dir = 1; }
+    }
+    camY += (camTarget - camY) * Math.min(1, dt * 7);
+    falling.forEach(function (f) { f.vy += 1500 * dt; f.y -= f.vy * dt / BH; f.alpha -= dt * 0.7; });
+    falling = falling.filter(function (f) { return f.alpha > 0; });
+  }
+  function block(x, yTop, w, hue, alpha) {
+    ctx.globalAlpha = alpha == null ? 1 : alpha;
+    ctx.fillStyle = 'hsl(' + hue + ',72%,55%)';
+    ctx.fillRect(x, yTop, w, BH);
+    ctx.fillStyle = 'hsl(' + hue + ',80%,70%)';
+    ctx.beginPath();
+    ctx.moveTo(x, yTop); ctx.lineTo(x + DEPTH, yTop - DEPTH * 0.7); ctx.lineTo(x + w + DEPTH, yTop - DEPTH * 0.7); ctx.lineTo(x + w, yTop); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'hsl(' + hue + ',60%,40%)';
+    ctx.fillRect(x + w, yTop, DEPTH, BH);
+    ctx.globalAlpha = 1;
+  }
+  function draw() {
+    var sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#0b0620'); sky.addColorStop(1, '#1c1038');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    for (var i = 0; i < tower.length; i++) {
+      var b = tower[i], y = yOf(i);
+      if (y < -BH * 2 || y > H + BH) continue;
+      block(b.x, y, b.w, b.hue);
+    }
+    falling.forEach(function (f) { block(f.x, yOf(f.y), f.w, f.hue, Math.max(0, f.alpha)); });
+    if (state !== 'over') block(cur.x, yOf(tower.length), cur.w, cur.hue);
+    ctx.textAlign = 'center';
+    ctx.font = '800 46px system-ui';
+    ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(10,5,25,.5)';
+    ctx.strokeText(score, W / 2, 84); ctx.fillStyle = '#fff'; ctx.fillText(score, W / 2, 84);
+    if (combo >= 2 && state === 'play') {
+      ctx.font = '800 16px system-ui'; ctx.fillStyle = '#ffd257';
+      ctx.fillText(combo + ' perfect in a row', W / 2, 116);
+    }
+    if (state === 'ready') {
+      ctx.font = '700 16px system-ui'; ctx.fillStyle = 'rgba(255,255,255,.9)';
+      ctx.fillText('tap to drop the first block', W / 2, H - 180);
+    }
+    if (state === 'over') {
+      ctx.fillStyle = 'rgba(5,3,12,.55)'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#fff'; ctx.font = '800 26px system-ui'; ctx.fillText('tower down', W / 2, H / 2 - 40);
+      ctx.font = '700 16px system-ui'; ctx.fillStyle = '#c9c2e8';
+      ctx.fillText('height  ' + score + '   ·   best  ' + best, W / 2, H / 2);
+      ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.font = '600 13.5px system-ui';
+      ctx.fillText('tap to stack again', W / 2, H / 2 + 34);
+    }
+  }
+  var last = 0;
+  function loop(ts) {
+    var dt = Math.min(0.033, (ts - last) / 1000 || 0); last = ts;
+    step(dt); draw();
+    requestAnimationFrame(loop);
+  }
+  cv.addEventListener('pointerdown', function (e) { e.preventDefault(); press(); });
+  window.addEventListener('keydown', function (e) { if (e.key === ' ') { e.preventDefault(); press(); } });
+  document.addEventListener('visibilitychange', function () { last = 0; });
+  reset();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
