@@ -15097,6 +15097,7 @@ ${SIDEBAR_HTML}
     <div class="ptype">6ixtube + 6ixmusic, together</div>
     <h1>party rooms</h1>
     <p style="color:rgba(236,234,246,.7);font-size:14.5px;line-height:1.55;margin:6px 0 0">start a room, send the code, everybody watches or listens in sync. anyone in the room can control playback — the one who started it holds the crown and can hand it off.</p>
+    <p style="margin:10px 0 0;font-size:14px"><a href="/vid" style="color:#b7a8ff;font-weight:800;text-decoration:none">or try 6ixvid — random stranger chat</a></p>
   </section>
   <div class="pgrid">
     <div>
@@ -15322,6 +15323,352 @@ $('seek').addEventListener('change',function(){if(el&&el.duration)act('seek',{po
 $('mSearch').addEventListener('click',function(){var q=$('mQ').value.trim();if(!q)return;jg('/api/msearch?q='+encodeURIComponent(q)).then(function(j){var h='';(j.songs||[]).slice(0,8).forEach(function(s){h+='<div class="qrow" data-id="'+esc(s.id)+'" data-t="'+esc(s.t)+'" data-a="'+esc(s.a)+'" data-img="'+esc(s.img||'')+'"><img src="'+esc(s.img||'')+'" alt=""><div class="qt"><b>'+esc(s.t)+'</b><span>'+esc(s.a)+'</span></div><button class="pbtn" data-add="1" type="button">+ queue</button><button class="pbtn acc" data-now="1" type="button">play now</button></div>'});$('mRes').innerHTML=h||'<div style="color:rgba(236,234,246,.5);font-size:13.5px">no songs found</div>'})});
 $('mRes').addEventListener('click',function(e){var n=e.target;var row=n;while(row&&row!==$('mRes')&&!row.getAttribute('data-id'))row=row.parentNode;if(!row||!row.getAttribute('data-id'))return;var t={id:row.getAttribute('data-id'),title:row.getAttribute('data-t'),artist:row.getAttribute('data-a'),img:row.getAttribute('data-img')};if(n.getAttribute('data-now'))act('setmedia',{track:t});else if(n.getAttribute('data-add'))act('addq',{track:t})});
 $('qList').addEventListener('click',function(e){var n=e.target;while(n&&n!==$('qList')&&!n.getAttribute('data-qi'))n=n.parentNode;if(n&&n.getAttribute('data-qi')!=null)act('playq',{i:Number(n.getAttribute('data-qi'))})});
+</script>
+${NOTIF_JS}
+</body>
+</html>`;
+}
+
+// ================= v435: 6ixvid — random stranger chat =================
+// Omegle-style matching for logged-in site accounts only (a ban sticks,
+// unlike the open web). Queue + pairs live in memory. Text chat rides
+// the state poll; cam rides WebRTC with signaling relayed through pair
+// state (same pattern as 6ixChat calls). Reports notify the admin and
+// auto-skip the reporter to a new match.
+const VIDQ = [];
+const VIDPAIRS = new Map();
+const VIDOF = new Map();
+const VIDLAST = new Map();
+const VIDNOTE = new Map();
+const VIDREPORTS = [];
+let vidPairSeq = 1;
+function vidPartner(p, me) { return p.a === me ? p.b : p.a; }
+function vidDissolve(p, whyA, whyB) {
+  VIDPAIRS.delete(p.id);
+  for (const u of [p.a, p.b]) { const s = VIDOF.get(u); if (s && s.mode === 'pair' && s.id === p.id) VIDOF.delete(u); }
+  VIDLAST.set(p.a, p.b); VIDLAST.set(p.b, p.a);
+  if (whyA) VIDNOTE.set(p.a, whyA);
+  if (whyB) VIDNOTE.set(p.b, whyB);
+}
+function vidPrune() {
+  const now = Date.now();
+  for (let i = VIDQ.length - 1; i >= 0; i--) { if (now - VIDQ[i].at > 20000) { VIDOF.delete(VIDQ[i].u); VIDQ.splice(i, 1); } }
+  for (const p of [...VIDPAIRS.values()]) {
+    if (now - p.seenA > 14000) vidDissolve(p, null, 'stranger disconnected');
+    else if (now - p.seenB > 14000) vidDissolve(p, 'stranger disconnected', null);
+  }
+}
+function vidTryMatch(me) {
+  const myIdx = VIDQ.findIndex((q) => q.u === me);
+  if (myIdx < 0) return;
+  const now = Date.now();
+  for (let i = 0; i < VIDQ.length; i++) {
+    const cand = VIDQ[i];
+    if (cand.u === me) continue;
+    const waited = now - Math.min(cand.at, VIDQ[myIdx].at);
+    if (VIDLAST.get(me) === cand.u && waited < 8000) continue;
+    const senior = cand.at <= VIDQ[myIdx].at ? cand : VIDQ[myIdx];
+    const junior = senior === cand ? VIDQ[myIdx] : cand;
+    VIDQ.splice(Math.max(myIdx, i), 1); VIDQ.splice(Math.min(myIdx, i), 1);
+    const p = { id: 'vp' + (vidPairSeq++), a: senior.u, b: junior.u, msgs: [], sigA: [], sigB: [], camA: false, camB: false, seenA: now, seenB: now, created: now };
+    VIDPAIRS.set(p.id, p);
+    VIDOF.set(p.a, { mode: 'pair', id: p.id });
+    VIDOF.set(p.b, { mode: 'pair', id: p.id });
+    return;
+  }
+}
+function vidState(me) {
+  const pre = VIDOF.get(me);
+  if (pre && pre.mode === 'queue') { const qe = VIDQ.find((q) => q.u === me); if (qe) qe.at = Date.now(); }
+  vidPrune();
+  const st = VIDOF.get(me);
+  const out = { ok: true, me: me, mode: 'idle', online: VIDQ.length + VIDPAIRS.size * 2, inQueue: VIDQ.length };
+  if (VIDNOTE.has(me)) { out.note = VIDNOTE.get(me); VIDNOTE.delete(me); }
+  if (!st) return out;
+  if (st.mode === 'queue') { vidTryMatch(me); const st2 = VIDOF.get(me); if (!st2 || st2.mode === 'queue') { out.mode = 'waiting'; return out; } return Object.assign(out, vidStatePair(me, st2)); }
+  return Object.assign(out, vidStatePair(me, st));
+}
+function vidStatePair(me, st) {
+  const p = VIDPAIRS.get(st.id);
+  if (!p) { VIDOF.delete(me); return { mode: 'idle' }; }
+  if (p.a === me) p.seenA = Date.now(); else p.seenB = Date.now();
+  const theirs = p.a === me ? 'sigB' : 'sigA';
+  const sigs = p[theirs].splice(0, p[theirs].length);
+  return { mode: 'paired', pair: { id: p.id, peer: vidPartner(p, me), initiator: p.a === me, myCam: p.a === me ? p.camA : p.camB, peerCam: p.a === me ? p.camB : p.camA, msgs: p.msgs.slice(-60), signals: sigs } };
+}
+async function vidApi(req, res, u) {
+  if (!u.pathname.startsWith('/api/vid/')) return false;
+  const me = voterUser(req);
+  if (!me) { partyJson(res, 401, { ok: false, err: 'log in first' }); return true; }
+  let b = {};
+  if (req.method === 'POST') { try { b = (await readJsonBody(req)) || {}; } catch { b = {}; } }
+  const myPair = () => { const st = VIDOF.get(me); return st && st.mode === 'pair' ? VIDPAIRS.get(st.id) : null; };
+  if (u.pathname === '/api/vid/reports') {
+    if (!isAdminReq(req)) { partyJson(res, 403, { ok: false, err: 'admins only' }); return true; }
+    partyJson(res, 200, { ok: true, reports: VIDREPORTS.slice(-50) });
+    return true;
+  }
+  if (u.pathname === '/api/vid/state') { partyJson(res, 200, vidState(me)); return true; }
+  if (u.pathname === '/api/vid/queue') {
+    const st = VIDOF.get(me);
+    if (st && st.mode === 'pair') { partyJson(res, 200, vidState(me)); return true; }
+    const ex = VIDQ.find((q) => q.u === me);
+    if (ex) ex.at = Date.now(); else { VIDQ.push({ u: me, at: Date.now() }); VIDOF.set(me, { mode: 'queue' }); }
+    vidTryMatch(me);
+    partyJson(res, 200, vidState(me));
+    return true;
+  }
+  if (u.pathname === '/api/vid/leave') {
+    const qi = VIDQ.findIndex((q) => q.u === me);
+    if (qi >= 0) { VIDQ.splice(qi, 1); VIDOF.delete(me); }
+    const p = myPair();
+    if (p) vidDissolve(p, null, 'stranger left');
+    partyJson(res, 200, { ok: true, mode: 'idle' });
+    return true;
+  }
+  if (u.pathname === '/api/vid/next') {
+    const p = myPair();
+    if (p) vidDissolve(p, null, 'stranger skipped');
+    if (!VIDQ.find((q) => q.u === me)) { VIDQ.push({ u: me, at: Date.now() }); VIDOF.set(me, { mode: 'queue' }); }
+    vidTryMatch(me);
+    partyJson(res, 200, vidState(me));
+    return true;
+  }
+  if (u.pathname === '/api/vid/send') {
+    const p = myPair();
+    if (!p) { partyJson(res, 200, { ok: false, err: 'not paired' }); return true; }
+    const text = String(b.text || '').slice(0, 300).trim();
+    if (text) { p.msgs.push({ u: me, text: text, at: Date.now() }); if (p.msgs.length > 100) p.msgs.splice(0, p.msgs.length - 100); }
+    partyJson(res, 200, vidState(me));
+    return true;
+  }
+  if (u.pathname === '/api/vid/signal') {
+    const p = myPair();
+    if (!p) { partyJson(res, 200, { ok: false, err: 'not paired' }); return true; }
+    if (b.data != null) { const arr = p.a === me ? p.sigA : p.sigB; arr.push(b.data); if (arr.length > 60) arr.splice(0, arr.length - 60); }
+    partyJson(res, 200, { ok: true });
+    return true;
+  }
+  if (u.pathname === '/api/vid/cam') {
+    const p = myPair();
+    if (!p) { partyJson(res, 200, { ok: false, err: 'not paired' }); return true; }
+    if (p.a === me) p.camA = !!b.on; else p.camB = !!b.on;
+    partyJson(res, 200, vidState(me));
+    return true;
+  }
+  if (u.pathname === '/api/vid/report') {
+    const p = myPair();
+    const against = p ? vidPartner(p, me) : (VIDLAST.get(me) || '');
+    if (against) {
+      VIDREPORTS.push({ by: me, against: against, at: Date.now() });
+      if (VIDREPORTS.length > 100) VIDREPORTS.splice(0, VIDREPORTS.length - 100);
+      try { pushNotif('deion', { type: 'vidreport', from: me, text: me + ' reported ' + against + ' on 6ixvid' }); } catch { }
+    }
+    if (p) vidDissolve(p, null, 'stranger left');
+    if (!VIDQ.find((q) => q.u === me)) { VIDQ.push({ u: me, at: Date.now() }); VIDOF.set(me, { mode: 'queue' }); }
+    vidTryMatch(me);
+    partyJson(res, 200, vidState(me));
+    return true;
+  }
+  partyJson(res, 404, { ok: false, err: 'unknown' });
+  return true;
+}
+
+const VID_CSS = `
+.vidwrap{max-width:980px;margin:0 auto;padding:18px 14px 110px;box-sizing:border-box}
+.vidstage{position:relative;border-radius:18px;overflow:hidden;background:#000;border:1px solid rgba(255,255,255,.1);aspect-ratio:16/10}
+.vidstage video{width:100%;height:100%;object-fit:cover;display:block;background:#000}
+#vLocal{position:absolute;right:10px;bottom:10px;width:26%;aspect-ratio:4/3;object-fit:cover;border-radius:12px;border:1px solid rgba(255,255,255,.3);background:#111}
+.vidph{position:absolute;inset:0;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;color:rgba(236,234,246,.55);font-size:14.5px;text-align:center;padding:20px}
+.vidbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+#vMsgs{height:250px;overflow:auto;display:flex;flex-direction:column;gap:7px;padding-right:2px}
+.vidspin{width:44px;height:44px;border-radius:50%;border:4px solid rgba(139,124,255,.25);border-top-color:#8b7cff;animation:vspin 0.9s linear infinite;margin:6px auto}
+@keyframes vspin{to{transform:rotate(360deg)}}
+`;
+
+function vidPage() {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>6ixvid — random chat</title>
+${FONT_LINKS}
+<style>${GALAXY_CSS}</style>
+<style>${PARTY_CSS}</style>
+<style>${VID_CSS}</style>
+</head>
+<body>
+${STAR_CANVAS}
+${SIDEBAR_HTML}
+<main class="vidwrap">
+  <section class="pcard psec">
+    <div class="ptype">random chat · accounts only</div>
+    <h1>6ixvid</h1>
+    <p style="color:rgba(236,234,246,.7);font-size:14.5px;line-height:1.55;margin:6px 0 0">omegle energy, but everybody here has a 6ix account — so if someone acts weird, the report button actually does something. text first, cam only if u both turn it on. chats are never saved.</p>
+    <div class="pcode" id="vOnline" style="margin-top:8px">…</div>
+  </section>
+  <div id="rMsg"></div>
+
+  <section class="pcard" id="vIdle">
+    <div style="text-align:center;padding:16px 6px">
+      <button class="pbtn acc" id="startBtn" type="button" style="font-size:16.5px;padding:13px 26px">find a stranger</button>
+      <div style="margin-top:12px"><button class="pbtn" id="camPref" type="button">cam: off</button></div>
+      <p style="color:rgba(236,234,246,.5);font-size:12.5px;margin-top:12px">u can flip ur cam on any time, even mid-chat. it only connects when the stranger has theirs on too.</p>
+    </div>
+  </section>
+
+  <section class="pcard" id="vWait" hidden>
+    <div style="text-align:center;padding:18px 6px">
+      <div class="vidspin"></div>
+      <div style="font-weight:800;font-size:16.5px">looking for a stranger…</div>
+      <div class="pcode" id="waitInfo" style="margin-top:6px"></div>
+      <button class="pbtn" id="cancelBtn" type="button" style="margin-top:14px">cancel</button>
+    </div>
+  </section>
+
+  <section id="vPair" hidden>
+    <div class="vidstage">
+      <video id="vRemote" autoplay playsinline></video>
+      <div class="vidph" id="vPh"><div style="font-weight:800;font-size:16px;color:#eceaf6">stranger is text-only rn</div><div>say hi below — or turn ur cam on n see if they match u</div></div>
+      <video id="vLocal" autoplay playsinline muted hidden></video>
+    </div>
+    <div class="vidbar">
+      <button class="pbtn" id="camBtn" type="button">cam: off</button>
+      <button class="pbtn acc" id="nextBtn" type="button">next stranger</button>
+      <button class="pbtn" id="reportBtn" type="button">report</button>
+      <button class="pbtn danger" id="leaveBtn2" type="button">leave</button>
+    </div>
+    <section class="pcard" style="margin-top:14px">
+      <h3 class="pt">chat with stranger</h3>
+      <div id="vMsgs"></div>
+      <div class="prow"><input id="vIn" placeholder="say something" maxlength="300"><button class="pbtn acc" id="vSend" type="button">send</button></div>
+    </section>
+  </section>
+</main>
+<script>
+var MODE='idle', PAIR=null, camPref=false, camOn=false, pc=null, localStream=null, iceQ=[], remoteSet=false, lastMsgN=-1, sysLines=[];
+var ICE=[{urls:'stun:stun.l.google.com:19302'}];
+try{ if(typeof ICE_SERVERS!=='undefined'&&ICE_SERVERS&&ICE_SERVERS.length) ICE=ICE_SERVERS; }catch(e){}
+function $(i){return document.getElementById(i)}
+function jp(u,b){return fetch(u,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b||{})}).then(function(r){return r.json()})}
+function jg(u){return fetch(u).then(function(r){return r.json()})}
+function esc(s){s=String(s==null?'':s);return s.split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('"').join('&quot;')}
+function showMsg(t){var m=$('rMsg');m.textContent=t;m.style.display='block'}
+function setMode(m){
+  MODE=m;
+  $('vIdle').hidden=m!=='idle';
+  $('vWait').hidden=m!=='waiting';
+  $('vPair').hidden=m!=='paired';
+  if(m!=='paired'){ closePc(); PAIR=null; lastMsgN=-1; }
+}
+function closePc(){
+  if(pc){ try{pc.close()}catch(e){} pc=null; }
+  var rv=$('vRemote'); if(rv) rv.srcObject=null;
+  remoteSet=false; iceQ=[];
+  $('vPh').style.display='flex';
+}
+function stopCamTracks(){
+  if(localStream){ localStream.getTracks().forEach(function(t){t.stop()}); localStream=null; }
+  camOn=false; $('vLocal').hidden=true; $('vLocal').srcObject=null;
+  $('camBtn').textContent='cam: off';
+}
+function signal(data){ jp('/api/vid/signal',{data:data}).catch(function(){}) }
+function setupPc(){
+  if(pc||!PAIR) return;
+  pc=new RTCPeerConnection({iceServers:ICE});
+  remoteSet=false; iceQ=[];
+  if(localStream) localStream.getTracks().forEach(function(t){ pc.addTrack(t,localStream) });
+  pc.ontrack=function(e){ var rv=$('vRemote'); rv.srcObject=e.streams[0]; $('vPh').style.display='none'; var p=rv.play(); if(p&&p.catch)p.catch(function(){}); };
+  pc.onicecandidate=function(e){ if(e.candidate) signal({ice:e.candidate}); };
+  pc.onnegotiationneeded=function(){ if(PAIR&&PAIR.initiator) makeOffer(); };
+  if(PAIR.initiator) makeOffer();
+}
+function makeOffer(){
+  if(!pc) return;
+  pc.createOffer().then(function(o){ return pc.setLocalDescription(o) }).then(function(){ signal({sdp:pc.localDescription}) }).catch(function(){});
+}
+function onSignal(s){
+  if(!s) return;
+  if(s.t==='camoff'){ closePc(); return; }
+  if(!pc) setupPc();
+  if(!pc) return;
+  if(s.sdp){
+    var d=new RTCSessionDescription(s.sdp);
+    pc.setRemoteDescription(d).then(function(){
+      remoteSet=true;
+      iceQ.forEach(function(c){ pc.addIceCandidate(new RTCIceCandidate(c)).catch(function(){}) });
+      iceQ=[];
+      if(d.type==='offer'){ pc.createAnswer().then(function(a){ return pc.setLocalDescription(a) }).then(function(){ signal({sdp:pc.localDescription}) }).catch(function(){}); }
+    }).catch(function(){});
+  } else if(s.ice){
+    if(remoteSet&&pc.remoteDescription) pc.addIceCandidate(new RTCIceCandidate(s.ice)).catch(function(){});
+    else iceQ.push(s.ice);
+  } else if(s.t==='reneg'){
+    if(PAIR&&PAIR.initiator) makeOffer();
+  }
+}
+function maybeConnect(){
+  if(PAIR&&camOn&&PAIR.peerCam){ if(!pc) setupPc(); }
+}
+function startCam(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ alert('no camera available on this device'); return; }
+  navigator.mediaDevices.getUserMedia({video:true,audio:true}).then(function(stream){
+    localStream=stream; camOn=true;
+    var lv=$('vLocal'); lv.srcObject=stream; lv.hidden=false;
+    $('camBtn').textContent='cam: on';
+    if(PAIR){ jp('/api/vid/cam',{on:true}).then(function(j){ if(j.pair) PAIR=j.pair; maybeConnect(); }); }
+  }).catch(function(){ alert('camera was blocked — check the browser permission'); });
+}
+function stopCam(){
+  if(PAIR) jp('/api/vid/cam',{on:false}).catch(function(){});
+  signal({t:'camoff'});
+  closePc(); stopCamTracks();
+}
+function renderMsgs(msgs){
+  if(!msgs) return;
+  if(msgs.length===lastMsgN) return;
+  lastMsgN=msgs.length;
+  var box=$('vMsgs'); var near=box.scrollHeight-box.scrollTop-box.clientHeight<70;
+  var h='';
+  sysLines.forEach(function(s){ h+='<div class="cm2 sys">'+esc(s)+'</div>' });
+  msgs.forEach(function(c){ h+='<div class="cm2"><span class="wh">'+(c.u===window.__vidMe?'you':'stranger')+'</span><br>'+esc(c.text)+'</div>' });
+  box.innerHTML=h; if(near) box.scrollTop=box.scrollHeight;
+}
+function apply(st){
+  if(!st||!st.ok) return;
+  if(st.me) window.__vidMe=st.me;
+  $('vOnline').textContent=st.online+' online rn · '+st.inQueue+' in line';
+  if(st.note){ sysLines.push(st.note); if(sysLines.length>5)sysLines.shift(); lastMsgN=-1; }
+  if(st.mode!==MODE){
+    if(st.mode==='paired'&&camPref&&!camOn) startCam();
+    setMode(st.mode);
+  }
+  if(st.mode==='waiting'){ $('waitInfo').textContent=st.inQueue+' in line · '+st.online+' online'; }
+  if(st.mode==='paired'&&st.pair){
+    var newPair=!PAIR||PAIR.id!==st.pair.id;
+    PAIR=st.pair;
+    if(newPair){ sysLines.push('u are talking to a stranger — say hi'); lastMsgN=-1; if(camOn){ jp('/api/vid/cam',{on:true}).catch(function(){}); PAIR.myCam=true; } }
+    (st.pair.signals||[]).forEach(onSignal);
+    if(camOn&&PAIR&&!PAIR.myCam) jp('/api/vid/cam',{on:true}).catch(function(){});
+    if(PAIR.peerCam&&camOn) maybeConnect();
+    renderMsgs(st.pair.msgs);
+  }
+}
+function poll(){ jg('/api/vid/state').then(apply).catch(function(){}) }
+$('startBtn').addEventListener('click',function(){ jp('/api/vid/queue',{}).then(function(j){ if(j.ok===false){ showMsg(j.err||'log in first'); return; } apply(j); }); });
+$('cancelBtn').addEventListener('click',function(){ jp('/api/vid/leave',{}).then(function(){ setMode('idle'); }); });
+$('leaveBtn2').addEventListener('click',function(){ stopCam(); jp('/api/vid/leave',{}).then(function(){ setMode('idle'); }); });
+$('nextBtn').addEventListener('click',function(){ closePc(); jp('/api/vid/next',{}).then(function(j){ apply(j); }); });
+$('reportBtn').addEventListener('click',function(){ if(confirm('report this stranger? u will be matched with someone new')){ closePc(); jp('/api/vid/report',{}).then(function(j){ apply(j); }); } });
+$('camPref').addEventListener('click',function(){ camPref=!camPref; $('camPref').textContent='cam: '+(camPref?'on':'off'); });
+$('camBtn').addEventListener('click',function(){ if(camOn) stopCam(); else startCam(); });
+function send(){ var v=$('vIn').value.trim(); if(!v) return; $('vIn').value=''; jp('/api/vid/send',{text:v}).then(function(j){ if(j.pair) renderMsgs(j.pair.msgs); }); }
+$('vSend').addEventListener('click',send);
+$('vIn').addEventListener('keydown',function(e){ if(e.key==='Enter') send(); });
+jg('/api/vid/state').then(function(j){ if(j.ok){ window.__vidMe=j.me; apply(j); } });
+setInterval(poll,2000);
+window.addEventListener('beforeunload',function(){ try{ navigator.sendBeacon('/api/vid/leave','{}'); }catch(e){} });
 </script>
 ${NOTIF_JS}
 </body>
@@ -19561,6 +19908,7 @@ const server = http.createServer(async (req, res) => {
   }
   if (u.pathname === '/party') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(partyPage()); }
   if (u.pathname.startsWith('/party/')) { const pcode = u.pathname.slice(7).toLowerCase(); if (/^[a-z0-9]{5}$/.test(pcode)) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(partyRoomPage(pcode)); } }
+  if (u.pathname === '/vid') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(vidPage()); }
   if (u.pathname === '/music') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     const mp434 = await musicPage(u.searchParams.get('q') || '');
@@ -19590,6 +19938,7 @@ const server = http.createServer(async (req, res) => {
     return SITES_FS.createReadStream(fp).pipe(res);
   }
   if (await partyApi(req, res, u)) return;
+  if (await vidApi(req, res, u)) return;
   if (u.pathname.startsWith('/api/tube/')) {
     const me = voterUser(req);
     const jout = (o, code) => { res.writeHead(code || 200, { 'content-type': 'application/json' }); return res.end(JSON.stringify(o)); };
