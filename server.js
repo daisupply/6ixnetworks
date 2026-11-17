@@ -4401,6 +4401,8 @@ body[data-sky] .app6 .cr-item.on,body[data-sky] .app6 .cr-item.on:hover,body[dat
 
 <div class="cr-sec">social</div>
 <button class="chip cr-item" id="frnav" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> friends<span id="frbadge" style="display:none;margin-left:auto;background:#dc2626;color:#fff;font-size:10.5px;font-weight:700;border-radius:999px;min-width:18px;height:18px;align-items:center;justify-content:center;padding:0 5px"></span></button>
+<div class="cr-sec">random</div>
+<button class="chip cr-item" type="button" onclick="location.href='/vid'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg> 6ixvid</button>
 <div class="cr-sec">voice</div>
 
 
