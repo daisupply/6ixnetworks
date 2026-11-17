@@ -11935,6 +11935,11 @@ button{border-radius:10px}
 .mssearch{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:0 6px 0 12px;color:#9d97b8}
 .mssearch input{flex:1;min-width:0;background:transparent;border:0;outline:none;color:#fff;font-size:16px;font-family:inherit;padding:10px 0}
 .mssearch button{background:transparent;border:0;color:#c9c4de;cursor:pointer;padding:6px;display:flex;box-shadow:none}
+.mstg{background:linear-gradient(140deg, rgba(139,124,255,.22), rgba(139,124,255,.05));border:1px solid rgba(139,124,255,.45);border-radius:14px;padding:13px 14px;margin-bottom:16px}
+.mstg-t{font-weight:900;font-size:14.5px;color:#fff;display:flex;align-items:center;gap:8px}
+.mstg p{color:#b6b0cc;font-size:12.5px;line-height:1.5;margin:7px 0 11px}
+.mstg button{width:100%;font-size:13.5px;font-weight:800;padding:10px;border-radius:10px;border:0;background:#8b7cff;color:#fff;cursor:pointer;font-family:inherit}
+.mstg-now{font-size:11.5px;color:#9d97b8;margin-top:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .msnav{display:flex;flex-direction:column;gap:2px;margin:14px 0 18px}
 .msnavb{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;border:0;color:#b9b4cc;font-size:14.5px;font-weight:700;padding:9px 10px;border-radius:10px;cursor:pointer;font-family:inherit;box-shadow:none}
 .msnavb:hover{background:rgba(255,255,255,.05);color:#fff}
@@ -12071,6 +12076,7 @@ body.gx-extbar #gxBar{display:none!important}
   <aside class="msside">
     <div class="msbrand"><svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg><span>six<em>tunes</em></span></div>
     <form class="mssearch" id="msForm"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg><input id="msQ" type="text" placeholder="songs, artists, albums" autocomplete="off"><button type="submit" aria-label="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button></form>
+    <div class="mstg"><div class="mstg-t"><svg viewBox="0 0 24 24" width="16" height="16" fill="#ffd257" aria-hidden="true"><path d="M3 8.2l4.2 3.6L12 5.4l4.8 6.4L21 8.2l-1.7 9.3H4.7L3 8.2z"/></svg>listen together</div><p>start a music room n listen in sync — whoever joins hears exactly what u hear.</p><button id="tgMusicBtn" type="button">start a room</button><div class="mstg-now" id="tgNow"></div></div>
     <nav class="msnav">
       <button type="button" class="msnavb on" data-nav="home"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>home</button>
       <button type="button" class="msnavb" data-nav="library"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12z"/></svg>your library</button>
@@ -12690,6 +12696,7 @@ syncSide();
 if (INITQ) doSearch(INITQ); else renderHome();
 maybeOnboard();
 })();</script>
+<script>(function(){ var btn=document.getElementById('tgMusicBtn'); if(!btn) return; var now=document.getElementById('tgNow'); function paint(){ try{ var st=window.gxMusic&&window.gxMusic.state?window.gxMusic.state():null; var tr=st&&st.queue?st.queue[st.idx]:null; if(now) now.textContent=tr?('starts with: '+(tr.t||tr.title||'')):'no song loaded — room starts empty'; }catch(e){} } paint(); setInterval(paint, 3000); btn.addEventListener('click', function(){ var body={type:'music'}; try{ var st=window.gxMusic.state(); var tr=st.queue[st.idx]; if(tr&&tr.id) body.track={id:tr.id, title:tr.t||tr.title||'', artist:tr.a||tr.artist||'', img:tr.img||''}; }catch(e){} btn.textContent='starting…'; fetch('/api/party/create', {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(body)}).then(function(r){ return r.json(); }).then(function(j){ if(j.ok&&j.code) location.href='/party/'+j.code; else { btn.textContent='start a room'; alert(j.err||'log in first'); } }).catch(function(){ btn.textContent='start a room'; }); }); })();</script>
 <script>${NOTIF_JS}</script>
 <script>${ENG_JS}</script></body>
 </html>`);
@@ -14679,6 +14686,11 @@ textarea.tin{resize:vertical;line-height:1.5}
 .tmsg{font-size:13px;opacity:.75;min-height:18px}
 .tempty{opacity:.55;padding:26px 0}
 .tsl{color:rgb(var(--acc));font-weight:700;cursor:pointer}.tsl:hover{text-decoration:underline}
+
+.tgfeat{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:linear-gradient(120deg, rgba(139,124,255,.20), rgba(139,124,255,.06));border:1px solid rgba(139,124,255,.45);border-radius:16px;padding:14px 16px;margin:16px 0 4px}
+.tgfeat-t{font-weight:900;font-size:15.5px;color:var(--ink,#eceaf6);display:flex;align-items:center;gap:8px}
+.tgfeat-s{font-size:12.5px;color:rgba(236,234,246,.6);width:100%}
+.tgfeat button{margin-left:auto;font-size:13.5px;font-weight:800;padding:10px 18px;border-radius:999px;border:0;background:#8b7cff;color:#fff;cursor:pointer;font-family:inherit}
 `;
 const TUBE_JS = `
 function $(i){return document.getElementById(i)}
@@ -16007,6 +16019,7 @@ function render() {
   var h = '<div class="wgrid" id="wGrid"><div class="pwrap" id="pWrap"><video id="vp" playsinline poster="' + esc(v.thumb || '') + '" src="/tube-file/' + esc(v.file) + '">' + cap + '</video>' +
   '<div class="vctrl"><button id="bPlay" type="button">▶</button><input type="range" id="seek" min="0" max="1000" value="0"><span id="tLab" style="font-size:12.5px;color:#c9c4e8">0:00 / ' + fmtD(v.dur) + '</span><input type="range" id="vol" min="0" max="100" value="90" style="width:74px"><select id="spd" style="background:#17142a;color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:4px"><option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2">2x</option></select><button id="bPip" type="button">pip</button><button id="bThe" type="button">theater</button><button id="bFull" type="button">full</button></div></div>' +
   '<div class="upn" id="upNext"></div></div>' +
+  '<div class="tgfeat"><div class="tgfeat-t"><svg viewBox="0 0 24 24" width="17" height="17" fill="#ffd257" aria-hidden="true"><path d="M3 8.2l4.2 3.6L12 5.4l4.8 6.4L21 8.2l-1.7 9.3H4.7L3 8.2z"/></svg>watch together</div><button id="tgWatchBtn" type="button">start watch party</button><div class="tgfeat-s">watch this in sync with friends — u start as the leader, hand the crown off whenever</div></div>' +
   '<h1 class="wtitle">' + esc(v.title) + '</h1>' +
   '<div class="wrow">' + ava(v.owner, 40) + '<div style="min-width:0"><a href="/yt/channel/' + encodeURIComponent(v.owner) + '" style="color:var(--ink);text-decoration:none;font-weight:700">' + esc(ch.name) + '</a><div class="tm">' + fmtN(ch.subs) + ' subscribers</div></div>' +
   (v.mine ? '<span class="tm">ur video</span>' : '<button class="tbtn" id="bSub" type="button">' + (V.subbed ? 'subscribed' : 'subscribe') + '</button><button class="tbtn ghost sm" id="bBell" type="button">' + (V.bell ? 'bell on' : 'bell off') + '</button>') +
@@ -16048,6 +16061,7 @@ function wireActions(v, ch) {
   function likeBtns(r) { if (r.ok) { $('bLike').innerHTML = '▲ ' + fmtN(r.likes); $('bDis').innerHTML = '▼ ' + fmtN(r.dislikes); $('bLike').classList.toggle('on', r.my === 'like'); $('bDis').classList.toggle('on', r.my === 'dislike'); } }
   likeBtns({ ok: true, likes: v.likes, dislikes: v.dislikes, my: v.my });
   $('bLike').addEventListener('click', function(){ jpost('/api/tube/like', { id: v.id, kind: v.my === 'like' ? '' : 'like' }).then(function(r){ if (r.ok) v.my = r.my; likeBtns(r); if (!r.ok) alert(r.err || 'log in first'); }); });
+  var tgB = $('tgWatchBtn'); if (tgB) tgB.addEventListener('click', function(){ jpost('/api/party/create', { type: 'watch', media: { kind: 'tube', id: v.id, title: v.title, img: v.thumb || '' } }).then(function(r){ if (r.ok && r.code) location.href = '/party/' + r.code; else alert(r.err || 'log in first'); }); });
   $('bDis').addEventListener('click', function(){ jpost('/api/tube/like', { id: v.id, kind: v.my === 'dislike' ? '' : 'dislike' }).then(function(r){ if (r.ok) v.my = r.my; likeBtns(r); if (!r.ok) alert(r.err || 'log in first'); }); });
   var sb = $('bSub');
   if (sb) { function drawSub() { sb.textContent = V.subbed ? 'subscribed' : 'subscribe'; sb.classList.toggle('on', V.subbed); var bb = $('bBell'); if (bb) bb.textContent = V.bell ? 'bell on' : 'bell off'; }
@@ -20192,7 +20206,7 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/music') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     const mp434 = await musicPage(u.searchParams.get('q') || '');
-    return res.end(mp434.includes('</body>') ? mp434.replace('</body>', partyBtnHtml('music') + '</body>') : mp434 + partyBtnHtml('music'));
+    return res.end(mp434);
   }
   const tfm = /^\/tube-file\/([a-z0-9._-]+)$/i.exec(u.pathname);
   if (tfm) {
@@ -20529,7 +20543,7 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/yt/watch') {
     const vidId = (u.searchParams.get('v') || '').trim();
     if (!vidId) { res.writeHead(302, { location: '/yt' }); return res.end(); }
-    if (vidId.startsWith('t_')) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); const tw434 = tubeWatchPage(vidId); return res.end(tw434.includes('</body>') ? tw434.replace('</body>', partyBtnHtml('tube', vidId) + '</body>') : tw434 + partyBtnHtml('tube', vidId)); }
+    if (vidId.startsWith('t_')) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); const tw434 = tubeWatchPage(vidId); return res.end(tw434); }
     // metadata is decoration now (title, poster, up next) — the embed
     // player does not need it, so a dead metadata backend no longer
     // kills the watch page; it renders with whatever resolved
