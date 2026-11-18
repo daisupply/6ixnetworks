@@ -19,6 +19,7 @@ const http = require('http');
 const { URL } = require('url');
 const zlib = require('zlib');
 const { pipeline, Readable } = require('stream');
+const BYOD = require('./byod.js');
 
 const PORT = process.env.PORT || 8080;
 function cookieDomain(req) { const h = String((req.headers && req.headers.host) || '').split(':')[0]; return (h === 'usareme.site' || h.endsWith('.usareme.site')) ? '; Domain=.usareme.site' : ''; }
@@ -17677,6 +17678,185 @@ async function radioApi(req, res, u) {
   } catch (e) { jres(res, 200, { ok: false, err: 'radio source unreachable rn', tracks: [] }); }
   return true;
 }
+// ---- byod (v485): build your own domain — cloudflare for saas custom hostnames ----
+let BYOD_REG = null;
+function byodRegistry() {
+  if (BYOD_REG) return BYOD_REG;
+  BYOD_REG = BYOD.createRegistry({
+    capPerUser: 5,
+    load: async () => {
+      try {
+        const got = await storeCmd([['GET', 'cfg:byod']], 6000);
+        if (got && got[0]) return JSON.parse(got[0]);
+      } catch (e) {}
+      return null;
+    },
+    save: async (obj) => { try { storeSet('cfg:byod', JSON.stringify(obj)); } catch (e) {} },
+  });
+  return BYOD_REG;
+}
+function byodClient() {
+  return BYOD.createByodClient({ token: process.env.CF_API_TOKEN || '', zoneId: process.env.CF_ZONE_ID || '' });
+}
+function byodReady() { return !!(process.env.CF_API_TOKEN && process.env.CF_ZONE_ID); }
+async function byodApi(req, res, u) {
+  if (!u.pathname.startsWith('/api/byod/')) return false;
+  const J = (o, code) => { res.writeHead(code || 200, { 'content-type': 'application/json' }); return res.end(JSON.stringify(o)); };
+  const me = voterUser(req);
+  if (!me) { J({ ok: false, err: 'login first' }, 401); return true; }
+  if (!byodReady()) { J({ ok: false, err: 'byod not set up yet' }); return true; }
+  const client = byodClient();
+  const reg = byodRegistry();
+  try { await reg.init(); } catch (e) {}
+  try {
+    if (u.pathname === '/api/byod/register' && req.method === 'POST') {
+      const body = await readJsonBody(req);
+      const host = BYOD.normalizeHostname(String((body && body.hostname) || ''));
+      if (!BYOD.validateHostname(host)) { J({ ok: false, err: 'bad hostname' }); return true; }
+      if (reg.get(host)) { J({ ok: false, err: 'hostname already claimed' }); return true; }
+      if (reg.listForUser(me).length >= 5) { J({ ok: false, err: 'byod limit is 5 per user' }); return true; }
+      const created = await client.createHostname(host);
+      if (!created.ok) { J({ ok: false, err: created.err || 'cloudflare said no' }); return true; }
+      const regd = await reg.register(me, host, { cfId: created.id, status: created.status, sslStatus: created.sslStatus, records: created.records });
+      if (!regd.ok) {
+        try { await client.deleteHostname(created.id); } catch (e) {}
+        J({ ok: false, err: regd.err || 'could not claim hostname' }); return true;
+      }
+      J({ ok: true, entry: regd.entry });
+      return true;
+    }
+    if (u.pathname === '/api/byod/mine' && req.method === 'GET') {
+      J({ ok: true, hostnames: reg.listForUser(me) });
+      return true;
+    }
+    if (u.pathname === '/api/byod/status' && req.method === 'GET') {
+      const host = BYOD.normalizeHostname(String(u.searchParams.get('hostname') || ''));
+      const entry = reg.get(host);
+      if (!entry) { J({ ok: false, err: 'not found' }); return true; }
+      if (entry.user !== me && me !== 'deion') { J({ ok: false, err: 'not yours' }); return true; }
+      if (!entry.cfId) { J({ ok: true, entry }); return true; }
+      const fresh = await client.getHostname(entry.cfId);
+      if (!fresh.ok) { J({ ok: true, entry, warn: fresh.err || 'could not refresh' }); return true; }
+      const upd = await reg.update(host, { status: fresh.status, sslStatus: fresh.sslStatus, records: fresh.records });
+      J({ ok: true, entry: upd.ok ? upd.entry : entry });
+      return true;
+    }
+    if (u.pathname === '/api/byod/remove' && req.method === 'POST') {
+      const body = await readJsonBody(req);
+      const host = BYOD.normalizeHostname(String((body && body.hostname) || ''));
+      const entry = reg.get(host);
+      if (!entry) { J({ ok: false, err: 'not found' }); return true; }
+      if (entry.user !== me && me !== 'deion') { J({ ok: false, err: 'not yours' }); return true; }
+      if (entry.cfId) {
+        const del = await client.deleteHostname(entry.cfId);
+        if (!del.ok) { J({ ok: false, err: del.err || 'cloudflare delete failed' }); return true; }
+      }
+      const un = await reg.unregister(me, host);
+      if (!un.ok) { J({ ok: false, err: un.err || 'could not remove' }); return true; }
+      J({ ok: true, hostname: host });
+      return true;
+    }
+  } catch (e) {
+    J({ ok: false, err: 'byod broke' });
+    return true;
+  }
+  return false;
+}
+function byodPage(req) {
+  const me = voterUser(req);
+  const ready = byodReady();
+  let main = '';
+  if (!me) {
+    main = '<p style="color:#9a93b8">log in to claim a domain that points at 6ix.</p>';
+  } else if (!ready) {
+    main = '<p style="color:#9a93b8">byod is not set up yet.</p>';
+  } else {
+    main = '<div style="display:flex;gap:8px;margin:14px 0">' +
+      '<input id="byodHost" type="text" inputmode="url" autocomplete="off" placeholder="play.example.com" style="flex:1;min-width:0;font-size:16px;padding:11px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:inherit">' +
+      '<button id="byodClaim" type="button" style="padding:11px 16px;border-radius:12px;border:0;font-weight:800;cursor:pointer">claim</button></div>' +
+      '<div id="byodMsg" style="font-size:14px;color:#9a93b8;min-height:20px"></div>' +
+      '<div id="byodList"></div>';
+  }
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>byod — 6ix</title>
+${FONT_LINKS}
+<style>${GALAXY_CSS}</style>
+</head>
+<body>
+<main style="max-width:640px;margin:0 auto;padding:26px 16px 130px">
+  <h1 style="font-size:24px;margin:6px 0 2px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z"/></svg> build your own domain</h1>
+  <p style="color:#9a93b8;margin:0 0 6px">point a domain you own at 6ix. you add the dns records, cloudflare handles the rest.</p>
+  ${main}
+</main>
+${SIDEBAR_HTML}
+<script>
+var BYOD_ON = ${me && ready ? 'true' : 'false'};
+function byodMsg(t){ var el=document.getElementById('byodMsg'); if(el) el.textContent=t||''; }
+function byodRecRow(r){
+  var row=document.createElement('div');
+  row.style.cssText='display:flex;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:13px;word-break:break-all';
+  var txt=document.createElement('span'); txt.style.flex='1'; txt.textContent=r.type+'  '+r.name+'  ->  '+r.value;
+  var btn=document.createElement('button'); btn.type='button'; btn.textContent='copy';
+  btn.onclick=function(){ if(navigator.clipboard) navigator.clipboard.writeText(r.value); btn.textContent='copied'; setTimeout(function(){btn.textContent='copy';},1200); };
+  row.appendChild(txt); row.appendChild(btn); return row;
+}
+function byodRender(list){
+  var wrap=document.getElementById('byodList'); if(!wrap) return; wrap.innerHTML='';
+  if(!list.length){ var p=document.createElement('p'); p.style.color='#9a93b8'; p.textContent='no domains yet.'; wrap.appendChild(p); return; }
+  list.forEach(function(e){
+    var card=document.createElement('div');
+    card.style.cssText='background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:12px 14px;margin-top:12px';
+    var head=document.createElement('div'); head.style.cssText='display:flex;gap:8px;align-items:center';
+    var name=document.createElement('b'); name.style.flex='1'; name.textContent=e.hostname;
+    var chip=document.createElement('span'); chip.textContent=(e.status==='active'&&e.sslStatus==='active')?'active':'pending';
+    var ref=document.createElement('button'); ref.type='button'; ref.textContent='refresh';
+    ref.onclick=function(){ byodStatus(e.hostname); };
+    var del=document.createElement('button'); del.type='button'; del.textContent='remove';
+    del.onclick=function(){ byodRemove(e.hostname); };
+    head.appendChild(name); head.appendChild(chip); head.appendChild(ref); head.appendChild(del);
+    card.appendChild(head);
+    if(chip.textContent!=='active'){
+      card.appendChild(byodRecRow({type:'CNAME', name:e.hostname, value:'byod.usareme.site'}));
+      (e.records||[]).forEach(function(r){ card.appendChild(byodRecRow(r)); });
+    }
+    wrap.appendChild(card);
+  });
+}
+function byodLoad(){
+  fetch('/api/byod/mine').then(function(r){return r.json();}).then(function(d){
+    if(d&&d.ok) byodRender(d.hostnames||[]); else byodMsg((d&&d.err)||'could not load');
+  }).catch(function(){ byodMsg('network error'); });
+}
+function byodStatus(h){
+  fetch('/api/byod/status?hostname='+encodeURIComponent(h)).then(function(r){return r.json();}).then(function(d){
+    if(d&&d.ok) byodLoad(); else byodMsg((d&&d.err)||'refresh failed');
+  }).catch(function(){ byodMsg('network error'); });
+}
+function byodRemove(h){
+  fetch('/api/byod/remove',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({hostname:h})}).then(function(r){return r.json();}).then(function(d){
+    if(d&&d.ok){ byodMsg('removed '+h); byodLoad(); } else byodMsg((d&&d.err)||'remove failed');
+  }).catch(function(){ byodMsg('network error'); });
+}
+if(BYOD_ON){
+  document.getElementById('byodClaim').onclick=function(){
+    var h=document.getElementById('byodHost').value;
+    byodMsg('claiming...');
+    fetch('/api/byod/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({hostname:h})}).then(function(r){return r.json();}).then(function(d){
+      if(d&&d.ok){ byodMsg('claimed — add the dns records below at your provider'); byodLoad(); }
+      else byodMsg((d&&d.err)||'claim failed');
+    }).catch(function(){ byodMsg('network error'); });
+  };
+  byodLoad();
+}
+</script>
+</body>
+</html>`;
+}
+
 function statusPage() {
   const up = Math.floor(process.uptime());
   const uh = Math.floor(up / 3600), um = Math.floor((up % 3600) / 60), us = up % 60;
@@ -23058,6 +23238,7 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('no game');
   }
   if (u.pathname === '/status') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(statusPage()); }
+  if (u.pathname === '/byod') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(byodPage(req)); }
   if (u.pathname === '/tiktok') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(tikPage()); }
   if (u.pathname === '/tiktok/watch') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(tikWatchPage()); }
   if (u.pathname === '/tk/file') {
@@ -23167,6 +23348,7 @@ const server = http.createServer(async (req, res) => {
   if (await dmRepApi(req, res, u)) return;
   if (await socialApi(req, res, u)) return;
   if (await radioApi(req, res, u)) return;
+  if (await byodApi(req, res, u)) return;
   if (u.pathname.startsWith('/api/tube/')) {
     const me = voterUser(req);
     const jout = (o, code) => { res.writeHead(code || 200, { 'content-type': 'application/json' }); return res.end(JSON.stringify(o)); };
