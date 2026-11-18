@@ -18010,6 +18010,38 @@ function pfWanted(){
   if(cur-1>=0){var idp=items[cur-1].id;if(!PF.map[idp]&&(!PF.skip[idp]||Date.now()-PF.skip[idp]>60000))return cur-1}
   return -1;
 }
+function pfFetch(tid,ctl){
+  var url='/tk/file?id='+tid;
+  function opt(extra){var o={};if(ctl)o.signal=ctl.signal;if(extra)for(var k in extra)o[k]=extra[k];return o}
+  return fetch(url,opt({headers:{'Range':'bytes=0-0'}})).then(function(r){
+    if(r.status===200)return r.blob();
+    var cr=r.headers.get('content-range')||'';
+    var m=/\\/(\\d+)\\s*$/.exec(cr);
+    var total=m?parseInt(m[1],10):0;
+    if(!r.ok||!total||total<1500000){
+      return fetch(url,opt()).then(function(r2){if(!r2.ok)throw 0;return r2.blob()});
+    }
+    var SEG=524288,N=Math.ceil(total/SEG),parts=new Array(N),done=0,failed=false,next=0,PAR=Math.min(4,N);
+    return new Promise(function(res,rej){
+      function worker(){
+        if(failed)return;
+        if(next>=N)return;
+        var i=next++;
+        var a=i*SEG,z=Math.min(total-1,(i+1)*SEG-1);
+        fetch(url,opt({headers:{'Range':'bytes='+a+'-'+z}})).then(function(rr){
+          if(rr.status!==206)throw 0;
+          return rr.arrayBuffer();
+        }).then(function(ab){
+          if(failed)return;
+          parts[i]=ab;done++;
+          if(done>=N)res(new Blob(parts));
+          else worker();
+        }).catch(function(e){if(!failed){failed=true;rej(e)}});
+      }
+      for(var w=0;w<PAR;w++)worker();
+    });
+  });
+}
 function pfRun(){
   if(document.hidden||cur<0)return;
   if(PF.busy){
@@ -18024,9 +18056,9 @@ function pfRun(){
   var ctl=('AbortController' in window)?new AbortController():null;
   PF.ctl=ctl;
   var opt=ctl?{signal:ctl.signal}:undefined;
-  fetch('/tk/file?id='+tid,opt).then(function(r){if(!r.ok)throw 0;return r.blob()}).then(function(b){
+  pfFetch(tid,ctl).then(function(b){
     PF.busy=false;PF.idx=-1;PF.ctl=null;
-    if(PF.bytes+b.size<=PFBYTES){PF.map[tid]={u:URL.createObjectURL(b),b:b.size}}
+    if(PF.bytes+b.size<=PFBYTES){PF.map[tid]={u:URL.createObjectURL(b),b:b.size};if(target===cur&&PF.map[tid]){var vv=vidOf(cur);if(vv&&vv.getAttribute('src')&&vv.getAttribute('src').indexOf('blob:')!==0){var ct=vv.currentTime||0,pl=!vv.paused;vv.src=PF.map[tid].u;try{vv.currentTime=ct}catch(e){}if(pl){var pp=vv.play();if(pp&&pp.catch)pp.catch(function(){})}}}}
     else PF.skip[tid]=Date.now();
     setTimeout(pfRun,150);
   }).catch(function(){
