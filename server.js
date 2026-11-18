@@ -11417,7 +11417,54 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style>
   });
 })();
 </script>
-<div class="starfield" aria-hidden="true"><i class="tw tv" style="left:82%;top:15%;width:2px;height:2px;animation-duration:3.4s;animation-delay:1.0s"></i><i class="tw" style="left:18%;top:14%;width:3px;height:3px;animation-duration:3.4s;animation-delay:2.2s"></i><i class="tw" style="left:76%;top:55%;width:2px;height:2px;animation-duration:2.0s;animation-delay:0.9s"></i><i class="tw" style="left:65%;top:78%;width:2px;height:2px;animation-duration:3.0s;animation-delay:2.9s"></i><i class="tw tv" style="left:90%;top:70%;width:2px;height:2px;animation-duration:2.3s;animation-delay:2.4s"></i><i class="tw" style="left:1%;top:21%;width:3px;height:3px;animation-duration:2.7s;animation-delay:1.1s"></i><i class="tw" style="left:28%;top:44%;width:2px;height:2px;animation-duration:2.1s;animation-delay:0.4s"></i><i class="tw" style="left:45%;top:78%;width:2px;height:2px;animation-duration:3.5s;animation-delay:2.9s"></i><i class="tw tv" style="left:69%;top:16%;width:2px;height:2px;animation-duration:2.1s;animation-delay:1.2s"></i><i class="tw" style="left:81%;top:80%;width:2px;height:2px;animation-duration:3.1s;animation-delay:2.8s"></i><i class="tw" style="left:6%;top:85%;width:2px;height:2px;animation-duration:3.4s;animation-delay:3.9s"></i><i class="tw" style="left:30%;top:13%;width:2px;height:2px;animation-duration:2.5s;animation-delay:2.5s"></i><i class="tw tv" style="left:47%;top:21%;width:2px;height:2px;animation-duration:2.6s;animation-delay:2.7s"></i><i class="tw" style="left:90%;top:88%;width:3px;height:3px;animation-duration:2.0s;animation-delay:2.5s"></i><i class="tw" style="left:69%;top:32%;width:2px;height:2px;animation-duration:2.8s;animation-delay:1.1s"></i><i class="tw" style="left:82%;top:89%;width:3px;height:3px;animation-duration:2.3s;animation-delay:1.3s"></i></div><a class="dcord" href="https://discord.gg/bY5Dhk6dQZ" target="_blank" rel="noopener"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.32 4.37a19.8 19.8 0 0 0-4.93-1.51 13.8 13.8 0 0 0-.64 1.28 18.3 18.3 0 0 0-5.5 0 12.6 12.6 0 0 0-.64-1.28h-.05A19.7 19.7 0 0 0 3.64 4.37C.53 9.05-.32 13.58.1 18.06a19.9 19.9 0 0 0 6.04 3.03c.24-.33.47-.68.66-1.03a12.9 12.9 0 0 1-1.04-.5c.09-.07.18-.14.26-.21a14.2 14.2 0 0 0 12.06 0c.08.07.17.14.26.21-.33.2-.68.37-1.04.5.19.35.42.7.66 1.03a19.8 19.8 0 0 0 6.05-3.03c.5-5.18-.84-9.68-3.69-13.69ZM8.02 15.33c-1.18 0-2.16-1.08-2.16-2.42s.95-2.42 2.16-2.42 2.18 1.09 2.16 2.42c0 1.34-.95 2.42-2.16 2.42Zm7.97 0c-1.18 0-2.15-1.08-2.15-2.42s.95-2.42 2.15-2.42 2.18 1.09 2.16 2.42c0 1.34-.95 2.42-2.16 2.42Z"/></svg><span><b>join the discord</b></span></a>\n<div id="socWrap" style="width:100%;max-width:1120px;margin:0 auto 18px;display:none;gap:14px;flex-wrap:wrap"><div style="flex:1 1 320px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:14px 16px"><div style="font-weight:800;letter-spacing:.06em;font-size:12px;color:#bdb4e4;margin-bottom:8px">HAPPENING ON 6IX</div><div id="socFeed" style="font-size:13.5px;line-height:1.5;color:#d8d2f0">loading…</div></div><div id="socMe" style="flex:1 1 320px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:14px 16px;display:none"><div style="font-weight:800;letter-spacing:.06em;font-size:12px;color:#bdb4e4;margin-bottom:8px">UR STUFF</div><div id="socMeBody" style="font-size:13.5px;line-height:1.55;color:#d8d2f0"></div></div></div>
+<div class="starfield" aria-hidden="true"><i class="tw tv" style="left:82%;top:15%;width:2px;height:2px;animation-duration:3.4s;animation-delay:1.0s"></i><i class="tw" style="left:18%;top:14%;width:3px;height:3px;animation-duration:3.4s;animation-delay:2.2s"></i><i class="tw" style="left:76%;top:55%;width:2px;height:2px;animation-duration:2.0s;animation-delay:0.9s"></i><i class="tw" style="left:65%;top:78%;width:2px;height:2px;animation-duration:3.0s;animation-delay:2.9s"></i><i class="tw tv" style="left:90%;top:70%;width:2px;height:2px;animation-duration:2.3s;animation-delay:2.4s"></i><i class="tw" style="left:1%;top:21%;width:3px;height:3px;animation-duration:2.7s;animation-delay:1.1s"></i><i class="tw" style="left:28%;top:44%;width:2px;height:2px;animation-duration:2.1s;animation-delay:0.4s"></i><i class="tw" style="left:45%;top:78%;width:2px;height:2px;animation-duration:3.5s;animation-delay:2.9s"></i><i class="tw tv" style="left:69%;top:16%;width:2px;height:2px;animation-duration:2.1s;animation-delay:1.2s"></i><i class="tw" style="left:81%;top:80%;width:2px;height:2px;animation-duration:3.1s;animation-delay:2.8s"></i><i class="tw" style="left:6%;top:85%;width:2px;height:2px;animation-duration:3.4s;animation-delay:3.9s"></i><i class="tw" style="left:30%;top:13%;width:2px;height:2px;animation-duration:2.5s;animation-delay:2.5s"></i><i class="tw tv" style="left:47%;top:21%;width:2px;height:2px;animation-duration:2.6s;animation-delay:2.7s"></i><i class="tw" style="left:90%;top:88%;width:3px;height:3px;animation-duration:2.0s;animation-delay:2.5s"></i><i class="tw" style="left:69%;top:32%;width:2px;height:2px;animation-duration:2.8s;animation-delay:1.1s"></i><i class="tw" style="left:82%;top:89%;width:3px;height:3px;animation-duration:2.3s;animation-delay:1.3s"></i></div><a class="dcord" href="https://discord.gg/bY5Dhk6dQZ" target="_blank" rel="noopener"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.32 4.37a19.8 19.8 0 0 0-4.93-1.51 13.8 13.8 0 0 0-.64 1.28 18.3 18.3 0 0 0-5.5 0 12.6 12.6 0 0 0-.64-1.28h-.05A19.7 19.7 0 0 0 3.64 4.37C.53 9.05-.32 13.58.1 18.06a19.9 19.9 0 0 0 6.04 3.03c.24-.33.47-.68.66-1.03a12.9 12.9 0 0 1-1.04-.5c.09-.07.18-.14.26-.21a14.2 14.2 0 0 0 12.06 0c.08.07.17.14.26.21-.33.2-.68.37-1.04.5.19.35.42.7.66 1.03a19.8 19.8 0 0 0 6.05-3.03c.5-5.18-.84-9.68-3.69-13.69ZM8.02 15.33c-1.18 0-2.16-1.08-2.16-2.42s.95-2.42 2.16-2.42 2.18 1.09 2.16 2.42c0 1.34-.95 2.42-2.16 2.42Zm7.97 0c-1.18 0-2.15-1.08-2.15-2.42s.95-2.42 2.15-2.42 2.18 1.09 2.16 2.42c0 1.34-.95 2.42-2.16 2.42Z"/></svg><span><b>join the discord</b></span></a>\n<div id="socWrap" style="width:100%;max-width:1120px;margin:0 auto 18px;display:none;gap:14px;flex-wrap:wrap"><div style="flex:1 1 320px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:14px 16px"><div style="font-weight:800;letter-spacing:.06em;font-size:12px;color:#bdb4e4;margin-bottom:8px">HAPPENING ON 6IX</div><div id="socFeed" style="font-size:13.5px;line-height:1.5;color:#d8d2f0">loading…</div></div><div id="socMe" style="flex:1 1 320px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:14px 16px;display:none"><div style="font-weight:800;letter-spacing:.06em;font-size:12px;color:#bdb4e4;margin-bottom:8px">UR STUFF</div><div id="socMeBody" style="font-size:13.5px;line-height:1.55;color:#d8d2f0"></div></div><style>#wheelBtn:hover{transform:translate(-50%,-50%)}#wheelBtn:disabled{cursor:default}</style><div id="wheelCard" style="flex:1 1 320px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:14px 16px;display:none"><div style="font-weight:800;letter-spacing:.06em;font-size:12px;color:#bdb4e4;margin-bottom:8px">SPIN THE WHEEL</div><div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><div style="position:relative;width:196px;height:196px;flex:none;margin:0 auto"><canvas id="wheelCv" width="392" height="392" style="width:196px;height:196px;display:block"></canvas><div style="position:absolute;top:-4px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:14px solid #ffd257"></div><button id="wheelBtn" type="button" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:66px;height:66px;border-radius:50%;border:2px solid rgba(255,210,87,.7);background:#17122b;color:#ffd257;font-weight:900;font-size:13px;cursor:pointer;font-family:inherit;line-height:1.15">SPIN<br><span style="font-size:10px;color:#bdb4e4;font-weight:700">25 coins</span></button></div><div style="flex:1;min-width:170px;font-size:13.5px;line-height:1.55;color:#d8d2f0"><div id="wheelMsg">most spins drop a few coins. one gold sliver on the whole wheel is a name fx - 1 in 250.</div><div id="wheelBal" style="margin-top:6px"></div><div style="margin-top:6px;color:#8a81ad;font-size:12px">prizes: 5 / 10 / 15 / 25 / 40 / 100 coins, or the gold fx</div></div></div></div></div>
+<script>
+(function(){
+  var cv=document.getElementById('wheelCv'); if(!cv)return;
+  var btn=document.getElementById('wheelBtn'), msg=document.getElementById('wheelMsg'), balEl=document.getElementById('wheelBal'), card=document.getElementById('wheelCard');
+  var TBL=null, rot=0, spinning=false;
+  var COL={'5':'#3b2d5c','10':'#463672','15':'#513f88','25':'#5d49a0','40':'#6d55b8','100':'#8b6fe8'};
+  function segs(){ var out=[],acc=0; TBL.forEach(function(t){ out.push({t:t,from:acc,to:acc+t.w}); acc+=t.w; }); return out; }
+  function draw(r){
+    var x=cv.getContext('2d'); var S=392,C=S/2,R=C-6; x.clearRect(0,0,S,S);
+    var sg=segs(), tot=250, twoPi=Math.PI*2;
+    sg.forEach(function(s){
+      var a0=(s.from/tot)*twoPi + r, a1=(s.to/tot)*twoPi + r;
+      x.beginPath(); x.moveTo(C,C); x.arc(C,C,R,a0,a1); x.closePath();
+      x.fillStyle = s.t.kind==='fx' ? '#f5c542' : COL[String(s.t.amt)]; x.fill();
+      x.strokeStyle='rgba(0,0,0,.35)'; x.lineWidth=2; x.stroke();
+    });
+    x.beginPath(); x.arc(C,C,R,0,twoPi); x.strokeStyle='rgba(255,210,87,.5)'; x.lineWidth=3; x.stroke();
+  }
+  function setBal(b){ balEl.innerHTML = (b==null||b===undefined) ? '' : 'ur balance: <b style="color:#ffd257">'+Number(b).toLocaleString('en-US')+'</b> coins'; }
+  fetch('/api/wheel').then(function(r){return r.json()}).then(function(d){
+    if(!d||!d.ok)return;
+    TBL=d.table; card.style.display='block'; draw(0);
+    if(!d.me){ msg.textContent='login to spin'; btn.disabled=true; btn.style.opacity='.55'; return; }
+    setBal(d.bal);
+  }).catch(function(){});
+  btn.addEventListener('click', function(){
+    if(spinning||!TBL)return;
+    spinning=true; btn.disabled=true; msg.textContent='spinning...';
+    fetch('/api/wheel/spin',{method:'POST',headers:{'content-type':'application/json'},body:'{}'}).then(function(r){return r.json()}).then(function(d){
+      if(!d||!d.ok){ msg.textContent=(d&&d.err)||'could not spin'; spinning=false; btn.disabled=false; if(d&&d.bal!==null&&d.bal!==undefined)setBal(d.bal); return; }
+      setBal(d.bal);
+      var sg=segs(), s=null, i;
+      for(i=0;i<sg.length;i++){ var t=sg[i].t; if(d.prize.kind==='fx'&&t.kind==='fx'){s=sg[i];break;} if(d.prize.kind==='coins'&&t.kind==='coins'&&t.amt===d.prize.amt){s=sg[i];break;} }
+      if(!s)s=sg[0];
+      var twoPi=Math.PI*2, unit=twoPi/250;
+      var mid=(s.from+Math.random()*(s.to-s.from))*unit;
+      var target=-Math.PI/2 - mid;
+      var base=rot-(rot%twoPi);
+      var F=base+twoPi*6+(((target%twoPi)+twoPi)%twoPi);
+      if(F<=rot+twoPi*5)F+=twoPi;
+      var start=rot, t0=null, DUR=5200;
+      function fr(ts){ if(!t0)t0=ts; var p=Math.min(1,(ts-t0)/DUR); var e=1-Math.pow(1-p,5); rot=start+(F-start)*e; draw(rot); if(p<1)requestAnimationFrame(fr); else { spinning=false; btn.disabled=false; if(d.prize.kind==='fx'){ msg.innerHTML='GOLD SLIVER. u won the <b>'+d.prize.name+'</b> - owned + equipped, check ur name in chat'; } else { msg.innerHTML='u won <b style="color:#ffd257">'+d.prize.amt+' coins</b>'; } } }
+      requestAnimationFrame(fr);
+    }).catch(function(){ msg.textContent='could not spin'; spinning=false; btn.disabled=false; });
+  });
+})();
+</script>
 <script>
 (function(){
   function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
@@ -16172,6 +16219,58 @@ let dmRepLoaded = false;
 let dmRepSeq = 1;
 async function dmRepLoad() { if (dmRepLoaded) return; dmRepLoaded = true; try { const got = await storeCmd([['GET', 'cfg:dmrep']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o && Array.isArray(o.reports)) { DMREPORTS.length = 0; for (const r of o.reports) DMREPORTS.push(r); } } } catch (e) {} }
 function dmRepSave() { try { storeSet('cfg:dmrep', JSON.stringify({ reports: DMREPORTS.slice(-40) })); } catch (e) {} }
+const WHEEL_TABLE = [
+  { kind: 'coins', amt: 5, w: 70 },
+  { kind: 'coins', amt: 10, w: 70 },
+  { kind: 'coins', amt: 15, w: 50 },
+  { kind: 'coins', amt: 25, w: 35 },
+  { kind: 'coins', amt: 40, w: 15 },
+  { kind: 'coins', amt: 100, w: 9 },
+  { kind: 'fx', w: 1 },
+];
+const WHEEL_COST = 25;
+const WHEEL_CD = new Map();
+async function wheelApi(req, res, u) {
+  if (u.pathname === '/api/wheel' && req.method === 'GET') {
+    const me = voterUser(req);
+    let bal = null;
+    if (me) { await coinsLoad(); bal = COINS.bal[me.toLowerCase()] || 0; }
+    jres(res, 200, { ok: true, me: !!me, bal, cost: WHEEL_COST, table: WHEEL_TABLE });
+    return true;
+  }
+  if (u.pathname !== '/api/wheel/spin' || req.method !== 'POST') return false;
+  const me = voterUser(req);
+  if (!me) { jres(res, 401, { ok: false, err: 'login first' }); return true; }
+  const k = me.toLowerCase();
+  const now = Date.now();
+  if ((WHEEL_CD.get(k) || 0) > now) { jres(res, 429, { ok: false, err: 'one sec twin' }); return true; }
+  await coinsLoad();
+  if ((COINS.bal[k] || 0) < WHEEL_COST) { jres(res, 200, { ok: false, err: 'need 25 coins - win trivia in chat (+25 a question)', bal: COINS.bal[k] || 0 }); return true; }
+  WHEEL_CD.set(k, now + 2000);
+  COINS.bal[k] -= WHEEL_COST;
+  let roll = Math.floor(Math.random() * 250);
+  let prize = null;
+  for (const t of WHEEL_TABLE) { if (roll < t.w) { prize = t; break; } roll -= t.w; }
+  if (!prize) prize = WHEEL_TABLE[0];
+  if (prize.kind === 'fx') {
+    const own = COINS.own[k] || (COINS.own[k] = []);
+    const unowned = Object.keys(FXSHOP).filter((f) => f !== 'none' && !own.includes(f));
+    if (unowned.length) {
+      const fx = unowned[Math.floor(Math.random() * unowned.length)];
+      own.push(fx); COINS.fx[k] = fx; coinsSave();
+      try { feedPush('wheel', k, 'hit the gold sliver on the wheel and won the ' + FXSHOP[fx].n); } catch (e) {}
+      jres(res, 200, { ok: true, prize: { kind: 'fx', fx, name: FXSHOP[fx].n }, bal: COINS.bal[k] || 0, cost: WHEEL_COST });
+      return true;
+    }
+    COINS.bal[k] += 500; coinsSave();
+    jres(res, 200, { ok: true, prize: { kind: 'coins', amt: 500 }, bal: COINS.bal[k] || 0, cost: WHEEL_COST });
+    return true;
+  }
+  COINS.bal[k] = (COINS.bal[k] || 0) + prize.amt;
+  coinsSave();
+  jres(res, 200, { ok: true, prize: { kind: 'coins', amt: prize.amt }, bal: COINS.bal[k], cost: WHEEL_COST });
+  return true;
+}
 async function dmRepApi(req, res, u) {
   if (u.pathname !== '/api/dm/report' || req.method !== 'POST') return false;
   const me = voterUser(req);
@@ -22372,6 +22471,7 @@ const server = http.createServer(async (req, res) => {
   if (await fypApi(req, res, u)) return;
   if (await spApi(req, res, u)) return;
   if (await scoresApi(req, res, u)) return;
+  if (await wheelApi(req, res, u)) return;
   if (await dmRepApi(req, res, u)) return;
   if (await socialApi(req, res, u)) return;
   if (await radioApi(req, res, u)) return;
