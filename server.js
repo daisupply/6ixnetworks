@@ -4434,7 +4434,7 @@ body[data-sky] .app6 .cr-item.on,body[data-sky] .app6 .cr-item.on:hover,body[dat
 <div class="cr-sec">rooms</div>
 <button class="chip room on cr-item" data-room="lobby" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> lobby</button>
 <button class="chip room cr-item" data-room="games" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4"/><path d="M8 10v4"/><path d="M15 13h.01"/><path d="M18 11h.01"/></svg> games</button>
-<button class="chip room cr-item" data-room="random" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg> random</button>
+<button class="chip room cr-item" data-room="random" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg> random</button><button class="chip room cr-item" data-room="trivia" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg> trivia</button>
 <button class="chip cr-item" id="mkpriv" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> new private room</button>
 <div class="cr-join"><input id="joincode" type="text" maxlength="12" placeholder="room code"><button class="chip" id="joinpriv" type="button">join</button></div>
 
@@ -4491,7 +4491,7 @@ body[data-sky] .app6 .cr-item.on,body[data-sky] .app6 .cr-item.on:hover,body[dat
 </div>
 <div id="msgs"></div>
 <style>.admrow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);color:#f4f4f5;border-radius:13px;padding:11px 13px;font-size:13.5px;font-weight:650;cursor:pointer;font-family:inherit;text-decoration:none;box-sizing:border-box}.admrow:hover{background:rgba(240,171,252,.1);border-color:rgba(240,171,252,.35)}.admrow svg{color:#f0abfc;flex:none}.admrow small{margin-left:auto;color:#8e8aa0;font-weight:600;font-size:11.5px;text-align:right}</style><div id="admbar" hidden style="display:none;gap:9px;align-items:center;padding:8px 12px;border-top:1px solid rgba(240,171,252,.22);background:linear-gradient(90deg,rgba(240,171,252,.07),rgba(139,124,255,.04))"><button type="button" id="admToggle" style="background:linear-gradient(135deg,#f0abfc,#8b7cf0);border:none;color:#1d0f2e;border-radius:999px;padding:7px 15px;font-size:12.5px;font-weight:900;letter-spacing:.03em;cursor:pointer;font-family:inherit;box-shadow:0 3px 14px rgba(240,171,252,.35)">✦ ADMIN · CONTROLS</button><span id="admMsg" style="font-size:12px;color:#8e8aa0"></span><a href="/admin" style="margin-left:auto;font-size:12.5px;font-weight:700;color:#cfc6f5;text-decoration:none;white-space:nowrap">full panel →</a></div><div id="admsheet" style="display:none;padding:13px 12px 14px;border-top:1px solid rgba(240,171,252,.16);background:linear-gradient(180deg,rgba(240,171,252,.05),rgba(139,124,255,.02))"><div style="font-size:10.5px;font-weight:800;letter-spacing:.08em;color:#bdb4e4;margin-bottom:7px">UR NAME RN — HOW EVERYONE SEES U</div><div id="admPreview" style="display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.09);border-radius:13px;padding:11px 14px;margin-bottom:12px;font-size:15px;flex-wrap:wrap"><span style="color:#8e8aa0;font-size:12.5px">loading ur style…</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button type="button" class="admrow" id="admClear"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>clear room<small>wipe msgs</small></button><button type="button" class="admrow" id="admMute"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="2" x2="22" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12"/><line x1="12" y1="19" x2="12" y2="22"/></svg>mute user<small>timed</small></button><button type="button" class="admrow" id="admUnmute"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>unmute<small>undo</small></button><button type="button" class="admrow" id="admKick"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>kick user<small>boot em</small></button><button type="button" class="admrow" id="admPurge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>purge user<small>their msgs</small></button><a class="admrow" href="/admin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>full panel<small>everything</small></a></div></div>
-<div id="songChip" style="display:none;margin:0 12px 8px;padding:10px 14px;border-radius:13px;border:1px solid rgba(255,210,87,.5);background:linear-gradient(135deg,rgba(255,210,87,.14),rgba(255,160,60,.05));color:#ffd257;font-weight:800;font-size:13.5px;cursor:pointer;align-items:center;gap:8px">♪ song round live - tap to listen, name it in chat for 40 coins</div><audio id="songAu" preload="none"></audio><script>(function(){var chip=document.getElementById('songChip'),au=document.getElementById('songAu'),cur='',playing=false;function poll(){fetch('/api/song').then(function(r){return r.json()}).then(function(d){if(d&&d.ok&&d.active&&d.id){if(d.id!==cur){cur=d.id;chip.style.display='flex';playing=false;chip.textContent='♪ song round live - tap to listen, name it in chat for 40 coins';}}else{cur='';chip.style.display='none';if(playing){au.pause();playing=false;}}}).catch(function(){});}setInterval(poll,5000);poll();chip.addEventListener('click',function(){if(!cur)return;if(playing){au.pause();playing=false;chip.textContent='♪ paused - tap to listen again';return;}au.src='/yt/stream?v='+encodeURIComponent(cur)+'&kind=a';au.play().then(function(){playing=true;chip.textContent='♪ playing - name the song or artist in chat';}).catch(function(){chip.textContent='♪ tap again - the browser blocked autoplay';});});au.addEventListener('loadedmetadata',function(){try{if(au.duration>60)au.currentTime=25;}catch(e){}});})();</script><form class="bar" id="sendbar"><button type="button" id="attach" title="send an image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="vertical-align:-2px"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button><input type="text" id="text" placeholder="message…" autocomplete="off" maxlength="500"><button type="submit" id="sendbtn" aria-label="send"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button></form>
+<div id="songChip" style="display:none;margin:0 12px 8px;padding:10px 14px;border-radius:13px;border:1px solid rgba(255,210,87,.5);background:linear-gradient(135deg,rgba(255,210,87,.14),rgba(255,160,60,.05));color:#ffd257;font-weight:800;font-size:13.5px;cursor:pointer;align-items:center;gap:8px">♪ song round live - tap to listen, name it in chat for 40 coins</div><audio id="songAu" preload="none"></audio><script>(function(){var chip=document.getElementById('songChip'),au=document.getElementById('songAu'),cur='',playing=false;function poll(){fetch('/api/song').then(function(r){return r.json()}).then(function(d){if(d&&d.ok&&d.active&&d.id&&window.room==='trivia'){if(d.id!==cur){cur=d.id;chip.style.display='flex';playing=false;chip.textContent='♪ song round live - tap to listen, name it in chat for 40 coins';}}else{cur='';chip.style.display='none';if(playing){au.pause();playing=false;}}}).catch(function(){});}setInterval(poll,5000);poll();chip.addEventListener('click',function(){if(!cur)return;if(playing){au.pause();playing=false;chip.textContent='♪ paused - tap to listen again';return;}au.src='/yt/stream?v='+encodeURIComponent(cur)+'&kind=a';au.play().then(function(){playing=true;chip.textContent='♪ playing - name the song or artist in chat';}).catch(function(){chip.textContent='♪ tap again - the browser blocked autoplay';});});au.addEventListener('loadedmetadata',function(){try{if(au.duration>60)au.currentTime=25;}catch(e){}});})();</script><form class="bar" id="sendbar"><button type="button" id="attach" title="send an image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="vertical-align:-2px"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button><input type="text" id="text" placeholder="message…" autocomplete="off" maxlength="500"><button type="submit" id="sendbtn" aria-label="send"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button></form>
 <input type="file" id="chatfile" accept="image/*" style="display:none">
 
 </div>
@@ -16801,18 +16801,18 @@ function songTick() {
   try {
     const now = Date.now();
     if (SONG.id && now > SONG.until) {
-      chatPost('lobby', { name: 'six ✦ ai', text: 'song round over - nobody named it. it was "' + SONG.title + '" by ' + SONG.artist, ts: now, bot: true });
+      chatPost('trivia', { name: 'six ✦ ai', text: 'song round over - nobody named it. it was "' + SONG.title + '" by ' + SONG.artist, ts: now, bot: true });
       SONG.id = ''; SONG.nextAt = now + 240000;
     }
     if (!SONG.id && !TRIVIA.q && now > SONG.nextAt) {
-      const room = CHAT_ROOMS.get('lobby');
+      const room = CHAT_ROOMS.get('trivia');
       const active = room && (room.socks.size > 0 || (room.pollAct && now - room.pollAct < 600000));
       if (!active) { SONG.nextAt = now + 60000; return; }
       songTracks().then((list) => {
         if (!list.length || SONG.id) { SONG.nextAt = Date.now() + 120000; return; }
         const t = list[(Math.random() * list.length) | 0];
         SONG.id = t.id; SONG.title = t.t; SONG.artist = t.a; SONG.until = Date.now() + 120000;
-        chatPost('lobby', { name: 'six ✦ ai', text: '♪ guess the song - a track is live on the chat radio for 2 min. tap the ♪ chip above the message box to hear it. first to name the song (or the artist) wins 40 coins', ts: Date.now(), bot: true });
+        chatPost('trivia', { name: 'six ✦ ai', text: '♪ guess the song - a track is live on the chat radio for 2 min. tap the ♪ chip above the message box to hear it. first to name the song (or the artist) wins 40 coins', ts: Date.now(), bot: true });
       }).catch(() => {});
     }
   } catch (e) {}
@@ -16827,7 +16827,7 @@ function songTitleKey(t) {
 }
 function songCheck(room, user, text) {
   try {
-    if (room !== 'lobby' || !SONG.id || !user || !text) return;
+    if (room !== 'trivia' || !SONG.id || !user || !text) return;
     const norm = songNorm(text);
     const tk = songTitleKey(SONG.title);
     const ak = songNorm(SONG.artist).trim();
@@ -16836,7 +16836,7 @@ function songCheck(room, user, text) {
     const title = SONG.title, artist = SONG.artist;
     SONG.id = ''; SONG.nextAt = Date.now() + 240000;
     const u = String(user).toLowerCase();
-    coinsAward(u, 40).then((bal) => { chatPost('lobby', { name: 'six ✦ ai', text: u + ' named it - "' + title + '" by ' + artist + ' - +40 coins (balance: ' + bal + ')', ts: Date.now(), bot: true }); }).catch(() => {});
+    coinsAward(u, 40).then((bal) => { chatPost('trivia', { name: 'six ✦ ai', text: u + ' named it - "' + title + '" by ' + artist + ' - +40 coins (balance: ' + bal + ')', ts: Date.now(), bot: true }); }).catch(() => {});
     bumpStat(u, 'song');
     try { feedPush('song', u, 'won guess-the-song in chat - +40 coins'); } catch (e) {}
   } catch (e) {}
@@ -17502,16 +17502,16 @@ function triviaTick() {
   try {
     const now = Date.now();
     if (TRIVIA.q && now > TRIVIA.until) {
-      chatPost('lobby', { name: 'six ✦ ai', text: 'time — nobody got it. answer was "' + TRIVIA.q.a[0] + '"', ts: now, bot: true });
+      chatPost('trivia', { name: 'six ✦ ai', text: 'time — nobody got it. answer was "' + TRIVIA.q.a[0] + '"', ts: now, bot: true });
       TRIVIA.q = null; TRIVIA.nextAt = now + 180000;
     }
     if (!TRIVIA.q && now > TRIVIA.nextAt) {
-      const room = CHAT_ROOMS.get('lobby');
+      const room = CHAT_ROOMS.get('trivia');
       const active = room && (room.socks.size > 0 || (room.pollAct && now - room.pollAct < 600000));
       if (active) {
         const pick = TRIVIA_BANK[(Math.random() * TRIVIA_BANK.length) | 0];
         TRIVIA.q = pick; TRIVIA.until = now + 90000;
-        chatPost('lobby', { name: 'six ✦ ai', text: 'trivia time — first right answer gets 25 coins: ' + pick.q, ts: now, bot: true });
+        chatPost('trivia', { name: 'six ✦ ai', text: 'trivia time — first right answer gets 25 coins: ' + pick.q, ts: now, bot: true });
       } else TRIVIA.nextAt = now + 60000;
     }
   } catch (e) {}
@@ -17519,7 +17519,7 @@ function triviaTick() {
 setInterval(triviaTick, 20000);
 function triviaCheck(room, user, text) {
   try {
-    if (room !== 'lobby' || !TRIVIA.q || !user || !text) return;
+    if (room !== 'trivia' || !TRIVIA.q || !user || !text) return;
     const norm = ' ' + String(text).toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim() + ' ';
     const hit = TRIVIA.q.a.some((a) => norm.includes(' ' + a + ' '));
     if (!hit) return;
@@ -17527,7 +17527,7 @@ function triviaCheck(room, user, text) {
     TRIVIA.q = null; TRIVIA.nextAt = Date.now() + 150000;
     const u = String(user).toLowerCase();
     coinsAward(u, 25).then((bal) => {
-      chatPost('lobby', { name: 'six ✦ ai', text: u + ' got it — "' + ans + '" — +25 coins (balance: ' + bal + ')', ts: Date.now(), bot: true });
+      chatPost('trivia', { name: 'six ✦ ai', text: u + ' got it — "' + ans + '" — +25 coins (balance: ' + bal + ')', ts: Date.now(), bot: true });
     }).catch(() => {});
     bumpStat(u, 'trivia');
     feedPush('trivia', u, 'won trivia in chat — +25 coins');
