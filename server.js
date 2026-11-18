@@ -11473,8 +11473,8 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style>
     var s=(b===null||b===undefined)?'':'ur balance: <b style="color:#ffd257">'+Number(b).toLocaleString('en-US')+'</b> coins';
     balEl.innerHTML=s; if(balT) balT.innerHTML=s;
   }
-  function openPop(){ if(!TBL)return; if(pop.parentNode!==document.body) document.body.appendChild(pop); pop.style.display='flex'; draw(rot); }
-  function closePop(){ if(spinning)return; pop.style.display='none'; }
+  function openPop(){ if(!TBL)return; if(pop.parentNode!==document.body) document.body.appendChild(pop); pop.style.display='flex'; document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden'; draw(rot); }
+  function closePop(){ if(spinning)return; pop.style.display='none'; document.documentElement.style.overflow='';document.body.style.overflow=''; }
   if(openBtn) openBtn.addEventListener('click', openPop);
   if(xBtn) xBtn.addEventListener('click', closePop);
   pop.addEventListener('click', function(e){ if(e.target===pop) closePop(); });
@@ -11510,8 +11510,8 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style>
 (function(){
   var openB=document.getElementById('shopOpen'), pop=document.getElementById('shopPop'), xB=document.getElementById('shopX'), sum=document.getElementById('shopSum');
   if(!pop)return;
-  function openPop(){ if(pop.parentNode!==document.body) document.body.appendChild(pop); pop.style.display='flex'; }
-  function closePop(){ pop.style.display='none'; }
+  function openPop(){ if(pop.parentNode!==document.body) document.body.appendChild(pop); pop.style.display='flex'; document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden'; }
+  function closePop(){ pop.style.display='none'; document.documentElement.style.overflow='';document.body.style.overflow=''; }
   if(openB) openB.addEventListener('click', openPop);
   if(xB) xB.addEventListener('click', closePop);
   pop.addEventListener('click', function(e){ if(e.target===pop) closePop(); });
