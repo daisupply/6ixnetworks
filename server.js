@@ -11425,7 +11425,8 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style>
   });
 })();
 </script>
-<div class="starfield" aria-hidden="true"><i class="tw tv" style="left:82%;top:15%;width:2px;height:2px;animation-duration:3.4s;animation-delay:1.0s"></i><i class="tw" style="left:18%;top:14%;width:3px;height:3px;animation-duration:3.4s;animation-delay:2.2s"></i><i class="tw" style="left:76%;top:55%;width:2px;height:2px;animation-duration:2.0s;animation-delay:0.9s"></i><i class="tw" style="left:65%;top:78%;width:2px;height:2px;animation-duration:3.0s;animation-delay:2.9s"></i><i class="tw tv" style="left:90%;top:70%;width:2px;height:2px;animation-duration:2.3s;animation-delay:2.4s"></i><i class="tw" style="left:1%;top:21%;width:3px;height:3px;animation-duration:2.7s;animation-delay:1.1s"></i><i class="tw" style="left:28%;top:44%;width:2px;height:2px;animation-duration:2.1s;animation-delay:0.4s"></i><i class="tw" style="left:45%;top:78%;width:2px;height:2px;animation-duration:3.5s;animation-delay:2.9s"></i><i class="tw tv" style="left:69%;top:16%;width:2px;height:2px;animation-duration:2.1s;animation-delay:1.2s"></i><i class="tw" style="left:81%;top:80%;width:2px;height:2px;animation-duration:3.1s;animation-delay:2.8s"></i><i class="tw" style="left:6%;top:85%;width:2px;height:2px;animation-duration:3.4s;animation-delay:3.9s"></i><i class="tw" style="left:30%;top:13%;width:2px;height:2px;animation-duration:2.5s;animation-delay:2.5s"></i><i class="tw tv" style="left:47%;top:21%;width:2px;height:2px;animation-duration:2.6s;animation-delay:2.7s"></i><i class="tw" style="left:90%;top:88%;width:3px;height:3px;animation-duration:2.0s;animation-delay:2.5s"></i><i class="tw" style="left:69%;top:32%;width:2px;height:2px;animation-duration:2.8s;animation-delay:1.1s"></i><i class="tw" style="left:82%;top:89%;width:3px;height:3px;animation-duration:2.3s;animation-delay:1.3s"></i></div><a class="dcord" href="https://discord.gg/bY5Dhk6dQZ" target="_blank" rel="noopener"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.32 4.37a19.8 19.8 0 0 0-4.93-1.51 13.8 13.8 0 0 0-.64 1.28 18.3 18.3 0 0 0-5.5 0 12.6 12.6 0 0 0-.64-1.28h-.05A19.7 19.7 0 0 0 3.64 4.37C.53 9.05-.32 13.58.1 18.06a19.9 19.9 0 0 0 6.04 3.03c.24-.33.47-.68.66-1.03a12.9 12.9 0 0 1-1.04-.5c.09-.07.18-.14.26-.21a14.2 14.2 0 0 0 12.06 0c.08.07.17.14.26.21-.33.2-.68.37-1.04.5.19.35.42.7.66 1.03a19.8 19.8 0 0 0 6.05-3.03c.5-5.18-.84-9.68-3.69-13.69ZM8.02 15.33c-1.18 0-2.16-1.08-2.16-2.42s.95-2.42 2.16-2.42 2.18 1.09 2.16 2.42c0 1.34-.95 2.42-2.16 2.42Zm7.97 0c-1.18 0-2.15-1.08-2.15-2.42s.95-2.42 2.15-2.42 2.18 1.09 2.16 2.42c0 1.34-.95 2.42-2.16 2.42Z"/></svg><span><b>join the discord</b></span></a>\n<style>#socFeed{max-height:288px;overflow-y:auto;scrollbar-width:thin;padding-right:4px}#shopOpen:hover{filter:brightness(1.1)}#shopX:hover{background:rgba(255,255,255,.12);color:#fff}</style><div id="socWrap" style="width:100%;max-width:1120px;margin:0 auto 18px;display:none;gap:14px;flex-wrap:wrap"><div style="flex:1 1 320px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:14px 16px"><div style="font-weight:800;letter-spacing:.06em;font-size:12px;color:#bdb4e4;margin-bottom:8px">HAPPENING ON 6IX</div><div id="socFeed" style="font-size:13.5px;line-height:1.5;color:#d8d2f0">loading…</div></div><div id="socMe" style="flex:1 1 320px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:14px 16px;display:none"><div style="font-weight:800;letter-spacing:.06em;font-size:12px;color:#bdb4e4;margin-bottom:8px">UR STUFF</div><div id="shopSum" style="font-size:13.5px;line-height:1.55;color:#d8d2f0">loading ur stuff…</div><button id="shopOpen" type="button" style="margin-top:11px;width:100%;padding:12px 16px;border-radius:13px;border:1px solid rgba(139,124,255,.6);background:linear-gradient(135deg,#8b7cf0,#6a4fe0);color:#fff;font-weight:900;font-size:14.5px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:9px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>open the shop</button></div><div id="shopPop" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(4,2,10,.86);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);align-items:center;justify-content:center;padding:16px"><div style="width:min(680px,95vw);max-height:92vh;display:flex;flex-direction:column;background:linear-gradient(165deg,#1e1538,#0f0a20);border:1px solid rgba(139,124,255,.4);border-radius:26px;padding:20px;box-shadow:0 34px 90px rgba(0,0,0,.65),0 0 60px rgba(139,124,255,.18);position:relative"><button id="shopX" type="button" aria-label="close" style="position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:11px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#bdb4e4;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div style="font-weight:900;font-size:19px;letter-spacing:.04em;color:#fff">NAME FX SHOP</div><div style="font-size:12.5px;color:#bdb4e4;margin-top:3px">tap a card to buy or equip it - the name on every card is urs, styled in that fx</div><div id="shopScroll" style="overflow-y:auto;margin-top:12px;padding-right:5px;min-height:0;scrollbar-width:thin"><div id="socMeBody" style="font-size:13.5px;line-height:1.55;color:#d8d2f0"></div></div></div></div><style>#wheelBtn:hover{transform:translate(-50%,-50%)}#wheelBtn:disabled{cursor:default}#wheelOpen:hover{filter:brightness(1.12)}#wheelX:hover{background:rgba(255,255,255,.12);color:#fff}</style><div id="wheelCard" style="flex:1 1 320px;background:linear-gradient(150deg,rgba(139,124,255,.13),rgba(255,210,87,.06));border:1px solid rgba(255,210,87,.35);border-radius:16px;padding:16px;display:none"><div style="font-weight:800;letter-spacing:.06em;font-size:12px;color:#ffd257;margin-bottom:6px">SPIN THE WHEEL</div><div style="font-size:13.5px;line-height:1.5;color:#d8d2f0">25 coins a spin. most of the wheel drops small coins - one gold sliver is a name fx, 1 in 250.</div><button id="wheelOpen" type="button" style="margin-top:12px;width:100%;padding:13px 16px;border-radius:13px;border:1px solid rgba(255,210,87,.65);background:linear-gradient(135deg,#ffd257,#ff9d5c);color:#241703;font-weight:900;font-size:15px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:9px"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M21 3v6h-6"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg>spin the wheel - 25 coins</button><div id="wheelBalT" style="margin-top:9px;font-size:12.5px;color:#bdb4e4"></div></div><div id="wheelPop" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(4,2,10,.86);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);align-items:center;justify-content:center;padding:16px"><div style="width:min(440px,95vw);max-height:94vh;overflow:auto;background:linear-gradient(165deg,#1e1538,#0f0a20);border:1px solid rgba(139,124,255,.4);border-radius:26px;padding:22px 20px 20px;box-shadow:0 34px 90px rgba(0,0,0,.65),0 0 60px rgba(139,124,255,.18);text-align:center;position:relative"><button id="wheelX" type="button" aria-label="close" style="position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:11px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#bdb4e4;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div style="font-weight:900;font-size:19px;letter-spacing:.04em;color:#fff">SPIN THE WHEEL</div><div style="font-size:12.5px;color:#bdb4e4;margin-top:3px">25 coins a spin &middot; the gold sliver is a name fx - 1 in 250</div><div style="position:relative;width:320px;height:320px;margin:16px auto 4px;max-width:86vw;aspect-ratio:1"><canvas id="wheelCv" width="640" height="640" style="width:100%;height:100%;display:block;filter:drop-shadow(0 14px 34px rgba(0,0,0,.55))"></canvas><div style="position:absolute;top:-7px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;border-top:17px solid #ffd257;filter:drop-shadow(0 3px 5px rgba(0,0,0,.5))"></div><div style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);width:9px;height:9px;border-radius:50%;background:#fff3c4;border:2px solid #b8860b"></div><button id="wheelBtn" type="button" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:88px;height:88px;border-radius:50%;border:3px solid #f5c542;background:radial-gradient(circle at 34% 30%,#3a2a6e,#1a1136 68%);color:#ffd257;font-weight:900;font-size:16px;cursor:pointer;font-family:inherit;line-height:1.15;box-shadow:0 0 0 5px rgba(20,12,44,.9),0 0 26px rgba(245,197,66,.35)">SPIN<br><span style="font-size:10.5px;color:#bdb4e4;font-weight:700">25 coins</span></button></div><div id="wheelMsg" style="min-height:22px;font-size:14.5px;color:#ece7ff;margin-top:8px">most spins drop a few coins. gold sliver = a name fx u dont own yet, auto-equipped.</div><div id="wheelBal" style="margin-top:5px;font-size:13px;color:#bdb4e4"></div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:13px"><span style="font-size:11.5px;font-weight:700;color:#cfc6f5;background:rgba(139,124,255,.14);border:1px solid rgba(139,124,255,.35);padding:4px 10px;border-radius:999px">5 coins</span><span style="font-size:11.5px;font-weight:700;color:#cfc6f5;background:rgba(139,124,255,.14);border:1px solid rgba(139,124,255,.35);padding:4px 10px;border-radius:999px">10</span><span style="font-size:11.5px;font-weight:700;color:#cfc6f5;background:rgba(139,124,255,.14);border:1px solid rgba(139,124,255,.35);padding:4px 10px;border-radius:999px">15</span><span style="font-size:11.5px;font-weight:700;color:#cfc6f5;background:rgba(139,124,255,.14);border:1px solid rgba(139,124,255,.35);padding:4px 10px;border-radius:999px">25</span><span style="font-size:11.5px;font-weight:700;color:#cfc6f5;background:rgba(139,124,255,.14);border:1px solid rgba(139,124,255,.35);padding:4px 10px;border-radius:999px">40</span><span style="font-size:11.5px;font-weight:700;color:#e6d9ff;background:rgba(139,124,255,.25);border:1px solid rgba(139,124,255,.55);padding:4px 10px;border-radius:999px">100</span><span style="font-size:11.5px;font-weight:800;color:#241703;background:linear-gradient(135deg,#ffd257,#ff9d5c);border:1px solid rgba(255,210,87,.8);padding:4px 10px;border-radius:999px">name fx - 1/250</span></div></div></div></div>
+<div class="starfield" aria-hidden="true"><i class="tw tv" style="left:82%;top:15%;width:2px;height:2px;animation-duration:3.4s;animation-delay:1.0s"></i><i class="tw" style="left:18%;top:14%;width:3px;height:3px;animation-duration:3.4s;animation-delay:2.2s"></i><i class="tw" style="left:76%;top:55%;width:2px;height:2px;animation-duration:2.0s;animation-delay:0.9s"></i><i class="tw" style="left:65%;top:78%;width:2px;height:2px;animation-duration:3.0s;animation-delay:2.9s"></i><i class="tw tv" style="left:90%;top:70%;width:2px;height:2px;animation-duration:2.3s;animation-delay:2.4s"></i><i class="tw" style="left:1%;top:21%;width:3px;height:3px;animation-duration:2.7s;animation-delay:1.1s"></i><i class="tw" style="left:28%;top:44%;width:2px;height:2px;animation-duration:2.1s;animation-delay:0.4s"></i><i class="tw" style="left:45%;top:78%;width:2px;height:2px;animation-duration:3.5s;animation-delay:2.9s"></i><i class="tw tv" style="left:69%;top:16%;width:2px;height:2px;animation-duration:2.1s;animation-delay:1.2s"></i><i class="tw" style="left:81%;top:80%;width:2px;height:2px;animation-duration:3.1s;animation-delay:2.8s"></i><i class="tw" style="left:6%;top:85%;width:2px;height:2px;animation-duration:3.4s;animation-delay:3.9s"></i><i class="tw" style="left:30%;top:13%;width:2px;height:2px;animation-duration:2.5s;animation-delay:2.5s"></i><i class="tw tv" style="left:47%;top:21%;width:2px;height:2px;animation-duration:2.6s;animation-delay:2.7s"></i><i class="tw" style="left:90%;top:88%;width:3px;height:3px;animation-duration:2.0s;animation-delay:2.5s"></i><i class="tw" style="left:69%;top:32%;width:2px;height:2px;animation-duration:2.8s;animation-delay:1.1s"></i><i class="tw" style="left:82%;top:89%;width:3px;height:3px;animation-duration:2.3s;animation-delay:1.3s"></i></div><a class="dcord" href="https://discord.gg/bY5Dhk6dQZ" target="_blank" rel="noopener"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.32 4.37a19.8 19.8 0 0 0-4.93-1.51 13.8 13.8 0 0 0-.64 1.28 18.3 18.3 0 0 0-5.5 0 12.6 12.6 0 0 0-.64-1.28h-.05A19.7 19.7 0 0 0 3.64 4.37C.53 9.05-.32 13.58.1 18.06a19.9 19.9 0 0 0 6.04 3.03c.24-.33.47-.68.66-1.03a12.9 12.9 0 0 1-1.04-.5c.09-.07.18-.14.26-.21a14.2 14.2 0 0 0 12.06 0c.08.07.17.14.26.21-.33.2-.68.37-1.04.5.19.35.42.7.66 1.03a19.8 19.8 0 0 0 6.05-3.03c.5-5.18-.84-9.68-3.69-13.69ZM8.02 15.33c-1.18 0-2.16-1.08-2.16-2.42s.95-2.42 2.16-2.42 2.18 1.09 2.16 2.42c0 1.34-.95 2.42-2.16 2.42Zm7.97 0c-1.18 0-2.15-1.08-2.15-2.42s.95-2.42 2.15-2.42 2.18 1.09 2.16 2.42c0 1.34-.95 2.42-2.16 2.42Z"/></svg><span><b>join the discord</b></span></a>\n<style>#socFeed{max-height:288px;overflow-y:auto;scrollbar-width:thin;padding-right:4px}#shopOpen:hover{filter:brightness(1.1)}#shopX:hover{background:rgba(255,255,255,.12);color:#fff}</style><div id="socWrap" style="width:100%;max-width:1120px;margin:0 auto 18px;display:none;gap:14px;flex-wrap:wrap"><div style="flex:1 1 320px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:14px 16px"><div style="font-weight:800;letter-spacing:.06em;font-size:12px;color:#bdb4e4;margin-bottom:8px">HAPPENING ON 6IX</div><div id="socFeed" style="font-size:13.5px;line-height:1.5;color:#d8d2f0">loading…</div></div><div id="socMe" style="flex:1 1 320px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:14px 16px;display:none"><div style="font-weight:800;letter-spacing:.06em;font-size:12px;color:#bdb4e4;margin-bottom:8px">UR STUFF</div><div id="shopSum" style="font-size:13.5px;line-height:1.55;color:#d8d2f0">loading ur stuff…</div><button id="shopOpen" type="button" style="margin-top:11px;width:100%;padding:12px 16px;border-radius:13px;border:1px solid rgba(139,124,255,.6);background:linear-gradient(135deg,#8b7cf0,#6a4fe0);color:#fff;font-weight:900;font-size:14.5px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:9px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>open the shop</button><button id="claimBtn" type="button" style="display:none;margin-top:9px;width:100%;padding:11px 16px;border-radius:13px;border:1px solid rgba(255,210,87,.55);background:linear-gradient(135deg,rgba(255,210,87,.2),rgba(255,160,60,.08));color:#ffd257;font-weight:900;font-size:14px;cursor:pointer;font-family:inherit">claim daily</button></div><div id="shopPop" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(4,2,10,.86);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);align-items:center;justify-content:center;padding:16px"><div style="width:min(680px,95vw);max-height:92vh;display:flex;flex-direction:column;background:linear-gradient(165deg,#1e1538,#0f0a20);border:1px solid rgba(139,124,255,.4);border-radius:26px;padding:20px;box-shadow:0 34px 90px rgba(0,0,0,.65),0 0 60px rgba(139,124,255,.18);position:relative"><button id="shopX" type="button" aria-label="close" style="position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:11px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#bdb4e4;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div style="font-weight:900;font-size:19px;letter-spacing:.04em;color:#fff">NAME FX SHOP</div><div style="font-size:12.5px;color:#bdb4e4;margin-top:3px">tap a card to buy or equip it - the name on every card is urs, styled in that fx</div><div id="shopScroll" style="overflow-y:auto;margin-top:12px;padding-right:5px;min-height:0;scrollbar-width:thin"><div id="socMeBody" style="font-size:13.5px;line-height:1.55;color:#d8d2f0"></div></div></div></div><style>#wheelBtn:hover{transform:translate(-50%,-50%)}#wheelBtn:disabled{cursor:default}#wheelOpen:hover{filter:brightness(1.12)}#wheelX:hover{background:rgba(255,255,255,.12);color:#fff}</style><div id="wheelCard" style="flex:1 1 320px;background:linear-gradient(150deg,rgba(139,124,255,.13),rgba(255,210,87,.06));border:1px solid rgba(255,210,87,.35);border-radius:16px;padding:16px;display:none"><div style="font-weight:800;letter-spacing:.06em;font-size:12px;color:#ffd257;margin-bottom:6px">SPIN THE WHEEL</div><div style="font-size:13.5px;line-height:1.5;color:#d8d2f0">25 coins a spin. most of the wheel drops small coins - one gold sliver is a name fx, 1 in 250.</div><button id="wheelOpen" type="button" style="margin-top:12px;width:100%;padding:13px 16px;border-radius:13px;border:1px solid rgba(255,210,87,.65);background:linear-gradient(135deg,#ffd257,#ff9d5c);color:#241703;font-weight:900;font-size:15px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:9px"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M21 3v6h-6"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg>spin the wheel - 25 coins</button><div id="wheelBalT" style="margin-top:9px;font-size:12.5px;color:#bdb4e4"></div></div><div id="wheelPop" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(4,2,10,.86);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);align-items:center;justify-content:center;padding:16px"><div style="width:min(440px,95vw);max-height:94vh;overflow:auto;background:linear-gradient(165deg,#1e1538,#0f0a20);border:1px solid rgba(139,124,255,.4);border-radius:26px;padding:22px 20px 20px;box-shadow:0 34px 90px rgba(0,0,0,.65),0 0 60px rgba(139,124,255,.18);text-align:center;position:relative"><button id="wheelX" type="button" aria-label="close" style="position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:11px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#bdb4e4;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div style="font-weight:900;font-size:19px;letter-spacing:.04em;color:#fff">SPIN THE WHEEL</div><div style="font-size:12.5px;color:#bdb4e4;margin-top:3px">25 coins a spin &middot; the gold sliver is a name fx - 1 in 250</div><div style="position:relative;width:320px;height:320px;margin:16px auto 4px;max-width:86vw;aspect-ratio:1"><canvas id="wheelCv" width="640" height="640" style="width:100%;height:100%;display:block;filter:drop-shadow(0 14px 34px rgba(0,0,0,.55))"></canvas><div style="position:absolute;top:-7px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;border-top:17px solid #ffd257;filter:drop-shadow(0 3px 5px rgba(0,0,0,.5))"></div><div style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);width:9px;height:9px;border-radius:50%;background:#fff3c4;border:2px solid #b8860b"></div><button id="wheelBtn" type="button" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:88px;height:88px;border-radius:50%;border:3px solid #f5c542;background:radial-gradient(circle at 34% 30%,#3a2a6e,#1a1136 68%);color:#ffd257;font-weight:900;font-size:16px;cursor:pointer;font-family:inherit;line-height:1.15;box-shadow:0 0 0 5px rgba(20,12,44,.9),0 0 26px rgba(245,197,66,.35)">SPIN<br><span style="font-size:10.5px;color:#bdb4e4;font-weight:700">25 coins</span></button></div><div id="wheelMsg" style="min-height:22px;font-size:14.5px;color:#ece7ff;margin-top:8px">most spins drop a few coins. gold sliver = a name fx u dont own yet, auto-equipped.</div><div id="wheelBal" style="margin-top:5px;font-size:13px;color:#bdb4e4"></div><style>.casbtn{padding:10px 16px;border-radius:12px;border:1px solid rgba(139,124,255,.5);background:rgba(139,124,255,.12);color:#e6e1ff;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit}.casbtn:hover{background:rgba(139,124,255,.24)}.casbtn.gold{border-color:rgba(255,210,87,.6);background:linear-gradient(135deg,rgba(255,210,87,.25),rgba(255,160,60,.1));color:#ffd257}.fbet{padding:6px 13px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.04);color:#bdb4e4;font-weight:800;font-size:12.5px;cursor:pointer;font-family:inherit}.fbet.on{border-color:rgba(255,210,87,.7);color:#ffd257;background:rgba(255,210,87,.12)}.slotbox{display:inline-flex;align-items:center;justify-content:center;width:52px;height:58px;border-radius:13px;background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.02));border:1px solid rgba(139,124,255,.4);font-size:27px;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}</style><button id="wheelDbl" type="button" style="display:none;margin-top:10px;padding:10px 18px;border-radius:12px;border:1px dashed rgba(255,210,87,.7);background:rgba(255,210,87,.08);color:#ffd257;font-weight:900;font-size:13.5px;cursor:pointer;font-family:inherit">double or nothing</button><div style="margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:13px;width:100%"><div style="font-weight:900;font-size:12px;letter-spacing:.14em;color:#bdb4e4">CASINO</div><div style="display:flex;gap:6px;justify-content:center;margin-top:10px" id="flipBets"><button type="button" class="fbet" data-bet="10">10</button><button type="button" class="fbet on" data-bet="25">25</button><button type="button" class="fbet" data-bet="50">50</button><button type="button" class="fbet" data-bet="100">100</button></div><div style="display:flex;gap:8px;justify-content:center;margin-top:9px"><button type="button" id="flipStar" class="casbtn">✦ star</button><button type="button" id="flipMoon" class="casbtn">☾ moon</button></div><div id="flipMsg" style="min-height:19px;font-size:13.5px;color:#d8d2f0;margin-top:7px"></div><div style="display:flex;gap:10px;justify-content:center;align-items:center;margin-top:8px"><span class="slotbox" id="sl0">?</span><span class="slotbox" id="sl1">?</span><span class="slotbox" id="sl2">?</span><button type="button" id="slotBtn" class="casbtn gold">spin slots</button></div><div style="display:flex;gap:6px;justify-content:center;margin-top:8px" id="slotBets"><button type="button" class="fbet on" data-bet="25">25</button><button type="button" class="fbet" data-bet="50">50</button></div><div id="slotMsg" style="min-height:19px;font-size:13.5px;color:#d8d2f0;margin-top:6px"></div></div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:13px"><span style="font-size:11.5px;font-weight:700;color:#cfc6f5;background:rgba(139,124,255,.14);border:1px solid rgba(139,124,255,.35);padding:4px 10px;border-radius:999px">5 coins</span><span style="font-size:11.5px;font-weight:700;color:#cfc6f5;background:rgba(139,124,255,.14);border:1px solid rgba(139,124,255,.35);padding:4px 10px;border-radius:999px">10</span><span style="font-size:11.5px;font-weight:700;color:#cfc6f5;background:rgba(139,124,255,.14);border:1px solid rgba(139,124,255,.35);padding:4px 10px;border-radius:999px">15</span><span style="font-size:11.5px;font-weight:700;color:#cfc6f5;background:rgba(139,124,255,.14);border:1px solid rgba(139,124,255,.35);padding:4px 10px;border-radius:999px">25</span><span style="font-size:11.5px;font-weight:700;color:#cfc6f5;background:rgba(139,124,255,.14);border:1px solid rgba(139,124,255,.35);padding:4px 10px;border-radius:999px">40</span><span style="font-size:11.5px;font-weight:700;color:#e6d9ff;background:rgba(139,124,255,.25);border:1px solid rgba(139,124,255,.55);padding:4px 10px;border-radius:999px">100</span><span style="font-size:11.5px;font-weight:800;color:#241703;background:linear-gradient(135deg,#ffd257,#ff9d5c);border:1px solid rgba(255,210,87,.8);padding:4px 10px;border-radius:999px">name fx - 1/250</span></div></div></div></div>
+<div id="pollRow" style="display:none;gap:14px;max-width:1060px;margin:14px auto 0;padding:0 16px;flex-wrap:wrap"><div id="pollCard" style="flex:1 1 340px;background:linear-gradient(160deg,rgba(139,124,255,.13),rgba(255,255,255,.03));border:1px solid rgba(139,124,255,.35);border-radius:18px;padding:16px 18px"><div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:#bdb4e4">DAILY POLL</div><div id="pollQ" style="font-size:17px;font-weight:800;color:#fff;margin-top:5px"></div><div id="pollOpts" style="margin-top:11px;display:flex;flex-direction:column;gap:8px"></div><div id="pollTot" style="font-size:12px;color:#8a81ad;margin-top:9px"></div></div><div id="advCard" style="flex:0 1 300px;background:linear-gradient(160deg,rgba(255,120,150,.12),rgba(255,255,255,.03));border:1px solid rgba(255,120,150,.35);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column"><div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:#ffb3c2">ADVENT CALENDAR</div><div style="font-size:16.5px;font-weight:800;color:#fff;margin-top:5px">25 doors of coins</div><div id="advSub" style="font-size:12.5px;color:#c9a7b4;margin-top:4px">one door a day in december</div><button id="advOpen" type="button" style="margin-top:auto;padding:11px 16px;border-radius:13px;border:1px solid rgba(255,120,150,.6);background:linear-gradient(135deg,#e0507a,#b03060);color:#fff;font-weight:900;font-size:14px;cursor:pointer;font-family:inherit">peek the doors</button></div></div><div id="advPop" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(4,2,10,.86);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);align-items:center;justify-content:center;padding:16px"><div style="width:min(620px,95vw);max-height:92vh;display:flex;flex-direction:column;background:linear-gradient(165deg,#2a1224,#120a18);border:1px solid rgba(255,120,150,.4);border-radius:26px;padding:20px;box-shadow:0 34px 90px rgba(0,0,0,.65);position:relative"><button id="advX" type="button" aria-label="close" style="position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:11px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#ffb3c2;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div style="font-weight:900;font-size:19px;letter-spacing:.04em;color:#fff">ADVENT CALENDAR</div><div id="advMsg" style="font-size:12.5px;color:#e8b7c4;margin-top:3px;min-height:17px">doors unlock one a day in december</div><div id="advGrid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:13px;overflow-y:auto;padding-right:4px;scrollbar-width:thin"></div></div></div>
 <script>
 (function(){
   var cv=document.getElementById('wheelCv'); if(!cv)return;
@@ -11508,6 +11509,133 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style>
 </script>
 <script>
 (function(){
+  function $(id){ return document.getElementById(id); }
+  function fmt(n){ return Number(n||0).toLocaleString('en-US'); }
+  function setBal(b){ var wb=$('wheelBal'); if(wb&&b!=null) wb.textContent='balance: '+fmt(b)+' coins'; }
+  // ---- coin flip ----
+  var flipBet=25, flipping=false;
+  var fb=$('flipBets');
+  if(fb) fb.addEventListener('click', function(e){ var b=e.target.closest('[data-bet]'); if(!b)return; flipBet=+b.getAttribute('data-bet'); fb.querySelectorAll('.fbet').forEach(function(x){ x.classList.toggle('on', x===b); }); });
+  function doFlip(pick){
+    if(flipping) return; flipping=true;
+    var msg=$('flipMsg'); msg.textContent='flipping…';
+    fetch('/api/casino/flip',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({bet:flipBet,pick:pick})}).then(function(r){return r.json()}).then(function(d){
+      flipping=false;
+      if(!d.ok){ msg.textContent=d.err||'flip failed'; if(d.bal!=null)setBal(d.bal); return; }
+      var sym=d.land==='star'?'✦ star':'☾ moon';
+      msg.innerHTML=d.win?('it landed <b style="color:#ffd257">'+sym+'</b> — u won <b style="color:#ffd257">'+fmt(d.payout)+'</b> coins'):('it landed <b>'+sym+'</b> — lost '+fmt(flipBet));
+      setBal(d.bal);
+    }).catch(function(){ flipping=false; msg.textContent='flip failed'; });
+  }
+  if($('flipStar')) $('flipStar').addEventListener('click', function(){ doFlip('star'); });
+  if($('flipMoon')) $('flipMoon').addEventListener('click', function(){ doFlip('moon'); });
+  // ---- slots ----
+  var slotBet=25, slotting=false;
+  var sb=$('slotBets');
+  if(sb) sb.addEventListener('click', function(e){ var b=e.target.closest('[data-bet]'); if(!b)return; slotBet=+b.getAttribute('data-bet'); sb.querySelectorAll('.fbet').forEach(function(x){ x.classList.toggle('on', x===b); }); });
+  var GL=['✦','●','◆','★','7','♦'];
+  if($('slotBtn')) $('slotBtn').addEventListener('click', function(){
+    if(slotting) return; slotting=true;
+    var msg=$('slotMsg'); msg.textContent='spinning…';
+    var boxes=[$('sl0'),$('sl1'),$('sl2')];
+    var iv=setInterval(function(){ boxes.forEach(function(bx){ if(bx) bx.textContent=GL[Math.floor(Math.random()*GL.length)]; }); }, 80);
+    fetch('/api/casino/slots',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({bet:slotBet})}).then(function(r){return r.json()}).then(function(d){
+      setTimeout(function(){
+        clearInterval(iv); slotting=false;
+        if(!d.ok){ msg.textContent=d.err||'slots failed'; if(d.bal!=null)setBal(d.bal); return; }
+        boxes.forEach(function(bx,i){ if(bx) bx.textContent=d.reels[i]; });
+        msg.innerHTML=d.payout>0?('<b style="color:#ffd257">+'+fmt(d.payout)+' coins</b>'+(d.mult>=8?' — TRIPLE. feed knows.':'')):('no match — lost '+fmt(slotBet));
+        setBal(d.bal);
+      }, 650);
+    }).catch(function(){ clearInterval(iv); slotting=false; msg.textContent='slots failed'; });
+  });
+  // ---- double or nothing (after a wheel coin win) ----
+  var dblBtn=$('wheelDbl'), dblAmt=0, dblBusy=false;
+  function checkPending(){
+    fetch('/api/wheel').then(function(r){return r.json()}).then(function(d){
+      if(d&&d.ok&&d.pending>0&&dblBtn){ dblAmt=d.pending; dblBtn.style.display='inline-block'; dblBtn.textContent='double or nothing · risk '+fmt(dblAmt)+' for '+(fmt(dblAmt*2)); }
+      else if(dblBtn){ dblBtn.style.display='none'; }
+    }).catch(function(){});
+  }
+  var wmsg=$('wheelMsg');
+  if(wmsg&&window.MutationObserver){ var mo=new MutationObserver(function(){ setTimeout(checkPending, 350); }); mo.observe(wmsg,{childList:true,characterData:true,subtree:true}); }
+  if(dblBtn) dblBtn.addEventListener('click', function(){
+    if(dblBusy) return; dblBusy=true; dblBtn.style.display='none';
+    fetch('/api/wheel/double',{method:'POST',headers:{'content-type':'application/json'},body:'{}'}).then(function(r){return r.json()}).then(function(d){
+      dblBusy=false;
+      if(!d.ok){ if(wmsg) wmsg.textContent=d.err||'double failed'; return; }
+      if(wmsg) wmsg.innerHTML=d.win?('DOUBLED. <b style="color:#ffd257">+'+fmt(d.amt)+' coins</b>'):('lost it all. the '+fmt(d.amt)+' is gone twin');
+      setBal(d.bal);
+    }).catch(function(){ dblBusy=false; });
+  });
+  // ---- daily poll ----
+  var pollRow=$('pollRow');
+  function renderPoll(d){
+    if(!d||!d.ok) return;
+    if(pollRow) pollRow.style.display='flex';
+    $('pollQ').textContent=d.q;
+    var box=$('pollOpts'); box.innerHTML='';
+    d.opts.forEach(function(o,i){
+      if(d.my>=0){
+        var pct=d.total?Math.round(d.counts[i]/d.total*100):0;
+        var row=document.createElement('div');
+        row.style.cssText='position:relative;border-radius:11px;overflow:hidden;border:1px solid '+(d.my===i?'rgba(255,210,87,.65)':'rgba(255,255,255,.1)')+';background:rgba(255,255,255,.03);padding:9px 12px;font-size:14px;color:#e6e1ff';
+        row.innerHTML='<span style="position:absolute;inset:0;width:'+pct+'%;background:linear-gradient(90deg,rgba(139,124,255,.35),rgba(139,124,255,.12))"></span><span style="position:relative;font-weight:700">'+o+'</span><span style="position:relative;float:right;color:#bdb4e4;font-weight:800">'+pct+'%</span>';
+        box.appendChild(row);
+      } else {
+        var btn=document.createElement('button');
+        btn.type='button'; btn.textContent=o;
+        btn.style.cssText='text-align:left;padding:10px 13px;border-radius:11px;border:1px solid rgba(139,124,255,.45);background:rgba(139,124,255,.1);color:#e6e1ff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit';
+        btn.addEventListener('click', function(){
+          fetch('/api/poll',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({i:i})}).then(function(r){return r.json()}).then(function(x){ if(x.ok){ x.q=d.q; x.opts=d.opts; renderPoll(x); } else if(x.err) alert(x.err); }).catch(function(){});
+        });
+        box.appendChild(btn);
+      }
+    });
+    $('pollTot').textContent=d.total+' votes today'+(d.my>=0?' · u can change ur vote anytime':'');
+  }
+  fetch('/api/poll').then(function(r){return r.json()}).then(renderPoll).catch(function(){});
+  // ---- advent ----
+  var advPop=$('advPop');
+  function advLock(on){ document.documentElement.style.overflow=on?'hidden':''; document.body.style.overflow=on?'hidden':''; }
+  function renderAdv(d){
+    if(!d||!d.ok) return;
+    if(pollRow) pollRow.style.display='flex';
+    var sub=$('advSub');
+    if(sub) sub.textContent=d.month===12?(Object.keys(d.opened).length+' doors opened · door '+Math.min(d.day,25)+' is live'):('starts dec 1 · 25 doors waiting');
+    var grid=$('advGrid'); if(!grid) return;
+    grid.innerHTML='';
+    for(var day=1; day<=25; day++){
+      (function(day){
+        var opened=d.opened[day];
+        var avail=!opened&&d.month===12&&day<=d.day;
+        var b=document.createElement('button');
+        b.type='button';
+        if(opened){ b.style.cssText='padding:13px 4px;border-radius:13px;border:1px solid rgba(255,210,87,.6);background:linear-gradient(160deg,rgba(255,210,87,.25),rgba(255,160,60,.08));color:#ffd257;font-weight:900;font-size:13px;font-family:inherit'; b.innerHTML=day+'<div style="font-size:11px;font-weight:800">+'+fmt(opened)+'</div>'; }
+        else if(avail){ b.style.cssText='padding:13px 4px;border-radius:13px;border:1px solid rgba(255,120,150,.7);background:linear-gradient(160deg,rgba(224,80,122,.35),rgba(224,80,122,.1));color:#fff;font-weight:900;font-size:16px;cursor:pointer;font-family:inherit'; b.textContent=day; b.addEventListener('click', function(){ openDoor(day); }); }
+        else { b.style.cssText='padding:13px 4px;border-radius:13px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:#6f6791;font-weight:900;font-size:16px;font-family:inherit'; b.textContent=day; }
+        grid.appendChild(b);
+      })(day);
+    }
+  }
+  function loadAdv(){ fetch('/api/advent').then(function(r){return r.json()}).then(renderAdv).catch(function(){}); }
+  function openDoor(day){
+    fetch('/api/advent',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({day:day})}).then(function(r){return r.json()}).then(function(d){
+      var m=$('advMsg');
+      if(!d.ok){ if(m) m.textContent=d.err||'cant open that'; return; }
+      if(m) m.innerHTML='door '+day+' — <b style="color:#ffd257">+'+fmt(d.amt)+' coins</b>';
+      setBal(d.bal);
+      loadAdv();
+    }).catch(function(){});
+  }
+  if($('advOpen')) $('advOpen').addEventListener('click', function(){ if(advPop){ if(advPop.parentNode!==document.body) document.body.appendChild(advPop); advPop.style.display='flex'; advLock(true); loadAdv(); } });
+  if($('advX')) $('advX').addEventListener('click', function(){ if(advPop){ advPop.style.display='none'; advLock(false); } });
+  if(advPop) advPop.addEventListener('click', function(e){ if(e.target===advPop){ advPop.style.display='none'; advLock(false); } });
+  loadAdv();
+})();
+</script>
+<script>
+(function(){
   var openB=document.getElementById('shopOpen'), pop=document.getElementById('shopPop'), xB=document.getElementById('shopX'), sum=document.getElementById('shopSum');
   if(!pop)return;
   function openPop(){ if(pop.parentNode!==document.body) document.body.appendChild(pop); pop.style.display='flex'; document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden'; }
@@ -11519,7 +11647,8 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style>
     if(!sum||!d||!d.coins)return;
     var keys=Object.keys(d.shop||{}).length-1;
     sum.innerHTML='<span style="display:inline-block;background:linear-gradient(135deg,rgba(255,210,87,.22),rgba(255,160,60,.1));border:1px solid rgba(255,210,87,.5);color:#ffd257;border-radius:999px;padding:4px 12px;font-weight:800;font-size:13px">'+Number(d.coins.bal).toLocaleString('en-US')+' coins</span> <span style="color:#8a81ad;font-size:12.5px">'+d.coins.own.length+'/'+keys+' fx collected</span>';
-  };
+  
+    var cb=document.getElementById('claimBtn'); if(cb&&d.claim){ cb.style.display='block'; if(d.claim.can){ cb.disabled=false; cb.style.opacity='1'; cb.textContent='claim daily · +'+d.claim.amt+' coins · day '+d.claim.streak+' streak'; } else { cb.disabled=true; cb.style.opacity='.55'; cb.textContent='daily claimed · '+d.claim.streak+' day streak'; } }};
   fetch('/api/me/social').then(function(r){return r.json()}).then(function(d){ if(d&&d.ok)window.__shopSumUpdate(d); }).catch(function(){});
 })();
 </script>
@@ -16288,12 +16417,27 @@ const WHEEL_TABLE = [
 ];
 const WHEEL_COST = 25;
 const WHEEL_CD = new Map();
+const WHEEL_PENDING = new Map();
 async function wheelApi(req, res, u) {
   if (u.pathname === '/api/wheel' && req.method === 'GET') {
     const me = voterUser(req);
     let bal = null;
     if (me) { await coinsLoad(); bal = COINS.bal[me.toLowerCase()] || 0; }
-    jres(res, 200, { ok: true, me: !!me, bal, cost: WHEEL_COST, table: WHEEL_TABLE });
+    let pend = 0;
+    if (me) { const pd = WHEEL_PENDING.get(me.toLowerCase()); if (pd && pd.exp > Date.now()) pend = pd.amt; }
+    jres(res, 200, { ok: true, me: !!me, bal, cost: WHEEL_COST, table: WHEEL_TABLE, pending: pend });
+    return true;
+  }
+  if (u.pathname === '/api/wheel/double' && req.method === 'POST') {
+    const me2 = voterUser(req);
+    if (!me2) { jres(res, 401, { ok: false, err: 'login first' }); return true; }
+    const k2 = me2.toLowerCase();
+    const pd = WHEEL_PENDING.get(k2);
+    if (!pd || pd.exp <= Date.now()) { jres(res, 200, { ok: false, err: 'no win waiting to double' }); return true; }
+    WHEEL_PENDING.delete(k2);
+    await coinsLoad();
+    if (Math.random() < 0.5) { COINS.bal[k2] = (COINS.bal[k2] || 0) + pd.amt; coinsSave(); jres(res, 200, { ok: true, win: true, amt: pd.amt, bal: COINS.bal[k2] }); }
+    else { COINS.bal[k2] = Math.max(0, (COINS.bal[k2] || 0) - pd.amt); coinsSave(); jres(res, 200, { ok: true, win: false, amt: pd.amt, bal: COINS.bal[k2] }); }
     return true;
   }
   if (u.pathname !== '/api/wheel/spin' || req.method !== 'POST') return false;
@@ -16320,15 +16464,137 @@ async function wheelApi(req, res, u) {
       jres(res, 200, { ok: true, prize: { kind: 'fx', fx, name: FXSHOP[fx].n }, bal: COINS.bal[k] || 0, cost: WHEEL_COST });
       return true;
     }
-    COINS.bal[k] += 500; coinsSave();
+    COINS.bal[k] += 500; coinsSave(); WHEEL_PENDING.set(k, { amt: 500, exp: now + 90000 });
     jres(res, 200, { ok: true, prize: { kind: 'coins', amt: 500 }, bal: COINS.bal[k] || 0, cost: WHEEL_COST });
     return true;
   }
-  COINS.bal[k] = (COINS.bal[k] || 0) + prize.amt;
+  COINS.bal[k] = (COINS.bal[k] || 0) + prize.amt; WHEEL_PENDING.set(k, { amt: prize.amt, exp: now + 90000 });
   coinsSave();
   jres(res, 200, { ok: true, prize: { kind: 'coins', amt: prize.amt }, bal: COINS.bal[k], cost: WHEEL_COST });
   return true;
 }
+// ---- casino + daily poll + advent (v475) ----
+const CASINO_CD = new Map();
+const SLOT_POOL = ['✦', '●', '●', '◆', '◆', '◆', '★', '★', '★', '★', '7', '7', '7', '7', '7', '♦', '♦', '♦', '♦', '♦', '♦'];
+async function casinoApi(req, res, u) {
+  if (u.pathname !== '/api/casino/flip' && u.pathname !== '/api/casino/slots') return false;
+  if (req.method !== 'POST') return false;
+  const me = voterUser(req);
+  if (!me) { jres(res, 401, { ok: false, err: 'login first' }); return true; }
+  const k = me.toLowerCase();
+  const now = Date.now();
+  if ((CASINO_CD.get(k) || 0) > now) { jres(res, 429, { ok: false, err: 'one sec twin' }); return true; }
+  const b = await readJsonBody(req, 1024).then((x) => x).catch(() => null);
+  const bet = Math.floor(Number(b && b.bet));
+  await coinsLoad();
+  if (u.pathname === '/api/casino/flip') {
+    if (![10, 25, 50, 100].includes(bet)) { jres(res, 400, { ok: false, err: 'bad bet' }); return true; }
+    const pick = b && b.pick === 'moon' ? 'moon' : 'star';
+    if ((COINS.bal[k] || 0) < bet) { jres(res, 200, { ok: false, err: 'not enough coins', bal: COINS.bal[k] || 0 }); return true; }
+    CASINO_CD.set(k, now + 700);
+    COINS.bal[k] -= bet;
+    const land = Math.random() < 0.5 ? 'star' : 'moon';
+    let payout = 0;
+    if (land === pick) payout = bet + Math.floor(bet * 0.9);
+    COINS.bal[k] += payout;
+    coinsSave();
+    jres(res, 200, { ok: true, land, win: payout > 0, payout, bal: COINS.bal[k] });
+    return true;
+  }
+  if (![25, 50].includes(bet)) { jres(res, 400, { ok: false, err: 'bad bet' }); return true; }
+  if ((COINS.bal[k] || 0) < bet) { jres(res, 200, { ok: false, err: 'not enough coins', bal: COINS.bal[k] || 0 }); return true; }
+  CASINO_CD.set(k, now + 700);
+  COINS.bal[k] -= bet;
+  const reels = [0, 1, 2].map(() => SLOT_POOL[Math.floor(Math.random() * SLOT_POOL.length)]);
+  let mult = 0;
+  if (reels[0] === reels[1] && reels[1] === reels[2]) mult = reels[0] === '✦' ? 20 : 8;
+  else if (reels[0] === reels[1] || reels[1] === reels[2] || reels[0] === reels[2]) mult = 1.5;
+  const payout = Math.floor(bet * mult);
+  COINS.bal[k] += payout;
+  coinsSave();
+  if (mult >= 8) { try { feedPush('slots', k, 'hit triple ' + reels[0] + ' on slots for ' + payout + ' coins'); } catch (e) {} }
+  jres(res, 200, { ok: true, reels, mult, payout, bal: COINS.bal[k] });
+  return true;
+}
+const POLL_BANK = [
+  ['pineapple on pizza?', ['yes, elite', 'absolutely not']],
+  ['is a hot dog a sandwich?', ['yes it is', 'no way']],
+  ['best way to eat fries?', ['ketchup', 'plain + salt', 'cheese loaded']],
+  ['winter or summer?', ['winter', 'summer']],
+  ['console or pc?', ['console', 'pc']],
+  ['would u rather fight?', ['one horse-sized duck', '100 duck-sized horses']],
+  ['cereal with water — valid?', ['valid', 'jail']],
+  ['best meal of the day?', ['breakfast', 'lunch', 'dinner']],
+  ['sleep in or stay up late?', ['sleep in', 'up late']],
+  ['is mint ice cream good?', ['top tier', 'tastes like toothpaste']],
+  ['money or free time?', ['money', 'free time']],
+  ['texting or calling?', ['texting', 'calling']],
+  ['best season for gaming?', ['winter', 'summer', 'all year']],
+  ['would u live in a big city or small town?', ['big city', 'small town']],
+];
+const POLL = { day: '', qi: 0, votes: {}, ready: false };
+let pollDirty = false;
+function pollSave() { if (pollDirty) return; pollDirty = true; setTimeout(() => { pollDirty = false; try { storeSet('cfg:poll', JSON.stringify({ day: POLL.day, qi: POLL.qi, votes: POLL.votes })); } catch (e) {} }, 800); }
+async function pollLoad() {
+  if (!POLL.ready) { POLL.ready = true; try { const got = await storeCmd([['GET', 'cfg:poll']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o) { POLL.day = o.day || ''; POLL.qi = o.qi || 0; POLL.votes = o.votes || {}; } } } catch (e) {} }
+  const today = scoreDay();
+  if (POLL.day !== today) { let h = 0; for (let i = 0; i < today.length; i++) h = (h * 31 + today.charCodeAt(i)) >>> 0; POLL.day = today; POLL.qi = h % POLL_BANK.length; POLL.votes = {}; pollSave(); }
+}
+async function pollApi(req, res, u) {
+  if (u.pathname !== '/api/poll') return false;
+  await pollLoad();
+  const q = POLL_BANK[POLL.qi];
+  const counts = () => q[1].map((_, i) => Object.values(POLL.votes).filter((v) => v === i).length);
+  if (req.method === 'GET') {
+    const me = voterUser(req);
+    const c = counts();
+    jres(res, 200, { ok: true, q: q[0], opts: q[1], counts: c, total: c.reduce((a, b) => a + b, 0), my: me ? (POLL.votes[me.toLowerCase()] !== undefined ? POLL.votes[me.toLowerCase()] : -1) : -1 });
+    return true;
+  }
+  if (req.method === 'POST') {
+    const me = voterUser(req);
+    if (!me) { jres(res, 401, { ok: false, err: 'login first' }); return true; }
+    const b = await readJsonBody(req, 1024).then((x) => x).catch(() => null);
+    const i = Math.floor(Number(b && b.i));
+    if (!(i >= 0 && i < q[1].length)) { jres(res, 400, { ok: false, err: 'bad pick' }); return true; }
+    POLL.votes[me.toLowerCase()] = i;
+    pollSave();
+    const c = counts();
+    jres(res, 200, { ok: true, counts: c, total: c.reduce((a, b) => a + b, 0), my: i });
+    return true;
+  }
+  return false;
+}
+async function adventApi(req, res, u) {
+  if (u.pathname !== '/api/advent') return false;
+  const me = voterUser(req);
+  if (!me) { jres(res, 401, { ok: false, err: 'login first' }); return true; }
+  await coinsLoad();
+  const k = me.toLowerCase();
+  const p = chiParts();
+  const prizes = {}; for (let d = 1; d <= 25; d++) prizes[d] = adventPrize(d);
+  if (req.method === 'GET') {
+    jres(res, 200, { ok: true, month: p.m, day: p.d, opened: COINS.adv[k] || {}, prizes });
+    return true;
+  }
+  if (req.method === 'POST') {
+    const b = await readJsonBody(req, 1024).then((x) => x).catch(() => null);
+    const day = Math.floor(Number(b && b.day));
+    if (p.m !== 12) { jres(res, 200, { ok: false, err: 'advent starts dec 1' }); return true; }
+    if (!(day >= 1 && day <= 25) || day > p.d) { jres(res, 200, { ok: false, err: 'that door is still locked' }); return true; }
+    const mine = COINS.adv[k] || (COINS.adv[k] = {});
+    if (mine[day]) { jres(res, 200, { ok: false, err: 'already opened that one' }); return true; }
+    const amt = adventPrize(day);
+    mine[day] = amt;
+    const bal = await coinsAward(k, amt);
+    coinsSave();
+    try { feedPush('advent', k, 'opened advent door ' + day + ' for ' + amt + ' coins'); } catch (e) {}
+    jres(res, 200, { ok: true, day, amt, bal, opened: mine });
+    return true;
+  }
+  return false;
+}
+
 async function dmRepApi(req, res, u) {
   if (u.pathname !== '/api/dm/report' || req.method !== 'POST') return false;
   const me = voterUser(req);
@@ -16905,10 +17171,10 @@ async function bumpStat(user, key, ev) {
   } catch (e) {}
 }
 async function badgeCheck(user) { try { if (!user) return; await badgesLoad(); evalBadges(String(user).toLowerCase(), null); } catch (e) {} }
-const COINS = { bal: {}, fx: {}, own: {}, ready: false };
+const COINS = { bal: {}, fx: {}, own: {}, claim: {}, adv: {}, ready: false };
 let coinsDirty = false;
-async function coinsLoad() { if (COINS.ready) return; COINS.ready = true; try { const got = await storeCmd([['GET', 'cfg:coins']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o) { if (o.bal) COINS.bal = o.bal; if (o.fx) COINS.fx = o.fx; if (o.own) COINS.own = o.own; } } } catch (e) {} }
-function coinsSave() { if (coinsDirty) return; coinsDirty = true; setTimeout(() => { coinsDirty = false; try { storeSet('cfg:coins', JSON.stringify({ bal: COINS.bal, fx: COINS.fx, own: COINS.own })); } catch (e) {} }, 800); }
+async function coinsLoad() { if (COINS.ready) return; COINS.ready = true; try { const got = await storeCmd([['GET', 'cfg:coins']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o) { if (o.bal) COINS.bal = o.bal; if (o.fx) COINS.fx = o.fx; if (o.own) COINS.own = o.own; if (o.claim) COINS.claim = o.claim; if (o.adv) COINS.adv = o.adv; } } } catch (e) {} }
+function coinsSave() { if (coinsDirty) return; coinsDirty = true; setTimeout(() => { coinsDirty = false; try { storeSet('cfg:coins', JSON.stringify({ bal: COINS.bal, fx: COINS.fx, own: COINS.own, claim: COINS.claim, adv: COINS.adv })); } catch (e) {} }, 800); }
 async function coinsAward(user, n) {
   try {
     if (!user) return 0;
@@ -16920,6 +17186,15 @@ async function coinsAward(user, n) {
     return COINS.bal[user];
   } catch (e) { return 0; }
 }
+function chiParts() { const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })); return { y: d.getFullYear(), m: d.getMonth() + 1, d: d.getDate() }; }
+function dayStr(offset) { const p = chiParts(); const dt = new Date(Date.UTC(p.y, p.m - 1, p.d + (offset || 0))); return dt.toISOString().slice(0, 10); }
+function claimInfo(k) {
+  const c = COINS.claim[k] || null; const today = scoreDay();
+  if (c && c.day === today) return { can: false, amt: 0, streak: c.streak || 1 };
+  const streak = (c && c.day === dayStr(-1)) ? (c.streak || 0) + 1 : 1;
+  return { can: true, amt: 30 + Math.min(streak - 1, 10) * 5, streak };
+}
+function adventPrize(day) { return day === 25 ? 500 : 20 + day * 6; }
 function fxStamp(msg, user) {
   try {
     if (!user) return;
@@ -17007,7 +17282,7 @@ function socialOnChat(room, user, text) {
   } catch (e) {}
 }
 async function socialApi(req, res, u) {
-  if (u.pathname !== '/api/coins' && u.pathname !== '/api/coins/buy' && u.pathname !== '/api/coins/grant' && u.pathname !== '/api/badges' && u.pathname !== '/api/me/social') return false;
+  if (u.pathname !== '/api/coins' && u.pathname !== '/api/coins/buy' && u.pathname !== '/api/coins/grant' && u.pathname !== '/api/badges' && u.pathname !== '/api/me/social' && u.pathname !== '/api/coins/claim') return false;
   const me = voterUser(req);
   if (u.pathname === '/api/coins' && req.method === 'GET') {
     if (!me) { jres(res, 401, { ok: false, err: 'login first' }); return true; }
@@ -17035,6 +17310,19 @@ async function socialApi(req, res, u) {
     jres(res, 200, { ok: true, bal: COINS.bal[k] || 0, fx: COINS.fx[k], own });
     return true;
   }
+  if (u.pathname === '/api/coins/claim' && req.method === 'POST') {
+    if (!me) { jres(res, 401, { ok: false, err: 'login first' }); return true; }
+    await coinsLoad();
+    const k = me.toLowerCase();
+    const info = claimInfo(k);
+    if (!info.can) { jres(res, 200, { ok: false, err: 'already claimed today', streak: info.streak }); return true; }
+    COINS.claim[k] = { day: scoreDay(), streak: info.streak };
+    const bal = await coinsAward(k, info.amt);
+    coinsSave();
+    try { if (info.streak >= 3) feedPush('daily', k, 'is on a ' + info.streak + ' day claim streak'); } catch (e) {}
+    jres(res, 200, { ok: true, amt: info.amt, streak: info.streak, bal });
+    return true;
+  }
   if (u.pathname === '/api/coins/grant' && req.method === 'POST') {
     if (!isAdminReq(req)) { jres(res, 403, { ok: false, err: 'admin only' }); return true; }
     const b = await readJsonBody(req, 2048).then((x) => x).catch(() => null);
@@ -17059,7 +17347,7 @@ async function socialApi(req, res, u) {
     const k = me.toLowerCase();
     const r = BADATA.u[k] || { got: {}, cnt: {} };
     const list = BADGES.filter((b) => r.got[b.id]).map((b) => ({ id: b.id, name: b.n, desc: b.d, at: r.got[b.id] }));
-    jres(res, 200, { ok: true, user: me, coins: { bal: COINS.bal[k] || 0, fx: COINS.fx[k] || '', own: COINS.own[k] || [] }, shop: FXSHOP, badges: list, cnt: r.cnt || {} });
+    jres(res, 200, { ok: true, user: me, coins: { bal: COINS.bal[k] || 0, fx: COINS.fx[k] || '', own: COINS.own[k] || [] }, claim: claimInfo(k), advOpened: Object.keys(COINS.adv[k] || {}).length, shop: FXSHOP, badges: list, cnt: r.cnt || {} });
     return true;
   }
   return false;
@@ -22530,6 +22818,9 @@ const server = http.createServer(async (req, res) => {
   if (await spApi(req, res, u)) return;
   if (await scoresApi(req, res, u)) return;
   if (await wheelApi(req, res, u)) return;
+    if (await casinoApi(req, res, u)) return;
+    if (await pollApi(req, res, u)) return;
+    if (await adventApi(req, res, u)) return;
   if (await dmRepApi(req, res, u)) return;
   if (await socialApi(req, res, u)) return;
   if (await radioApi(req, res, u)) return;
