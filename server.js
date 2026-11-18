@@ -4454,7 +4454,7 @@ body[data-sky] .app6 .cr-item.on,body[data-sky] .app6 .cr-item.on:hover,body[dat
 <div class="dme"><div class="dme-av" id="myav">?</div><div class="dme-meta"><b id="mydisp">guest</b><span id="mysub"></span></div><button class="dme-btn" id="profbtn" type="button" title="ur profile" aria-label="ur profile"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
 </aside>
 <main class="main6">
-<div class="head6"><button id="drawerbtn" type="button" aria-label="rooms" style="display:none;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);color:#e4e4e7;align-items:center;justify-content:center;cursor:pointer;flex:none;padding:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><div class="head6-t"><span id="roomtitle">lobby</span><span class="head6-sub" id="pres">connecting…</span></div><div class="hcall"><button id="vjoin" class="hbtn" type="button" title="voice call" aria-label="voice call"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button><button id="vjoinv" class="hbtn" type="button" title="video call" aria-label="video call"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></button></div></div>
+<div class="head6"><button id="drawerbtn" type="button" aria-label="rooms" style="display:none;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);color:#e4e4e7;align-items:center;justify-content:center;cursor:pointer;flex:none;padding:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><div class="head6-t"><span id="roomtitle">lobby</span><span class="head6-sub" id="pres">connecting…</span></div><div class="hcall"><button id="dmreport" class="hbtn" type="button" title="report this convo to deion" aria-label="report conversation" style="display:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></button><button id="vjoin" class="hbtn" type="button" title="voice call" aria-label="voice call"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button><button id="vjoinv" class="hbtn" type="button" title="video call" aria-label="video call"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></button></div></div>
 <div id="privbar" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid rgba(255,255,255,.4);border-radius:12px;background:rgba(255,255,255,.08);font-size:14px;text-align:left"></div>
 
 
@@ -4535,6 +4535,12 @@ function goDm(room, peer, disp) {
   var b = document.getElementById('privbadge'); if (b) b.style.display = 'none';
   fetch('/auth/notifs-read', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ type: 'dm', from: peer }) }).catch(function () {});
 }
+var dmRepBtn = document.getElementById('dmreport');
+if (dmRepBtn) dmRepBtn.addEventListener('click', function () {
+  if (!dmPeer) return;
+  if (!confirm('report this convo? the last messages in it get sent to deion so he can review')) return;
+  fetch('/api/dm/report', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ peer: dmPeer }) }).then(function (r) { return r.json(); }).then(function (x) { alert(x && x.ok ? 'reported - deion can review it now' : ((x && x.err) || 'could not report')); }).catch(function () { alert('could not report'); });
+});
 function frBtn(label, fn) { var b = document.createElement('button'); b.type = 'button'; b.style.cssText = 'flex:none;font-size:12px;font-weight:600;padding:5px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:#e4e4e7;cursor:pointer'; b.textContent = label; b.addEventListener('click', fn); return b; }
 function frRow(main, sub) {
   var d = document.createElement('div'); d.style.cssText = 'display:flex;align-items:center;gap:7px;padding:6px 2px';
@@ -4642,7 +4648,7 @@ loadFriends();
 function goRoom(r){
   leaveVoice();
   showChat();
-  if (r.indexOf('dm-') !== 0) { dmPeer = ''; window.__sixDmOpen = ''; } else window.__sixDmOpen = r;
+  if (r.indexOf('dm-') !== 0) { dmPeer = ''; window.__sixDmOpen = ''; } else window.__sixDmOpen = r; var _dr = document.getElementById('dmreport'); if (_dr) _dr.style.display = r.indexOf('dm-') === 0 ? '' : 'none';
   var _rail = document.querySelector('.chatrail'); if (_rail) _rail.classList.remove('open');
   room=r;
   Array.prototype.forEach.call(document.querySelectorAll('.room'), function(b){ b.classList.toggle('on', b.getAttribute('data-room')===r); });
@@ -7121,6 +7127,8 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <div class="acard" id="adReqs"></div>
 <h2 class="asec">6ixvid reports</h2>
 <div class="acard" id="adVid"></div>
+<h2 class="asec">dm reports</h2>
+<div class="acard" id="adDm"></div>
 </div>
 ${SIDEBAR_HTML}
 </div>
@@ -7153,8 +7161,8 @@ function render(){
   (S.users || []).forEach(function (u) {
     var banned = (S.bans || []).indexOf(String(u.name).toLowerCase()) >= 0;
     uh += '<div class="arow"><span class="aname">@' + escA(u.name) + '</span>' + (u.disp ? '<span class="asub">' + escA(u.disp) + '</span>' : '') + '<span class="asub">joined ' + (u.created ? new Date(u.created).toLocaleDateString() : '?') + '</span>' + (u.ip ? '<span class="asub">ip ' + escA(u.ip) + '</span>' : '') + (banned ? '<span style="color:#fca5a5;font-size:12px;font-weight:700">BANNED</span>' : '');
-    if (String(u.name).toLowerCase() === 'deion') uh += '<span class="asub">— thats u</span>';
-    else uh += btn('u-mute', 'mute', ' data-u="' + escA(u.name) + '"') + (banned ? btn('u-unban', 'unban', ' data-u="' + escA(u.name) + '"') : btn('u-ban', 'ban', ' data-u="' + escA(u.name) + '"', 'danger')) + btn('u-ipban', 'ip ban', ' data-u="' + escA(u.name) + '"', 'danger') + btn('u-logout', 'log out', ' data-u="' + escA(u.name) + '"') + btn('u-del', 'delete acct', ' data-u="' + escA(u.name) + '"', 'danger');
+    if (String(u.name).toLowerCase() === 'deion') uh += '<span class="asub">— thats u</span>' + btn('u-coins', 'give coins', ' data-u="' + escA(u.name) + '"');
+    else uh += btn('u-mute', 'mute', ' data-u="' + escA(u.name) + '"') + (banned ? btn('u-unban', 'unban', ' data-u="' + escA(u.name) + '"') : btn('u-ban', 'ban', ' data-u="' + escA(u.name) + '"', 'danger')) + btn('u-ipban', 'ip ban', ' data-u="' + escA(u.name) + '"', 'danger') + btn('u-coins', 'give coins', ' data-u="' + escA(u.name) + '"') + btn('u-logout', 'log out', ' data-u="' + escA(u.name) + '"') + btn('u-del', 'delete acct', ' data-u="' + escA(u.name) + '"', 'danger');
     uh += '</div>';
   });
   document.getElementById('adUsers').innerHTML = uh || '<div class="asub">no accounts</div>';
@@ -7186,6 +7194,21 @@ function render(){
   });
   if ((S.vidReports || []).length) vh += '<div class="arow">' + btn('vid-clear', 'clear all reports', '', 'danger') + '</div>';
   document.getElementById('adVid').innerHTML = vh || '<div class="asub">no reports</div>';
+  var dh = '';
+  var dmBy = {};
+  (S.dmReports || []).forEach(function (r) { (dmBy[r.against] = dmBy[r.against] || []).push(r); });
+  Object.keys(dmBy).forEach(function (ag) {
+    var list = dmBy[ag];
+    dh += '<div class="arow"><span class="aname">@' + escA(ag) + '</span><span class="asub">' + list.length + ' dm report' + (list.length > 1 ? 's' : '') + '</span>' + btn('dm-ban', 'chat ban', ' data-u="' + escA(ag) + '"', 'danger') + '</div>';
+    list.forEach(function (r) {
+      var when = r.at ? new Date(r.at).toLocaleString() : '';
+      var convo = (r.msgs && r.msgs.length) ? r.msgs.map(function (m) { return '<b>@' + escA(m.u || '') + ':</b> ' + escA(m.text || (m.img ? '[image]' : '')); }).join('<br>') : '(no messages saved)';
+      dh += '<div class="arow"><span class="asub">reported by @' + escA(r.by) + ' · ' + escA(when) + ' · ' + ((r.msgs || []).length) + ' msgs saved</span>' + btn('dm-chat', 'view convo', ' data-id="' + escA(r.id) + '"') + btn('dm-dismiss', 'dismiss', ' data-id="' + escA(r.id) + '"') + '</div>';
+      dh += '<div class="arow" id="dc-' + escA(r.id) + '" style="display:none"><div style="font-size:13px;line-height:1.55;max-height:300px;overflow:auto">' + convo + '</div></div>';
+    });
+  });
+  if ((S.dmReports || []).length) dh += '<div class="arow">' + btn('dm-clear', 'clear all dm reports', '', 'danger') + '</div>';
+  document.getElementById('adDm').innerHTML = dh || '<div class="asub">no dm reports</div>';
 }
 function load(){
   fetch('/api/admin/state').then(function (r) { return r.json(); }).then(function (o) { S = o; render(); }).catch(function () {});
@@ -7201,6 +7224,11 @@ document.addEventListener('click', function (ev) {
   else if (act === 'vid-clear') { if (!confirm('clear ALL 6ixvid reports?')) return; post('/api/admin/vid/clear').then(function () { note('reports cleared'); load(); }); }
   else if (act === 'vid-ban') { if (!confirm('ban @' + u + ' from 6ixvid?')) return; post('/api/admin/vid/ban', { user: u }).then(function () { note('banned ' + u + ' from 6ixvid'); load(); }); }
   else if (act === 'vid-unban') { post('/api/admin/vid/unban', { user: u }).then(function () { note('unbanned ' + u); load(); }); }
+  else if (act === 'dm-chat') { var dc = document.getElementById('dc-' + id); if (dc) dc.style.display = dc.style.display === 'none' ? '' : 'none'; }
+  else if (act === 'dm-dismiss') { post('/api/admin/dm/dismiss', { id: id }).then(function () { note('dm report dismissed'); load(); }); }
+  else if (act === 'dm-clear') { if (!confirm('clear ALL dm reports?')) return; post('/api/admin/dm/clear').then(function () { note('dm reports cleared'); load(); }); }
+  else if (act === 'dm-ban') { if (!confirm('BAN @' + u + ' from chat? they get kicked and cannot rejoin until unbanned')) return; post('/api/admin/chat/ban', { user: u }).then(function () { note('banned ' + u + ' from chat'); load(); }); }
+  else if (act === 'u-coins') { var amt = prompt('give @' + u + ' how many coins? type max for basically infinite', '1000'); if (!amt) return; var nn = /^(max|inf|infinite)$/i.test(amt.trim()) ? 999999999 : parseInt(amt, 10); if (!nn || nn <= 0) { note('bad amount'); return; } post('/api/coins/grant', { u: u, n: nn }).then(function (o) { note(o && o.ok ? 'gave @' + u + ' ' + nn + ' coins - new bal ' + o.bal : 'could not grant'); }); }
   else if (act === 'room-clear') { if (!confirm('clear room ' + room + '?')) return; post('/api/admin/chat/clear', { room: room }).then(function () { note('cleared ' + room); load(); }); }
   else if (act === 'room-purge') { var un2 = prompt('delete ALL messages from who in ' + room + '?'); if (!un2) return; post('/api/admin/chat/purgeuser', { room: room, user: un2 }).then(function (o) { note('purged ' + ((o && o.removed) || 0) + ' msgs'); load(); }); }
   else if (act === 'u-mute') { var mins = parseInt(prompt('mute @' + u + ' for how many minutes?', '10') || '10', 10) || 10; post('/api/admin/chat/mute', { user: u, mins: mins }).then(function () { note('muted ' + u + ' for ' + mins + 'm'); load(); }); }
@@ -16139,6 +16167,30 @@ let vidDataLoaded = false;
 let vidReportSeq = 1;
 async function vidDataLoad() { if (vidDataLoaded) return; vidDataLoaded = true; try { const got = await storeCmd([['GET', 'cfg:vid']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o && Array.isArray(o.reports)) { VIDREPORTS.length = 0; for (const r of o.reports) VIDREPORTS.push(r); } if (o && Array.isArray(o.bans)) for (const x of o.bans) VIDBANS.add(String(x).toLowerCase()); } } catch { } }
 function vidDataSave() { try { storeSet('cfg:vid', JSON.stringify({ reports: VIDREPORTS.slice(-60), bans: [...VIDBANS] })); } catch { } }
+const DMREPORTS = [];
+let dmRepLoaded = false;
+let dmRepSeq = 1;
+async function dmRepLoad() { if (dmRepLoaded) return; dmRepLoaded = true; try { const got = await storeCmd([['GET', 'cfg:dmrep']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o && Array.isArray(o.reports)) { DMREPORTS.length = 0; for (const r of o.reports) DMREPORTS.push(r); } } } catch (e) {} }
+function dmRepSave() { try { storeSet('cfg:dmrep', JSON.stringify({ reports: DMREPORTS.slice(-40) })); } catch (e) {} }
+async function dmRepApi(req, res, u) {
+  if (u.pathname !== '/api/dm/report' || req.method !== 'POST') return false;
+  const me = voterUser(req);
+  if (!me) { jres(res, 401, { ok: false, err: 'login first' }); return true; }
+  const b = await readJsonBody(req, 2048).then((x) => x).catch(() => null);
+  const peer = String((b && b.peer) || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+  const k = me.toLowerCase();
+  if (!peer || peer === k || !ACCOUNTS.has(peer) || !areFriends(k, peer)) { jres(res, 400, { ok: false, err: 'bad peer' }); return true; }
+  await dmRepLoad();
+  const room = dmRoomFor(k, peer);
+  const msgs = chatRoomOf(room).msgs.slice(-60).map((m) => ({ u: m.name || '', text: String(m.text || '').slice(0, 500), img: m.img ? 1 : 0, ts: m.ts || 0 }));
+  const ex = DMREPORTS.find((r) => r.by === k && r.against === peer && Date.now() - r.at < 600000);
+  if (ex) { ex.msgs = msgs; ex.at = Date.now(); }
+  else { DMREPORTS.push({ id: 'dr' + Date.now().toString(36) + (dmRepSeq++), by: k, against: peer, at: Date.now(), msgs }); if (DMREPORTS.length > 40) DMREPORTS.splice(0, DMREPORTS.length - 40); }
+  dmRepSave();
+  try { pushNotif('deion', { type: 'dmreport', from: k, text: k + ' reported a dm with ' + peer }); } catch (e) {}
+  jres(res, 200, { ok: true, saved: msgs.length });
+  return true;
+}
 let vidPairSeq = 1;
 function vidPartner(p, me) { return p.a === me ? p.b : p.a; }
 function vidDissolve(p, whyA, whyB) {
@@ -16830,7 +16882,7 @@ async function socialApi(req, res, u) {
     if (!isAdminReq(req)) { jres(res, 403, { ok: false, err: 'admin only' }); return true; }
     const b = await readJsonBody(req, 2048).then((x) => x).catch(() => null);
     const who = b && String(b.u || '').toLowerCase(); const n = b ? Math.floor(Number(b.n)) : NaN;
-    if (!who || !isFinite(n) || n <= 0 || n > 100000) { jres(res, 400, { ok: false, err: 'bad grant' }); return true; }
+    if (!who || !isFinite(n) || n <= 0 || n > 1000000000) { jres(res, 400, { ok: false, err: 'bad grant' }); return true; }
     const bal = await coinsAward(who, n);
     jres(res, 200, { ok: true, bal });
     return true;
@@ -21170,7 +21222,7 @@ const server = http.createServer(async (req, res) => {
     return res.end(JSON.stringify({ ok: true, hot: it ? it.hot : 0 }));
   }
   if (u.pathname === '/api/admin/state' && req.method === 'GET') {
-    await vidDataLoad();
+    await vidDataLoad(); await dmRepLoad();
     const adm = isAdminReq(req);
     if (!adm) { res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-cache' }); return res.end(JSON.stringify({ ok: true, admin: false })); }
     await confAutoLoad(); await chatBansLoad(); await ipBansLoad();
@@ -21182,7 +21234,7 @@ const server = http.createServer(async (req, res) => {
     const reqs = [...GAME_REQUESTS.values()].map(r => ({ id: r.id, name: r.name, by: r.by || '', votes: r.voters ? r.voters.size : 0, ts: r.ts || 0 })).sort((x, y) => y.votes - x.votes);
     const mutes = [...CHAT_MUTES.entries()].map(([user, exp]) => ({ user, left: Math.max(0, Math.round((exp - nowMs) / 60000)) })).filter(m => m.left > 0);
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-cache' });
-    return res.end(JSON.stringify({ ok: true, admin: true, confessAuto: confAuto.mins, mutes, vidReports: VIDREPORTS.slice(-50).reverse(), vidBans: [...VIDBANS], bans: [...CHAT_BANS], ipbans: [...IP_BANS], rooms: roomsPub, dmRooms, privRooms, users, reqs, stats: { accounts: ACCOUNTS.size, sessions: SESSIONS.size, requests: GAME_REQUESTS.size, online } }));
+    return res.end(JSON.stringify({ ok: true, admin: true, confessAuto: confAuto.mins, mutes, dmReports: DMREPORTS.slice(-40).reverse(), vidReports: VIDREPORTS.slice(-50).reverse(), vidBans: [...VIDBANS], bans: [...CHAT_BANS], ipbans: [...IP_BANS], rooms: roomsPub, dmRooms, privRooms, users, reqs, stats: { accounts: ACCOUNTS.size, sessions: SESSIONS.size, requests: GAME_REQUESTS.size, online } }));
   }
   if (u.pathname.startsWith('/api/admin/') && req.method === 'POST') {
     if (!isAdminReq(req)) { res.writeHead(403, { 'content-type': 'application/json' }); return res.end('{"ok":false,"error":"not admin"}'); }
@@ -21210,6 +21262,8 @@ const server = http.createServer(async (req, res) => {
     if (u.pathname === '/api/admin/vid/clear') { await vidDataLoad(); VIDREPORTS.length = 0; vidDataSave(); return done(); }
     if (u.pathname === '/api/admin/vid/ban') { await vidDataLoad(); const un = String(b.user || '').toLowerCase().replace(/[^a-z0-9_]/g, ''); if (un && !ADMIN_USERS.has(un)) { VIDBANS.add(un); vidDataSave(); const qi = VIDQ.findIndex(q => q.u === un); if (qi >= 0) { VIDQ.splice(qi, 1); VIDOF.delete(un); } const st2 = VIDOF.get(un); if (st2 && st2.mode === 'pair') { const pr = VIDPAIRS.get(st2.id); if (pr) vidDissolve(pr, pr.a === un ? null : 'stranger left', pr.a === un ? 'stranger left' : null); } VIDNOTE.set(un, 'u were banned from 6ixvid'); } return done({ ok: !!un && !ADMIN_USERS.has(un) }); }
     if (u.pathname === '/api/admin/vid/unban') { await vidDataLoad(); const un = String(b.user || '').toLowerCase(); VIDBANS.delete(un); vidDataSave(); return done(); }
+    if (u.pathname === '/api/admin/dm/dismiss') { await dmRepLoad(); const rid = String(b.id || ''); const dx = DMREPORTS.findIndex(r => r.id === rid); if (dx >= 0) { DMREPORTS.splice(dx, 1); dmRepSave(); } return done({ ok: dx >= 0 }); }
+    if (u.pathname === '/api/admin/dm/clear') { await dmRepLoad(); DMREPORTS.length = 0; dmRepSave(); return done(); }
     res.writeHead(404, { 'content-type': 'application/json' }); return res.end('{"ok":false}');
   }
   if (u.pathname === '/api/splash/next' && req.method === 'GET') {
@@ -22318,6 +22372,7 @@ const server = http.createServer(async (req, res) => {
   if (await fypApi(req, res, u)) return;
   if (await spApi(req, res, u)) return;
   if (await scoresApi(req, res, u)) return;
+  if (await dmRepApi(req, res, u)) return;
   if (await socialApi(req, res, u)) return;
   if (await radioApi(req, res, u)) return;
   if (u.pathname.startsWith('/api/tube/')) {
