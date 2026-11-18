@@ -1107,11 +1107,10 @@ const TABBAR_HTML = `<nav id="tabbar"><a href="/home"><svg width="21" height="21
     var tb8 = document.getElementById('tabbar');
     if (tb8) {
       var lens8 = document.createElement('span'); lens8.id = 'tabLens'; tb8.appendChild(lens8);
-      var placeLens8 = function() { var on = tb8.querySelector('a.on'); if (!on) { lens8.style.opacity = '0'; return; } var br = tb8.getBoundingClientRect(), ar = on.getBoundingClientRect(); if (!ar.width) return; lens8.style.width = ar.width + 'px'; lens8.style.height = ar.height + 'px'; lens8.style.transform = 'translate(' + (ar.left - br.left) + 'px,' + (ar.top - br.top) + 'px)'; lens8.style.opacity = '1'; };
-      requestAnimationFrame(placeLens8); setTimeout(placeLens8, 350); setTimeout(placeLens8, 1200);
+      var placeLens8 = function() { var on = tb8.querySelector('a.on'); if (!on) { lens8.style.opacity = '0'; return; } var br = tb8.getBoundingClientRect(), ar = on.getBoundingClientRect(); if (!ar.width) return; var bcs = getComputedStyle(tb8); var bx = parseFloat(bcs.borderLeftWidth) || 0, by = parseFloat(bcs.borderTopWidth) || 0; lens8.style.width = ar.width + 'px'; lens8.style.height = ar.height + 'px'; lens8.style.transform = 'translate(' + (ar.left - br.left - bx) + 'px,' + (ar.top - br.top - by) + 'px)'; lens8.style.opacity = '1'; };
+      requestAnimationFrame(placeLens8); setTimeout(placeLens8, 350); setTimeout(placeLens8, 1200); setTimeout(placeLens8, 2600);
+      if (window.ResizeObserver) { var ro8 = new ResizeObserver(placeLens8); ro8.observe(tb8); var on8b = tb8.querySelector('a.on'); if (on8b) ro8.observe(on8b); }
       window.addEventListener('resize', placeLens8);
-      var lastY8 = window.scrollY || 0, tick8 = false;
-      window.addEventListener('scroll', function() { if (tick8) return; tick8 = true; requestAnimationFrame(function() { var y = window.scrollY || 0; if (y > 140 && y - lastY8 > 8) tb8.classList.add('mini'); else if (lastY8 - y > 4 || y <= 140) tb8.classList.remove('mini'); lastY8 = y; tick8 = false; }); }, { passive: true });
     }
     var rail8 = document.getElementById('siderail');
     if (rail8) {
@@ -1121,8 +1120,9 @@ const TABBAR_HTML = `<nav id="tabbar"><a href="/home"><svg width="21" height="21
         if (!rl8 || !on8) { if (tries8++ < 6) setTimeout(railLensInit8, 300); return; }
         rl8.style.position = 'relative';
         var lens28 = document.createElement('span'); lens28.id = 'railLens'; rl8.appendChild(lens28);
-        var place28 = function() { var rr = rl8.getBoundingClientRect(), ar2 = on8.getBoundingClientRect(); if (!ar2.width) return; lens28.style.width = ar2.width + 'px'; lens28.style.height = ar2.height + 'px'; lens28.style.transform = 'translate(' + (ar2.left - rr.left) + 'px,' + (ar2.top - rr.top) + 'px)'; lens28.style.opacity = '1'; };
-        requestAnimationFrame(place28); setTimeout(place28, 400); setTimeout(place28, 1200);
+        var place28 = function() { var ar2 = on8.getBoundingClientRect(); if (!ar2.width) return; lens28.style.width = ar2.width + 'px'; lens28.style.height = ar2.height + 'px'; lens28.style.transform = 'translate(' + on8.offsetLeft + 'px,' + on8.offsetTop + 'px)'; lens28.style.opacity = '1'; };
+        requestAnimationFrame(place28); setTimeout(place28, 400); setTimeout(place28, 1200); setTimeout(place28, 2600);
+        if (window.ResizeObserver) { var ro28 = new ResizeObserver(place28); ro28.observe(rl8); ro28.observe(on8); }
         window.addEventListener('resize', place28);
       };
       railLensInit8();
@@ -2343,16 +2343,14 @@ body #tabbar{border-radius:999px!important;background:linear-gradient(180deg,rgb
 #tabbar a.on svg{transform:scale(1.07)}
 #tabbar a svg{transition:transform .3s cubic-bezier(.32,.72,.24,1)}
 #tabbar a span{transition:opacity .25s ease}
-#tabbar.mini{transform:translateY(5px) scale(.93)}
-#tabbar.mini a span{opacity:0}
-#tabLens{position:absolute;left:0;top:0;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,.13));border:1px solid rgba(255,255,255,.38);box-shadow:inset 0 1px 1px rgba(255,255,255,.6),inset 0 -1px 0 rgba(255,255,255,.1),0 8px 20px rgba(0,0,0,.3);-webkit-backdrop-filter:blur(6px) saturate(170%);backdrop-filter:blur(6px) saturate(170%);transition:transform .42s cubic-bezier(.32,.72,.24,1),width .42s cubic-bezier(.32,.72,.24,1),height .42s cubic-bezier(.32,.72,.24,1),opacity .25s ease;pointer-events:none;z-index:0;opacity:0}
+#tabLens{position:absolute;left:0;top:0;box-sizing:border-box;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,.13));border:1px solid rgba(255,255,255,.38);box-shadow:inset 0 1px 1px rgba(255,255,255,.6),inset 0 -1px 0 rgba(255,255,255,.1),0 8px 20px rgba(0,0,0,.3);-webkit-backdrop-filter:blur(6px) saturate(170%);backdrop-filter:blur(6px) saturate(170%);transition:transform .42s cubic-bezier(.32,.72,.24,1),width .42s cubic-bezier(.32,.72,.24,1),height .42s cubic-bezier(.32,.72,.24,1),opacity .25s ease;pointer-events:none;z-index:0;opacity:0}
 body:not([data-nav="side"]) #topbar{left:10px!important;right:10px!important;top:10px!important;border-radius:999px!important;background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,.08) 55%,rgba(255,255,255,.05))!important;-webkit-backdrop-filter:blur(22px) saturate(185%) brightness(1.07)!important;backdrop-filter:blur(22px) saturate(185%) brightness(1.07)!important;border:1px solid rgba(255,255,255,.3)!important;box-shadow:inset 0 1px 1px rgba(255,255,255,.5),inset 0 -1px 1px rgba(255,255,255,.12),0 18px 40px rgba(0,0,0,.42),0 4px 14px rgba(0,0,0,.28)!important}
 #menuBtn{background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,.08))!important;-webkit-backdrop-filter:blur(20px) saturate(180%)!important;backdrop-filter:blur(20px) saturate(180%)!important;border:1px solid rgba(255,255,255,.32)!important;box-shadow:inset 0 1px 1px rgba(255,255,255,.55),inset 0 -1px 0 rgba(255,255,255,.1),0 10px 24px rgba(0,0,0,.35)!important}
 body[data-nav="side"] #siderail{border-radius:34px!important;left:12px!important;top:12px!important;bottom:12px!important;background:linear-gradient(165deg,rgba(255,255,255,.19),rgba(255,255,255,.07) 50%,rgba(255,255,255,.04))!important;-webkit-backdrop-filter:blur(24px) saturate(185%) brightness(1.06)!important;backdrop-filter:blur(24px) saturate(185%) brightness(1.06)!important;border:1px solid rgba(255,255,255,.3)!important;box-shadow:inset 0 1px 1px rgba(255,255,255,.5),inset 1px 0 0 rgba(255,255,255,.09),inset -1px 0 0 rgba(255,255,255,.05),0 28px 64px rgba(0,0,0,.55),0 6px 20px rgba(0,0,0,.3)!important}
 body[data-nav="side"] #siderail::before{content:'';position:absolute;left:8%;right:8%;top:1px;height:120px;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0));pointer-events:none}
 #siderail .rl a{position:relative;z-index:1;background:transparent!important}
 #siderail .rl a.on{background:transparent!important;color:#fff!important}
-#railLens{position:absolute;left:0;top:0;border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.27),rgba(255,255,255,.11));border:1px solid rgba(255,255,255,.34);box-shadow:inset 0 1px 1px rgba(255,255,255,.55),inset 0 -1px 0 rgba(255,255,255,.08),0 8px 20px rgba(0,0,0,.28);transition:transform .42s cubic-bezier(.32,.72,.24,1),width .42s cubic-bezier(.32,.72,.24,1),height .42s cubic-bezier(.32,.72,.24,1),opacity .25s ease;pointer-events:none;z-index:0;opacity:0}
+#railLens{position:absolute;left:0;top:0;box-sizing:border-box;border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.27),rgba(255,255,255,.11));border:1px solid rgba(255,255,255,.34);box-shadow:inset 0 1px 1px rgba(255,255,255,.55),inset 0 -1px 0 rgba(255,255,255,.08),0 8px 20px rgba(0,0,0,.28);transition:transform .42s cubic-bezier(.32,.72,.24,1),width .42s cubic-bezier(.32,.72,.24,1),height .42s cubic-bezier(.32,.72,.24,1),opacity .25s ease;pointer-events:none;z-index:0;opacity:0}
 @media (prefers-reduced-motion: reduce){#tabLens,#railLens{transition:none}#tabbar{transition:none!important}}
 `;
 const PWA_MANIFEST = JSON.stringify({ name: '6ixNetworks', short_name: '6ix', description: '6ixNetworks — search, games, 6ixChat, six ai', start_url: '/', scope: '/', display: 'standalone', background_color: '#0a0a0b', theme_color: '#0a0a0b', icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }] });
