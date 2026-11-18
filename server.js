@@ -4306,6 +4306,17 @@ body.frview .hcall{display:none}
 .fxgrad{background:linear-gradient(90deg,#8b7cff,#ff5ea8,#ffd257);-webkit-background-clip:text;background-clip:text;color:transparent}
 .fxrain{background:linear-gradient(90deg,#ff5a5a,#ffb52e,#3ddc84,#38b6ff,#c86bff,#ff5a5a);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:fxslide 3.2s linear infinite}
 @keyframes fxslide{to{background-position:300% 0}}
+.fxghost{color:#e6e9f7;text-shadow:0 0 12px rgba(255,255,255,.9),0 0 30px rgba(190,200,255,.45)}
+.fxfrost{color:#bfe9ff;text-shadow:0 0 8px rgba(80,200,255,.95),0 0 22px rgba(80,200,255,.45)}
+.fxtoxic{color:#b6ff5e;text-shadow:0 0 8px rgba(120,255,60,.9),0 0 20px rgba(120,255,60,.4)}
+.fxsunset{background:linear-gradient(90deg,#ff9a3d,#ff5e7a,#c86bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.fxfire{color:#ffb03a;text-shadow:0 0 6px rgba(255,90,0,.95),0 0 18px rgba(255,60,0,.55);animation:fxflick 1.1s ease-in-out infinite alternate}
+.fxgold{background:linear-gradient(90deg,#8a641c,#ffd257,#fff3b0,#ffd257,#8a641c);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:fxshine 2.8s linear infinite}
+.fxglitch{color:#fff;text-shadow:2px 0 rgba(255,45,85,.85),-2px 0 rgba(45,226,255,.85);animation:fxgl 1.7s steps(2) infinite}
+.fxgalaxy{background:linear-gradient(90deg,#7b5cff,#ff5ea8,#38b6ff,#7b5cff);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:fxslide 4s linear infinite}
+@keyframes fxshine{to{background-position:200% 0}}
+@keyframes fxflick{from{text-shadow:0 0 5px rgba(255,90,0,.8),0 0 14px rgba(255,60,0,.45)}to{text-shadow:0 0 9px rgba(255,120,0,1),0 0 24px rgba(255,60,0,.65)}}
+@keyframes fxgl{0%{text-shadow:2px 0 rgba(255,45,85,.85),-2px 0 rgba(45,226,255,.85)}50%{text-shadow:-2px 0 rgba(255,45,85,.85),2px 0 rgba(45,226,255,.85)}100%{text-shadow:2px 0 rgba(255,45,85,.85),-2px 0 rgba(45,226,255,.85)}}
 /* ---------- mobile ---------- */
 @media(max-width:820px){
 .app6 .chatrail{position:fixed;left:0;top:0;bottom:0;height:100dvh;width:276px;z-index:120;transform:translateX(-106%);transition:transform .22s ease;box-shadow:0 0 44px rgba(0,0,0,.55);padding-top:max(18px,env(safe-area-inset-top))}
@@ -11386,16 +11397,32 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style>
   fetch('/api/feed').then(function(r){return r.json()}).then(function(d){
     if(!d||!d.ok||!d.items||!d.items.length)return;
     document.getElementById('socWrap').style.display='flex';
-    document.getElementById('socFeed').innerHTML=d.items.slice(0,8).map(function(i){return '<div style="padding:2.5px 0"><b>'+esc(i.u||'six')+'</b> '+esc(i.x)+' <span style="color:#8a81ad">'+ago(i.at)+' ago</span></div>'}).join('');
+    document.getElementById('socFeed').innerHTML=d.items.slice(0,8).map(function(i){return '<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05)"><b>'+esc(i.u||'six')+'</b> '+esc(i.x)+' <span style="color:#8a81ad">'+ago(i.at)+' ago</span></div>'}).join('');
   }).catch(function(){});
   fetch('/api/me/social').then(function(r){return r.json()}).then(function(d){
     if(!d||!d.ok)return;
     document.getElementById('socWrap').style.display='flex';
     var m=document.getElementById('socMe');m.style.display='block';
-    var badges=d.badges.length?d.badges.map(function(b){return '<span title="'+esc(b.desc)+'" style="display:inline-block;background:rgba(139,124,255,.18);border:1px solid rgba(139,124,255,.45);border-radius:999px;padding:2px 9px;margin:2px 3px 2px 0;font-size:12px;font-weight:700">'+esc(b.name)+'</span>'}).join(''):'<span style="color:#8a81ad">no badges yet — play games, chat, win trivia</span>';
-    var shop=Object.keys(d.shop).map(function(k){var s=d.shop[k];var owned=d.coins.own.indexOf(k)>=0;var on=d.coins.fx===k;return '<button type="button" data-fx="'+k+'" style="background:'+(on?'#8b7cff':'rgba(255,255,255,.07)')+';border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:999px;padding:5px 12px;font-weight:700;font-size:12.5px;cursor:pointer;margin:2px 3px 2px 0;font-family:inherit">'+esc(s.n)+(owned?(on?' — on':' — equip'):' — '+s.p+' coins')+'</button>'}).join('');
-    document.getElementById('socMeBody').innerHTML='<div style="font-size:15px"><b>'+d.coins.bal+'</b> coins'+(d.coins.fx?' · name fx: <b>'+esc(d.coins.fx)+'</b>':'')+'</div><div style="margin-top:7px">'+badges+'</div><div style="margin-top:9px;color:#bdb4e4;font-size:12px;font-weight:800;letter-spacing:.06em">CHAT NAME FX SHOP</div><div style="margin-top:4px">'+shop+'</div>';
-    m.querySelectorAll('[data-fx]').forEach(function(b){b.addEventListener('click',function(){fetch('/api/coins/buy',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({fx:b.getAttribute('data-fx')})}).then(function(r){return r.json()}).then(function(x){if(x.ok)location.reload();else alert(x.err||'cant buy that')}).catch(function(){})})});
+    var SHOPCSS='.shhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.shbal{background:linear-gradient(135deg,rgba(255,210,87,.22),rgba(255,160,60,.1));border:1px solid rgba(255,210,87,.5);color:#ffd257;border-radius:999px;padding:4px 12px;font-weight:800;font-size:13.5px}.shgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(126px,1fr));gap:9px;margin-top:9px}.shcard{position:relative;text-align:left;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.11);border-radius:15px;padding:11px 12px 10px;cursor:pointer;font-family:inherit;color:#fff;display:flex;flex-direction:column;gap:3px;min-height:106px}.shcard:hover{border-color:rgba(139,124,255,.65);background:rgba(139,124,255,.08)}.shcard.on{border-color:#8b7cff;background:rgba(139,124,255,.14);box-shadow:0 0 0 1px #8b7cff,0 6px 22px rgba(139,124,255,.25)}.shprev{font-size:16.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}.shname{font-size:12px;font-weight:700;color:#d8d2f0}.shdesc{font-size:11px;color:#8a81ad;line-height:1.35;flex:1}.shfoot{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:5px}.shprice{font-size:12px;font-weight:800;color:#ffd257}.shprice.own{color:#7ee2a8}.shprice.on{color:#c9bfff}.shprice.cant{color:#8a81ad}.shtag{font-size:9px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;border-radius:999px;padding:2px 7px;border:1px solid rgba(255,255,255,.18);color:#bdb4e4}.shtag.rare{color:#7cc4ff;border-color:rgba(124,196,255,.5)}.shtag.epic{color:#e0aaff;border-color:rgba(224,170,255,.55)}.shtag.legendary{color:#ffd257;border-color:rgba(255,210,87,.6)}.fxglow{text-shadow:0 0 8px rgba(139,124,255,.95),0 0 2px rgba(255,255,255,.6)}.fxgrad{background:linear-gradient(90deg,#8b7cff,#ff5ea8,#ffd257);-webkit-background-clip:text;background-clip:text;color:transparent}.fxrain{background:linear-gradient(90deg,#ff5a5a,#ffb52e,#3ddc84,#38b6ff,#c86bff,#ff5a5a);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:fxslide 3.2s linear infinite}.fxghost{color:#e6e9f7;text-shadow:0 0 12px rgba(255,255,255,.9),0 0 30px rgba(190,200,255,.45)}.fxfrost{color:#bfe9ff;text-shadow:0 0 8px rgba(80,200,255,.95),0 0 22px rgba(80,200,255,.45)}.fxtoxic{color:#b6ff5e;text-shadow:0 0 8px rgba(120,255,60,.9),0 0 20px rgba(120,255,60,.4)}.fxsunset{background:linear-gradient(90deg,#ff9a3d,#ff5e7a,#c86bff);-webkit-background-clip:text;background-clip:text;color:transparent}.fxfire{color:#ffb03a;text-shadow:0 0 6px rgba(255,90,0,.95),0 0 18px rgba(255,60,0,.55);animation:fxflick 1.1s ease-in-out infinite alternate}.fxgold{background:linear-gradient(90deg,#8a641c,#ffd257,#fff3b0,#ffd257,#8a641c);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:fxshine 2.8s linear infinite}.fxglitch{color:#fff;text-shadow:2px 0 rgba(255,45,85,.85),-2px 0 rgba(45,226,255,.85);animation:fxgl 1.7s steps(2) infinite}.fxgalaxy{background:linear-gradient(90deg,#7b5cff,#ff5ea8,#38b6ff,#7b5cff);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:fxslide 4s linear infinite}@keyframes fxslide{to{background-position:300% 0}}@keyframes fxshine{to{background-position:200% 0}}@keyframes fxflick{from{text-shadow:0 0 5px rgba(255,90,0,.8),0 0 14px rgba(255,60,0,.45)}to{text-shadow:0 0 9px rgba(255,120,0,1),0 0 24px rgba(255,60,0,.65)}}@keyframes fxgl{0%{text-shadow:2px 0 rgba(255,45,85,.85),-2px 0 rgba(45,226,255,.85)}50%{text-shadow:-2px 0 rgba(255,45,85,.85),2px 0 rgba(45,226,255,.85)}100%{text-shadow:2px 0 rgba(255,45,85,.85),-2px 0 rgba(45,226,255,.85)}}';
+    function rarity(p){return p>=300?'legendary':p>=200?'epic':p>=120?'rare':'common'}
+    function renderMe(d){
+      var m=document.getElementById('socMe');m.style.display='block';m.style.background='linear-gradient(160deg,rgba(139,124,255,.1),rgba(255,255,255,.03))';m.style.borderRadius='18px';
+      if(!document.getElementById('shstyle')){var st=document.createElement('style');st.id='shstyle';st.textContent=SHOPCSS;document.head.appendChild(st);}
+      var badges=d.badges.length?d.badges.map(function(b){return '<span title="'+esc(b.desc)+'" style="display:inline-block;background:rgba(139,124,255,.18);border:1px solid rgba(139,124,255,.45);border-radius:999px;padding:2px 9px;margin:2px 3px 2px 0;font-size:12px;font-weight:700">'+esc(b.name)+'</span>'}).join(''):'<span style="color:#8a81ad">no badges yet - play games, chat, win trivia</span>';
+      var keys=Object.keys(d.shop);
+      var cards=keys.map(function(k){
+        var s=d.shop[k];var isNone=k==='none';
+        var owned=isNone||d.coins.own.indexOf(k)>=0;
+        var on=isNone?(!d.coins.fx):(d.coins.fx===k);
+        var cant=!owned&&d.coins.bal<s.p;
+        var foot=on?'<span class="shprice on">equipped</span>':owned?'<span class="shprice own">equip</span>':cant?'<span class="shprice cant">'+s.p+' - need '+(s.p-d.coins.bal)+' more</span>':'<span class="shprice">'+s.p+' coins</span>';
+        var tag=isNone?'':'<span class="shtag '+rarity(s.p)+'">'+rarity(s.p)+'</span>';
+        return '<button type="button" class="shcard'+(on?' on':'')+'" data-fx="'+k+'"><span class="shprev '+(isNone?'':'fx'+k)+'">'+esc(d.user)+'</span><span class="shname">'+esc(s.n)+'</span><span class="shdesc">'+esc(s.d||'')+'</span><span class="shfoot">'+foot+tag+'</span></button>';
+      }).join('');
+      document.getElementById('socMeBody').innerHTML='<div class="shhead"><span class="shbal">'+d.coins.bal+' coins</span><span style="font-size:12px;color:#8a81ad">'+d.coins.own.length+'/'+(keys.length-1)+' fx collected - win trivia in chat for +25</span></div><div style="margin-top:8px">'+badges+'</div><div style="margin-top:11px;color:#bdb4e4;font-size:12px;font-weight:800;letter-spacing:.06em">NAME FX SHOP</div><div class="shgrid">'+cards+'</div>';
+      m.querySelectorAll('[data-fx]').forEach(function(b){b.addEventListener('click',function(){fetch('/api/coins/buy',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({fx:b.getAttribute('data-fx')})}).then(function(r){return r.json()}).then(function(x){if(!x.ok){alert(x.err||'cant buy that');return;}fetch('/api/me/social').then(function(r){return r.json()}).then(function(d2){if(d2&&d2.ok)renderMe(d2);}).catch(function(){});}).catch(function(){});});});
+    }
+    renderMe(d);
   }).catch(function(){});
 })();
 </script>
@@ -16617,7 +16644,7 @@ async function scoresApi(req, res, u) {
 }
 
 // ---- social layer: badges, coins, name fx, chat trivia (v459) ----
-const FXSHOP = { glow: { n: 'glow name', p: 50 }, grad: { n: 'gradient name', p: 120 }, rain: { n: 'rainbow name', p: 300 } };
+const FXSHOP = { none: { n: 'plain name', p: 0, d: 'no effect, the clean default' }, glow: { n: 'glow name', p: 50, d: 'soft purple halo around ur name' }, ghost: { n: 'ghost name', p: 60, d: 'pale phantom white glow' }, frost: { n: 'frost name', p: 80, d: 'icy blue freeze glow' }, toxic: { n: 'toxic name', p: 90, d: 'radioactive green glow' }, grad: { n: 'gradient name', p: 120, d: 'purple pink gold gradient' }, sunset: { n: 'sunset name', p: 140, d: 'orange pink purple gradient' }, fire: { n: 'fire name', p: 160, d: 'flickering flame glow' }, gold: { n: 'gold name', p: 220, d: 'shining gold that keeps moving' }, glitch: { n: 'glitch name', p: 260, d: 'red cyan split glitch' }, rain: { n: 'rainbow name', p: 300, d: 'full rainbow sliding across ur name' }, galaxy: { n: 'galaxy name', p: 450, d: 'purple pink blue nebula slide' } };
 const BADGES = [
   { id: 'plays1', n: 'first drop', d: 'submit ur first game score', test: (r) => (r.cnt.plays || 0) >= 1 },
   { id: 'plays25', n: 'grinder', d: 'submit 25 game scores', test: (r) => (r.cnt.plays || 0) >= 25 },
@@ -16784,6 +16811,7 @@ async function socialApi(req, res, u) {
     if (!me) { jres(res, 401, { ok: false, err: 'login first' }); return true; }
     const b = await readJsonBody(req, 2048).then((x) => x).catch(() => null);
     const fx = b && String(b.fx || '');
+    if (fx === 'none') { await coinsLoad(); const kk = me.toLowerCase(); COINS.fx[kk] = ''; coinsSave(); jres(res, 200, { ok: true, bal: COINS.bal[kk] || 0, fx: '', own: COINS.own[kk] || [] }); return true; }
     if (!FXSHOP[fx]) { jres(res, 400, { ok: false, err: 'bad fx' }); return true; }
     await coinsLoad();
     const k = me.toLowerCase();
