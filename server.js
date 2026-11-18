@@ -16202,6 +16202,7 @@ ${SIDEBAR_HTML}
           <button class="pbtn" id="wFsBtn" type="button" aria-label="fullscreen"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
         </div>
         <div id="wMeta" style="font-size:15px;font-weight:700;margin-top:10px"></div>
+        <div class="prow"><button class="pbtn acc" id="wPick" type="button" style="flex:1;padding:11px"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" style="vertical-align:-2px;margin-right:6px"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>search 6ixtube</button></div>
         <div class="prow"><input id="wUrl" placeholder="switch video: youtube link or 6ixtube id (t_...)"><button class="pbtn acc" id="wGo" type="button">switch</button></div>
         <div class="picks" id="tubePicks"></div>
       </section>
@@ -16237,6 +16238,37 @@ ${SIDEBAR_HTML}
     </div>
   </div>
 </main>
+<style>
+.tpop{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:14px}
+.tpop[hidden]{display:none}
+.tpback{position:absolute;inset:0;background:rgba(4,2,10,.86);backdrop-filter:blur(6px)}
+.tpcard{position:relative;width:min(880px,100%);max-height:88vh;display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(38,30,64,.97),rgba(18,14,34,.97));border:1px solid rgba(255,255,255,.14);border-radius:20px;box-shadow:0 24px 70px rgba(0,0,0,.6);overflow:hidden}
+.tphead{display:flex;gap:8px;align-items:center;padding:12px;border-bottom:1px solid rgba(255,255,255,.09)}
+.tpbrand{font-weight:900;letter-spacing:.02em;white-space:nowrap}
+.tpbrand i{color:#c86bff;font-style:normal}
+.tphead input{flex:1;min-width:0;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:11px;color:#f4f2ff;padding:10px 12px;font-size:16px}
+.tpx{flex:none;width:38px;height:38px;border-radius:11px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.tpgrid{overflow-y:auto;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;-webkit-overflow-scrolling:touch}
+.tpc2{cursor:pointer;text-align:left;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:13px;overflow:hidden;padding:0;color:#f4f2ff;font:inherit}
+.tpc2 img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:#0a0817}
+.tpc2 .tt{font-size:13px;font-weight:700;line-height:1.3;padding:8px 9px 2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tpc2 .tm{font-size:11.5px;color:rgba(236,234,246,.55);padding:0 9px 9px}
+.tpmsg{grid-column:1/-1;text-align:center;color:rgba(236,234,246,.55);font-size:14px;padding:26px 8px}
+@media(max-width:560px){.tpgrid{grid-template-columns:repeat(2,1fr);gap:9px;padding:9px}.tpbrand{display:none}.tpop{padding:8px}}
+</style>
+<div class="tpop" id="tpPop" hidden>
+<div class="tpback" id="tpBack"></div>
+<div class="tpcard" role="dialog" aria-label="search 6ixtube">
+<div class="tphead">
+<span class="tpbrand">6ix<i>tube</i></span>
+<input id="tpQ" placeholder="search 6ixtube" autocomplete="off">
+<button class="pbtn acc" id="tpGo" type="button">search</button>
+<button class="tpx" id="tpX" type="button" aria-label="close"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></svg></button>
+</div>
+<div class="tpgrid" id="tpGrid"><div class="tpmsg">loading 6ixtube…</div></div>
+</div>
+</div>
+
 <script>
 var CODE = ${JSON.stringify(code)};
 var CROWN = '<svg viewBox="0 0 24 24" width="13" height="13" fill="#ffd257" aria-hidden="true"><path d="M3 8.2l4.2 3.6L12 5.4l4.8 6.4L21 8.2l-1.7 9.3H4.7L3 8.2z"/></svg>';
@@ -16391,6 +16423,43 @@ $('cIn').addEventListener('keydown',function(e){if(e.key==='Enter')sendChat()});
 $('wGo').addEventListener('click',function(){var id=ytId($('wUrl').value);if(!id)return;act('setmedia',{media:{kind:id.indexOf('t_')===0?'tube':'yt',id:id,title:''}})});
 jg('/api/tube/feed').then(function(j){var h='';(j.feed||[]).slice(0,6).forEach(function(v){h+='<div class="pick" data-id="'+esc(v.id)+'" data-t="'+esc(v.title)+'"><img src="'+esc(v.thumb||'')+'" alt=""><div class="pt">'+esc(v.title)+'</div></div>'});$('tubePicks').innerHTML=h}).catch(function(){});
 $('tubePicks').addEventListener('click',function(e){var n=e.target;while(n&&n!==$('tubePicks')&&!n.getAttribute('data-id'))n=n.parentNode;if(n&&n.getAttribute('data-id'))act('setmedia',{media:{kind:'tube',id:n.getAttribute('data-id'),title:n.getAttribute('data-t')}})});
+var tpLoaded=false;
+function tpRender(list){
+  var h='';
+  (list||[]).forEach(function(v){
+    h+='<button class="tpc2" type="button" data-id="'+esc(v.id)+'" data-t="'+esc(v.title)+'"><img src="'+esc(v.thumb||'')+'" alt="" loading="lazy"><div class="tt">'+esc(v.title)+'</div><div class="tm">'+esc(v.chan||v.owner||'')+(v.dur?' · '+fmtT(v.dur):'')+'</div></button>';
+  });
+  $('tpGrid').innerHTML=h||'<div class="tpmsg">nothing found — try another search</div>';
+}
+function tpLoad(q){
+  $('tpGrid').innerHTML='<div class="tpmsg">loading…</div>';
+  var u=q?('/api/tube/search?q='+encodeURIComponent(q)):'/api/tube/feed';
+  jg(u).then(function(j){tpRender(j.videos||j.vids||j.feed||[])}).catch(function(){$('tpGrid').innerHTML='<div class="tpmsg">couldnt load 6ixtube rn</div>'});
+}
+function tpOpen(){
+  var pop=$('tpPop');
+  if(pop.parentNode!==document.body)document.body.appendChild(pop);
+  pop.hidden=false;
+  document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden';
+  if(!tpLoaded){tpLoaded=true;tpLoad('')}
+  setTimeout(function(){try{$('tpQ').focus()}catch(e){}},60);
+}
+function tpClose(){
+  $('tpPop').hidden=true;
+  document.documentElement.style.overflow='';document.body.style.overflow='';
+}
+$('wPick').addEventListener('click',tpOpen);
+$('tpX').addEventListener('click',tpClose);
+$('tpBack').addEventListener('click',tpClose);
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('tpPop').hidden)tpClose()});
+function tpSearch(){tpLoad($('tpQ').value.trim())}
+$('tpGo').addEventListener('click',tpSearch);
+$('tpQ').addEventListener('keydown',function(e){if(e.key==='Enter')tpSearch()});
+$('tpGrid').addEventListener('click',function(e){
+  var n=e.target;while(n&&n!==$('tpGrid')&&!n.getAttribute('data-id'))n=n.parentNode;
+  if(n&&n.getAttribute('data-id')){act('setmedia',{media:{kind:'tube',id:n.getAttribute('data-id'),title:n.getAttribute('data-t')||''}});tpClose()}
+});
+
 $('mSearch').addEventListener('click',function(){var q=$('mQ').value.trim();if(!q)return;jg('/api/msearch?q='+encodeURIComponent(q)).then(function(j){var h='';(j.songs||[]).slice(0,8).forEach(function(s){h+='<div class="qrow" data-id="'+esc(s.id)+'" data-t="'+esc(s.t)+'" data-a="'+esc(s.a)+'" data-img="'+esc(s.img||'')+'"><img src="'+esc(s.img||'')+'" alt=""><div class="qt"><b>'+esc(s.t)+'</b><span>'+esc(s.a)+'</span></div><button class="pbtn" data-add="1" type="button">+ queue</button><button class="pbtn acc" data-now="1" type="button">play now</button></div>'});$('mRes').innerHTML=h||'<div style="color:rgba(236,234,246,.5);font-size:13.5px">no songs found</div>'})});
 $('mRes').addEventListener('click',function(e){var n=e.target;var row=n;while(row&&row!==$('mRes')&&!row.getAttribute('data-id'))row=row.parentNode;if(!row||!row.getAttribute('data-id'))return;var t={id:row.getAttribute('data-id'),title:row.getAttribute('data-t'),artist:row.getAttribute('data-a'),img:row.getAttribute('data-img')};if(n.getAttribute('data-now'))act('setmedia',{track:t});else if(n.getAttribute('data-add'))act('addq',{track:t})});
 $('qList').addEventListener('click',function(e){var n=e.target;while(n&&n!==$('qList')&&!n.getAttribute('data-qi'))n=n.parentNode;if(n&&n.getAttribute('data-qi')!=null)act('playq',{i:Number(n.getAttribute('data-qi'))})});
