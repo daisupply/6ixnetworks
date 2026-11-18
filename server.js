@@ -1824,7 +1824,7 @@ var p = location.pathname; document.querySelectorAll('#siderail .rl a').forEach(
     }, { passive: true });
   }
 })();
-</script>`;
+</script><script>(function(){try{var p=location.pathname;if(p==='/chat'||p.indexOf('/party')===0||p.indexOf('/vid')===0)return;window.__starClaim=function(b){if(!b||b.dataset.done)return;b.dataset.done='1';fetch('/api/star/claim',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({page:p})}).then(function(r){return r.json()}).then(function(x){if(x&&x.ok){b.textContent='+150';b.style.width='66px';setTimeout(function(){if(b.parentNode)b.remove()},2600);}else{b.remove();if(x&&x.err)alert(x.err);}}).catch(function(){b.remove()})};fetch('/api/star/here?page='+encodeURIComponent(p)).then(function(r){return r.json()}).then(function(d){if(!d||!d.ok||!d.here||d.found)return;if(document.querySelector('button[aria-label="hidden star"]'))return;var b=document.createElement('button');b.type='button';b.textContent='✦';b.setAttribute('aria-label','hidden star');b.setAttribute('onclick','window.__starClaim&&__starClaim(this)');var x=4+(d.sx||8);var y=30+(d.sy||20);b.style.cssText='position:fixed;left:'+x+'%;top:'+y+'%;z-index:40;width:40px;height:40px;border-radius:999px;border:1px solid rgba(255,210,87,.55);background:rgba(20,14,34,.55);color:#ffd257;font-size:19px;cursor:pointer;box-shadow:0 0 16px rgba(255,210,87,.35);display:flex;align-items:center;justify-content:center;padding:0';document.body.appendChild(b)}).catch(function(){})}catch(e){}})();</script>`;
 // ---------- galaxy theme ----------
 // relaxing deep-space look shared by every page: layered nebula gradients,
 // a slow twinkling starfield canvas (served from /stars.js), glass panels,
@@ -4491,7 +4491,7 @@ body[data-sky] .app6 .cr-item.on,body[data-sky] .app6 .cr-item.on:hover,body[dat
 </div>
 <div id="msgs"></div>
 <style>.admrow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);color:#f4f4f5;border-radius:13px;padding:11px 13px;font-size:13.5px;font-weight:650;cursor:pointer;font-family:inherit;text-decoration:none;box-sizing:border-box}.admrow:hover{background:rgba(240,171,252,.1);border-color:rgba(240,171,252,.35)}.admrow svg{color:#f0abfc;flex:none}.admrow small{margin-left:auto;color:#8e8aa0;font-weight:600;font-size:11.5px;text-align:right}</style><div id="admbar" hidden style="display:none;gap:9px;align-items:center;padding:8px 12px;border-top:1px solid rgba(240,171,252,.22);background:linear-gradient(90deg,rgba(240,171,252,.07),rgba(139,124,255,.04))"><button type="button" id="admToggle" style="background:linear-gradient(135deg,#f0abfc,#8b7cf0);border:none;color:#1d0f2e;border-radius:999px;padding:7px 15px;font-size:12.5px;font-weight:900;letter-spacing:.03em;cursor:pointer;font-family:inherit;box-shadow:0 3px 14px rgba(240,171,252,.35)">✦ ADMIN · CONTROLS</button><span id="admMsg" style="font-size:12px;color:#8e8aa0"></span><a href="/admin" style="margin-left:auto;font-size:12.5px;font-weight:700;color:#cfc6f5;text-decoration:none;white-space:nowrap">full panel →</a></div><div id="admsheet" style="display:none;padding:13px 12px 14px;border-top:1px solid rgba(240,171,252,.16);background:linear-gradient(180deg,rgba(240,171,252,.05),rgba(139,124,255,.02))"><div style="font-size:10.5px;font-weight:800;letter-spacing:.08em;color:#bdb4e4;margin-bottom:7px">UR NAME RN — HOW EVERYONE SEES U</div><div id="admPreview" style="display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.09);border-radius:13px;padding:11px 14px;margin-bottom:12px;font-size:15px;flex-wrap:wrap"><span style="color:#8e8aa0;font-size:12.5px">loading ur style…</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button type="button" class="admrow" id="admClear"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>clear room<small>wipe msgs</small></button><button type="button" class="admrow" id="admMute"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="2" x2="22" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12"/><line x1="12" y1="19" x2="12" y2="22"/></svg>mute user<small>timed</small></button><button type="button" class="admrow" id="admUnmute"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>unmute<small>undo</small></button><button type="button" class="admrow" id="admKick"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>kick user<small>boot em</small></button><button type="button" class="admrow" id="admPurge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>purge user<small>their msgs</small></button><a class="admrow" href="/admin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>full panel<small>everything</small></a></div></div>
-<form class="bar" id="sendbar"><button type="button" id="attach" title="send an image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="vertical-align:-2px"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button><input type="text" id="text" placeholder="message…" autocomplete="off" maxlength="500"><button type="submit" id="sendbtn" aria-label="send"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button></form>
+<div id="songChip" style="display:none;margin:0 12px 8px;padding:10px 14px;border-radius:13px;border:1px solid rgba(255,210,87,.5);background:linear-gradient(135deg,rgba(255,210,87,.14),rgba(255,160,60,.05));color:#ffd257;font-weight:800;font-size:13.5px;cursor:pointer;align-items:center;gap:8px">♪ song round live - tap to listen, name it in chat for 40 coins</div><audio id="songAu" preload="none"></audio><script>(function(){var chip=document.getElementById('songChip'),au=document.getElementById('songAu'),cur='',playing=false;function poll(){fetch('/api/song').then(function(r){return r.json()}).then(function(d){if(d&&d.ok&&d.active&&d.id){if(d.id!==cur){cur=d.id;chip.style.display='flex';playing=false;chip.textContent='♪ song round live - tap to listen, name it in chat for 40 coins';}}else{cur='';chip.style.display='none';if(playing){au.pause();playing=false;}}}).catch(function(){});}setInterval(poll,5000);poll();chip.addEventListener('click',function(){if(!cur)return;if(playing){au.pause();playing=false;chip.textContent='♪ paused - tap to listen again';return;}au.src='/yt/stream?v='+encodeURIComponent(cur)+'&kind=a';au.play().then(function(){playing=true;chip.textContent='♪ playing - name the song or artist in chat';}).catch(function(){chip.textContent='♪ tap again - the browser blocked autoplay';});});au.addEventListener('loadedmetadata',function(){try{if(au.duration>60)au.currentTime=25;}catch(e){}});})();</script><form class="bar" id="sendbar"><button type="button" id="attach" title="send an image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="vertical-align:-2px"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button><input type="text" id="text" placeholder="message…" autocomplete="off" maxlength="500"><button type="submit" id="sendbtn" aria-label="send"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button></form>
 <input type="file" id="chatfile" accept="image/*" style="display:none">
 
 </div>
@@ -16611,6 +16611,103 @@ async function adventApi(req, res, u) {
   return false;
 }
 
+// ---- hidden star + guess the song (v477) ----
+const STAR_PAGES = ['/home', '/gs', '/music', '/movies', '/apps', '/news', '/search', '/emu', '/yt'];
+const STAR = { day: '', page: '', winner: '', sx: 8, sy: 20, ready: false };
+let starDirty = false;
+function starSave() { if (starDirty) return; starDirty = true; setTimeout(() => { starDirty = false; try { storeSet('cfg:star', JSON.stringify({ day: STAR.day, page: STAR.page, winner: STAR.winner, sx: STAR.sx, sy: STAR.sy })); } catch (e) {} }, 800); }
+async function starLoad() {
+  if (!STAR.ready) { STAR.ready = true; try { const got = await storeCmd([['GET', 'cfg:star']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o) { STAR.day = o.day || ''; STAR.page = o.page || ''; STAR.winner = o.winner || ''; STAR.sx = o.sx || 8; STAR.sy = o.sy || 20; } } } catch (e) {} }
+  const today = scoreDay();
+  if (STAR.day !== today) { let h = 7; for (let i = 0; i < today.length; i++) h = (h * 31 + today.charCodeAt(i)) >>> 0; STAR.day = today; STAR.page = STAR_PAGES[h % STAR_PAGES.length]; STAR.winner = ''; STAR.sx = (h >> 3) % 20; STAR.sy = (h >> 5) % 40; starSave(); }
+}
+async function starApi(req, res, u) {
+  if (u.pathname !== '/api/star' && u.pathname !== '/api/star/here' && u.pathname !== '/api/star/claim') return false;
+  await starLoad();
+  if (u.pathname === '/api/star' && req.method === 'GET') { jres(res, 200, { ok: true, found: !!STAR.winner, winner: STAR.winner }); return true; }
+  if (u.pathname === '/api/star/here' && req.method === 'GET') {
+    const p = String(u.searchParams.get('page') || '');
+    jres(res, 200, { ok: true, here: p === STAR.page, found: !!STAR.winner, sx: STAR.sx, sy: STAR.sy });
+    return true;
+  }
+  if (u.pathname === '/api/star/claim' && req.method === 'POST') {
+    const me = voterUser(req);
+    if (!me) { jres(res, 401, { ok: false, err: 'login first' }); return true; }
+    const b = await readJsonBody(req, 1024).then((x) => x).catch(() => null);
+    const p = String((b && b.page) || '');
+    if (STAR.winner) { jres(res, 200, { ok: false, err: STAR.winner + ' already found todays star' }); return true; }
+    if (p !== STAR.page) { jres(res, 200, { ok: false, err: 'not the star page' }); return true; }
+    STAR.winner = me.toLowerCase();
+    starSave();
+    const bal = await coinsAward(STAR.winner, 150);
+    try { feedPush('star', STAR.winner, 'found todays hidden star - +150 coins'); } catch (e) {}
+    jres(res, 200, { ok: true, amt: 150, bal });
+    return true;
+  }
+  return false;
+}
+const SONG = { id: '', title: '', artist: '', until: 0, nextAt: Date.now() + 75000, tracks: [], tracksAt: 0 };
+async function songTracks() {
+  if (SONG.tracks.length && Date.now() - SONG.tracksAt < 1800000) return SONG.tracks;
+  try {
+    const a = await ytmSearchAll('top hits 2025');
+    const b = await ytmSearchAll('popular songs right now');
+    const seen = new Set(); const out = [];
+    for (const s of [...((a && a.songs) || []), ...((b && b.songs) || [])]) { if (s && s.id && s.t && !seen.has(s.id)) { seen.add(s.id); out.push({ id: s.id, t: s.t, a: s.a || '' }); } }
+    if (out.length) { SONG.tracks = out; SONG.tracksAt = Date.now(); }
+    return out;
+  } catch (e) { return SONG.tracks; }
+}
+function songTick() {
+  try {
+    const now = Date.now();
+    if (SONG.id && now > SONG.until) {
+      chatPost('lobby', { name: 'six ✦ ai', text: 'song round over - nobody named it. it was "' + SONG.title + '" by ' + SONG.artist, ts: now, bot: true });
+      SONG.id = ''; SONG.nextAt = now + 240000;
+    }
+    if (!SONG.id && !TRIVIA.q && now > SONG.nextAt) {
+      const room = CHAT_ROOMS.get('lobby');
+      const active = room && (room.socks.size > 0 || (room.pollAct && now - room.pollAct < 600000));
+      if (!active) { SONG.nextAt = now + 60000; return; }
+      songTracks().then((list) => {
+        if (!list.length || SONG.id) { SONG.nextAt = Date.now() + 120000; return; }
+        const t = list[(Math.random() * list.length) | 0];
+        SONG.id = t.id; SONG.title = t.t; SONG.artist = t.a; SONG.until = Date.now() + 120000;
+        chatPost('lobby', { name: 'six ✦ ai', text: '♪ guess the song - a track is live on the chat radio for 2 min. tap the ♪ chip above the message box to hear it. first to name the song (or the artist) wins 40 coins', ts: Date.now(), bot: true });
+      }).catch(() => {});
+    }
+  } catch (e) {}
+}
+setInterval(songTick, 20000);
+function songNorm(s) { return ' ' + String(s || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim() + ' '; }
+function songTitleKey(t) {
+  let s = String(t || '').toLowerCase().replace(/\([^)]*\)/g, ' ').replace(/\[[^\]]*\]/g, ' ');
+  s = s.replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+  const stop = ['official', 'video', 'music', 'lyrics', 'lyric', 'audio', 'hd', 'hq', 'mv', 'visualizer'];
+  return s.split(' ').filter((w) => w && !stop.includes(w)).join(' ');
+}
+function songCheck(room, user, text) {
+  try {
+    if (room !== 'lobby' || !SONG.id || !user || !text) return;
+    const norm = songNorm(text);
+    const tk = songTitleKey(SONG.title);
+    const ak = songNorm(SONG.artist).trim();
+    const hit = (tk.length >= 4 && norm.includes(' ' + tk + ' ')) || (ak.length >= 4 && norm.includes(' ' + ak + ' '));
+    if (!hit) return;
+    const title = SONG.title, artist = SONG.artist;
+    SONG.id = ''; SONG.nextAt = Date.now() + 240000;
+    const u = String(user).toLowerCase();
+    coinsAward(u, 40).then((bal) => { chatPost('lobby', { name: 'six ✦ ai', text: u + ' named it - "' + title + '" by ' + artist + ' - +40 coins (balance: ' + bal + ')', ts: Date.now(), bot: true }); }).catch(() => {});
+    bumpStat(u, 'song');
+    try { feedPush('song', u, 'won guess-the-song in chat - +40 coins'); } catch (e) {}
+  } catch (e) {}
+}
+async function songApi(req, res, u) {
+  if (u.pathname !== '/api/song' || req.method !== 'GET') return false;
+  jres(res, 200, { ok: true, active: !!SONG.id, id: SONG.id || '', until: SONG.until });
+  return true;
+}
+
 async function dmRepApi(req, res, u) {
   if (u.pathname !== '/api/dm/report' || req.method !== 'POST') return false;
   const me = voterUser(req);
@@ -17302,7 +17399,7 @@ function socialOnChat(room, user, text) {
     if (!user || !room || room.startsWith('dm-') || room.startsWith('p-')) return;
     const u = String(user).toLowerCase();
     bumpStat(u, 'msgs');
-    triviaCheck(room, u, text);
+    triviaCheck(room, u, text); songCheck(room, u, text);
   } catch (e) {}
 }
 async function socialApi(req, res, u) {
@@ -22850,6 +22947,8 @@ const server = http.createServer(async (req, res) => {
     if (await casinoApi(req, res, u)) return;
     if (await pollApi(req, res, u)) return;
     if (await adventApi(req, res, u)) return;
+    if (await starApi(req, res, u)) return;
+    if (await songApi(req, res, u)) return;
   if (await dmRepApi(req, res, u)) return;
   if (await socialApi(req, res, u)) return;
   if (await radioApi(req, res, u)) return;
