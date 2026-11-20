@@ -1,38 +1,128 @@
-/* the world — full-screen plaza. chrome hidden, exit is the ✕ in the HUD. */
+/* six's network — v500 design system.
+   one glass language: rgba(11,8,24,.68) + blur(14px) + 1px rgba(255,255,255,.09),
+   radius 999 pills / 16 cards, violet #8b7cff accent, gold #ffd257 = money only. */
 html,body{height:100%}
 body{display:block;padding:0;margin:0;overflow:hidden;background:#07040f}
 #tabbar,#siderail,#topbar,#tabSheet{display:none!important}
 #wcv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+
+/* ---------- top-left stack ---------- */
 #whud{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:flex-start;justify-content:space-between;padding:12px 14px;pointer-events:none}
-.wbrand{font-size:19px;font-weight:900;letter-spacing:-.02em;color:#f3efff;text-shadow:0 2px 18px rgba(139,124,255,.65)}
-.wbrand span{font-size:12px;font-weight:700;color:rgba(243,239,255,.75);background:rgba(10,6,24,.55);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:3px 9px;margin-left:7px;vertical-align:2px}
-.wbtns{display:flex;gap:8px;pointer-events:auto}
-#wgames{width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(10,6,24,.66);color:#e9e4ff;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
-#wgames svg{width:21px;height:21px}
-#wgames:active{transform:scale(.94)}
-#wcab{position:fixed;left:50%;bottom:196px;transform:translateX(-50%);z-index:22;border:1px solid rgba(255,210,87,.55);background:rgba(24,16,4,.88);color:#ffd257;font:inherit;font-size:14px;font-weight:800;padding:11px 20px;border-radius:999px;cursor:pointer;box-shadow:0 0 24px rgba(255,210,87,.35);backdrop-filter:blur(8px)}
-#wcab[hidden]{display:none!important}
-#warcade,#wgame{position:fixed;inset:0;z-index:60;background:rgba(4,2,12,.72);display:flex;align-items:center;justify-content:center;padding:14px;backdrop-filter:blur(3px)}
-#warcade[hidden],#wgame[hidden]{display:none!important}
-.wa-card,.wg-card{width:min(620px,96vw);max-height:92vh;overflow:auto;background:linear-gradient(180deg,#171029,#0d0819);border:1px solid rgba(183,168,255,.35);border-radius:20px;padding:16px;box-shadow:0 24px 70px rgba(0,0,0,.6)}
-.wa-head,.wg-head{display:flex;align-items:center;gap:10px;font-weight:900;font-size:17px;color:#f3efff}
+.wleft{display:flex;flex-direction:column;gap:8px;pointer-events:none;max-width:min(300px,62vw);align-items:flex-start}
+.wbrand{display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:800;letter-spacing:-.01em;color:#f3efff;background:rgba(11,8,24,.68);border:1px solid rgba(255,255,255,.09);border-radius:999px;padding:8px 14px;backdrop-filter:blur(14px);box-shadow:0 8px 28px rgba(0,0,0,.35);white-space:nowrap}
+@media (max-width:640px){#wemotes{bottom:calc(204px + env(safe-area-inset-bottom))}#wemotes button{padding:8px 11px}}
+.wbrand .wstar{color:#ffd257;font-size:13px}
+.wbrand span{font-size:11.5px;font-weight:600;color:rgba(243,239,255,.55)}
+#wbal{display:inline-flex;align-items:center;gap:6px;background:rgba(24,16,4,.62);border:1px solid rgba(255,210,87,.32);color:#ffd257;font-size:12.5px;font-weight:800;padding:6px 12px;border-radius:999px;backdrop-filter:blur(14px)}
+#wquest{background:rgba(11,8,24,.68);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:10px 13px;backdrop-filter:blur(14px);box-shadow:0 8px 28px rgba(0,0,0,.3);min-width:210px}
+#wquest[hidden]{display:none!important}
+.wq-t{font-size:13px;font-weight:700;color:#f3efff}
+.wq-bar{height:5px;border-radius:99px;background:rgba(255,255,255,.1);margin:7px 0 6px;overflow:hidden}
+.wq-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffd257,#ff9d5c);border-radius:99px;transition:width .4s}
+.wq-s{font-size:11.5px;color:rgba(243,239,255,.6);font-weight:600}
+#wlb{background:rgba(11,8,24,.6);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:9px 13px;font-size:12px;color:rgba(243,239,255,.85);line-height:1.7;backdrop-filter:blur(14px)}
+#wlb[hidden]{display:none!important}
+#wlb b{color:#ffd257;font-weight:800}
+#wlb .lb-h{font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:rgba(243,239,255,.45);font-weight:700}
+
+/* ---------- top-right toolbar (one pill, ghost segments) ---------- */
+.wbtns{display:flex;gap:2px;pointer-events:auto;background:rgba(11,8,24,.68);border:1px solid rgba(255,255,255,.09);border-radius:999px;padding:4px;backdrop-filter:blur(14px);box-shadow:0 8px 28px rgba(0,0,0,.35)}
+.wbtns button,.wbtns a{width:38px;height:38px;border-radius:50%;border:0;background:transparent;color:#cfc8f5;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;text-decoration:none;transition:background .15s,transform .1s}
+.wbtns button:hover,.wbtns a:hover{background:rgba(255,255,255,.09)}
+.wbtns button:active,.wbtns a:active{transform:scale(.92)}
+.wbtns svg{width:20px;height:20px}
+#wshopbtn{color:#ffd257}
+#wshopbtn .wcent{font-size:19px;font-weight:900;line-height:1}
+#wmic.on{background:#8b7cff;color:#fff}
+#wmic.live{background:#16a34a;color:#fff}
+.wleave{font-size:15px}
+
+/* ---------- minimap ---------- */
+#wmap{position:fixed;right:14px;top:70px;z-index:14;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(8,5,20,.55);backdrop-filter:blur(8px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+@media (max-width:640px){#wmap{width:100px;height:62px;top:66px}}
+
+/* ---------- toast (v500 fix: never set top+bottom together — that stretched
+   the pill to a full-height capsule on phones) ---------- */
+#wtoast{position:fixed;left:50%;top:16px;transform:translateX(-50%);z-index:30;width:max-content;max-width:min(520px,92vw);background:rgba(11,8,24,.85);border:1px solid rgba(255,210,87,.45);color:#ffe9a8;font-size:14px;font-weight:700;line-height:1.35;text-align:center;padding:10px 18px;border-radius:999px;box-shadow:0 10px 32px rgba(0,0,0,.45);backdrop-filter:blur(14px);animation:wtoastIn .22s ease}
+#wtoast[hidden]{display:none!important}
+@keyframes wtoastIn{from{opacity:0;transform:translateX(-50%) translateY(-6px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@media (max-width:640px){#wtoast{top:118px}}
+
+/* ---------- chat log ---------- */
+#wlog{position:fixed;left:14px;bottom:calc(150px + env(safe-area-inset-bottom));z-index:15;display:flex;flex-direction:column;gap:4px;max-width:min(320px,70vw);pointer-events:none}
+#wlog div{background:rgba(8,5,20,.55);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:5px 9px;font-size:12.5px;line-height:1.4;color:rgba(243,239,255,.92);word-break:break-word;animation:wfade 9s forwards}
+#wlog b{color:#b7a8ff}
+@keyframes wfade{0%,78%{opacity:1}100%{opacity:0}}
+
+/* ---------- portal chip (floats above its pad, positioned from JS) ---------- */
+#wportal{position:fixed;left:0;top:0;transform:translate(-50%,-100%);z-index:22;border:1px solid rgba(139,124,255,.55);background:rgba(11,8,24,.85);color:#fff;font:inherit;font-size:14px;font-weight:700;padding:11px 20px;border-radius:999px;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.45),0 0 22px rgba(139,124,255,.35);backdrop-filter:blur(14px);transition:transform .12s}
+#wportal[hidden]{display:none!important}
+#wportal:hover{transform:translate(-50%,-100%) scale(1.05)}
+
+/* ---------- the ONE contextual action button ---------- */
+#wact{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:22;display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(139,124,255,.55);background:rgba(11,8,24,.88);color:#fff;font:inherit;font-size:14px;font-weight:700;padding:12px 22px;border-radius:999px;cursor:pointer;box-shadow:0 12px 32px rgba(0,0,0,.5);backdrop-filter:blur(14px);animation:wtoastIn .18s ease}
+#wact[hidden]{display:none!important}
+#wact:active{transform:translateX(-50%) scale(.96)}
+#wact.m-wish{border-color:rgba(165,243,252,.55);color:#cffafe}
+#wact.m-shop{border-color:rgba(255,210,87,.6);color:#ffd257}
+#wact .wact-ic{display:inline-flex}
+#wact .wact-ic svg{width:17px;height:17px}
+
+/* ---------- bottom cluster: dash + emotes ---------- */
+#wdash{position:fixed;right:14px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:21;width:52px;height:52px;border-radius:50%;font:inherit;color:#cffafe;background:rgba(11,8,24,.72);border:1px solid rgba(165,243,252,.35);cursor:pointer;backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 28px rgba(0,0,0,.4)}
+#wdash svg{width:22px;height:22px}
+#wdash:active{background:rgba(22,78,99,.8);transform:scale(.94)}
+#wemotebtn{position:fixed;right:76px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:21;width:52px;height:52px;border-radius:50%;color:#e9e4ff;background:rgba(11,8,24,.72);border:1px solid rgba(255,255,255,.12);cursor:pointer;backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 28px rgba(0,0,0,.4)}
+#wemotebtn svg{width:22px;height:22px}
+#wemotebtn:active{transform:scale(.94)}
+#wemotes{position:fixed;right:14px;bottom:calc(140px + env(safe-area-inset-bottom));z-index:21;display:flex;gap:2px;background:rgba(11,8,24,.78);border:1px solid rgba(255,255,255,.09);border-radius:999px;padding:4px;backdrop-filter:blur(14px);box-shadow:0 12px 32px rgba(0,0,0,.45);animation:wfadeIn .16s ease}
+@keyframes wfadeIn{from{opacity:0}to{opacity:1}}
+#wemotes[hidden]{display:none!important}
+#wemotes button{font:inherit;font-size:12.5px;font-weight:700;color:#e9e4ff;background:transparent;border:0;border-radius:999px;padding:9px 13px;cursor:pointer}
+#wemotes button:hover{background:rgba(255,255,255,.09)}
+#wemotes button:active{background:#8b7cff;color:#fff}
+
+/* ---------- chat bar ---------- */
+#wbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom));z-index:20;display:flex;align-items:center;gap:4px;width:min(520px,calc(100vw - 24px));background:rgba(11,8,24,.72);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:4px;backdrop-filter:blur(14px);box-shadow:0 12px 32px rgba(0,0,0,.4);box-sizing:border-box}
+#win{flex:1;min-width:0;background:transparent;border:0;color:#f3efff;padding:10px 14px;font-size:16px;font-family:inherit;outline:none}
+#win::placeholder{color:rgba(243,239,255,.4)}
+#wsend{flex:none;font-size:14px;font-weight:700;padding:10px 18px;border-radius:999px;border:0;background:#8b7cff;color:#fff;cursor:pointer;font-family:inherit}
+#wsend:active{transform:scale(.96)}
+@media (max-width:640px){#wbar{left:10px;right:10px;transform:none;width:auto}}
+
+/* ---------- joystick ---------- */
+#wjoy{position:fixed;left:18px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:18;width:108px;height:108px;border-radius:50%;border:1px solid rgba(255,255,255,.14);background:rgba(11,8,24,.32);display:none;touch-action:none;backdrop-filter:blur(4px)}
+#wknob{position:absolute;left:50%;top:50%;width:46px;height:46px;border-radius:50%;background:linear-gradient(160deg,rgba(183,168,255,.75),rgba(139,124,255,.55));border:1px solid rgba(255,255,255,.4);transform:translate(-50%,-50%);box-shadow:0 4px 14px rgba(0,0,0,.35)}
+@media (pointer:coarse){#wjoy.on{display:block}}
+
+/* ---------- overlays + panels ---------- */
+#warcade,#wgame,#wshop{position:fixed;inset:0;z-index:60;background:rgba(4,2,12,.66);display:flex;align-items:center;justify-content:center;padding:14px;backdrop-filter:blur(6px)}
+#warcade[hidden],#wgame[hidden],#wshop[hidden]{display:none!important}
+.wa-card,.wg-card{width:min(620px,96vw);max-height:92vh;overflow:auto;background:linear-gradient(180deg,rgba(23,16,41,.97),rgba(13,8,25,.98));border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:18px;box-shadow:0 24px 70px rgba(0,0,0,.65);scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent}
+.wa-card::-webkit-scrollbar,.wg-card::-webkit-scrollbar{width:8px}
+.wa-card::-webkit-scrollbar-thumb,.wg-card::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:99px}
+.wa-head,.wg-head{display:flex;align-items:center;gap:10px;font-weight:800;font-size:16.5px;color:#f3efff;letter-spacing:-.01em}
 .wa-head span:first-child,.wg-head #wg-title{flex:0 1 auto}
-#wa-count{color:rgba(243,239,255,.55);font-size:12.5px;font-weight:700}
+#wa-count{color:rgba(243,239,255,.5);font-size:12.5px;font-weight:600}
 #wg-score{margin-left:auto;color:#ffd257;font-size:14px;font-weight:800}
-#wa-x,#wg-x{margin-left:auto;width:34px;height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;cursor:pointer;font-size:14px}
+#wa-x,#wg-x,#wsh-x{margin-left:auto;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#fff;cursor:pointer;font-size:13px;flex:none}
+#wa-x:hover,#wg-x:hover,#wsh-x:hover{background:rgba(255,255,255,.12)}
 .wg-head #wg-x{margin-left:8px}
-#wa-q{width:100%;box-sizing:border-box;margin:12px 0 6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:12px;color:#fff;font:inherit;font-size:16px;padding:10px 13px;outline:none}
-.wa-sec{margin:13px 0 5px;font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#b7a8ff}
-.wa-item{display:flex;align-items:center;gap:10px;width:100%;box-sizing:border-box;text-align:left;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);border-radius:13px;padding:10px 12px;margin:6px 0;cursor:pointer;color:#f3efff;font:inherit}
-.wa-item:hover{border-color:rgba(183,168,255,.55)}
-.wa-item b{font-size:14.5px}
+#wa-q{width:100%;box-sizing:border-box;margin:12px 0 6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font:inherit;font-size:16px;padding:10px 13px;outline:none}
+#wa-q:focus{border-color:rgba(139,124,255,.7)}
+.wa-sec{margin:14px 0 5px;font-size:11px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:rgba(183,168,255,.85)}
+.wa-item{display:flex;align-items:center;gap:10px;width:100%;box-sizing:border-box;text-align:left;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 12px;margin:5px 0;cursor:pointer;color:#f3efff;font:inherit;transition:background .15s,border-color .15s}
+.wa-item:hover{background:rgba(139,124,255,.16);border-color:rgba(139,124,255,.45)}
+.wa-item:active{transform:scale(.99)}
+.wa-item b{font-size:14.5px;font-weight:700}
 .wa-item small{display:block;color:rgba(243,239,255,.55);font-size:11.5px;margin-top:1px}
 .wa-item .wa-cap{margin-left:auto;color:#ffd257;font-weight:800;font-size:12.5px;white-space:nowrap}
-#wg-how{color:rgba(243,239,255,.66);font-size:13px;margin:8px 0 10px}
-#wg-stage{position:relative;border-radius:14px;overflow:hidden;background:#0a0618;border:1px solid rgba(255,255,255,.09);touch-action:none;user-select:none;-webkit-user-select:none}
+#wg-how{color:rgba(243,239,255,.6);font-size:13px;margin:8px 0 10px}
+#wg-stage{position:relative;border-radius:16px;overflow:hidden;background:#0a0618;border:1px solid rgba(255,255,255,.08);touch-action:none;user-select:none;-webkit-user-select:none}
 #wg-stage canvas{display:block;width:100%}
-#wg-result{margin-top:12px;background:rgba(255,210,87,.09);border:1px solid rgba(255,210,87,.35);border-radius:13px;padding:11px 13px;color:#ffe9a8;font-size:14px;font-weight:700}
-#wg-result button{margin-left:8px;background:#ffd257;color:#241a02;border:none;font:inherit;font-weight:900;font-size:13px;padding:7px 13px;border-radius:999px;cursor:pointer}
+#wg-hud{display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:rgba(243,239,255,.75);padding:2px 2px 8px}
+#wg-result{margin-top:12px;background:rgba(255,210,87,.08);border:1px solid rgba(255,210,87,.3);border-radius:14px;padding:11px 13px;color:#ffe9a8;font-size:14px;font-weight:600}
+#wg-result button{margin-left:8px;background:#ffd257;color:#241a02;border:none;font:inherit;font-weight:800;font-size:13px;padding:7px 13px;border-radius:999px;cursor:pointer}
 #wg-result button.ghost{background:rgba(255,255,255,.1);color:#fff}
 .mg-pads{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px}
 .mg-pad{height:104px;border-radius:16px;border:2px solid rgba(255,255,255,.15);cursor:pointer;opacity:.55;transition:opacity .12s,transform .12s}
@@ -40,63 +130,45 @@ body{display:block;padding:0;margin:0;overflow:hidden;background:#07040f}
 .mg-react{height:300px;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:900;color:#fff;cursor:pointer;text-align:center;padding:16px}
 .mg-quiz{padding:16px}
 .mg-quiz .q{font-size:16.5px;font-weight:800;color:#fff;margin-bottom:12px}
-.mg-quiz button{display:block;width:100%;box-sizing:border-box;text-align:left;margin:7px 0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#f3efff;font:inherit;font-size:14.5px;padding:11px 13px;border-radius:12px;cursor:pointer}
+.mg-quiz button{display:block;width:100%;box-sizing:border-box;text-align:left;margin:7px 0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f3efff;font:inherit;font-size:14.5px;padding:11px 13px;border-radius:12px;cursor:pointer}
+.mg-quiz button:hover{border-color:rgba(139,124,255,.5)}
 .mg-quiz button.right{border-color:#4ade80;background:rgba(74,222,128,.16)}
 .mg-quiz button.wrong{border-color:#f87171;background:rgba(248,113,113,.14)}
 .mg-dpad{display:flex;gap:8px;justify-content:center;padding:10px}
-.mg-dpad button{width:52px;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:#fff;font-size:17px;cursor:pointer}
-#wmic{width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(12,8,28,.66);color:#cfc8f5;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;backdrop-filter:blur(8px)}
-#wmic svg{width:21px;height:21px}
-#wmic.on{background:#8b7cff;border-color:#8b7cff;color:#fff;box-shadow:0 0 18px rgba(139,124,255,.75)}
-#wmic.live{background:#16a34a;border-color:#16a34a;color:#fff;box-shadow:0 0 18px rgba(22,163,74,.7)}
-.wleave{width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(12,8,28,.66);color:#cfc8f5;text-decoration:none;display:flex;align-items:center;justify-content:center;font-size:16px;backdrop-filter:blur(8px)}
-#wlog{position:fixed;left:14px;bottom:86px;z-index:15;display:flex;flex-direction:column;gap:4px;max-width:min(330px,72vw);pointer-events:none}
-#wlog div{background:rgba(8,5,20,.55);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:5px 9px;font-size:12.5px;line-height:1.4;color:rgba(243,239,255,.92);word-break:break-word;animation:wfade 9s forwards}
-#wlog b{color:#b7a8ff}
-@keyframes wfade{0%,78%{opacity:1}100%{opacity:0}}
-#wportal{position:fixed;left:0;top:0;transform:translate(-50%,-100%);z-index:22;border:1px solid rgba(255,255,255,.25);background:rgba(16,10,36,.85);color:#fff;font:inherit;font-size:14.5px;font-weight:800;padding:12px 22px;border-radius:999px;cursor:pointer;box-shadow:0 0 26px rgba(139,124,255,.5);backdrop-filter:blur(8px)}
-#wportal[hidden]{display:none!important}
-#wwish{position:fixed;left:50%;bottom:190px;transform:translateX(-50%);z-index:22;border:1px solid rgba(165,243,252,.45);background:rgba(10,20,36,.85);color:#cffafe;font:inherit;font-size:13.5px;font-weight:800;padding:10px 18px;border-radius:999px;cursor:pointer;box-shadow:0 0 22px rgba(96,165,250,.35);backdrop-filter:blur(8px)}
-#wwish[hidden]{display:none!important}
-#wwish:hover{transform:translateX(-50%)}
-#wportal:hover{transform:translate(-50%,-100%) scale(1.05)}
-#wbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));z-index:20;display:flex;gap:8px;width:min(520px,calc(100vw - 28px))}
-#wbar:hover{transform:translateX(-50%)}
-#win{flex:1;min-width:0;background:rgba(10,6,24,.72);border:1px solid rgba(255,255,255,.16);border-radius:999px;color:#f3efff;padding:12px 17px;font-size:16px;font-family:inherit;outline:none;backdrop-filter:blur(10px)}
-#win::placeholder{color:rgba(243,239,255,.45)}
-#wsend{flex:none;font-size:14.5px;font-weight:800;padding:12px 19px;border-radius:999px;border:0;background:#8b7cff;color:#fff;cursor:pointer;font-family:inherit}
-#wjoy{position:fixed;left:20px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:18;width:112px;height:112px;border-radius:50%;border:1.5px solid rgba(255,255,255,.16);background:rgba(12,8,28,.35);display:none;touch-action:none}
-#wknob{position:absolute;left:50%;top:50%;width:48px;height:48px;border-radius:50%;background:rgba(183,168,255,.5);border:1.5px solid rgba(255,255,255,.35);transform:translate(-50%,-50%)}
-#wlogin{position:fixed;inset:0;z-index:40;background:rgba(5,3,12,.72);display:flex;align-items:center;justify-content:center;padding:20px}
+.mg-dpad button{width:52px;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#fff;font-size:17px;cursor:pointer}
+
+/* ---------- shop ---------- */
+#wsh-bal{color:#ffd257;font-size:13.5px;font-weight:800}
+.wsh-note{color:rgba(243,239,255,.5);font-size:12.5px;margin-top:7px}
+#wsh-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 4px}
+#wsh-tabs button{font:inherit;font-size:13px;font-weight:700;color:#e9e4ff;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.11);border-radius:999px;padding:8px 14px;cursor:pointer}
+#wsh-tabs button:hover{background:rgba(255,255,255,.1)}
+#wsh-tabs button.on{background:#8b7cff;color:#fff;border-color:#8b7cff}
+#wsh-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:9px;margin-top:8px}
+.wsh-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:11px;display:flex;flex-direction:column;gap:6px}
+.wsh-prev{height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center}
+.wsh-prev i{width:26px;height:26px;border-radius:50%;display:block;box-shadow:0 0 16px currentColor}
+.wsh-name{font-size:13.5px;font-weight:700;color:#f3efff;line-height:1.25}
+.wsh-rar{font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase}
+.wsh-card button{margin-top:auto;font:inherit;font-size:13px;font-weight:800;padding:9px 10px;border-radius:999px;border:none;cursor:pointer;background:#ffd257;color:#241a02}
+.wsh-card button.eq{background:rgba(255,255,255,.1);color:#fff}
+.wsh-card button.on{background:#4ade80;color:#052e10}
+.wsh-card button:disabled{opacity:.45;cursor:default}
+
+/* ---------- login ---------- */
+#wlogin{position:fixed;inset:0;z-index:40;background:rgba(5,3,12,.72);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)}
 #wlogin[hidden]{display:none!important}
-.wl-card{max-width:400px;text-align:center;background:rgba(14,9,30,.9);border:1px solid rgba(255,255,255,.13);border-radius:20px;padding:28px 24px}
-.wl-big{font-size:22px;font-weight:900;color:#f3efff}
-.wl-card p{color:rgba(243,239,255,.65);font-size:14px;line-height:1.55}
-.wl-btn{display:inline-block;margin-top:8px;background:#8b7cff;color:#fff;font-weight:800;font-size:15px;text-decoration:none;padding:12px 24px;border-radius:999px}
-@media (pointer:coarse){#wjoy.on{display:block}}
-.wleft{display:flex;flex-direction:column;gap:8px;pointer-events:none;max-width:min(300px,64vw)}
-#wquest{background:rgba(10,6,24,.66);border:1px solid rgba(255,210,87,.35);border-radius:14px;padding:9px 12px;backdrop-filter:blur(8px)}
-#wquest[hidden]{display:none!important}
-.wq-t{font-size:13px;font-weight:800;color:#ffe9a8}
-.wq-bar{height:6px;border-radius:99px;background:rgba(255,255,255,.12);margin:6px 0 5px;overflow:hidden}
-.wq-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffd257,#ff9d5c);border-radius:99px;transition:width .4s}
-.wq-s{font-size:11.5px;color:rgba(243,239,255,.72);font-weight:700}
-#wbal{display:inline-block;margin-top:7px;background:rgba(10,6,24,.66);border:1px solid rgba(255,210,87,.4);color:#ffd257;font-size:12.5px;font-weight:800;padding:5px 11px;border-radius:999px;backdrop-filter:blur(8px)}
-@media (max-width:640px){#wtoast{top:auto;bottom:158px}}
-#wlb{background:rgba(10,6,24,.55);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:8px 12px;font-size:12px;color:rgba(243,239,255,.85);line-height:1.65;backdrop-filter:blur(8px)}
-#wlb[hidden]{display:none!important}
-#wlb b{color:#ffd257;font-weight:800}
-#wlb .lb-h{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:rgba(243,239,255,.5);font-weight:800}
-#wmap{position:fixed;right:14px;top:70px;z-index:14;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(8,5,20,.6);backdrop-filter:blur(6px)}
-@media (max-width:640px){#wmap{width:104px;height:65px;top:64px}}
-#wtoast{position:fixed;left:50%;top:84px;transform:translateX(-50%);z-index:30;background:rgba(16,10,36,.9);border:1px solid rgba(255,210,87,.5);color:#ffe9a8;font-size:15px;font-weight:800;padding:11px 20px;border-radius:999px;box-shadow:0 0 30px rgba(255,210,87,.3);white-space:nowrap;max-width:92vw;text-overflow:ellipsis;overflow:hidden}
-#wtoast[hidden]{display:none!important}
-#wemotes{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:20;display:flex;flex-direction:column;gap:6px}
-#wemotes button{font:inherit;font-size:12px;font-weight:800;color:#e9e4ff;background:rgba(12,8,28,.66);border:1px solid rgba(255,255,255,.15);border-radius:999px;padding:8px 13px;cursor:pointer;backdrop-filter:blur(8px)}
-#wemotes button:active{background:#8b7cff;color:#fff}
-@media (max-width:640px){#wemotes{bottom:auto;top:140px}}
-#wdash{position:fixed;left:24px;bottom:calc(24px + env(safe-area-inset-bottom));z-index:21;font:inherit;font-size:13px;font-weight:800;color:#cffafe;background:rgba(10,20,36,.7);border:1px solid rgba(165,243,252,.4);border-radius:999px;padding:11px 18px;cursor:pointer;backdrop-filter:blur(8px)}
-#wdash:active{background:#164e63}
-@media (pointer:coarse){#wdash{left:124px;bottom:calc(40px + env(safe-area-inset-bottom))}}
-#wbar{bottom:calc(14px + env(safe-area-inset-bottom))}
-@media (max-width:640px){#wbar{width:calc(100vw - 120px);left:14px;transform:none}#wbar:hover{transform:none}}
+.wl-card{max-width:400px;text-align:center;background:linear-gradient(180deg,rgba(23,16,41,.97),rgba(13,8,25,.98));border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:28px 24px;box-shadow:0 24px 70px rgba(0,0,0,.65)}
+.wl-big{font-size:21px;font-weight:800;color:#f3efff;letter-spacing:-.01em}
+.wl-card p{color:rgba(243,239,255,.6);font-size:14px;line-height:1.55}
+.wl-btn{display:inline-block;margin-top:8px;background:#8b7cff;color:#fff;font-weight:700;font-size:15px;text-decoration:none;padding:12px 24px;border-radius:999px}
+
+/* chips + popover hide while a panel is open */
+body.wov #wportal,body.wov #wact,body.wov #wemotebtn,body.wov #wdash{display:none!important}
+
+/* shell law: the site chrome flattens every <button> to border-radius:8px
+   !important — the world re-asserts its own shapes. */
+#wdash,#wemotebtn,.wbtns button,#wa-x,#wg-x,#wsh-x{border-radius:50%!important}
+#wportal,#wact,#wsend,#wemotes button,.wsh-card button,#wg-result button,#wsh-tabs button{border-radius:999px!important}
+.wa-item,.mg-quiz button,.mg-dpad button{border-radius:12px!important}
+#wdash svg,#wemotebtn svg{flex:none}

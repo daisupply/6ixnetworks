@@ -18,11 +18,13 @@
  *
  * State is in-memory only (presence, shards, quests, stats, signaling),
  * exactly like party rooms: a server restart resets the plaza. Nothing
- * here touches the store directly — coins go through ctx.awardCoins, so
+ * here touches the store directly — six cents (the world-only currency, NOT
+ * site coins) go through ctx.awardCents, so
  * the world costs zero extra Upstash ops beyond the normal coin saves.
  *
  * ctx: { voterUser(req), readJsonBody(req), getFx(user)->fxId|'',
- *        awardCoins(user, n)->Promise<bal>, scoreDay()->'YYYY-MM-DD',
+ *        awardCents(user, n)->Promise<bal>, getCents(user)->int,
+ *        getInv/setInv, getWear/setWear, scoreDay()->'YYYY-MM-DD',
  *        FONT_LINKS, GALAXY_CSS, SIDEBAR_HTML, STAR_CANVAS, NOTIF_JS }
  */
 const fs = require('fs');
@@ -39,6 +41,7 @@ const GOLD_LIFE_MS = 45000;
 
 const QUESTS = require('./quests.js');
 const GAMES_MOD = require('./games.js');
+const SHOP = require('./shop.js');
 
 const ZONES = [
   { id: 'fountain', name: 'the fountain', x: 2400, y: 1500, r: 125 },
@@ -118,6 +121,7 @@ function sixState(now) {
   return {
     u: 'six', npc: true, x: Math.round(x), y: Math.round(y), dir, fx: 'galaxy',
     vc: false, talk: false, bub: moving ? '' : SIX_LINES[lineIdx],
+    wear: { trail: { kind: 'star', c: '#c4b5fd' }, hat: { kind: 'crown', c: '#ffd257' }, aura: { kind: 'spin', c: '#8b7cff' }, pet: { kind: 'star', c: '#ffd257' } },
   };
 }
 
@@ -228,6 +232,16 @@ function createWorld(ctx) {
   function prune(now) {
     for (const [u, p] of P) if (now - p.at > STALE_MS) { P.delete(u); SIG.delete(u); }
   }
+  function wearOf(u) {
+    const out = { trail: null, hat: null, aura: null, pet: null };
+    let w = {};
+    try { w = ctx.getWear(u) || {}; } catch { }
+    for (const cat of ['trail', 'hat', 'aura', 'pet']) {
+      const it = w[cat] && SHOP.BY_ID[w[cat]];
+      if (it) out[cat] = { kind: it.kind, c: it.color };
+    }
+    return out;
+  }
   function roster(now) {
     const out = [sixState(now)];
     for (const [u, p] of P) {
@@ -236,6 +250,7 @@ function createWorld(ctx) {
         vc: !!p.vc, talk: !!p.talk,
         bub: (p.bub && now - p.bubAt < 6000) ? p.bub : '',
         emote: (p.emote && now - (p.emoteAt || 0) < 2600) ? p.emote : '',
+        wear: p.wear || null,
       });
     }
     return out;
@@ -271,6 +286,7 @@ function createWorld(ctx) {
       p.talk = !!b.talk;
       p.at = now;
       try { p.fx = ctx.getFx(me) || ''; } catch { p.fx = ''; }
+      try { p.wear = wearOf(me); } catch { p.wear = null; }
       let questDone = null;
       // walking feeds the walk quest (delta capped so teleports don't farm)
       const moved = dist(ox, oy, p.x, p.y);
@@ -306,7 +322,7 @@ function createWorld(ctx) {
           if (s.gold) st.golds += 1;
           const amt = s.gold ? GOLD_PAY : SHARD_PAY;
           let bal = null;
-          try { bal = await ctx.awardCoins(me, amt); } catch { }
+          try { bal = await ctx.awardCents(me, amt); } catch { }
           got = { amt, gold: !!s.gold, bal };
           questDone = questEvent(me, 'shard') || questDone;
           if (s.gold) questDone = questEvent(me, 'gold') || questDone;
@@ -315,14 +331,16 @@ function createWorld(ctx) {
       }
       if (questDone && questDone.done) {
         let bal = null;
-        try { bal = await ctx.awardCoins(me, questDone.pay); } catch { }
+        try { bal = await ctx.awardCents(me, questDone.pay); } catch { }
         questDone.bal = bal;
       }
       const sig = SIG.get(me) || [];
       SIG.delete(me);
       const st = statsFor(me);
       J({
-        ok: true, me, players: roster(now), sig, n: P.size, bal: (() => { try { return ctx.getBal(me); } catch { return null; } })(),
+        ok: true, me, players: roster(now), sig, n: P.size, bal: (() => { try { return ctx.getCents(me); } catch { return null; } })(),
+        inv: (() => { try { return ctx.getInv(me); } catch { return []; } })(),
+        wearIds: (() => { try { return ctx.getWear(me); } catch { return {}; } })(),
         shards: shards.map((s) => ({ id: s.id, x: s.x, y: s.y, gold: s.gold })),
         lb: leaderboard(), quest: questView(me),
         today: { shards: st.shards, golds: st.golds },
@@ -342,7 +360,7 @@ function createWorld(ctx) {
       p.bub = text; p.bubAt = now; p.at = now;
       const qd = questEvent(me, 'say');
       let bal = null;
-      if (qd && qd.done) { try { bal = await ctx.awardCoins(me, qd.pay); } catch { } }
+      if (qd && qd.done) { try { bal = await ctx.awardCents(me, qd.pay); } catch { } }
       J({ ok: true, questDone: qd ? { done: true, pay: qd.pay, t: qd.t, bal } : null, quest: questView(me) });
       return true;
     }
@@ -351,7 +369,7 @@ function createWorld(ctx) {
       const id = String(b.id || '').slice(0, 20);
       const qd = id ? questEvent(me, 'portal', id) : null;
       let bal = null;
-      if (qd && qd.done) { try { bal = await ctx.awardCoins(me, qd.pay); } catch { } }
+      if (qd && qd.done) { try { bal = await ctx.awardCents(me, qd.pay); } catch { } }
       J({ ok: true, questDone: qd ? { done: true, pay: qd.pay, t: qd.t, bal } : null, quest: questView(me) });
       return true;
     }
@@ -372,11 +390,44 @@ function createWorld(ctx) {
         coins = Math.max(1, Math.round(pts / g.maxPoints * g.capCoins));
         rec.plays[g.id] = used + 1;
         paid = true;
-        try { await ctx.awardCoins(me, coins); } catch { }
+        try { await ctx.awardCents(me, coins); } catch { }
       }
       let bal = null;
-      try { bal = ctx.getBal(me); } catch { }
-      J({ ok: true, coins, paid, playsLeft: Math.max(0, 3 - (rec.plays[g.id] || 0)), bal });
+      try { bal = ctx.getCents(me); } catch { }
+      J({ ok: true, cents: coins, paid, playsLeft: Math.max(0, 3 - (rec.plays[g.id] || 0)), bal });
+      return true;
+    }
+    if (u.pathname === '/api/world/shopbuy' && req.method === 'POST') {
+      const it = SHOP.BY_ID[String(b.id || '')];
+      if (!it) { J({ ok: false, err: 'no such item' }, 400); return true; }
+      let inv = [];
+      try { inv = ctx.getInv(me); } catch { }
+      if (inv.includes(it.id)) { J({ ok: false, err: 'u already own that' }); return true; }
+      let bal = 0;
+      try { bal = ctx.getCents(me); } catch { }
+      if (bal < it.price) { J({ ok: false, err: 'not enough six cents', bal }); return true; }
+      try { bal = await ctx.awardCents(me, -it.price); } catch { }
+      inv.push(it.id);
+      try { ctx.setInv(me, inv); } catch { }
+      J({ ok: true, bal, inv });
+      return true;
+    }
+    if (u.pathname === '/api/world/shopequip' && req.method === 'POST') {
+      const cat = String(b.cat || '');
+      if (!['trail', 'hat', 'aura', 'pet'].includes(cat)) { J({ ok: false, err: 'bad category' }, 400); return true; }
+      let wear = {};
+      try { wear = ctx.getWear(me); } catch { }
+      if (b.id == null || b.id === '') { delete wear[cat]; }
+      else {
+        const it = SHOP.BY_ID[String(b.id)];
+        if (!it || it.cat !== cat) { J({ ok: false, err: 'bad item' }, 400); return true; }
+        let owned = false;
+        try { owned = ctx.getInv(me).includes(it.id); } catch { }
+        if (!owned) { J({ ok: false, err: 'u don\'t own that' }); return true; }
+        wear[cat] = it.id;
+      }
+      try { ctx.setWear(me, wear); } catch { }
+      J({ ok: true, wearIds: wear, wear: wearOf(me) });
       return true;
     }
     if (u.pathname === '/api/world/wish' && req.method === 'POST') {
@@ -385,12 +436,12 @@ function createWorld(ctx) {
       const lastW = WISH_AT.get(me) || 0;
       if (now - lastW < 3000) { J({ ok: false, err: 'the fountain needs a sec' }); return true; }
       let bal0 = 0;
-      try { bal0 = ctx.getBal(me); } catch { }
+      try { bal0 = ctx.getCents(me); } catch { }
       if (bal0 < 1) { J({ ok: false, err: 'u need 1 coin to wish' }); return true; }
       WISH_AT.set(me, now);
       const jackpot = Math.random() < 0.02;
       let bal = null;
-      try { bal = await ctx.awardCoins(me, jackpot ? 49 : -1); } catch { }
+      try { bal = await ctx.awardCents(me, jackpot ? 49 : -1); } catch { }
       J({ ok: true, fortune: FORTUNES[Math.floor(Math.random() * FORTUNES.length)], jackpot, bal });
       return true;
     }
@@ -425,11 +476,12 @@ function createWorld(ctx) {
       '<canvas id="wcv"></canvas>\n' +
       '<div id="whud">\n' +
       '  <div class="wleft">\n' +
-      '    <div class="wbrand">✦ six\'s network <span id="wn"></span></div><span id="wbal">✦ — coins</span>\n' +
+      '    <div class="wbrand"><span class="wstar">✦</span> six\'s network <span id="wn"></span></div><span id="wbal">¢ — six cents</span>\n' +
       '    <div id="wquest" hidden><div class="wq-t"></div><div class="wq-bar"><i></i></div><div class="wq-s"></div></div>\n' +
       '    <div id="wlb" hidden></div>\n' +
       '  </div>\n' +
       '  <div class="wbtns">\n' +
+      '    <button id="wshopbtn" type="button" title="six cents shop"><span class="wcent">\u00a2</span></button>\n' +
       '    <button id="wgames" type="button" title="minigames"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.2-.022.63-.022 1.41a5 5 0 0 0 8.303 4.743 1 1 0 0 1 .984-.27h.066a1 1 0 0 1 .984.27A5 5 0 0 0 21.32 10c0-.78-.016-1.21-.022-1.41A4 4 0 0 0 17.32 5z"/></svg></button>\n' +
       '    <button id="wmic" type="button" title="voice chat"></button>\n' +
       '    <a class="wleave" href="/home" title="leave">✕</a>\n' +
@@ -438,8 +490,9 @@ function createWorld(ctx) {
       '<div id="wtoast" hidden></div>\n' +
       '<div id="wlog"></div>\n' +
       '<button id="wportal" type="button" hidden></button>\n' +
-      '<button id="wwish" type="button" hidden>make a wish — 1 coin</button>\n' +
-      '<div id="wemotes">\n' +
+      '<button id="wact" type="button" hidden><span class="wact-ic"></span><span class="wact-t"></span></button>\n' +
+      '<button id="wemotebtn" type="button" title="emotes"></button>\n' +
+      '<div id="wemotes" hidden>\n' +
       '  <button type="button" data-em="wave">wave</button>\n' +
       '  <button type="button" data-em="dance">dance</button>\n' +
       '  <button type="button" data-em="spin">spin</button>\n' +
@@ -451,7 +504,6 @@ function createWorld(ctx) {
       '  <button id="wsend" type="submit">send</button>\n</form>\n' +
       '<div id="wjoy"><div id="wknob"></div></div>\n' +
       '<button id="wdash" type="button">dash</button>\n' +
-      '<button id="wcab" type="button" hidden>play minigames ✦</button>\n' +
       '<div id="warcade" hidden><div class="wa-card">\n' +
       '  <div class="wa-head"><span>✦ the arcade</span><span id="wa-count"></span><button id="wa-x" type="button">✕</button></div>\n' +
       '  <input id="wa-q" type="text" placeholder="search 112 minigames…">\n' +
@@ -463,11 +515,17 @@ function createWorld(ctx) {
       '  <div id="wg-stage"></div>\n' +
       '  <div id="wg-result" hidden></div>\n' +
       '</div></div>\n' +
+      '<div id="wshop" hidden><div class="wa-card">\n' +
+      '  <div class="wa-head"><span>\u2726 six cents shop</span><span id="wsh-bal"></span><button id="wsh-x" type="button">\u2715</button></div>\n' +
+      '  <div class="wsh-note">six cents are earned right here in the world \u2014 shards, quests, minigames. they are NOT site coins.</div>\n' +
+      '  <div id="wsh-tabs"></div>\n' +
+      '  <div id="wsh-grid"></div>\n' +
+      '</div></div>\n' +
       '<div id="wlogin" hidden><div class="wl-card"><div class="wl-big">six\'s network is for the logged-in</div>' +
       '<p>make an account or log in, then walk in. a whole world in here: districts, a lake, a forest, moon shards, quests from six, voice chat.</p>' +
       '<a class="wl-btn" href="/home">go log in</a></div></div>\n' +
       '<script>' + ctx.NOTIF_JS + '</script>\n' +
-      '<script>window.WGAMES=' + JSON.stringify(GAMES_MOD.GAMES) + ';window.WCABS=' + JSON.stringify(GAMES_MOD.CABINETS) + ';</script>\n' +
+      '<script>window.WGAMES=' + JSON.stringify(GAMES_MOD.GAMES) + ';window.WCABS=' + JSON.stringify(GAMES_MOD.CABINETS) + ';window.WSHOP=' + JSON.stringify(SHOP.ITEMS) + ';</script>\n' +
       '<script>' + CLIENT + '</script>\n' +
       '</body>\n</html>';
   }

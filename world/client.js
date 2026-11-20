@@ -123,6 +123,7 @@ var myEmote = '', myEmoteTs = 0;
 var pendingClaim = '', claimAt = 0;
 var insidePad = '';
 var myZone = '', zoneSeen = false;
+var wactMode = '';
 var dashUntil = 0, dashCd = 0, dashDir = 0;
 var lastBub = {};
 var moveTarget = null;
@@ -165,6 +166,15 @@ var peers = {};
 var RTC_CFG = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] };
 var MIC_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>';
 var MIC_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="2" x2="22" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12"/><line x1="12" y1="19" x2="12" y2="22"/></svg>';
+$('wdash').innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2 4.5 13.5H11L9.5 22 19 9.5h-6.5L13 2z"/></svg>';
+$('wemotebtn').innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1.15" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1.15" fill="currentColor" stroke="none"/><path d="M8 14.5c1.2 1.4 2.5 2 4 2s2.8-.6 4-2" stroke-linecap="round"/></svg>';
+var emotePopTimer = 0;
+$('wemotebtn').addEventListener('click', function () {
+  var pop = $('wemotes');
+  pop.hidden = !pop.hidden;
+  clearTimeout(emotePopTimer);
+  if (!pop.hidden) emotePopTimer = setTimeout(function () { pop.hidden = true; }, 5000);
+});
 $('wmic').innerHTML = MIC_OFF;
 
 function vcSend(to, data) { jpost('/api/world/signal', { to: to, data: data }); }
@@ -303,6 +313,7 @@ window.addEventListener('keydown', function (e) {
 });
 window.addEventListener('keyup', function (e) { keys[e.key.toLowerCase()] = false; });
 function doEmote(em) {
+  var ep = $('wemotes'); if (ep) ep.hidden = true;
   myEmote = em; myEmoteTs = Date.now();
   if (players[me]) { players[me].emote = em; players[me].emoteAt = performance.now(); }
   if (em === 'heart') burst(px, py - 18, '#f472b6', 8, 60);
@@ -331,14 +342,17 @@ function enterPortal(pad) {
   setTimeout(function () { location.href = pad.href; }, 160);
 }
 $('wportal').addEventListener('click', function () { if (insidePad) enterPortal(insidePad); });
-$('wwish').addEventListener('click', function () {
+$('wact').addEventListener('click', function () {
+  if (wactMode === 'shop') { openShop(); return; }
+  if (wactMode === 'cab') { openArcade(); return; }
+  if (wactMode !== 'wish') return;
   jpost('/api/world/wish', {}).then(function (r) {
     if (!r) return;
     if (!r.ok) { toast(r.err || 'the fountain said no'); return; }
     if (r.jackpot) {
       sndQuest();
       burst(px, py - 10, '#ffd257', 34, 160);
-      floatText(px, py - 46, 'JACKPOT +50c', '#ffd257');
+      floatText(px, py - 46, 'JACKPOT +50¢', '#ffd257');
       toast('✦ THE FOUNTAIN PAID OUT — jackpot! ' + r.fortune, 5200);
     } else {
       sndPick(false);
@@ -380,7 +394,7 @@ function renderQuest(q) {
   el.hidden = false;
   el.querySelector('.wq-t').textContent = '✦ quest: ' + q.t;
   el.querySelector('.wq-bar i').style.width = Math.round(100 * q.prog / Math.max(1, q.n)) + '%';
-  el.querySelector('.wq-s').textContent = q.prog + ' / ' + q.n + ' · pays ' + q.pay + 'c' + (q.chain ? ' · chain ×' + (q.chain + 1) : '');
+  el.querySelector('.wq-s').textContent = q.prog + ' / ' + q.n + ' · pays ¢' + q.pay + (q.chain ? ' · chain ×' + (q.chain + 1) : '');
 }
 function renderLb(lb, today) {
   var el = $('wlb'); if (!el) return;
@@ -394,9 +408,9 @@ function renderLb(lb, today) {
 function onQuestDone(qd) {
   if (!qd) return;
   sndQuest();
-  toast('✦ quest done: ' + qd.t + ' — +' + qd.pay + ' coins');
+  toast('✦ quest done: ' + qd.t + ' — +' + qd.pay + ' six cents');
   burst(px, py - 10, '#ffd257', 26, 140);
-  floatText(px, py - 44, '+' + qd.pay + 'c', '#ffd257');
+  floatText(px, py - 44, '+¢' + qd.pay, '#ffd257');
 }
 
 /* ---------------- sync loop ---------------- */
@@ -406,17 +420,20 @@ function ping() {
   if (pendingClaim && performance.now() - claimAt > 250) { body.claim = pendingClaim; }
   jpost('/api/world/ping', body).then(function (r) {
     if (!r || !r.ok) return;
-    $('wn').textContent = r.n + ' in the network';
-    if (r.bal != null && $('wbal')) $('wbal').textContent = '✦ ' + r.bal + ' coins';
+    $('wn').textContent = r.n + ' online';
+    if (r.bal != null) setCentsBal(r.bal);
+    if (r.inv) myInv = r.inv;
+    if (r.wearIds) myWearIds = r.wearIds;
+    if (window.__shopOpen) renderShopGrid();
     var seen = {};
     (r.players || []).forEach(function (p) {
       seen[p.u] = 1;
       var cur = players[p.u];
       if (!cur) {
-        players[p.u] = { u: p.u, x: p.x, y: p.y, tx: p.x, ty: p.y, dir: p.dir, fx: p.fx, vc: p.vc, talk: p.talk, bub: '', bubAt: 0, emote: '', emoteAt: 0, npc: !!p.npc };
+        players[p.u] = { u: p.u, x: p.x, y: p.y, tx: p.x, ty: p.y, dir: p.dir, fx: p.fx, vc: p.vc, talk: p.talk, bub: '', bubAt: 0, emote: '', emoteAt: 0, npc: !!p.npc, wear: p.wear || null };
         cur = players[p.u];
       }
-      cur.tx = p.x; cur.ty = p.y; cur.dir = p.dir; cur.fx = p.fx; cur.vc = p.vc; cur.talk = p.talk; cur.npc = !!p.npc;
+      cur.tx = p.x; cur.ty = p.y; cur.dir = p.dir; cur.fx = p.fx; cur.vc = p.vc; cur.talk = p.talk; cur.npc = !!p.npc; cur.wear = p.wear || null;
       if (p.bub && p.bub !== cur.bub) {
         cur.bub = p.bub; cur.bubAt = performance.now();
         if (p.u !== me && !p.npc && lastBub[p.u] !== p.bub && dist(px, py, p.x, p.y) < 460) { lastBub[p.u] = p.bub; logLine(p.u, p.bub); }
@@ -431,7 +448,7 @@ function ping() {
       sSeen[s.id] = 1;
       if (!shards[s.id]) {
         shards[s.id] = { x: s.x, y: s.y, gold: !!s.gold, seed: Math.random() * TAU };
-        if (s.gold && !goldKnown[s.id]) { goldKnown[s.id] = 1; toast('✦ a GOLDEN shard just dropped — 25 coins, first one there'); }
+        if (s.gold && !goldKnown[s.id]) { goldKnown[s.id] = 1; toast('✦ a GOLDEN shard just dropped — 25 six cents, first one there'); }
       }
     });
     Object.keys(shards).forEach(function (id) { if (!sSeen[id]) delete shards[id]; });
@@ -441,7 +458,7 @@ function ping() {
     if (r.got) {
       sndPick(r.got.gold);
       burst(px, py - 8, r.got.gold ? '#ffd257' : '#a5f3fc', r.got.gold ? 24 : 12, 110);
-      floatText(px, py - 40, '+' + r.got.amt + 'c', r.got.gold ? '#ffd257' : '#a5f3fc');
+      floatText(px, py - 40, '+¢' + r.got.amt, r.got.gold ? '#ffd257' : '#a5f3fc');
       pendingClaim = '';
     }
     if (r.questDone) onQuestDone(r.questDone);
@@ -504,6 +521,25 @@ function update(now) {
   if (dashing && Math.random() < 0.75) {
     parts.push({ x: px - vx * 0.03 + (Math.random() * 14 - 7), y: py - vy * 0.03 + (Math.random() * 14 - 7), vx: -vx * 0.12, vy: -vy * 0.12, at: now, life: 330, c: '#a5f3fc', r: 2.4 });
   }
+  Object.keys(players).forEach(function (u) {
+    var p = players[u];
+    if (p.wear && p.wear.trail) {
+      var pmoving = u === me ? moving : dist(p.x, p.y, p.tx, p.ty) > 3;
+      if (pmoving && Math.random() < 0.55) {
+        parts.push({ x: p.x + (Math.random() * 10 - 5), y: p.y + 8 + Math.random() * 4, vx: 0, vy: 6, at: now, life: 620, c: p.wear.trail.c, r: 2.6, ts: p.wear.trail.kind });
+      }
+    }
+    if (p.wear && p.wear.pet) {
+      var pet = pets[u] || (pets[u] = { x: p.x, y: p.y - 30, kind: p.wear.pet.kind, c: p.wear.pet.c });
+      pet.kind = p.wear.pet.kind; pet.c = p.wear.pet.c;
+      var pa = now / 1500 + u.length * 1.7;
+      var txp = p.x + Math.cos(pa) * 30, typ = p.y - 30 + Math.sin(now / 600 + u.length) * 4;
+      pet.x += (txp - pet.x) * Math.min(1, dt * 3.4);
+      pet.y += (typ - pet.y) * Math.min(1, dt * 3.4);
+    } else if (pets[u]) {
+      delete pets[u];
+    }
+  });
   if (inWater && moving && Math.random() < 0.3) {
     parts.push({ x: px + (Math.random() * 22 - 11), y: py + 12, vx: 0, vy: 0, at: now, life: 620, c: '#7dd3fc', r: 3.4, ring: true });
   }
@@ -525,10 +561,20 @@ function update(now) {
     chip.style.top = (near.y - cp2.y - 56) + 'px';
     if (insidePad !== near) { insidePad = near; chip.textContent = 'enter ' + near.label + ' →'; chip.style.borderColor = near.c; chip.style.boxShadow = '0 0 26px ' + near.c + '66'; }
   } else { insidePad = ''; chip.hidden = true; }
-  $('wwish').hidden = dist(px, py, FOUNTAIN.x, FOUNTAIN.y) > 135;
   var nearCab = false;
   for (var ci = 0; ci < CABS.length; ci++) { if (dist(px, py, CABS[ci].x, CABS[ci].y) < 82) { nearCab = true; break; } }
-  $('wcab').hidden = !nearCab;
+  var wact = $('wact'), actMode = '', actLabel = '';
+  if (dist(px, py, TENT.x, TENT.y) < 105) { actMode = 'shop'; actLabel = 'six cents shop'; }
+  else if (nearCab) { actMode = 'cab'; actLabel = 'play minigames'; }
+  else if (dist(px, py, FOUNTAIN.x, FOUNTAIN.y) < 135) { actMode = 'wish'; actLabel = 'make a wish · 1 six cent'; }
+  if (actMode) {
+    if (wactMode !== actMode) {
+      wactMode = actMode;
+      wact.className = 'm-' + actMode;
+      wact.querySelector('.wact-t').textContent = actLabel;
+    }
+    wact.hidden = false;
+  } else { wactMode = ''; wact.hidden = true; }
   if (!pendingClaim) {
     for (var id in shards) { if (dist(px, py, shards[id].x, shards[id].y) < 34) { pendingClaim = id; claimAt = performance.now(); break; } }
   }
@@ -541,10 +587,10 @@ function update(now) {
   fires.forEach(function (f) { f.x += Math.cos(f.s + now / 2400) * f.v * dt; f.y += Math.sin(f.s * 1.7 + now / 1900) * f.v * dt * 0.6; if (f.x < 0) f.x = MAP_W; if (f.x > MAP_W) f.x = 0; if (f.y < 0) f.y = MAP_H; if (f.y > MAP_H) f.y = 0; });
   Object.keys(players).forEach(function (u) {
     var p = players[u];
-    if (p.emote === 'heart' && now - p.emoteAt < 2400 && Math.random() < 0.3) {
+    if (p.emote === 'heart' && now - p.emoteAt < 2400 && Math.random() < 0.5) {
       parts.push({ x: p.x + (Math.random() * 34 - 17), y: p.y - 20, vx: 0, vy: -46, at: now, life: 1000, c: '#f472b6', r: 3, heart: true, big: true });
     }
-    if (p.emote === 'dance' && now - p.emoteAt < 2400 && Math.random() < 0.14) {
+    if (p.emote === 'dance' && now - p.emoteAt < 2400 && Math.random() < 0.3) {
       parts.push({ x: p.x + (Math.random() * 36 - 18), y: p.y - 26, vx: 6, vy: -34, at: now, life: 850, c: '#c4b5fd', r: 3, note: true });
     }
     if (p.emote === 'spin' && now - p.emoteAt < 2400 && Math.random() < 0.3) {
@@ -628,7 +674,7 @@ function drawPlayer(g, p, now, isMe) {
   var emoteAge = now - (p.emoteAt || 0);
   var emote = (p.emote && emoteAge < 2600) ? p.emote : '';
   var bounce = 0, rot = 0;
-  if (emote === 'dance') { bounce = Math.abs(Math.sin(now / 125)) * 11; rot = Math.sin(now / 150) * 0.22; }
+  if (emote === 'dance') { bounce = Math.abs(Math.sin(now / 125)) * 17; rot = Math.sin(now / 150) * 0.3; }
   if (emote === 'spin') rot = (emoteAge / 900) * TAU;
   if (emote === 'wave') bounce = Math.sin(now / 120) * 1.5;
   var walking = dist(p.x, p.y, p.tx, p.ty) > 4 || (isMe && moving);
@@ -639,6 +685,29 @@ function drawPlayer(g, p, now, isMe) {
   sh.addColorStop(0, 'rgba(0,0,0,.5)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
   g.fillStyle = sh;
   g.beginPath(); g.ellipse(x, y + 13, 19, 8, 0, 0, TAU); g.fill();
+  if (p.wear && p.wear.aura) {
+    var au = p.wear.aura, ai2, oa;
+    g.strokeStyle = au.c; g.globalAlpha = 0.75; g.lineWidth = 2.2;
+    if (au.kind === 'pulse') {
+      g.beginPath(); g.arc(x, y + 4, 21 + Math.sin(now / 300 + x) * 3, 0, TAU); g.stroke();
+    } else if (au.kind === 'spin') {
+      for (ai2 = 0; ai2 < 3; ai2++) { g.beginPath(); g.arc(x, y + 4, 23, now / 900 + ai2 * 2.1, now / 900 + ai2 * 2.1 + 1.1); g.stroke(); }
+    } else if (au.kind === 'orbit') {
+      g.fillStyle = au.c;
+      for (ai2 = 0; ai2 < 3; ai2++) { oa = now / 800 + ai2 * 2.1; g.beginPath(); g.arc(x + Math.cos(oa) * 24, y + 4 + Math.sin(oa) * 7, 2.6, 0, TAU); g.fill(); }
+    } else {
+      g.beginPath(); g.ellipse(x, y + 4, 23, 10, 0, 0, TAU); g.stroke();
+    }
+    g.globalAlpha = 1;
+  }
+  if (emote === 'spin') {
+    g.fillStyle = '#ffd257';
+    for (var sxi = 0; sxi < 3; sxi++) {
+      var sxa = now / 160 + sxi * 2.1;
+      star4(g, x + Math.cos(sxa) * 25, y + Math.sin(sxa) * 10, 4.6, sxa);
+      g.fill();
+    }
+  }
   g.save();
   g.translate(x, by);
   if (emote === 'dead') g.rotate(Math.PI / 2 * 0.92);
@@ -668,6 +737,7 @@ function drawPlayer(g, p, now, isMe) {
     g.strokeStyle = 'hsla(' + hue + ',70%,26%,.85)'; g.lineWidth = 1.6; g.stroke();
     g.strokeStyle = 'rgba(255,255,255,.5)'; g.lineWidth = 1.6;
     g.beginPath(); g.arc(0, 0, 13.6, Math.PI * 1.08, Math.PI * 1.52); g.stroke();
+    if (p.wear && p.wear.hat) drawHat(g, p.wear.hat, now);
     var ex = Math.cos(p.dir || 0) * 3.4, ey = Math.sin(p.dir || 0) * 2.6;
     g.fillStyle = '#14101f';
     if (emote === 'dead') {
@@ -863,6 +933,7 @@ function render(now) {
     g.beginPath(); g.arc(fx, fy - 12, 13 + Math.sin(now / 900) * 1.2, 0, TAU); g.fill(); g.shadowBlur = 0;
     if (Math.random() < 0.1) parts.push({ x: fx + (Math.random() * 30 - 15), y: fy - 22, vx: 0, vy: -26, at: now, life: 700, c: '#dcd6ff', r: 1.6 });
   })();
+  if (inV(TENT.x, TENT.y, 150)) drawTent(g, now);
   /* arcade cabinets */
   CABS.forEach(function (c) { if (inV(c.x, c.y, 90)) drawCabinet(g, c, now); });
   /* portals */
@@ -948,6 +1019,10 @@ function render(now) {
     else drawPlayer(g, d.p, now, d.p.u === me);
   });
   if (players[me]) drawNameTag(g, players[me], now);
+  Object.keys(pets).forEach(function (u) {
+    var pet = pets[u];
+    if (inV(pet.x, pet.y, 70)) drawPet(g, pet, now);
+  });
   /* particles */
   parts.forEach(function (p) {
     var age = (now - p.at) / p.life;
@@ -958,10 +1033,18 @@ function render(now) {
       return;
     }
     g.fillStyle = p.c;
-    if (p.heart) {
-      g.font = (p.big ? '16px' : '11px') + ' Inter'; g.textAlign = 'center';
+    if (p.ts === 'star') {
+      g.fillStyle = p.c; star4(g, p.x, p.y, p.r * 2.1, age * 4); g.fill();
+    } else if (p.ts === 'spark') {
+      g.strokeStyle = p.c; g.lineWidth = 1.6;
+      g.beginPath();
+      g.moveTo(p.x - p.r * 1.7, p.y); g.lineTo(p.x + p.r * 1.7, p.y);
+      g.moveTo(p.x, p.y - p.r * 1.7); g.lineTo(p.x, p.y + p.r * 1.7);
+      g.stroke();
+    } else if (p.heart || p.ts === 'heart') {
+      g.font = (p.big ? '21px' : '12px') + ' Inter'; g.textAlign = 'center';
       g.fillText('♥', p.x, p.y - age * 30);
-    } else if (p.note) {
+    } else if (p.note || p.ts === 'note') {
       g.font = '13px Inter'; g.textAlign = 'center';
       g.fillText('♪', p.x, p.y - age * 24);
     } else {
@@ -1090,7 +1173,7 @@ function buildArcadeList() {
       var sm = document.createElement('small'); sm.textContent = g.how;
       left.appendChild(nm); left.appendChild(sm);
       var cap = document.createElement('span');
-      cap.className = 'wa-cap'; cap.textContent = 'up to ' + g.capCoins + 'c';
+      cap.className = 'wa-cap'; cap.textContent = 'up to ¢' + g.capCoins;
       b.appendChild(left); b.appendChild(cap);
       b.addEventListener('click', function () { launchGame(g.id); });
       list.appendChild(b);
@@ -1102,13 +1185,15 @@ function openArcade() {
   closeGame();
   if (!$('wa-list').children.length) buildArcadeList();
   $('warcade').hidden = false;
+  document.body.classList.add('wov');
 }
-function closeArcade() { $('warcade').hidden = true; }
+function closeArcade() { $('warcade').hidden = true; document.body.classList.remove('wov'); }
 function closeGame() {
   MG.open = false; MG.doneFlag = false; MG.id = null; MG.entry = null;
   window.__mgOpen = false;
   mgCleanup();
   $('wgame').hidden = true;
+  document.body.classList.remove('wov');
 }
 function launchGame(id) {
   var entry = null;
@@ -1119,10 +1204,11 @@ function launchGame(id) {
   MG.open = true; MG.id = id; MG.entry = entry; MG.points = 0; MG.doneFlag = false;
   window.__mgOpen = true;
   $('wg-title').textContent = entry.name;
-  $('wg-how').textContent = entry.how + ' · up to ' + entry.capCoins + ' coins';
+  $('wg-how').textContent = entry.how + ' · up to ¢' + entry.capCoins + ' six cents';
   $('wg-score').textContent = '0 pts';
   $('wg-result').hidden = true;
   $('wgame').hidden = false;
+  document.body.classList.add('wov');
   var api = {
     score: function (n) { MG.points = n; $('wg-score').textContent = n + ' pts'; },
     done: function (n) { finishGame(entry, Math.max(0, Math.floor(n || 0))); }
@@ -1144,8 +1230,8 @@ function finishGame(entry, points) {
   jpost('/api/world/miniscore', { game: entry.id, points: points }).then(function (r) {
     var html;
     if (!r || !r.ok) html = 'score didn\'t land (' + ((r && r.err) || 'network') + ') — the run still counts in ur heart';
-    else if (r.paid && r.coins > 0) html = '✦ +' + r.coins + ' coins' + (r.bal != null ? ' · balance ' + r.bal + 'c' : '') + (r.playsLeft != null ? ' · ' + r.playsLeft + ' paid plays left today' : '');
-    else if (points > 0) html = 'practice run — paid plays for this one are used up today, coins resume tomorrow';
+    else if (r.paid && r.cents > 0) html = '✦ +' + r.cents + ' six cents' + (r.bal != null ? ' · balance ¢' + r.bal : '') + (r.playsLeft != null ? ' · ' + r.playsLeft + ' paid plays left today' : '');
+    else if (points > 0) html = 'practice run — paid plays for this one are used up today, six cents resume tomorrow';
     else html = 'no points that run — go again';
     res.innerHTML = '';
     res.appendChild(document.createTextNode(html));
@@ -1156,11 +1242,10 @@ function finishGame(entry, points) {
     back.type = 'button'; back.className = 'ghost'; back.textContent = 'all games';
     back.addEventListener('click', function () { closeGame(); openArcade(); });
     res.appendChild(again); res.appendChild(back);
-    if (r && r.bal != null && $('wbal')) $('wbal').textContent = '✦ ' + r.bal + ' coins';
+    if (r && r.bal != null) setCentsBal(r.bal);
   });
 }
 $('wgames').addEventListener('click', openArcade);
-$('wcab').addEventListener('click', openArcade);
 $('wa-x').addEventListener('click', closeArcade);
 $('wg-x').addEventListener('click', closeGame);
 $('wa-q').addEventListener('input', function () {
@@ -1739,15 +1824,260 @@ var ENGINES = {
   }
 };
 
+
+/* ---------------- six cents shop ---------------- */
+var myInv = [], myWearIds = {}, shopTab = 'all', centsBal = 0;
+var pets = {};
+var RAR_C = { common: '#9ca3af', rare: '#38bdf8', epic: '#c084fc', legendary: '#ffd257' };
+var TENT = { x: 3950, y: 1600 };
+OBS.push({ x: TENT.x, y: TENT.y, r: 36 });
+function setCentsBal(n) {
+  centsBal = n;
+  if ($('wbal')) $('wbal').textContent = '¢ ' + n + ' six cents';
+  if (window.__shopOpen) $('wsh-bal').textContent = '¢ ' + n + ' six cents';
+}
+function drawTent(g, now) {
+  var x = TENT.x, y = TENT.y;
+  g.fillStyle = 'rgba(0,0,0,.45)';
+  g.beginPath(); g.ellipse(x, y + 26, 56, 10, 0, 0, TAU); g.fill();
+  g.fillStyle = '#241534'; g.fillRect(x - 46, y - 6, 92, 32);
+  g.fillStyle = '#ffd257';
+  g.beginPath(); g.moveTo(x - 58, y - 6); g.lineTo(x, y - 40); g.lineTo(x + 58, y - 6); g.closePath(); g.fill();
+  g.fillStyle = '#b8860b';
+  g.beginPath(); g.moveTo(x - 58, y - 6); g.lineTo(x, y - 40); g.lineTo(x - 30, y - 6); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(x + 58, y - 6); g.lineTo(x, y - 40); g.lineTo(x + 30, y - 6); g.closePath(); g.fill();
+  g.fillStyle = '#17102e';
+  rr(g, x - 34, y - 24, 68, 13, 4); g.fill();
+  g.fillStyle = '#ffd257';
+  g.font = '800 8.5px Inter, sans-serif'; g.textAlign = 'center';
+  g.fillText('SIX CENTS SHOP', x, y - 14.5);
+  g.fillStyle = '#ffd9a0'; g.shadowColor = '#ffca7a'; g.shadowBlur = 9;
+  g.beginPath(); g.arc(x - 40, y + 4, 2.6, 0, TAU); g.arc(x + 40, y + 4, 2.6, 0, TAU); g.fill();
+  g.shadowBlur = 0;
+}
+function drawHat(g, hat, now) {
+  var c = hat.c;
+  g.fillStyle = c; g.strokeStyle = c;
+  switch (hat.kind) {
+    case 'cap':
+      g.beginPath(); g.arc(0, -3, 13, Math.PI, TAU); g.fill();
+      g.fillRect(0, -6.4, 19, 3.6);
+      break;
+    case 'crown':
+      g.beginPath();
+      g.moveTo(-11, -10); g.lineTo(-11, -22); g.lineTo(-5.5, -15); g.lineTo(0, -24); g.lineTo(5.5, -15); g.lineTo(11, -22); g.lineTo(11, -10); g.closePath(); g.fill();
+      break;
+    case 'halo':
+      g.lineWidth = 2.6;
+      g.beginPath(); g.ellipse(0, -21 + Math.sin(now / 500) * 1.2, 9, 3.1, 0, 0, TAU); g.stroke();
+      break;
+    case 'horns':
+      g.beginPath(); g.moveTo(-13, -8); g.lineTo(-7, -10); g.lineTo(-12, -20); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(13, -8); g.lineTo(7, -10); g.lineTo(12, -20); g.closePath(); g.fill();
+      break;
+    case 'beanie':
+      g.beginPath(); g.arc(0, -2, 13.6, Math.PI, TAU); g.fill();
+      g.fillRect(-13.6, -4.6, 27.2, 4);
+      g.beginPath(); g.arc(0, -16, 3.4, 0, TAU); g.fill();
+      break;
+    case 'wizard':
+      g.beginPath(); g.moveTo(-3, -30); g.lineTo(-12, -8); g.lineTo(12, -8); g.closePath(); g.fill();
+      g.beginPath(); g.ellipse(0, -8, 16, 3.6, 0, 0, TAU); g.fill();
+      break;
+    case 'antenna':
+      g.lineWidth = 2; g.beginPath(); g.moveTo(0, -13); g.lineTo(0, -23); g.stroke();
+      g.fillStyle = c; star4(g, 0, -26, 5.4, now / 600); g.fill();
+      break;
+    case 'flower':
+      for (var fi3 = 0; fi3 < 5; fi3++) {
+        var fa2 = fi3 / 5 * TAU;
+        g.beginPath(); g.arc(9 + Math.cos(fa2) * 3.6, -13 + Math.sin(fa2) * 3.6, 2.9, 0, TAU); g.fill();
+      }
+      g.fillStyle = '#fff7cc';
+      g.beginPath(); g.arc(9, -13, 2.2, 0, TAU); g.fill();
+      break;
+    case 'mohawk':
+      g.beginPath();
+      g.moveTo(-2.6, -13); g.lineTo(0, -25); g.lineTo(2.6, -13); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(-2.4, -10); g.lineTo(0.6, -21); g.lineTo(3.2, -10.6); g.closePath(); g.fill();
+      break;
+    case 'tophat':
+      g.fillRect(-8, -25, 16, 13);
+      g.fillRect(-13.5, -13.4, 27, 3.6);
+      break;
+    default:
+      g.beginPath(); g.arc(0, -13, 5, 0, TAU); g.fill();
+  }
+}
+function drawPet(g, pet, now) {
+  var x = pet.x, y = pet.y, c = pet.c;
+  g.fillStyle = 'rgba(0,0,0,.3)';
+  g.beginPath(); g.ellipse(x, y + 12, 7, 2.6, 0, 0, TAU); g.fill();
+  g.fillStyle = c; g.strokeStyle = c;
+  switch (pet.kind) {
+    case 'star':
+      g.shadowColor = c; g.shadowBlur = 10;
+      star4(g, x, y, 8, now / 700); g.fill(); g.shadowBlur = 0;
+      break;
+    case 'ghost':
+      g.globalAlpha = 0.92;
+      g.beginPath();
+      g.arc(x, y, 7, Math.PI, TAU);
+      g.lineTo(x + 7, y + 7);
+      for (var wi = 0; wi < 3; wi++) g.arc(x + 4.6 - wi * 4.6, y + 7, 2.3, 0, Math.PI);
+      g.lineTo(x - 7, y);
+      g.fill();
+      g.globalAlpha = 1;
+      g.fillStyle = '#17102e';
+      g.beginPath(); g.arc(x - 2.6, y - 0.6, 1.3, 0, TAU); g.arc(x + 2.6, y - 0.6, 1.3, 0, TAU); g.fill();
+      break;
+    case 'bat': {
+      var flap = Math.sin(now / 130) * 3;
+      g.beginPath(); g.ellipse(x - 7, y - flap, 6.4, 3, -0.5, 0, TAU); g.fill();
+      g.beginPath(); g.ellipse(x + 7, y - flap, 6.4, 3, 0.5, 0, TAU); g.fill();
+      g.beginPath(); g.arc(x, y, 4.4, 0, TAU); g.fill();
+      break;
+    }
+    case 'cat':
+      g.beginPath(); g.arc(x, y, 6.4, 0, TAU); g.fill();
+      g.beginPath(); g.moveTo(x - 6, y - 3); g.lineTo(x - 4.6, y - 9.4); g.lineTo(x - 1.4, y - 5.4); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(x + 6, y - 3); g.lineTo(x + 4.6, y - 9.4); g.lineTo(x + 1.4, y - 5.4); g.closePath(); g.fill();
+      g.fillStyle = '#17102e';
+      g.beginPath(); g.arc(x - 2.2, y - 0.6, 1.1, 0, TAU); g.arc(x + 2.2, y - 0.6, 1.1, 0, TAU); g.fill();
+      break;
+    case 'frog':
+      g.beginPath(); g.arc(x, y, 6.6, 0, TAU); g.fill();
+      g.beginPath(); g.arc(x - 4, y - 5.6, 2.7, 0, TAU); g.arc(x + 4, y - 5.6, 2.7, 0, TAU); g.fill();
+      g.fillStyle = '#17102e';
+      g.beginPath(); g.arc(x - 4, y - 5.6, 1.2, 0, TAU); g.arc(x + 4, y - 5.6, 1.2, 0, TAU); g.fill();
+      break;
+    case 'skull':
+      g.fillStyle = '#f1eefc';
+      g.beginPath(); g.arc(x, y - 1, 6.4, 0, TAU); g.fill();
+      g.fillRect(x - 3.6, y + 3.4, 7.2, 3.6);
+      g.fillStyle = '#17102e';
+      g.beginPath(); g.arc(x - 2.5, y - 1.4, 1.7, 0, TAU); g.arc(x + 2.5, y - 1.4, 1.7, 0, TAU); g.fill();
+      break;
+    case 'ufo':
+      g.fillStyle = 'rgba(230,228,255,.85)';
+      g.beginPath(); g.arc(x, y - 2.6, 4.4, Math.PI, TAU); g.fill();
+      g.fillStyle = c;
+      g.beginPath(); g.ellipse(x, y, 9, 3.6, 0, 0, TAU); g.fill();
+      g.fillStyle = '#fff7cc';
+      g.beginPath(); g.arc(x - 5, y + 0.6, 1.2, 0, TAU); g.arc(x, y + 1.2, 1.2, 0, TAU); g.arc(x + 5, y + 0.6, 1.2, 0, TAU); g.fill();
+      break;
+    default:
+      g.shadowColor = c; g.shadowBlur = 12;
+      g.beginPath(); g.arc(x, y, 6, 0, TAU); g.fill();
+      g.shadowBlur = 0;
+      g.fillStyle = 'rgba(255,255,255,.75)';
+      g.beginPath(); g.arc(x - 2, y - 2, 2, 0, TAU); g.fill();
+  }
+}
+function openShop() {
+  closeGame(); closeArcade();
+  window.__shopOpen = true;
+  $('wshop').hidden = false;
+  document.body.classList.add('wov');
+  $('wsh-bal').textContent = '¢ ' + centsBal + ' six cents';
+  renderShopTabs();
+  renderShopGrid();
+}
+function closeShop() { window.__shopOpen = false; $('wshop').hidden = true; document.body.classList.remove('wov'); }
+function renderShopTabs() {
+  var tabs = [['all', 'all'], ['trail', 'trails'], ['hat', 'hats'], ['aura', 'auras'], ['pet', 'pets'], ['mine', 'my stuff']];
+  var wrap = $('wsh-tabs');
+  wrap.innerHTML = '';
+  tabs.forEach(function (t) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.textContent = t[1];
+    if (shopTab === t[0]) b.className = 'on';
+    b.addEventListener('click', function () { shopTab = t[0]; renderShopTabs(); renderShopGrid(); });
+    wrap.appendChild(b);
+  });
+}
+function renderShopGrid() {
+  var grid = $('wsh-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  var items = (window.WSHOP || []).filter(function (it) {
+    if (shopTab === 'all') return true;
+    if (shopTab === 'mine') return myInv.indexOf(it.id) >= 0;
+    return it.cat === shopTab;
+  });
+  if (!items.length) {
+    var none = document.createElement('div');
+    none.style.cssText = 'color:rgba(243,239,255,.5);font-size:13.5px;padding:8px 2px';
+    none.textContent = shopTab === 'mine' ? 'nothing yet — buy something, it shows up here' : 'nothing here';
+    grid.appendChild(none);
+    return;
+  }
+  items.forEach(function (it) {
+    var owned = myInv.indexOf(it.id) >= 0;
+    var equipped = myWearIds[it.cat] === it.id;
+    var card = document.createElement('div');
+    card.className = 'wsh-card';
+    var prev = document.createElement('div');
+    prev.className = 'wsh-prev';
+    prev.style.background = 'radial-gradient(circle at 50% 42%, ' + it.color + '59, rgba(255,255,255,.03) 72%)';
+    var dot = document.createElement('i');
+    dot.style.background = it.color; dot.style.color = it.color;
+    prev.appendChild(dot);
+    var nm = document.createElement('div');
+    nm.className = 'wsh-name'; nm.textContent = it.name;
+    var rar = document.createElement('div');
+    rar.className = 'wsh-rar'; rar.style.color = RAR_C[it.rarity] || '#fff';
+    rar.textContent = it.rarity + ' · ' + it.cat;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    if (equipped) { btn.textContent = 'equipped ✓ — tap to take off'; btn.className = 'on'; }
+    else if (owned) { btn.textContent = 'equip'; btn.className = 'eq'; }
+    else if (centsBal >= it.price) { btn.textContent = 'buy · ¢' + it.price; }
+    else { btn.textContent = '¢' + it.price + ' · need more'; btn.disabled = true; }
+    btn.addEventListener('click', function () {
+      if (!owned) buyItem(it.id);
+      else equipItem(it);
+    });
+    card.appendChild(prev); card.appendChild(nm); card.appendChild(rar); card.appendChild(btn);
+    grid.appendChild(card);
+  });
+}
+function buyItem(id) {
+  jpost('/api/world/shopbuy', { id: id }).then(function (r) {
+    if (!r || !r.ok) { toast((r && r.err) || 'buy failed'); return; }
+    myInv = r.inv || myInv;
+    if (r.bal != null) setCentsBal(r.bal);
+    sndPick(true);
+    toast('✦ bought it — equip it from the shop');
+    renderShopGrid();
+  });
+}
+function equipItem(it) {
+  var equipped = myWearIds[it.cat] === it.id;
+  jpost('/api/world/shopequip', { cat: it.cat, id: equipped ? '' : it.id }).then(function (r) {
+    if (!r || !r.ok) { toast((r && r.err) || 'equip failed'); return; }
+    myWearIds = r.wearIds || {};
+    if (players[me]) players[me].wear = r.wear || null;
+    sndPop();
+    renderShopGrid();
+  });
+}
+$('wshopbtn').addEventListener('click', openShop);
+$('wsh-x').addEventListener('click', closeShop);
+window.__shop = {
+  open: openShop, close: closeShop,
+  state: function () { return { inv: myInv.slice(), wear: Object.assign({}, myWearIds), bal: centsBal, tab: shopTab }; }
+};
+
 /* ---------------- boot ---------------- */
 requestAnimationFrame(loop);
 fetch('/auth/me').then(function (r) { return r.json(); }).then(function (o) {
   if (!o || !o.user) { $('wlogin').hidden = false; return; }
   me = o.user;
-  players[me] = { u: me, x: px, y: py, tx: px, ty: py, dir: dir, fx: '', vc: false, talk: false, bub: '', bubAt: 0, emote: '', emoteAt: 0, npc: false };
+  players[me] = { u: me, x: px, y: py, tx: px, ty: py, dir: dir, fx: '', vc: false, talk: false, bub: '', bubAt: 0, emote: '', emoteAt: 0, npc: false, wear: null };
   started = true;
   ping();
-  setTimeout(function () { toast("welcome to six's network ✦ wasd / joystick · space = dash · shards pay coins · six gives quests"); }, 600);
+  setTimeout(function () { toast("welcome to six's network ✦ shards pay six cents · six gives quests"); }, 600);
 }).catch(function () { $('wlogin').hidden = false; });
 window.addEventListener('beforeunload', function () {
   try { navigator.sendBeacon('/api/world/leave', new Blob(['{}'], { type: 'application/json' })); } catch (e) { }
