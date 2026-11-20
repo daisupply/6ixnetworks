@@ -38,6 +38,7 @@ const GOLD_EVERY_MS = 240000;
 const GOLD_LIFE_MS = 45000;
 
 const QUESTS = require('./quests.js');
+const GAMES_MOD = require('./games.js');
 
 const ZONES = [
   { id: 'fountain', name: 'the fountain', x: 2400, y: 1500, r: 125 },
@@ -128,6 +129,8 @@ function createWorld(ctx) {
   const SIG = new Map();    // user -> [{from, data, at}]
   const SAY_AT = new Map(); // user -> last say ts
   const WISH_AT = new Map(); // user -> last wish ts
+  const lastMini = new Map(); // user -> ts (miniscore rate limit)
+  const MGPLAY = new Map(); // user -> { day, plays: { gameId: n } } (paid plays per game/day)
   const STATS = new Map();  // user -> {day, shards, golds}
   const QUEST = new Map();  // user -> {day, qi, prog, chain, seen:Set}
   let shards = [];          // {id,x,y,gold,born}
@@ -353,6 +356,29 @@ function createWorld(ctx) {
       return true;
     }
 
+    if (u.pathname === '/api/world/miniscore' && req.method === 'POST') {
+      const g = GAMES_MOD.BY_ID[String(b.game || '')];
+      if (!g) { J({ ok: false, err: 'no such minigame' }, 400); return true; }
+      const pts = Math.floor(Number(b.points));
+      if (!Number.isFinite(pts) || pts < 0 || pts > g.maxPoints) { J({ ok: false, err: 'score out of range' }, 400); return true; }
+      if (now - (lastMini.get(me) || 0) < 10000) { J({ ok: false, err: 'too fast — give it a few seconds' }, 429); return true; }
+      lastMini.set(me, now);
+      const mday = ctx.scoreDay();
+      let rec = MGPLAY.get(me);
+      if (!rec || rec.day !== mday) { rec = { day: mday, plays: {} }; MGPLAY.set(me, rec); }
+      const used = rec.plays[g.id] || 0;
+      let coins = 0, paid = false;
+      if (pts > 0 && used < 3) {
+        coins = Math.max(1, Math.round(pts / g.maxPoints * g.capCoins));
+        rec.plays[g.id] = used + 1;
+        paid = true;
+        try { await ctx.awardCoins(me, coins); } catch { }
+      }
+      let bal = null;
+      try { bal = ctx.getBal(me); } catch { }
+      J({ ok: true, coins, paid, playsLeft: Math.max(0, 3 - (rec.plays[g.id] || 0)), bal });
+      return true;
+    }
     if (u.pathname === '/api/world/wish' && req.method === 'POST') {
       const p = P.get(me);
       if (!p || dist(p.x, p.y, 2400, 1500) > 130) { J({ ok: false, err: 'stand at the fountain to wish' }); return true; }
@@ -404,6 +430,7 @@ function createWorld(ctx) {
       '    <div id="wlb" hidden></div>\n' +
       '  </div>\n' +
       '  <div class="wbtns">\n' +
+      '    <button id="wgames" type="button" title="minigames"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.2-.022.63-.022 1.41a5 5 0 0 0 8.303 4.743 1 1 0 0 1 .984-.27h.066a1 1 0 0 1 .984.27A5 5 0 0 0 21.32 10c0-.78-.016-1.21-.022-1.41A4 4 0 0 0 17.32 5z"/></svg></button>\n' +
       '    <button id="wmic" type="button" title="voice chat"></button>\n' +
       '    <a class="wleave" href="/home" title="leave">✕</a>\n' +
       '  </div>\n</div>\n' +
@@ -424,10 +451,23 @@ function createWorld(ctx) {
       '  <button id="wsend" type="submit">send</button>\n</form>\n' +
       '<div id="wjoy"><div id="wknob"></div></div>\n' +
       '<button id="wdash" type="button">dash</button>\n' +
+      '<button id="wcab" type="button" hidden>play minigames ✦</button>\n' +
+      '<div id="warcade" hidden><div class="wa-card">\n' +
+      '  <div class="wa-head"><span>✦ the arcade</span><span id="wa-count"></span><button id="wa-x" type="button">✕</button></div>\n' +
+      '  <input id="wa-q" type="text" placeholder="search 112 minigames…">\n' +
+      '  <div id="wa-list"></div>\n' +
+      '</div></div>\n' +
+      '<div id="wgame" hidden><div class="wg-card">\n' +
+      '  <div class="wg-head"><span id="wg-title"></span><span id="wg-score"></span><button id="wg-x" type="button">✕</button></div>\n' +
+      '  <div id="wg-how"></div>\n' +
+      '  <div id="wg-stage"></div>\n' +
+      '  <div id="wg-result" hidden></div>\n' +
+      '</div></div>\n' +
       '<div id="wlogin" hidden><div class="wl-card"><div class="wl-big">six\'s network is for the logged-in</div>' +
       '<p>make an account or log in, then walk in. a whole world in here: districts, a lake, a forest, moon shards, quests from six, voice chat.</p>' +
       '<a class="wl-btn" href="/home">go log in</a></div></div>\n' +
       '<script>' + ctx.NOTIF_JS + '</script>\n' +
+      '<script>window.WGAMES=' + JSON.stringify(GAMES_MOD.GAMES) + ';window.WCABS=' + JSON.stringify(GAMES_MOD.CABINETS) + ';</script>\n' +
       '<script>' + CLIENT + '</script>\n' +
       '</body>\n</html>';
   }
