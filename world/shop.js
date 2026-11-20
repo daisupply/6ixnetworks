@@ -1081,6 +1081,186 @@ const ITEMS = [
   "price": 1280,
   "color": "#c4b5fd",
   "kind": "ufo"
+ },
+ {
+  "id": "s121",
+  "cat": "face",
+  "name": "blackout shades",
+  "rarity": "common",
+  "price": 40,
+  "color": "#fb7185",
+  "kind": "shades"
+ },
+ {
+  "id": "s122",
+  "cat": "face",
+  "name": "neon shades",
+  "rarity": "common",
+  "price": 25,
+  "color": "#c4b5fd",
+  "kind": "shades"
+ },
+ {
+  "id": "s123",
+  "cat": "face",
+  "name": "star shades",
+  "rarity": "common",
+  "price": 15,
+  "color": "#e9e4ff",
+  "kind": "shades"
+ },
+ {
+  "id": "s124",
+  "cat": "face",
+  "name": "heart shades",
+  "rarity": "common",
+  "price": 15,
+  "color": "#5eead4",
+  "kind": "shades"
+ },
+ {
+  "id": "s125",
+  "cat": "face",
+  "name": "starry eyes",
+  "rarity": "common",
+  "price": 35,
+  "color": "#4ade80",
+  "kind": "stareyes"
+ },
+ {
+  "id": "s126",
+  "cat": "face",
+  "name": "nova eyes",
+  "rarity": "common",
+  "price": 50,
+  "color": "#7dd3fc",
+  "kind": "stareyes"
+ },
+ {
+  "id": "s127",
+  "cat": "face",
+  "name": "heart eyes",
+  "rarity": "common",
+  "price": 15,
+  "color": "#a78bfa",
+  "kind": "hearteyes"
+ },
+ {
+  "id": "s128",
+  "cat": "face",
+  "name": "crush eyes",
+  "rarity": "common",
+  "price": 55,
+  "color": "#fde68a",
+  "kind": "hearteyes"
+ },
+ {
+  "id": "s129",
+  "cat": "face",
+  "name": "sleepy face",
+  "rarity": "common",
+  "price": 20,
+  "color": "#f472b6",
+  "kind": "sleepy"
+ },
+ {
+  "id": "s130",
+  "cat": "face",
+  "name": "dozy face",
+  "rarity": "common",
+  "price": 45,
+  "color": "#fca5a5",
+  "kind": "sleepy"
+ },
+ {
+  "id": "s131",
+  "cat": "face",
+  "name": "wink face",
+  "rarity": "common",
+  "price": 40,
+  "color": "#e9e4ff",
+  "kind": "wink"
+ },
+ {
+  "id": "s132",
+  "cat": "face",
+  "name": "big grin",
+  "rarity": "common",
+  "price": 25,
+  "color": "#f0abfc",
+  "kind": "grin"
+ },
+ {
+  "id": "s133",
+  "cat": "face",
+  "name": "goofy grin",
+  "rarity": "rare",
+  "price": 130,
+  "color": "#fb7185",
+  "kind": "grin"
+ },
+ {
+  "id": "s134",
+  "cat": "face",
+  "name": "cat mouth",
+  "rarity": "rare",
+  "price": 195,
+  "color": "#ff9d5c",
+  "kind": "cat"
+ },
+ {
+  "id": "s135",
+  "cat": "face",
+  "name": "kitty mouth",
+  "rarity": "rare",
+  "price": 170,
+  "color": "#7dd3fc",
+  "kind": "cat"
+ },
+ {
+  "id": "s136",
+  "cat": "face",
+  "name": "dizzy eyes",
+  "rarity": "rare",
+  "price": 160,
+  "color": "#fca5a5",
+  "kind": "dizzy"
+ },
+ {
+  "id": "s137",
+  "cat": "face",
+  "name": "starstruck",
+  "rarity": "rare",
+  "price": 130,
+  "color": "#fb7185",
+  "kind": "dizzy"
+ },
+ {
+  "id": "s138",
+  "cat": "face",
+  "name": "soft blush",
+  "rarity": "rare",
+  "price": 165,
+  "color": "#5eead4",
+  "kind": "blush"
+ },
+ {
+  "id": "s139",
+  "cat": "face",
+  "name": "rosy blush",
+  "rarity": "rare",
+  "price": 110,
+  "color": "#ff9d5c",
+  "kind": "blush"
+ },
+ {
+  "id": "s140",
+  "cat": "face",
+  "name": "faceless",
+  "rarity": "rare",
+  "price": 190,
+  "color": "#f472b6",
+  "kind": "blank"
  }
 ];
 const BY_ID = {};

@@ -17729,10 +17729,10 @@ async function coinsAward(user, n) {
 }
 /* SIX CENTS — the world-only currency of six's network. Separate ledger from
    site coins on purpose: world earnings/spending never touch cfg:coins. */
-const CENTS = { bal: {}, inv: {}, wear: {}, ready: false };
+const CENTS = { bal: {}, inv: {}, wear: {}, hue: {}, ready: false };
 let centsDirty = false;
-async function centsLoad() { if (CENTS.ready) return; CENTS.ready = true; try { const got = await storeCmd([['GET', 'cfg:cents']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o) { if (o.bal) CENTS.bal = o.bal; if (o.inv) CENTS.inv = o.inv; if (o.wear) CENTS.wear = o.wear; } } } catch (e) {} }
-function centsSave() { if (centsDirty) return; centsDirty = true; setTimeout(() => { centsDirty = false; try { storeSet('cfg:cents', JSON.stringify({ bal: CENTS.bal, inv: CENTS.inv, wear: CENTS.wear })); } catch (e) {} }, 800); }
+async function centsLoad() { if (CENTS.ready) return; CENTS.ready = true; try { const got = await storeCmd([['GET', 'cfg:cents']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o) { if (o.bal) CENTS.bal = o.bal; if (o.inv) CENTS.inv = o.inv; if (o.wear) CENTS.wear = o.wear; if (o.hue) CENTS.hue = o.hue; } } } catch (e) {} }
+function centsSave() { if (centsDirty) return; centsDirty = true; setTimeout(() => { centsDirty = false; try { storeSet('cfg:cents', JSON.stringify({ bal: CENTS.bal, inv: CENTS.inv, wear: CENTS.wear, hue: CENTS.hue })); } catch (e) {} }, 800); }
 async function centsAward(user, n) {
   try {
     if (!user) return 0;
@@ -18971,6 +18971,8 @@ function worldMod() {
       setInv: (u, arr) => { try { centsLoad(); CENTS.inv[String(u).toLowerCase()] = (arr || []).slice(0, 400); centsSave(); } catch (e) { } },
       getWear: (u) => { try { centsLoad(); return Object.assign({}, CENTS.wear[String(u).toLowerCase()] || {}); } catch (e) { return {}; } },
       setWear: (u, w) => { try { centsLoad(); CENTS.wear[String(u).toLowerCase()] = w || {}; centsSave(); } catch (e) { } },
+      getHue: (u) => { try { centsLoad(); const h = CENTS.hue[String(u).toLowerCase()]; return (typeof h === 'number') ? h : null; } catch (e) { return null; } },
+      setHue: (u, h) => { try { centsLoad(); CENTS.hue[String(u).toLowerCase()] = h; centsSave(); } catch (e) { } },
       FONT_LINKS, GALAXY_CSS, SIDEBAR_HTML, STAR_CANVAS, NOTIF_JS,
     });
   }

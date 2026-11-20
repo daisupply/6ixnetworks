@@ -136,6 +136,9 @@ function createWorld(ctx) {
   const lastMini = new Map(); // user -> ts (miniscore rate limit)
   const MGPLAY = new Map(); // user -> { day, plays: { gameId: n } } (paid plays per game/day)
   const STATS = new Map();  // user -> {day, shards, golds}
+  const DUEL_CH = new Map();   // challenged user -> {from, at}
+  const DUELS = new Map();     // id -> {id, a, b, startAt, delay, ra, rb, settled}
+  const DUEL_DONE = new Map(); // user -> finished-duel result waiting for their next ping
   const QUEST = new Map();  // user -> {day, qi, prog, chain, seen:Set}
   let shards = [];          // {id,x,y,gold,born}
   let shardSeq = 1;
@@ -233,10 +236,10 @@ function createWorld(ctx) {
     for (const [u, p] of P) if (now - p.at > STALE_MS) { P.delete(u); SIG.delete(u); }
   }
   function wearOf(u) {
-    const out = { trail: null, hat: null, aura: null, pet: null };
+    const out = { trail: null, hat: null, aura: null, pet: null, face: null };
     let w = {};
     try { w = ctx.getWear(u) || {}; } catch { }
-    for (const cat of ['trail', 'hat', 'aura', 'pet']) {
+    for (const cat of ['trail', 'hat', 'aura', 'pet', 'face']) {
       const it = w[cat] && SHOP.BY_ID[w[cat]];
       if (it) out[cat] = { kind: it.kind, c: it.color };
     }
@@ -246,7 +249,7 @@ function createWorld(ctx) {
     const out = [sixState(now)];
     for (const [u, p] of P) {
       out.push({
-        u, x: Math.round(p.x), y: Math.round(p.y), dir: p.dir, fx: p.fx || '',
+        u, x: Math.round(p.x), y: Math.round(p.y), dir: p.dir, fx: p.fx || '', hue: (p.hue != null ? p.hue : null),
         vc: !!p.vc, talk: !!p.talk,
         bub: (p.bub && now - p.bubAt < 6000) ? p.bub : '',
         emote: (p.emote && now - (p.emoteAt || 0) < 2600) ? p.emote : '',
@@ -261,6 +264,44 @@ function createWorld(ctx) {
     for (const [u, s] of STATS) if (s.day === day && s.shards > 0) rows.push({ u, n: s.shards });
     rows.sort((a, b) => b.n - a.n);
     return rows.slice(0, 5);
+  }
+
+  function duelInFor(me, now) {
+    const ch = DUEL_CH.get(me);
+    if (!ch) return null;
+    if (now - ch.at > 30000) { DUEL_CH.delete(me); return null; }
+    return { from: ch.from };
+  }
+  function duelFor(me, now) {
+    for (const d of DUELS.values()) {
+      if (d.settled) continue;
+      if (d.a !== me && d.b !== me) continue;
+      // deadline: 8s after the green moment, settle with whoever reported
+      if (now > d.startAt + d.delay + 8000) { settleDuel(d); continue; }
+      return { id: d.id, foe: d.a === me ? d.b : d.a, startAt: d.startAt, delay: d.delay, reported: (d.a === me ? d.ra : d.rb) != null };
+    }
+    return null;
+  }
+  function duelDoneFor(me, now) {
+    const r = DUEL_DONE.get(me);
+    if (!r) return null;
+    DUEL_DONE.delete(me);
+    return r;
+  }
+  async function settleDuel(d) {
+    if (d.settled) return;
+    d.settled = true;
+    DUELS.delete(d.id);
+    const ra = d.ra != null ? d.ra : 6000, rb = d.rb != null ? d.rb : 6000;
+    const tie = Math.abs(ra - rb) < 15;
+    const aWin = !tie && ra < rb;
+    let pa = 0, pb = 0;
+    if (tie) { pa = 10; pb = 10; } else if (aWin) pa = 20; else pb = 20;
+    let ba = null, bb = null;
+    try { if (pa) ba = await ctx.awardCents(d.a, pa); } catch { }
+    try { if (pb) bb = await ctx.awardCents(d.b, pb); } catch { }
+    DUEL_DONE.set(d.a, { win: tie ? 'tie' : (aWin ? 'win' : 'lose'), foe: d.b, myMs: ra, foeMs: rb, prize: pa, bal: ba });
+    DUEL_DONE.set(d.b, { win: tie ? 'tie' : (aWin ? 'lose' : 'win'), foe: d.a, myMs: rb, foeMs: ra, prize: pb, bal: bb });
   }
 
   async function api(req, res, u) {
@@ -287,6 +328,7 @@ function createWorld(ctx) {
       p.at = now;
       try { p.fx = ctx.getFx(me) || ''; } catch { p.fx = ''; }
       try { p.wear = wearOf(me); } catch { p.wear = null; }
+      try { p.hue = ctx.getHue(me); } catch { p.hue = null; }
       let questDone = null;
       // walking feeds the walk quest (delta capped so teleports don't farm)
       const moved = dist(ox, oy, p.x, p.y);
@@ -312,9 +354,14 @@ function createWorld(ctx) {
       }
       // shard claim: server validates the distance, then pays
       let got = null;
-      if (b.claim) {
-        const i = shards.findIndex((s) => s.id === String(b.claim));
-        if (i >= 0 && dist(p.x, p.y, shards[i].x, shards[i].y) < 70) {
+      let claimId = b.claim;
+      if (!claimId) {
+        let bd = 62;
+        for (const s of shards) { const dd = dist(p.x, p.y, s.x, s.y); if (dd < bd) { bd = dd; claimId = s.id; } }
+      }
+      if (claimId) {
+        const i = shards.findIndex((s) => s.id === String(claimId));
+        if (i >= 0 && dist(p.x, p.y, shards[i].x, shards[i].y) < 85) {
           const s = shards[i];
           shards.splice(i, 1);
           const st = statsFor(me);
@@ -344,7 +391,8 @@ function createWorld(ctx) {
         shards: shards.map((s) => ({ id: s.id, x: s.x, y: s.y, gold: s.gold })),
         lb: leaderboard(), quest: questView(me),
         today: { shards: st.shards, golds: st.golds },
-        zone: p.zone ? zoneName(p.zone) : '', got, questDone,
+        zone: p.zone ? zoneName(p.zone) : '', got, questDone, srvNow: now,
+        duelIn: duelInFor(me, now), duel: duelFor(me, now), duelDone: duelDoneFor(me, now),
       });
       return true;
     }
@@ -414,7 +462,7 @@ function createWorld(ctx) {
     }
     if (u.pathname === '/api/world/shopequip' && req.method === 'POST') {
       const cat = String(b.cat || '');
-      if (!['trail', 'hat', 'aura', 'pet'].includes(cat)) { J({ ok: false, err: 'bad category' }, 400); return true; }
+      if (!['trail', 'hat', 'aura', 'pet', 'face'].includes(cat)) { J({ ok: false, err: 'bad category' }, 400); return true; }
       let wear = {};
       try { wear = ctx.getWear(me); } catch { }
       if (b.id == null || b.id === '') { delete wear[cat]; }
@@ -428,6 +476,62 @@ function createWorld(ctx) {
       }
       try { ctx.setWear(me, wear); } catch { }
       J({ ok: true, wearIds: wear, wear: wearOf(me) });
+      return true;
+    }
+    if (u.pathname === '/api/world/char' && req.method === 'POST') {
+      const h = Math.round(Number(b.hue));
+      if (!isFinite(h) || h < 0 || h > 359) { J({ ok: false, err: 'bad color' }, 400); return true; }
+      try { ctx.setHue(me, h); } catch { }
+      const p2 = P.get(me); if (p2) p2.hue = h;
+      J({ ok: true, hue: h });
+      return true;
+    }
+    if (u.pathname === '/api/world/pinfo' && req.method === 'GET') {
+      const who = String(u.searchParams.get('u') || '').toLowerCase();
+      if (!who) { J({ ok: false, err: 'who?' }, 400); return true; }
+      let cents = null, hue = null, wearNames = [];
+      try { cents = ctx.getCents(who); } catch { }
+      try { hue = ctx.getHue(who); } catch { }
+      try { const w = wearOf(who); if (w) for (const k of ['trail', 'hat', 'aura', 'pet']) if (w[k]) wearNames.push(w[k].name); } catch { }
+      J({ ok: true, user: who, cents, hue, wear: wearNames, online: P.has(who) });
+      return true;
+    }
+    if (u.pathname === '/api/world/duel' && req.method === 'POST') {
+      const to = String(b.to || '').toLowerCase();
+      if (!to || to === me) { J({ ok: false, err: 'pick someone else' }, 400); return true; }
+      if (!P.has(to)) { J({ ok: false, err: 'they are not in the world rn' }); return true; }
+      if (duelFor(me, now) || duelFor(to, now)) { J({ ok: false, err: 'one of u is already in a battle' }); return true; }
+      DUEL_CH.set(to, { from: me, at: now });
+      J({ ok: true });
+      return true;
+    }
+    if (u.pathname === '/api/world/duel-accept' && req.method === 'POST') {
+      const from = String(b.from || '').toLowerCase();
+      const ch = DUEL_CH.get(me);
+      if (!ch || ch.from !== from || now - ch.at > 30000) { J({ ok: false, err: 'that challenge expired' }); return true; }
+      DUEL_CH.delete(me);
+      if (!P.has(from)) { J({ ok: false, err: 'they left' }); return true; }
+      const id = 'd' + now.toString(36) + Math.floor(Math.random() * 9999);
+      DUELS.set(id, { id, a: from, b: me, startAt: now + 1600, delay: 1300 + Math.floor(Math.random() * 2200), ra: null, rb: null, settled: false });
+      J({ ok: true, id });
+      return true;
+    }
+    if (u.pathname === '/api/world/duel-decline' && req.method === 'POST') {
+      const from = String(b.from || '').toLowerCase();
+      const ch = DUEL_CH.get(me);
+      if (ch && ch.from === from) { DUEL_CH.delete(me); DUEL_DONE.set(from, { declined: true, foe: me }); }
+      J({ ok: true });
+      return true;
+    }
+    if (u.pathname === '/api/world/duel-report' && req.method === 'POST') {
+      const d = DUELS.get(String(b.id || ''));
+      if (!d || d.settled || (d.a !== me && d.b !== me)) { J({ ok: false, err: 'no such battle' }, 400); return true; }
+      let ms = Number(b.ms);
+      if (!isFinite(ms) || ms < 0) ms = 6000;
+      ms = Math.min(6000, Math.max(0, Math.round(ms)));
+      if (d.a === me) d.ra = ms; else d.rb = ms;
+      if (d.ra != null && d.rb != null) settleDuel(d);
+      J({ ok: true });
       return true;
     }
     if (u.pathname === '/api/world/wish' && req.method === 'POST') {
@@ -483,6 +587,7 @@ function createWorld(ctx) {
       '  <div class="wbtns">\n' +
       '    <button id="wshopbtn" type="button" title="six cents shop"><span class="wcent">\u00a2</span></button>\n' +
       '    <button id="wgames" type="button" title="minigames"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.2-.022.63-.022 1.41a5 5 0 0 0 8.303 4.743 1 1 0 0 1 .984-.27h.066a1 1 0 0 1 .984.27A5 5 0 0 0 21.32 10c0-.78-.016-1.21-.022-1.41A4 4 0 0 0 17.32 5z"/></svg></button>\n' +
+      '    <button id="wcharbtn" type="button" title="your character"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>\n' +
       '    <button id="wmic" type="button" title="voice chat"></button>\n' +
       '    <a class="wleave" href="/home" title="leave">✕</a>\n' +
       '  </div>\n</div>\n' +
@@ -505,22 +610,37 @@ function createWorld(ctx) {
       '<div id="wjoy"><div id="wknob"></div></div>\n' +
       '<button id="wdash" type="button">dash</button>\n' +
       '<div id="warcade" hidden><div class="wa-card">\n' +
-      '  <div class="wa-head"><span>✦ the arcade</span><span id="wa-count"></span><button id="wa-x" type="button">✕</button></div>\n' +
+      '  <div class="wa-head"><span>✦ the arcade</span><span id="wa-count"></span><button id="wa-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
       '  <input id="wa-q" type="text" placeholder="search 112 minigames…">\n' +
       '  <div id="wa-list"></div>\n' +
       '</div></div>\n' +
       '<div id="wgame" hidden><div class="wg-card">\n' +
-      '  <div class="wg-head"><span id="wg-title"></span><span id="wg-score"></span><button id="wg-x" type="button">✕</button></div>\n' +
+      '  <div class="wg-head"><span id="wg-title"></span><span id="wg-score"></span><button id="wg-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
       '  <div id="wg-how"></div>\n' +
       '  <div id="wg-stage"></div>\n' +
       '  <div id="wg-result" hidden></div>\n' +
       '</div></div>\n' +
       '<div id="wshop" hidden><div class="wa-card">\n' +
-      '  <div class="wa-head"><span>\u2726 six cents shop</span><span id="wsh-bal"></span><button id="wsh-x" type="button">\u2715</button></div>\n' +
+      '  <div class="wa-head"><span>\u2726 six cents shop</span><span id="wsh-bal"></span><button id="wsh-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
       '  <div class="wsh-note">six cents are earned right here in the world \u2014 shards, quests, minigames. they are NOT site coins.</div>\n' +
+      '  <input id="wsh-q" type="text" placeholder="search 140 items\u2026">\n' +
       '  <div id="wsh-tabs"></div>\n' +
       '  <div id="wsh-grid"></div>\n' +
       '</div></div>\n' +
+      '<div id="wchar" hidden><div class="wa-card">\n' +
+      '  <div class="wa-head"><span>\u2726 your character</span><button id="wchar-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
+      '  <div class="wchar-top"><canvas id="wchar-pv" width="96" height="96"></canvas><div><div id="wchar-name"></div><div class="wchar-sub">this is how the world sees u \u2014 color is saved to ur account</div></div></div>\n' +
+      '  <div class="wchar-lab">body color</div><div id="wchar-sw"></div>\n' +
+      '  <div class="wchar-lab">ur fit</div><div class="wchar-fit">hats, trails, auras + pets live in the six cents shop. name fx lives in the site fx shop.</div>\n' +
+      '  <button id="wchar-shop" type="button">open the six cents shop</button>\n' +
+      '</div></div>\n' +
+      '<div id="wprof" hidden><div class="wprof-card">\n' +
+      '  <div id="wprof-banner"></div><button id="wprof-x" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>\n' +
+      '  <div class="wprof-body"><div id="wprof-av"></div><div id="wprof-name"></div><div id="wprof-user"></div><div id="wprof-meta"></div><div id="wprof-badges"></div><div id="wprof-stats"></div><div id="wprof-wear"></div>\n' +
+      '  <div class="wprof-acts"><button id="wprof-add" type="button">add friend</button><button id="wprof-battle" type="button">battle</button><a id="wprof-link" href="#">full profile</a></div></div>\n' +
+      '</div></div>\n' +
+      '<div id="wduel" hidden><span id="wduel-t"></span><button id="wduel-yes" type="button">accept</button><button id="wduel-no" type="button">nah</button></div>\n' +
+      '<div id="wduelgo" hidden><div id="wduelgo-t"></div><div id="wduelgo-s"></div></div>\n' +
       '<div id="wlogin" hidden><div class="wl-card"><div class="wl-big">six\'s network is for the logged-in</div>' +
       '<p>make an account or log in, then walk in. a whole world in here: districts, a lake, a forest, moon shards, quests from six, voice chat.</p>' +
       '<a class="wl-btn" href="/home">go log in</a></div></div>\n' +

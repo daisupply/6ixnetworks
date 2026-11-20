@@ -382,7 +382,15 @@ if ($('wdash')) $('wdash').addEventListener('click', function () { tryDash(); })
 cv.addEventListener('pointerdown', function (e) {
   ac();
   var cp = camPos();
-  moveTarget = { x: clamp(e.clientX + cp.x, 30, MAP_W - 30), y: clamp(e.clientY + cp.y, 30, MAP_H - 30), at: performance.now() };
+  var wx = e.clientX + cp.x, wy = e.clientY + cp.y;
+  var tapped = null;
+  for (var ku in players) {
+    var op = players[ku];
+    if (!op || op.u === me || op.npc) continue;
+    if (dist(wx, wy, op.x, op.y) < 36) { tapped = op; break; }
+  }
+  if (tapped) { openProfile(tapped.u); return; }
+  moveTarget = { x: clamp(wx, 30, MAP_W - 30), y: clamp(wy, 30, MAP_H - 30), at: performance.now() };
 }, { passive: true });
 
 /* ---------------- HUD ---------------- */
@@ -417,7 +425,7 @@ function onQuestDone(qd) {
 function ping() {
   if (!started) return;
   var body = { x: Math.round(px), y: Math.round(py), dir: dir, vc: vcOn, talk: talkNow, emote: myEmote, emoteTs: myEmoteTs };
-  if (pendingClaim && performance.now() - claimAt > 250) { body.claim = pendingClaim; }
+  if (pendingClaim) { body.claim = pendingClaim; }
   jpost('/api/world/ping', body).then(function (r) {
     if (!r || !r.ok) return;
     $('wn').textContent = r.n + ' online';
@@ -430,10 +438,10 @@ function ping() {
       seen[p.u] = 1;
       var cur = players[p.u];
       if (!cur) {
-        players[p.u] = { u: p.u, x: p.x, y: p.y, tx: p.x, ty: p.y, dir: p.dir, fx: p.fx, vc: p.vc, talk: p.talk, bub: '', bubAt: 0, emote: '', emoteAt: 0, npc: !!p.npc, wear: p.wear || null };
+        players[p.u] = { u: p.u, x: p.x, y: p.y, tx: p.x, ty: p.y, dir: p.dir, fx: p.fx, vc: p.vc, talk: p.talk, bub: '', bubAt: 0, emote: '', emoteAt: 0, npc: !!p.npc, wear: p.wear || null, hue: (p.hue != null ? p.hue : null) };
         cur = players[p.u];
       }
-      cur.tx = p.x; cur.ty = p.y; cur.dir = p.dir; cur.fx = p.fx; cur.vc = p.vc; cur.talk = p.talk; cur.npc = !!p.npc; cur.wear = p.wear || null;
+      cur.tx = p.x; cur.ty = p.y; cur.dir = p.dir; cur.fx = p.fx; cur.vc = p.vc; cur.talk = p.talk; cur.npc = !!p.npc; cur.wear = p.wear || null; cur.hue = (p.hue != null ? p.hue : null);
       if (p.bub && p.bub !== cur.bub) {
         cur.bub = p.bub; cur.bubAt = performance.now();
         if (p.u !== me && !p.npc && lastBub[p.u] !== p.bub && dist(px, py, p.x, p.y) < 460) { lastBub[p.u] = p.bub; logLine(p.u, p.bub); }
@@ -463,6 +471,7 @@ function ping() {
     }
     if (r.questDone) onQuestDone(r.questDone);
     if (r.quest) renderQuest(r.quest);
+    duelTick(r);
     renderLb(r.lb, r.today);
     if (typeof r.zone === 'string') {
       if (zoneSeen && r.zone && r.zone !== myZone) toast('— ' + r.zone + ' —', 1800);
@@ -576,7 +585,7 @@ function update(now) {
     wact.hidden = false;
   } else { wactMode = ''; wact.hidden = true; }
   if (!pendingClaim) {
-    for (var id in shards) { if (dist(px, py, shards[id].x, shards[id].y) < 34) { pendingClaim = id; claimAt = performance.now(); break; } }
+    for (var id in shards) { if (dist(px, py, shards[id].x, shards[id].y) < 54) { pendingClaim = id; claimAt = performance.now(); break; } }
   }
   var tx = px + vx * 0.22, ty = py + vy * 0.22;
   cam.x = lerp(cam.x, tx, Math.min(1, dt * 5));
@@ -727,7 +736,7 @@ function drawPlayer(g, p, now, isMe) {
     g.fillStyle = '#ffd257';
     star4(g, 0, 0, 8, -now / 2600); g.fill();
   } else {
-    var hue = hueOf(p.u);
+    var hue = (p.hue != null ? p.hue : hueOf(p.u));
     var grad = g.createRadialGradient(-5, -6, 3, 0, 0, 17);
     grad.addColorStop(0, 'hsl(' + hue + ',78%,70%)');
     grad.addColorStop(0.55, 'hsl(' + hue + ',66%,54%)');
@@ -747,6 +756,67 @@ function drawPlayer(g, p, now, isMe) {
       g.beginPath(); g.arc(-4.6 + ex, -1.5 + ey, 1.7, 0, TAU); g.arc(4.6 + ex, -1.5 + ey, 1.7, 0, TAU); g.fill();
       g.strokeStyle = '#14101f'; g.lineWidth = 1.3;
       g.beginPath(); g.arc(ex, 2.6 + ey, 4.4, 0.25 * Math.PI, 0.75 * Math.PI); g.stroke();
+    }
+    if (p.wear && p.wear.face) {
+      var fc = p.wear.face, fk = fc.kind;
+      if (fk === 'shades') {
+        g.fillStyle = '#17131f';
+        g.beginPath(); g.roundRect(-11 + ex, -5 + ey, 22, 6.4, 3); g.fill();
+        g.fillStyle = fc.c; g.globalAlpha = 0.5;
+        g.fillRect(-8.6 + ex, -3.4 + ey, 6.4, 1.6); g.fillRect(2.2 + ex, -3.4 + ey, 6.4, 1.6);
+        g.globalAlpha = 1;
+      } else if (fk === 'stareyes') {
+        g.fillStyle = fc.c; g.shadowColor = fc.c; g.shadowBlur = 7;
+        star4(g, -4.6 + ex, -1.5 + ey, 4.8, now / 700); g.fill();
+        star4(g, 4.6 + ex, -1.5 + ey, 4.8, -now / 700); g.fill();
+        g.shadowBlur = 0;
+      } else if (fk === 'hearteyes') {
+        g.fillStyle = fc.c;
+        [[-4.6], [4.6]].forEach(function (e2) {
+          var hx = e2[0] + ex, hy = -1.8 + ey;
+          g.beginPath();
+          g.moveTo(hx, hy + 3.4);
+          g.bezierCurveTo(hx - 4.6, hy - 1.2, hx - 2.2, hy - 4.6, hx, hy - 2);
+          g.bezierCurveTo(hx + 2.2, hy - 4.6, hx + 4.6, hy - 1.2, hx, hy + 3.4);
+          g.fill();
+        });
+      } else if (fk === 'sleepy') {
+        g.strokeStyle = '#14101f'; g.lineWidth = 1.5;
+        g.beginPath(); g.arc(-4.6 + ex, -2.6 + ey, 2.7, 0.2 * Math.PI, 0.8 * Math.PI); g.stroke();
+        g.beginPath(); g.arc(4.6 + ex, -2.6 + ey, 2.7, 0.2 * Math.PI, 0.8 * Math.PI); g.stroke();
+        g.fillStyle = 'rgba(199,210,254,.85)';
+        g.font = '700 7px Inter, sans-serif'; g.textAlign = 'center';
+        g.fillText('z', 11.5 + ex, -8 + ey - Math.sin(now / 480) * 1.2);
+        g.font = '700 5.5px Inter, sans-serif';
+        g.fillText('z', 14.5 + ex, -12.5 + ey - Math.sin(now / 480 + 1) * 1.2);
+      } else if (fk === 'wink') {
+        g.fillStyle = '#14101f';
+        g.fillRect(2.2 + ex, -2.2 + ey, 4.8, 1.5);
+      } else if (fk === 'grin') {
+        g.strokeStyle = '#14101f'; g.lineWidth = 1.9;
+        g.beginPath(); g.arc(ex, 0.9 + ey, 7, 0.18 * Math.PI, 0.82 * Math.PI); g.stroke();
+      } else if (fk === 'cat') {
+        g.strokeStyle = '#14101f'; g.lineWidth = 1.3;
+        g.beginPath(); g.arc(-2.1 + ex, 2.2 + ey, 2.1, 0.1 * Math.PI, 0.9 * Math.PI); g.stroke();
+        g.beginPath(); g.arc(2.1 + ex, 2.2 + ey, 2.1, 0.1 * Math.PI, 0.9 * Math.PI); g.stroke();
+      } else if (fk === 'dizzy') {
+        g.strokeStyle = '#14101f'; g.lineWidth = 1.5;
+        [[-4.6], [4.6]].forEach(function (e2) {
+          var cx2 = e2[0] + ex, cy2 = -1.5 + ey;
+          g.beginPath();
+          g.moveTo(cx2 - 2.3, cy2 - 2.3); g.lineTo(cx2 + 2.3, cy2 + 2.3);
+          g.moveTo(cx2 + 2.3, cy2 - 2.3); g.lineTo(cx2 - 2.3, cy2 + 2.3);
+          g.stroke();
+        });
+      } else if (fk === 'blush') {
+        g.fillStyle = fc.c; g.globalAlpha = 0.55;
+        g.beginPath(); g.ellipse(-8.6 + ex, 2.4 + ey, 3.1, 1.9, 0, 0, TAU); g.fill();
+        g.beginPath(); g.ellipse(8.6 + ex, 2.4 + ey, 3.1, 1.9, 0, 0, TAU); g.fill();
+        g.globalAlpha = 1;
+      } else if (fk === 'blank') {
+        g.beginPath(); g.arc(0, 0, 10.6, 0, TAU);
+        g.fillStyle = 'hsl(' + hue + ',70%,60%)'; g.fill();
+      }
     }
     if (emote === 'wave') {
       g.fillStyle = 'hsl(' + hue + ',70%,60%)';
@@ -1826,7 +1896,7 @@ var ENGINES = {
 
 
 /* ---------------- six cents shop ---------------- */
-var myInv = [], myWearIds = {}, shopTab = 'all', centsBal = 0;
+var myInv = [], myWearIds = {}, shopTab = 'all', shopQuery = '', centsBal = 0;
 var pets = {};
 var RAR_C = { common: '#9ca3af', rare: '#38bdf8', epic: '#c084fc', legendary: '#ffd257' };
 var TENT = { x: 3950, y: 1600 };
@@ -1985,7 +2055,7 @@ function openShop() {
 }
 function closeShop() { window.__shopOpen = false; $('wshop').hidden = true; document.body.classList.remove('wov'); }
 function renderShopTabs() {
-  var tabs = [['all', 'all'], ['trail', 'trails'], ['hat', 'hats'], ['aura', 'auras'], ['pet', 'pets'], ['mine', 'my stuff']];
+  var tabs = [['all', 'all'], ['trail', 'trails'], ['hat', 'hats'], ['aura', 'auras'], ['pet', 'pets'], ['face', 'faces'], ['mine', 'my stuff']];
   var wrap = $('wsh-tabs');
   wrap.innerHTML = '';
   tabs.forEach(function (t) {
@@ -2001,6 +2071,7 @@ function renderShopGrid() {
   if (!grid) return;
   grid.innerHTML = '';
   var items = (window.WSHOP || []).filter(function (it) {
+    if (shopQuery && it.name.toLowerCase().indexOf(shopQuery) < 0) return false;
     if (shopTab === 'all') return true;
     if (shopTab === 'mine') return myInv.indexOf(it.id) >= 0;
     return it.cat === shopTab;
@@ -2008,7 +2079,7 @@ function renderShopGrid() {
   if (!items.length) {
     var none = document.createElement('div');
     none.style.cssText = 'color:rgba(243,239,255,.5);font-size:13.5px;padding:8px 2px';
-    none.textContent = shopTab === 'mine' ? 'nothing yet — buy something, it shows up here' : 'nothing here';
+    none.textContent = shopQuery ? 'no items match that search' : (shopTab === 'mine' ? 'nothing yet — buy something, it shows up here' : 'nothing here');
     grid.appendChild(none);
     return;
   }
@@ -2021,7 +2092,11 @@ function renderShopGrid() {
     prev.className = 'wsh-prev';
     prev.style.background = 'radial-gradient(circle at 50% 42%, ' + it.color + '59, rgba(255,255,255,.03) 72%)';
     var dot = document.createElement('i');
-    dot.style.background = it.color; dot.style.color = it.color;
+    if (it.cat === 'face') {
+      dot.style.background = 'radial-gradient(circle at 35% 42%, #14101f 0 2.2px, transparent 3px), radial-gradient(circle at 65% 42%, #14101f 0 2.2px, transparent 3px), ' + it.color;
+      dot.style.boxShadow = 'none';
+    } else { dot.style.background = it.color; }
+    dot.style.color = it.color;
     prev.appendChild(dot);
     var nm = document.createElement('div');
     nm.className = 'wsh-name'; nm.textContent = it.name;
@@ -2064,10 +2139,213 @@ function equipItem(it) {
 }
 $('wshopbtn').addEventListener('click', openShop);
 $('wsh-x').addEventListener('click', closeShop);
+var wshQ = $('wsh-q');
+if (wshQ) wshQ.addEventListener('input', function () { shopQuery = wshQ.value.trim().toLowerCase(); renderShopGrid(); });
 window.__shop = {
   open: openShop, close: closeShop,
   state: function () { return { inv: myInv.slice(), wear: Object.assign({}, myWearIds), bal: centsBal, tab: shopTab }; }
 };
+
+
+/* ---------------- profiles, character, battles ---------------- */
+function pesc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+var profUser = '';
+function closeProfile() { $('wprof').hidden = true; document.body.classList.remove('wov'); }
+function openProfile(u) {
+  if (!u || u === me) return;
+  profUser = u;
+  var pop = $('wprof');
+  pop.hidden = false;
+  document.body.classList.add('wov');
+  $('wprof-name').textContent = '@' + u;
+  $('wprof-name').className = '';
+  $('wprof-user').textContent = 'loading their six profile…';
+  $('wprof-meta').textContent = '';
+  $('wprof-badges').innerHTML = '';
+  $('wprof-stats').innerHTML = '';
+  $('wprof-wear').textContent = '';
+  $('wprof-av').innerHTML = pesc(u.slice(0, 1).toUpperCase());
+  $('wprof-link').href = '/u/' + encodeURIComponent(u);
+  var addB = $('wprof-add');
+  addB.disabled = true; addB.textContent = 'add friend';
+  var batB = $('wprof-battle');
+  batB.disabled = true; batB.textContent = 'battle';
+  fetch('/api/user/' + encodeURIComponent(u)).then(function (r) { return r.json(); }).then(function (o) {
+    if (!o || !o.ok || profUser !== u) return;
+    var hue = (o.hue != null) ? o.hue : hueOf(u);
+    var bh = (o.banner != null) ? o.banner : hue;
+    var pb = $('wprof-banner');
+    if (o.bannerImg) pb.style.background = 'url(' + o.bannerImg + ') center/cover';
+    else pb.style.background = 'linear-gradient(120deg,hsl(' + bh + ',45%,32%),hsl(' + ((bh + 40) % 360) + ',50%,16%))';
+    var av = $('wprof-av');
+    av.style.background = 'hsl(' + hue + ',45%,38%)';
+    av.innerHTML = o.av ? '<img src="' + pesc(o.av) + '" alt="">' : pesc((o.disp || u).slice(0, 1).toUpperCase());
+    var nm = $('wprof-name');
+    nm.textContent = o.disp || u;
+    nm.className = o.fx ? ('fx' + o.fx) : '';
+    $('wprof-user').textContent = '@' + o.user + (o.online ? ' · online now' : '');
+    $('wprof-meta').textContent = (o.status ? o.status + ' · ' : '') + (o.created ? ('here since ' + new Date(o.created).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })) : '');
+    var bh2 = '<span class="wprof-lv">Lv ' + (o.lvl || 1) + '</span>';
+    (o.badges || []).forEach(function (b) { bh2 += ' <span class="wprof-chip">' + pesc(b.label) + '</span>'; });
+    $('wprof-badges').innerHTML = bh2;
+    var c = o.cnt || {};
+    $('wprof-stats').innerHTML =
+      '<span class="wprof-chip">' + (c.msgs || 0) + ' msgs</span>' +
+      '<span class="wprof-chip">' + (c.trivia || 0) + ' trivia wins</span>' +
+      '<span class="wprof-chip">' + (c.plays || 0) + ' game scores</span>' +
+      '<span class="wprof-chip">' + (o.friends || 0) + ' friends</span>';
+    var soc = o.social || {};
+    if (soc.friend) { addB.textContent = 'friends ✓'; addB.disabled = true; }
+    else if (soc.out) { addB.textContent = 'request sent'; addB.disabled = true; }
+    else if (soc.inc) {
+      addB.textContent = 'accept friend request'; addB.disabled = false;
+      addB.onclick = function () {
+        addB.disabled = true; addB.textContent = 'adding…';
+        fetch('/auth/friend-accept', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ user: u }) }).then(function () { addB.textContent = 'friends ✓'; toast('u + @' + u + ' are friends now'); }).catch(function () { addB.disabled = false; addB.textContent = 'accept friend request'; });
+      };
+    } else {
+      addB.textContent = 'add friend'; addB.disabled = false;
+      addB.onclick = function () {
+        addB.disabled = true; addB.textContent = 'sending…';
+        fetch('/auth/friend-add', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ user: u }) }).then(function () { addB.textContent = 'request sent'; toast('friend request sent to @' + u); }).catch(function () { addB.disabled = false; addB.textContent = 'add friend'; });
+      };
+    }
+  }).catch(function () {});
+  fetch('/api/world/pinfo?u=' + encodeURIComponent(u)).then(function (r) { return r.json(); }).then(function (o) {
+    if (!o || !o.ok || profUser !== u) return;
+    if (o.cents != null) $('wprof-stats').innerHTML += '<span class="wprof-chip gold">¢' + o.cents + ' six cents</span>';
+    if (o.wear && o.wear.length) $('wprof-wear').textContent = 'wearing: ' + o.wear.join(' · ');
+    if (o.online) { batB.disabled = false; batB.textContent = 'battle — reaction duel'; }
+    else batB.textContent = 'battle (not in the world)';
+  }).catch(function () {});
+}
+$('wprof-x').addEventListener('click', closeProfile);
+$('wprof').addEventListener('click', function (e) { if (e.target === $('wprof')) closeProfile(); });
+$('wprof-battle').addEventListener('click', function () {
+  var u = profUser;
+  if (!u) return;
+  jpost('/api/world/duel', { to: u }).then(function (r) {
+    if (r && r.ok) { toast('battle challenge sent to @' + u + ' — first tap on green wins ¢20'); closeProfile(); }
+    else toast('couldnt send the challenge', (r && r.err) || '');
+  });
+});
+
+/* character customization */
+var CHAR_HUES = [258, 282, 305, 340, 12, 32, 55, 95, 145, 174, 200, 222];
+function curHue() { var p = players[me]; return (p && p.hue != null) ? p.hue : hueOf(me); }
+function drawCharPv(h) {
+  var cv2 = $('wchar-pv'); if (!cv2) return;
+  var g = cv2.getContext('2d');
+  g.clearRect(0, 0, 96, 96);
+  var sh = g.createRadialGradient(48, 76, 2, 48, 76, 26);
+  sh.addColorStop(0, 'rgba(0,0,0,.5)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = sh; g.beginPath(); g.ellipse(48, 76, 26, 10, 0, 0, TAU); g.fill();
+  g.beginPath(); g.arc(48, 46, 30, 0, TAU);
+  g.fillStyle = 'hsl(' + h + ',70%,60%)'; g.fill();
+  g.lineWidth = 3; g.strokeStyle = 'hsl(' + h + ',70%,42%)'; g.stroke();
+  g.fillStyle = '#14101f';
+  g.beginPath(); g.arc(37, 42, 3.4, 0, TAU); g.arc(59, 42, 3.4, 0, TAU); g.fill();
+  g.strokeStyle = '#14101f'; g.lineWidth = 2.4;
+  g.beginPath(); g.arc(48, 50, 10, 0.25 * Math.PI, 0.75 * Math.PI); g.stroke();
+}
+function openChar() {
+  $('wchar').hidden = false;
+  document.body.classList.add('wov');
+  $('wchar-name').textContent = '@' + me;
+  var sw = $('wchar-sw');
+  if (!sw.children.length) {
+    CHAR_HUES.forEach(function (h) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.style.background = 'hsl(' + h + ',70%,58%)';
+      b.setAttribute('data-hue', h);
+      b.addEventListener('click', function () {
+        jpost('/api/world/char', { hue: h }).then(function (r) {
+          if (r && r.ok) {
+            if (players[me]) players[me].hue = h;
+            drawCharPv(h);
+            Array.prototype.forEach.call(sw.children, function (x) { x.classList.toggle('on', +x.getAttribute('data-hue') === h); });
+            toast('character saved — that color is u everywhere in the world');
+          } else toast('couldnt save that', (r && r.err) || '');
+        });
+      });
+      sw.appendChild(b);
+    });
+  }
+  var cur = curHue();
+  Array.prototype.forEach.call(sw.children, function (x) { x.classList.toggle('on', +x.getAttribute('data-hue') === cur); });
+  drawCharPv(cur);
+}
+function closeChar() { $('wchar').hidden = true; document.body.classList.remove('wov'); }
+$('wcharbtn').addEventListener('click', openChar);
+$('wchar-x').addEventListener('click', closeChar);
+$('wchar').addEventListener('click', function (e) { if (e.target === $('wchar')) closeChar(); });
+$('wchar-shop').addEventListener('click', function () { closeChar(); openShop(); });
+window.__profile = { open: openProfile };
+window.__char = { open: openChar };
+
+/* battles: reaction duel */
+var duelChFrom = '', duelRun = null;
+function duelTick(r) {
+  if (r.duelDone) {
+    var d = r.duelDone;
+    if (d.declined) toast('@' + d.foe + ' declined ur battle');
+    else if (d.win === 'win') toast('u WON the battle vs @' + d.foe + ' — ' + d.myMs + 'ms beats ' + d.foeMs + 'ms · +¢' + d.prize);
+    else if (d.win === 'tie') toast('battle tie vs @' + d.foe + ' — both get +¢' + d.prize);
+    else toast('u lost the battle vs @' + d.foe + ' — their ' + d.foeMs + 'ms beat ur ' + d.myMs + 'ms');
+    if (d.bal != null) setCentsBal(d.bal);
+  }
+  var bar = $('wduel');
+  if (r.duelIn && r.duelIn.from) {
+    if (duelChFrom !== r.duelIn.from) { duelChFrom = r.duelIn.from; $('wduel-t').textContent = '@' + duelChFrom + ' wants to battle — reaction duel, winner +¢20'; }
+    bar.hidden = false;
+  } else { bar.hidden = true; duelChFrom = ''; }
+  if (r.duel && !duelRun) startDuelFx(r.duel, r.srvNow || Date.now());
+  if (!r.duel && duelRun && duelRun.reported) endDuelFx();
+}
+function startDuelFx(d, srvNow) {
+  var ov = $('wduelgo');
+  duelRun = { id: d.id, foe: d.foe, green: false, reported: !!d.reported, greenStamp: 0 };
+  ov.hidden = false;
+  ov.classList.remove('go');
+  $('wduelgo-t').textContent = 'battle vs @' + d.foe;
+  $('wduelgo-s').textContent = duelRun.reported ? 'time locked in — waiting on @' + d.foe + '…' : 'wait for green, then TAP as fast as u can';
+  var wait = Math.max(0, (d.startAt + d.delay) - srvNow);
+  setTimeout(function () {
+    if (!duelRun || duelRun.id !== d.id || duelRun.reported) return;
+    duelRun.green = true;
+    duelRun.greenStamp = performance.now();
+    ov.classList.add('go');
+    $('wduelgo-s').textContent = 'TAP!';
+  }, wait);
+}
+function endDuelFx() { $('wduelgo').hidden = true; duelRun = null; }
+$('wduelgo').addEventListener('pointerdown', function (e) {
+  e.preventDefault();
+  if (!duelRun || duelRun.reported) return;
+  duelRun.reported = true;
+  if (!duelRun.green) {
+    jpost('/api/world/duel-report', { id: duelRun.id, ms: -1 });
+    $('wduelgo-s').textContent = 'too soon! that counts as a loss unless they mess up too…';
+    setTimeout(endDuelFx, 1600);
+    return;
+  }
+  var ms = Math.round(performance.now() - duelRun.greenStamp);
+  jpost('/api/world/duel-report', { id: duelRun.id, ms: ms });
+  $('wduelgo-s').textContent = 'ur time: ' + ms + 'ms — waiting on @' + duelRun.foe + '…';
+});
+$('wduel-yes').addEventListener('click', function () {
+  if (!duelChFrom) return;
+  var f = duelChFrom;
+  $('wduel').hidden = true; duelChFrom = '';
+  jpost('/api/world/duel-accept', { from: f });
+});
+$('wduel-no').addEventListener('click', function () {
+  if (!duelChFrom) return;
+  var f = duelChFrom;
+  $('wduel').hidden = true; duelChFrom = '';
+  jpost('/api/world/duel-decline', { from: f });
+});
 
 /* ---------------- boot ---------------- */
 requestAnimationFrame(loop);
