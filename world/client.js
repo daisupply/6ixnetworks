@@ -471,6 +471,10 @@ function ping() {
     }
     if (r.questDone) onQuestDone(r.questDone);
     if (r.quest) renderQuest(r.quest);
+    if (r.prog) renderProg(r.prog);
+    if (r.disc) toast('discovered — ' + r.disc.zone + ' · +6 xp', 2600);
+    if (r.achNew && r.achNew.length) r.achNew.forEach(function (a, i) { setTimeout(function () { toast('achievement — ' + a.name + ' · +\u00a2' + a.reward, 3400); sndQuest(); }, 350 * (i + 1)); });
+    if (r.lvlUp) onLvlUp(r.lvlUp);
     duelTick(r);
     renderLb(r.lb, r.today);
     if (typeof r.zone === 'string') {
@@ -1271,7 +1275,8 @@ function launchGame(id) {
   if (!entry) return;
   closeGame();
   closeArcade();
-  MG.open = true; MG.id = id; MG.entry = entry; MG.points = 0; MG.doneFlag = false;
+  MG.open = true; MG.id = id; MG.entry = entry; MG.points = 0; MG.doneFlag = false; MG.token = '';
+  jpost('/api/world/mini-start', { game: id }).then(function (r) { if (r && r.ok) MG.token = r.token; });
   window.__mgOpen = true;
   $('wg-title').textContent = entry.name;
   $('wg-how').textContent = entry.how + ' · up to ¢' + entry.capCoins + ' six cents';
@@ -1297,10 +1302,11 @@ function finishGame(entry, points) {
   res.hidden = false;
   res.innerHTML = 'submitting score…';
   sndQuest();
-  jpost('/api/world/miniscore', { game: entry.id, points: points }).then(function (r) {
+  jpost('/api/world/miniscore', { game: entry.id, points: points, token: MG.token || '' }).then(function (r) {
     var html;
     if (!r || !r.ok) html = 'score didn\'t land (' + ((r && r.err) || 'network') + ') — the run still counts in ur heart';
     else if (r.paid && r.cents > 0) html = '✦ +' + r.cents + ' six cents' + (r.bal != null ? ' · balance ¢' + r.bal : '') + (r.playsLeft != null ? ' · ' + r.playsLeft + ' paid plays left today' : '');
+    else if (r.practice) html = 'practice run — that score wasnt from a live session, so no six cents';
     else if (points > 0) html = 'practice run — paid plays for this one are used up today, six cents resume tomorrow';
     else html = 'no points that run — go again';
     res.innerHTML = '';
@@ -2214,6 +2220,7 @@ function openProfile(u) {
   fetch('/api/world/pinfo?u=' + encodeURIComponent(u)).then(function (r) { return r.json(); }).then(function (o) {
     if (!o || !o.ok || profUser !== u) return;
     if (o.cents != null) $('wprof-stats').innerHTML += '<span class="wprof-chip gold">¢' + o.cents + ' six cents</span>';
+    if (o.prog) $('wprof-stats').innerHTML += '<span class="wprof-chip">Lv ' + o.prog.lvl + ' · ' + o.prog.title + '</span>';
     if (o.wear && o.wear.length) $('wprof-wear').textContent = 'wearing: ' + o.wear.join(' · ');
     if (o.online) { batB.disabled = false; batB.textContent = 'battle — reaction duel'; }
     else batB.textContent = 'battle (not in the world)';
@@ -2229,6 +2236,51 @@ $('wprof-battle').addEventListener('click', function () {
     else toast('couldnt send the challenge', (r && r.err) || '');
   });
 });
+
+/* progression */
+var sndLvl = function () { tone(392, 0, .16, 'triangle', .15); tone(523, .09, .16, 'triangle', .15); tone(659, .18, .16, 'triangle', .15); tone(784, .27, .2, 'triangle', .16); tone(1046, .38, .42, 'triangle', .17); };
+function renderProg(p) {
+  var el = $('wlvl'); if (el) el.textContent = 'Lv ' + p.lvl + ' · ' + p.title;
+  var bar = document.querySelector('#wxp i');
+  if (bar) bar.style.width = Math.max(0, Math.min(100, Math.round(p.cur / Math.max(1, p.need) * 100))) + '%';
+}
+function onLvlUp(u) {
+  sndLvl();
+  burst(px, py - 10, '#ffd257', 30, 150);
+  floatText(px, py - 56, 'LEVEL ' + u.lvl, '#ffd257');
+  toast('level ' + u.lvl + ' — ' + u.title, 3600);
+}
+/* achievements panel */
+function openAch() {
+  $('wach').hidden = false;
+  document.body.classList.add('wov');
+  $('wach-sub').textContent = 'loading…';
+  $('wach-list').innerHTML = '';
+  fetch('/api/world/ach', { headers: { 'x-six': '1' } }).then(function (r) { return r.json(); }).then(function (o) {
+    if (!o || !o.ok) { $('wach-sub').textContent = 'couldnt load achievements'; return; }
+    var got = o.achs.filter(function (a) { return a.got; }).length;
+    $('wach-sub').textContent = got + ' of ' + o.achs.length + ' unlocked · Lv ' + o.prog.lvl + ' ' + o.prog.title + ' · ' + o.prog.xp + ' xp total';
+    var list = $('wach-list');
+    list.innerHTML = '';
+    o.achs.forEach(function (a) {
+      var row = document.createElement('div');
+      row.className = 'ach-row' + (a.got ? ' got' : '');
+      var ic = document.createElement('span'); ic.className = 'ach-ic'; ic.textContent = a.got ? '\u2726' : '\u2727';
+      var mid = document.createElement('div'); mid.className = 'ach-mid';
+      var nm = document.createElement('div'); nm.className = 'ach-name'; nm.textContent = a.name;
+      var ds = document.createElement('div'); ds.className = 'ach-desc'; ds.textContent = a.desc + ' · ' + a.cat;
+      mid.appendChild(nm); mid.appendChild(ds);
+      var rw = document.createElement('span'); rw.className = 'ach-rw'; rw.textContent = a.got ? 'done' : '+\u00a2' + a.reward;
+      row.appendChild(ic); row.appendChild(mid); row.appendChild(rw);
+      list.appendChild(row);
+    });
+  }).catch(function () { $('wach-sub').textContent = 'couldnt load achievements'; });
+}
+function closeAch() { $('wach').hidden = true; document.body.classList.remove('wov'); }
+$('wachbtn').addEventListener('click', openAch);
+$('wach-x').addEventListener('click', closeAch);
+$('wach').addEventListener('click', function (e) { if (e.target === $('wach')) closeAch(); });
+window.__ach = { open: openAch, close: closeAch };
 
 /* character customization */
 var CHAR_HUES = [258, 282, 305, 340, 12, 32, 55, 95, 145, 174, 200, 222];

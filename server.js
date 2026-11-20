@@ -17730,6 +17730,10 @@ async function coinsAward(user, n) {
 /* SIX CENTS — the world-only currency of six's network. Separate ledger from
    site coins on purpose: world earnings/spending never touch cfg:coins. */
 const CENTS = { bal: {}, inv: {}, wear: {}, hue: {}, ready: false };
+const WDATA = { ready: false, data: {} };
+let wdataDirty = false;
+async function wdataLoad() { if (WDATA.ready) return; WDATA.ready = true; try { const got = await storeCmd([['GET', 'cfg:wdata']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o && typeof o === 'object') { for (const k of Object.keys(o)) if (!(k in WDATA.data)) WDATA.data[k] = o[k]; } } } catch (e) {} }
+function wdataSave() { if (wdataDirty) return; wdataDirty = true; setTimeout(() => { wdataDirty = false; try { storeSet('cfg:wdata', JSON.stringify(WDATA.data)); } catch (e) {} }, 800); }
 let centsDirty = false;
 async function centsLoad() { if (CENTS.ready) return; CENTS.ready = true; try { const got = await storeCmd([['GET', 'cfg:cents']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o) { if (o.bal) CENTS.bal = o.bal; if (o.inv) CENTS.inv = o.inv; if (o.wear) CENTS.wear = o.wear; if (o.hue) CENTS.hue = o.hue; } } } catch (e) {} }
 function centsSave() { if (centsDirty) return; centsDirty = true; setTimeout(() => { centsDirty = false; try { storeSet('cfg:cents', JSON.stringify({ bal: CENTS.bal, inv: CENTS.inv, wear: CENTS.wear, hue: CENTS.hue })); } catch (e) {} }, 800); }
@@ -18973,6 +18977,9 @@ function worldMod() {
       setWear: (u, w) => { try { centsLoad(); CENTS.wear[String(u).toLowerCase()] = w || {}; centsSave(); } catch (e) { } },
       getHue: (u) => { try { centsLoad(); const h = CENTS.hue[String(u).toLowerCase()]; return (typeof h === 'number') ? h : null; } catch (e) { return null; } },
       setHue: (u, h) => { try { centsLoad(); CENTS.hue[String(u).toLowerCase()] = h; centsSave(); } catch (e) { } },
+      wget: (k) => { try { wdataLoad(); return WDATA.data[k]; } catch (e) { return undefined; } },
+      wset: (k, v) => { try { wdataLoad(); if (v === undefined) delete WDATA.data[k]; else WDATA.data[k] = v; wdataSave(); } catch (e) { } },
+      isAdmin: (u) => { try { return ADMIN_USERS.has(String(u).toLowerCase()); } catch (e) { return false; } },
       FONT_LINKS, GALAXY_CSS, SIDEBAR_HTML, STAR_CANVAS, NOTIF_JS,
     });
   }

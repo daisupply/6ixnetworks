@@ -223,3 +223,19 @@ body.wov #wportal,body.wov #wact,body.wov #wemotebtn,body.wov #wdash{display:non
 #wduelgo.go{background:rgba(18,110,52,.96)}
 #wduelgo-t{font-size:26px;font-weight:900;color:#fff;letter-spacing:-.01em}
 #wduelgo-s{font-size:16px;font-weight:700;color:rgba(255,255,255,.88)}
+
+/* v505 progression (s2) */
+#wlvlrow{display:flex;align-items:center;gap:8px;margin-top:6px}
+#wlvl{font-size:11px;font-weight:700;letter-spacing:.02em;color:#d9d2ff;background:rgba(11,8,24,.55);border:1px solid rgba(139,124,255,.4);padding:5px 10px;border-radius:999px;backdrop-filter:blur(10px);white-space:nowrap}
+#wxp{display:block;width:104px;height:5px;border-radius:99px;background:rgba(255,255,255,.15);overflow:hidden}
+#wxp i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8b7cff,#ffd257);border-radius:99px;transition:width .5s ease}
+#wach-list{display:flex;flex-direction:column;gap:7px;max-height:54vh;overflow-y:auto;margin-top:10px}
+.ach-row{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:12px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07)}
+.ach-row.got{border-color:rgba(255,210,87,.5);background:rgba(255,210,87,.08)}
+.ach-ic{color:#ffd257;font-size:15px;flex:none}
+.ach-row:not(.got) .ach-ic{color:rgba(255,255,255,.35)}
+.ach-mid{flex:1;min-width:0}
+.ach-name{font-size:13px;font-weight:700;color:#f2efff}
+.ach-desc{font-size:11px;color:rgba(235,230,255,.6)}
+.ach-rw{font-size:11px;font-weight:700;color:#ffd257;flex:none}
+.ach-row:not(.got) .ach-rw{color:rgba(255,255,255,.45)}

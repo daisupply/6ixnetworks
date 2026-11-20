@@ -126,6 +126,7 @@ function sixState(now) {
 }
 
 function createWorld(ctx) {
+  try { ctx.wget('__warm'); } catch { } // kick the persistent world-data load early so early writes never race it
   const CSS = fs.readFileSync(path.join(__dirname, 'world.css'), 'utf8');
   const CLIENT = fs.readFileSync(path.join(__dirname, 'client.js'), 'utf8');
 
@@ -139,6 +140,93 @@ function createWorld(ctx) {
   const DUEL_CH = new Map();   // challenged user -> {from, at}
   const DUELS = new Map();     // id -> {id, a, b, startAt, delay, ra, rb, settled}
   const DUEL_DONE = new Map(); // user -> finished-duel result waiting for their next ping
+  const TP_OK = new Set();     // users allowed one server-sanctioned teleport (portals, fast travel)
+  const MTOK = new Map();      // minigame play token -> {user, game, at}
+  const BUYLOCK = new Set();   // users with a shop purchase in flight
+  const PROG = new Map();      // user -> progression record (persisted in cfg:wdata 'prog')
+  const LVLUP = new Map();     // user -> {lvl, title} waiting for their next ping
+  const ACHNEW = new Map();    // user -> [{name, reward}] waiting for their next ping
+  function wload(key, user) { try { const all = ctx.wget(key) || {}; return all[user]; } catch { return undefined; } }
+  function wsave(key, user, val) { try { const all = ctx.wget(key) || {}; all[user] = val; ctx.wset(key, all); } catch { } }
+  function progFor(user) {
+    let pg = PROG.get(user);
+    if (!pg) { const sv = wload('prog', user); if (sv && typeof sv === 'object') pg = sv; }
+    if (!pg || typeof pg !== 'object') pg = { xp: 0, playSec: 0, zones: [], ach: {}, c: {}, lastDay: '' };
+    pg.c = pg.c || {}; pg.ach = pg.ach || {}; pg.zones = pg.zones || [];
+    PROG.set(user, pg);
+    return pg;
+  }
+  function progSave(user) { try { wsave('prog', user, progFor(user)); } catch { } }
+  function lvlAt(l) { return 60 * (l - 1) * l / 2; }
+  function levelOf(xp) { let l = 1; while (lvlAt(l + 1) <= xp) l++; return l; }
+  const TITLES = [[18, 'legend'], [12, 'veteran'], [8, 'world traveler'], [5, 'arcade regular'], [3, 'explorer'], [1, 'newcomer']];
+  function titleOf(l) { for (const [n, t] of TITLES) if (l >= n) return t; return 'newcomer'; }
+  function awardXp(user, amt) {
+    if (!amt) return;
+    const pg = progFor(user);
+    const before = levelOf(pg.xp || 0);
+    pg.xp = (pg.xp || 0) + amt;
+    const after = levelOf(pg.xp);
+    if (after > before) LVLUP.set(user, { lvl: after, title: titleOf(after) });
+    progSave(user);
+  }
+  function progView(user) {
+    const pg = progFor(user);
+    const lvl = levelOf(pg.xp || 0);
+    return { xp: pg.xp || 0, lvl, title: titleOf(lvl), cur: (pg.xp || 0) - lvlAt(lvl), need: lvlAt(lvl + 1) - lvlAt(lvl), playSec: Math.floor(pg.playSec || 0), zones: (pg.zones || []).length, ach: Object.keys(pg.ach || {}).length };
+  }
+  const ACHS = [
+    { id: 'first-steps', name: 'first steps', desc: 'spend a minute inside the world', cat: 'progression', reward: 5, test: (pg) => (pg.playSec || 0) >= 60 },
+    { id: 'rising-star', name: 'rising star', desc: 'reach level 5', cat: 'progression', reward: 50, test: (pg) => levelOf(pg.xp || 0) >= 5 },
+    { id: 'world-veteran', name: 'world veteran', desc: 'reach level 10', cat: 'progression', reward: 150, test: (pg) => levelOf(pg.xp || 0) >= 10 },
+    { id: 'wanderer', name: 'wanderer', desc: 'discover 5 locations', cat: 'exploration', reward: 20, test: (pg) => (pg.zones || []).length >= 5 },
+    { id: 'cartographer', name: 'cartographer', desc: 'discover 12 locations', cat: 'exploration', reward: 50, test: (pg) => (pg.zones || []).length >= 12 },
+    { id: 'globetrotter', name: 'globetrotter', desc: 'discover 17 locations', cat: 'exploration', reward: 120, test: (pg) => (pg.zones || []).length >= 17 },
+    { id: 'marathon', name: 'marathon walker', desc: 'walk 100,000 steps worth of world', cat: 'exploration', reward: 60, test: (pg) => (pg.c.walk || 0) >= 100000 },
+    { id: 'shard-starter', name: 'shard starter', desc: 'collect 10 moon shards', cat: 'collection', reward: 10, test: (pg) => (pg.c.shard || 0) >= 10 },
+    { id: 'shard-hunter', name: 'shard hunter', desc: 'collect 100 moon shards', cat: 'collection', reward: 40, test: (pg) => (pg.c.shard || 0) >= 100 },
+    { id: 'shard-legend', name: 'shard legend', desc: 'collect 500 moon shards', cat: 'collection', reward: 150, test: (pg) => (pg.c.shard || 0) >= 500 },
+    { id: 'gold-rush', name: 'gold rush', desc: 'collect 5 golden shards', cat: 'collection', reward: 30, test: (pg) => (pg.c.gold || 0) >= 5 },
+    { id: 'gold-hoarder', name: 'gold hoarder', desc: 'collect 25 golden shards', cat: 'collection', reward: 100, test: (pg) => (pg.c.gold || 0) >= 25 },
+    { id: 'big-spender', name: 'big spender', desc: 'buy 5 things from the six cents shop', cat: 'collection', reward: 25, test: (pg) => (pg.c.buy || 0) >= 5 },
+    { id: 'fashionista', name: 'fashionista', desc: 'own 15 cosmetics', cat: 'collection', reward: 60, test: (pg, h) => h.inv >= 15 },
+    { id: 'high-roller', name: 'high roller', desc: 'hold 500 six cents at once', cat: 'collection', reward: 50, test: (pg, h) => h.bal >= 500 },
+    { id: 'first-game', name: 'first game', desc: 'finish a paid minigame run', cat: 'arcade', reward: 5, test: (pg) => (pg.c.mini || 0) >= 1 },
+    { id: 'arcade-regular', name: 'arcade regular', desc: 'finish 25 paid minigame runs', cat: 'arcade', reward: 40, test: (pg) => (pg.c.mini || 0) >= 25 },
+    { id: 'arcade-addict', name: 'arcade addict', desc: 'finish 100 paid minigame runs', cat: 'arcade', reward: 120, test: (pg) => (pg.c.mini || 0) >= 100 },
+    { id: 'quest-starter', name: 'quest starter', desc: 'complete ur first quest', cat: 'quests', reward: 5, test: (pg) => (pg.c.quest || 0) >= 1 },
+    { id: 'quest-pro', name: 'quest pro', desc: 'complete 10 quests', cat: 'quests', reward: 30, test: (pg) => (pg.c.quest || 0) >= 10 },
+    { id: 'quest-legend', name: 'quest legend', desc: 'complete 50 quests', cat: 'quests', reward: 100, test: (pg) => (pg.c.quest || 0) >= 50 },
+    { id: 'chatterbox', name: 'chatterbox', desc: 'say 25 things in world chat', cat: 'social', reward: 20, test: (pg) => (pg.c.say || 0) >= 25 },
+    { id: 'duelist', name: 'duelist', desc: 'win a reaction duel', cat: 'social', reward: 15, test: (pg) => (pg.c.duel || 0) >= 1 },
+    { id: 'champion', name: 'champion', desc: 'win 10 reaction duels', cat: 'social', reward: 80, test: (pg) => (pg.c.duel || 0) >= 10 },
+    { id: 'wishing-well', name: 'wishing well', desc: 'make 10 wishes at the fountain', cat: 'social', reward: 20, test: (pg) => (pg.c.wish || 0) >= 10 },
+  ];
+  function achCheck(user) {
+    const pg = progFor(user);
+    const h = { bal: 0, inv: 0 };
+    try { h.bal = ctx.getCents(user) || 0; } catch { }
+    try { h.inv = (ctx.getInv(user) || []).length; } catch { }
+    for (const a of ACHS) {
+      if (pg.ach[a.id]) continue;
+      let okA = false;
+      try { okA = a.test(pg, h); } catch { }
+      if (okA) {
+        pg.ach[a.id] = Date.now();
+        const arr = ACHNEW.get(user) || []; arr.push({ name: a.name, reward: a.reward }); ACHNEW.set(user, arr);
+        Promise.resolve(ctx.awardCents(user, a.reward)).catch(() => { });
+        txLog(user, 'achievement', a.reward, a.name);
+      }
+    }
+    progSave(user);
+  }
+  function txLog(user, kind, amt, note) {
+    try {
+      const arr = wload('tx', user) || [];
+      arr.unshift({ ts: Date.now(), kind, amt, note: note || '' });
+      wsave('tx', user, arr.slice(0, 40));
+    } catch { }
+  }
   const QUEST = new Map();  // user -> {day, qi, prog, chain, seen:Set}
   let shards = [];          // {id,x,y,gold,born}
   let shardSeq = 1;
@@ -180,12 +268,15 @@ function createWorld(ctx) {
   function statsFor(user) {
     const day = ctx.scoreDay();
     let s = STATS.get(user);
+    if (!s) { const sv = wload('stats', user); if (sv && sv.day === day) { s = sv; STATS.set(user, s); } }
     if (!s || s.day !== day) { s = { day, shards: 0, golds: 0 }; STATS.set(user, s); }
     return s;
   }
+  function statsSave(user) { try { const s = STATS.get(user); if (s) wsave('stats', user, s); } catch { } }
   function questFor(user) {
     const day = ctx.scoreDay();
     let q = QUEST.get(user);
+    if (!q) { const sv = wload('quest', user); if (sv && sv.day === day) { q = { day: sv.day, qi: sv.qi, prog: sv.prog, chain: sv.chain, seen: new Set(sv.seen || []) }; QUEST.set(user, q); } }
     if (!q || q.day !== day) {
       let h = 0; const seed = user + day;
       for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
@@ -227,8 +318,10 @@ function createWorld(ctx) {
       q.qi = (q.qi + 137 + q.chain * 31) % QUESTS.length;
       q.prog = 0;
       q.seen = new Set();
+      wsave('quest', user, { day: q.day, qi: q.qi, prog: 0, chain: q.chain, seen: [] });
       return { done: true, pay, t: def.t };
     }
+    wsave('quest', user, { day: q.day, qi: q.qi, prog: q.prog, chain: q.chain, seen: Array.from(q.seen).slice(0, 60) });
     return null;
   }
 
@@ -300,6 +393,10 @@ function createWorld(ctx) {
     let ba = null, bb = null;
     try { if (pa) ba = await ctx.awardCents(d.a, pa); } catch { }
     try { if (pb) bb = await ctx.awardCents(d.b, pb); } catch { }
+    if (pa) txLog(d.a, 'battle', pa, 'vs ' + d.b);
+    if (pb) txLog(d.b, 'battle', pb, 'vs ' + d.a);
+    if (tie) { awardXp(d.a, 3); awardXp(d.b, 3); }
+    else { const wu = aWin ? d.a : d.b; const pd = progFor(wu); pd.c.duel = (pd.c.duel || 0) + 1; progSave(wu); awardXp(wu, 8); achCheck(wu); }
     DUEL_DONE.set(d.a, { win: tie ? 'tie' : (aWin ? 'win' : 'lose'), foe: d.b, myMs: ra, foeMs: rb, prize: pa, bal: ba });
     DUEL_DONE.set(d.b, { win: tie ? 'tie' : (aWin ? 'lose' : 'win'), foe: d.a, myMs: rb, foeMs: ra, prize: pb, bal: bb });
   }
@@ -320,8 +417,15 @@ function createWorld(ctx) {
       if (!p) { p = { x: 2400, y: 1700, dir: 0, at: now, bub: '', bubAt: 0, vc: false, talk: false, fx: '', emote: '', emoteTs: 0, emoteAt: 0, lx: 2400, ly: 1700, zone: '' }; P.set(me, p); }
       const ox = p.x, oy = p.y;
       const prevAt = p.at;
-      if (b.x != null) p.x = clampN(b.x, 24, MAP_W - 24);
-      if (b.y != null) p.y = clampN(b.y, 24, MAP_H - 24);
+      if (b.x != null || b.y != null) {
+        let nx = b.x != null ? clampN(b.x, 24, MAP_W - 24) : p.x;
+        let ny = b.y != null ? clampN(b.y, 24, MAP_H - 24) : p.y;
+        const dtS = Math.min(2, Math.max(0.15, (now - prevAt) / 1000));
+        const dd = dist(ox, oy, nx, ny), maxStep = 660 * dtS + 90;
+        if (dd > maxStep && !TP_OK.has(me)) { nx = ox + (nx - ox) * maxStep / dd; ny = oy + (ny - oy) * maxStep / dd; }
+        TP_OK.delete(me);
+        p.x = nx; p.y = ny;
+      }
       if (b.dir != null) p.dir = clampN(b.dir, -Math.PI * 2, Math.PI * 2);
       p.vc = !!b.vc;
       p.talk = !!b.talk;
@@ -331,8 +435,13 @@ function createWorld(ctx) {
       try { p.hue = ctx.getHue(me); } catch { p.hue = null; }
       let questDone = null;
       // walking feeds the walk quest (delta capped so teleports don't farm)
+      const pg = progFor(me);
+      pg.playSec = (pg.playSec || 0) + Math.min(1.6, Math.max(0, (now - prevAt) / 1000));
+      if (pg.lastDay !== ctx.scoreDay()) { pg.lastDay = ctx.scoreDay(); awardXp(me, 10); }
+      if (!pg.c.enter) pg.c.enter = 1;
       const moved = dist(ox, oy, p.x, p.y);
       if (moved > 1 && moved < 560) questDone = questEvent(me, 'walk', Math.round(moved)) || questDone;
+      if (moved > 1 && moved < 560) pg.c.walk = (pg.c.walk || 0) + Math.round(moved);
       // emotes: a fresh emote timestamp counts once
       if (b.emote && b.emoteTs && b.emoteTs !== p.emoteTs) {
         p.emote = String(b.emote).slice(0, 12); p.emoteTs = b.emoteTs; p.emoteAt = now;
@@ -340,7 +449,11 @@ function createWorld(ctx) {
       }
       // zone entry (distinct spots, or a specific spot for targeted quests)
       const zn = zoneAt(p.x, p.y);
-      if (zn && zn !== p.zone) questDone = questEvent(me, 'zone', zn) || questDone;
+      let disc = null;
+      if (zn && zn !== p.zone) {
+        questDone = questEvent(me, 'zone', zn) || questDone;
+        if (pg.zones.indexOf(zn) < 0) { pg.zones.push(zn); disc = { zone: zoneName(zn) }; awardXp(me, 6); progSave(me); }
+      }
       p.zone = zn;
       // meeting people: standing close to another player counts them
       if (QUESTS[questFor(me).qi].kind === 'meet') {
@@ -371,6 +484,12 @@ function createWorld(ctx) {
           let bal = null;
           try { bal = await ctx.awardCents(me, amt); } catch { }
           got = { amt, gold: !!s.gold, bal };
+          txLog(me, s.gold ? 'gold shard' : 'shard', amt);
+          statsSave(me);
+          pg.c.shard = (pg.c.shard || 0) + 1;
+          if (s.gold) pg.c.gold = (pg.c.gold || 0) + 1;
+          awardXp(me, s.gold ? 5 : 1);
+          achCheck(me);
           questDone = questEvent(me, 'shard') || questDone;
           if (s.gold) questDone = questEvent(me, 'gold') || questDone;
           fillShards(now);
@@ -380,10 +499,15 @@ function createWorld(ctx) {
         let bal = null;
         try { bal = await ctx.awardCents(me, questDone.pay); } catch { }
         questDone.bal = bal;
+        txLog(me, 'quest', questDone.pay, questDone.t);
+        pg.c.quest = (pg.c.quest || 0) + 1;
+        awardXp(me, 12);
+        achCheck(me);
       }
       const sig = SIG.get(me) || [];
       SIG.delete(me);
       const st = statsFor(me);
+      if (Math.random() < 0.08) achCheck(me);
       J({
         ok: true, me, players: roster(now), sig, n: P.size, bal: (() => { try { return ctx.getCents(me); } catch { return null; } })(),
         inv: (() => { try { return ctx.getInv(me); } catch { return []; } })(),
@@ -393,6 +517,9 @@ function createWorld(ctx) {
         today: { shards: st.shards, golds: st.golds },
         zone: p.zone ? zoneName(p.zone) : '', got, questDone, srvNow: now,
         duelIn: duelInFor(me, now), duel: duelFor(me, now), duelDone: duelDoneFor(me, now),
+        prog: progView(me), disc,
+        lvlUp: (() => { const v = LVLUP.get(me) || null; LVLUP.delete(me); return v; })(),
+        achNew: (() => { const v = ACHNEW.get(me) || []; ACHNEW.delete(me); return v; })(),
       });
       return true;
     }
@@ -407,8 +534,9 @@ function createWorld(ctx) {
       if (!p) { p = { x: 2400, y: 1700, dir: 0, at: now, bub: '', bubAt: 0, vc: false, talk: false, fx: '', emote: '', emoteTs: 0, emoteAt: 0, lx: 2400, ly: 1700, zone: '' }; P.set(me, p); }
       p.bub = text; p.bubAt = now; p.at = now;
       const qd = questEvent(me, 'say');
+      const pgs = progFor(me); pgs.c.say = (pgs.c.say || 0) + 1; progSave(me); achCheck(me);
       let bal = null;
-      if (qd && qd.done) { try { bal = await ctx.awardCents(me, qd.pay); } catch { } }
+      if (qd && qd.done) { try { bal = await ctx.awardCents(me, qd.pay); } catch { } txLog(me, 'quest', qd.pay, qd.t); pgs.c.quest = (pgs.c.quest || 0) + 1; awardXp(me, 12); achCheck(me); }
       J({ ok: true, questDone: qd ? { done: true, pay: qd.pay, t: qd.t, bal } : null, quest: questView(me) });
       return true;
     }
@@ -417,35 +545,66 @@ function createWorld(ctx) {
       const id = String(b.id || '').slice(0, 20);
       const qd = id ? questEvent(me, 'portal', id) : null;
       let bal = null;
-      if (qd && qd.done) { try { bal = await ctx.awardCents(me, qd.pay); } catch { } }
+      if (qd && qd.done) { try { bal = await ctx.awardCents(me, qd.pay); } catch { } txLog(me, 'quest', qd.pay, qd.t); const pgp = progFor(me); pgp.c.quest = (pgp.c.quest || 0) + 1; awardXp(me, 12); achCheck(me); }
       J({ ok: true, questDone: qd ? { done: true, pay: qd.pay, t: qd.t, bal } : null, quest: questView(me) });
       return true;
     }
 
+    if (u.pathname === '/api/world/mini-start' && req.method === 'POST') {
+      const g = GAMES_MOD.BY_ID[String(b.game || '')];
+      if (!g) { J({ ok: false, err: 'no such minigame' }, 400); return true; }
+      const token = 'mt' + now.toString(36) + Math.floor(Math.random() * 1e9).toString(36);
+      MTOK.set(token, { user: me, game: g.id, at: now });
+      if (MTOK.size > 400) { for (const [k, v] of MTOK) { if (now - v.at > 180000) MTOK.delete(k); } }
+      J({ ok: true, token });
+      return true;
+    }
     if (u.pathname === '/api/world/miniscore' && req.method === 'POST') {
       const g = GAMES_MOD.BY_ID[String(b.game || '')];
       if (!g) { J({ ok: false, err: 'no such minigame' }, 400); return true; }
       const pts = Math.floor(Number(b.points));
       if (!Number.isFinite(pts) || pts < 0 || pts > g.maxPoints) { J({ ok: false, err: 'score out of range' }, 400); return true; }
+      // a score only pays against a live play session: started via mini-start,
+      // one-shot, right game, right player, at least 2s of actual play.
+      const tk = MTOK.get(String(b.token || ''));
+      let live = false;
+      if (tk && tk.user === me && tk.game === g.id && now - tk.at >= 2000 && now - tk.at <= 240000) { live = true; MTOK.delete(String(b.token || '')); }
+      if (!live) {
+        let bal0 = null;
+        try { bal0 = ctx.getCents(me); } catch { }
+        J({ ok: true, cents: 0, paid: false, practice: true, playsLeft: null, bal: bal0 });
+        return true;
+      }
       if (now - (lastMini.get(me) || 0) < 10000) { J({ ok: false, err: 'too fast — give it a few seconds' }, 429); return true; }
       lastMini.set(me, now);
       const mday = ctx.scoreDay();
       let rec = MGPLAY.get(me);
+      if (!rec) { const sv = wload('mgplay', me); if (sv && sv.day === mday) { rec = sv; MGPLAY.set(me, rec); } }
       if (!rec || rec.day !== mday) { rec = { day: mday, plays: {} }; MGPLAY.set(me, rec); }
       const used = rec.plays[g.id] || 0;
       let coins = 0, paid = false;
       if (pts > 0 && used < 3) {
         coins = Math.max(1, Math.round(pts / g.maxPoints * g.capCoins));
         rec.plays[g.id] = used + 1;
+        wsave('mgplay', me, rec);
         paid = true;
         try { await ctx.awardCents(me, coins); } catch { }
+        txLog(me, 'minigame', coins, g.name);
+        const pgm = progFor(me); pgm.c.mini = (pgm.c.mini || 0) + 1; progSave(me); awardXp(me, 4); achCheck(me);
       }
       let bal = null;
       try { bal = ctx.getCents(me); } catch { }
       J({ ok: true, cents: coins, paid, playsLeft: Math.max(0, 3 - (rec.plays[g.id] || 0)), bal });
       return true;
     }
+    if (u.pathname === '/api/world/tx' && req.method === 'GET') {
+      J({ ok: true, tx: wload('tx', me) || [] });
+      return true;
+    }
     if (u.pathname === '/api/world/shopbuy' && req.method === 'POST') {
+      if (BUYLOCK.has(me)) { J({ ok: false, err: 'one purchase at a time' }, 429); return true; }
+      BUYLOCK.add(me);
+      setTimeout(() => BUYLOCK.delete(me), 1500);
       const it = SHOP.BY_ID[String(b.id || '')];
       if (!it) { J({ ok: false, err: 'no such item' }, 400); return true; }
       let inv = [];
@@ -457,6 +616,8 @@ function createWorld(ctx) {
       try { bal = await ctx.awardCents(me, -it.price); } catch { }
       inv.push(it.id);
       try { ctx.setInv(me, inv); } catch { }
+      txLog(me, 'shop', -it.price, it.name);
+      const pgb = progFor(me); pgb.c.buy = (pgb.c.buy || 0) + 1; progSave(me); achCheck(me);
       J({ ok: true, bal, inv });
       return true;
     }
@@ -493,7 +654,12 @@ function createWorld(ctx) {
       try { cents = ctx.getCents(who); } catch { }
       try { hue = ctx.getHue(who); } catch { }
       try { const w = wearOf(who); if (w) for (const k of ['trail', 'hat', 'aura', 'pet']) if (w[k]) wearNames.push(w[k].name); } catch { }
-      J({ ok: true, user: who, cents, hue, wear: wearNames, online: P.has(who) });
+      J({ ok: true, user: who, cents, hue, wear: wearNames, online: P.has(who), prog: (() => { try { return progView(who); } catch { return null; } })() });
+      return true;
+    }
+    if (u.pathname === '/api/world/ach' && req.method === 'GET') {
+      const pg = progFor(me);
+      J({ ok: true, achs: ACHS.map((a) => ({ id: a.id, name: a.name, desc: a.desc, cat: a.cat, reward: a.reward, got: !!pg.ach[a.id] })), prog: progView(me) });
       return true;
     }
     if (u.pathname === '/api/world/duel' && req.method === 'POST') {
@@ -501,6 +667,7 @@ function createWorld(ctx) {
       if (!to || to === me) { J({ ok: false, err: 'pick someone else' }, 400); return true; }
       if (!P.has(to)) { J({ ok: false, err: 'they are not in the world rn' }); return true; }
       if (duelFor(me, now) || duelFor(to, now)) { J({ ok: false, err: 'one of u is already in a battle' }); return true; }
+      if (DUEL_CH.has(to)) { J({ ok: false, err: 'they already have a challenge waiting' }); return true; }
       DUEL_CH.set(to, { from: me, at: now });
       J({ ok: true });
       return true;
@@ -546,6 +713,8 @@ function createWorld(ctx) {
       const jackpot = Math.random() < 0.02;
       let bal = null;
       try { bal = await ctx.awardCents(me, jackpot ? 49 : -1); } catch { }
+      txLog(me, 'wish', jackpot ? 49 : -1, jackpot ? 'fountain jackpot' : 'a wish at the fountain');
+      const pgw = progFor(me); pgw.c.wish = (pgw.c.wish || 0) + 1; progSave(me); achCheck(me);
       J({ ok: true, fortune: FORTUNES[Math.floor(Math.random() * FORTUNES.length)], jackpot, bal });
       return true;
     }
@@ -581,6 +750,7 @@ function createWorld(ctx) {
       '<div id="whud">\n' +
       '  <div class="wleft">\n' +
       '    <div class="wbrand"><span class="wstar">✦</span> six\'s network <span id="wn"></span></div><span id="wbal">¢ — six cents</span>\n' +
+      '    <div id="wlvlrow"><span id="wlvl">Lv 1 · newcomer</span><span id="wxp"><i></i></span></div>\n' +
       '    <div id="wquest" hidden><div class="wq-t"></div><div class="wq-bar"><i></i></div><div class="wq-s"></div></div>\n' +
       '    <div id="wlb" hidden></div>\n' +
       '  </div>\n' +
@@ -588,6 +758,7 @@ function createWorld(ctx) {
       '    <button id="wshopbtn" type="button" title="six cents shop"><span class="wcent">\u00a2</span></button>\n' +
       '    <button id="wgames" type="button" title="minigames"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.2-.022.63-.022 1.41a5 5 0 0 0 8.303 4.743 1 1 0 0 1 .984-.27h.066a1 1 0 0 1 .984.27A5 5 0 0 0 21.32 10c0-.78-.016-1.21-.022-1.41A4 4 0 0 0 17.32 5z"/></svg></button>\n' +
       '    <button id="wcharbtn" type="button" title="your character"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>\n' +
+      '    <button id="wachbtn" type="button" title="achievements"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></button>\n' +
       '    <button id="wmic" type="button" title="voice chat"></button>\n' +
       '    <a class="wleave" href="/home" title="leave">✕</a>\n' +
       '  </div>\n</div>\n' +
@@ -633,6 +804,11 @@ function createWorld(ctx) {
       '  <div class="wchar-lab">body color</div><div id="wchar-sw"></div>\n' +
       '  <div class="wchar-lab">ur fit</div><div class="wchar-fit">hats, trails, auras + pets live in the six cents shop. name fx lives in the site fx shop.</div>\n' +
       '  <button id="wchar-shop" type="button">open the six cents shop</button>\n' +
+      '</div></div>\n' +
+      '<div id="wach" hidden><div class="wa-card">\n' +
+      '  <div class="wa-head"><span>\u2726 achievements</span><button id="wach-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
+      '  <div id="wach-sub" class="wchar-sub"></div>\n' +
+      '  <div id="wach-list"></div>\n' +
       '</div></div>\n' +
       '<div id="wprof" hidden><div class="wprof-card">\n' +
       '  <div id="wprof-banner"></div><button id="wprof-x" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>\n' +
