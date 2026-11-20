@@ -17086,6 +17086,21 @@ async function songApi(req, res, u) {
 const MAIL_ALERT_TO = 'bro1@muse.ai';
 let mailAlertErrLogged = false;
 async function mailAlert(subject, text) {
+  // v494: resend first (free tier) - cf email sending turned out paid-only
+  const rk = String(process.env.RESEND_API_KEY || '').trim();
+  if (rk) {
+    const rbase = String(process.env.RESEND_API_BASE || 'https://api.resend.com').replace(/\/+$/, '');
+    try {
+      const r = await fetch(rbase + '/emails', {
+        method: 'POST', signal: AbortSignal.timeout(10000),
+        headers: { 'content-type': 'application/json', authorization: 'Bearer ' + rk },
+        body: JSON.stringify({ from: '6ixnetworks <alerts@usareme.site>', to: [MAIL_ALERT_TO], subject: String(subject).slice(0, 120), text: String(text).slice(0, 4000) }),
+      });
+      if (r.ok) return true;
+      if (!mailAlertErrLogged) { mailAlertErrLogged = true; const j = await r.json().catch(() => null); console.error('mailAlert resend failed', r.status, j ? JSON.stringify(j).slice(0, 200) : ''); }
+      return false;
+    } catch (e) { if (!mailAlertErrLogged) { mailAlertErrLogged = true; console.error('mailAlert resend err', e.message); } return false; }
+  }
   const acct = String(process.env.CF_ACCOUNT_ID || '').trim();
   const token = String(process.env.CF_EMAIL_TOKEN || process.env.CF_API_TOKEN || '').trim();
   if (!acct || !token) return false;
