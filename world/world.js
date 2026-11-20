@@ -28,10 +28,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const MAP_W = 1600;
-const MAP_H = 1000;
+const MAP_W = 4800;
+const MAP_H = 3000;
 const STALE_MS = 7000;
-const SHARD_TARGET = 12;
+const SHARD_TARGET = 40;
 const SHARD_PAY = 3;
 const GOLD_PAY = 25;
 const GOLD_EVERY_MS = 240000;
@@ -40,18 +40,23 @@ const GOLD_LIFE_MS = 45000;
 const QUESTS = require('./quests.js');
 
 const ZONES = [
-  { id: 'fountain', name: 'the fountain', x: 800, y: 500, r: 125 },
-  { id: 'stage', name: 'the stage', x: 800, y: 905, r: 140 },
-  { id: 'arcade', name: 'the arcade', x: 180, y: 215, r: 140 },
-  { id: 'theater', name: 'the theater', x: 1420, y: 215, r: 140 },
-  { id: 'lounge', name: 'the chat lounge', x: 110, y: 500, r: 125 },
-  { id: 'party', name: 'the party house', x: 1490, y: 500, r: 125 },
-  { id: 'tube', name: 'tube corner', x: 180, y: 800, r: 135 },
-  { id: 'tiktok', name: 'the tiktok wall', x: 1420, y: 800, r: 135 },
-  { id: 'blox', name: 'blox tower', x: 800, y: 120, r: 125 },
-  { id: 'garden', name: 'the lamp garden', x: 330, y: 360, r: 125 },
-  { id: 'overlook', name: 'the east overlook', x: 1280, y: 620, r: 130 },
-  { id: 'spawn', name: 'spawn plaza', x: 800, y: 700, r: 140 },
+  { id: 'fountain', name: 'the fountain', x: 2400, y: 1500, r: 125 },
+  { id: 'stage', name: 'the stage', x: 2400, y: 1905, r: 140 },
+  { id: 'arcade', name: 'the arcade', x: 1780, y: 1215, r: 140 },
+  { id: 'theater', name: 'the theater', x: 3020, y: 1215, r: 140 },
+  { id: 'lounge', name: 'the chat lounge', x: 1710, y: 1500, r: 125 },
+  { id: 'party', name: 'the party house', x: 3090, y: 1500, r: 125 },
+  { id: 'tube', name: 'tube corner', x: 1780, y: 1800, r: 135 },
+  { id: 'tiktok', name: 'the tiktok wall', x: 3020, y: 1800, r: 135 },
+  { id: 'blox', name: 'blox tower', x: 2400, y: 1120, r: 125 },
+  { id: 'garden', name: 'the lamp garden', x: 700, y: 900, r: 230 },
+  { id: 'overlook', name: 'the east overlook', x: 3400, y: 750, r: 210 },
+  { id: 'spawn', name: 'spawn plaza', x: 2400, y: 1700, r: 140 },
+  { id: 'lake', name: 'the moonlit lake', x: 2400, y: 2620, r: 400 },
+  { id: 'pier', name: 'the pier', x: 2400, y: 2400, r: 170 },
+  { id: 'forest', name: 'the pine forest', x: 650, y: 2100, r: 400 },
+  { id: 'market', name: 'neon market', x: 3950, y: 1600, r: 330 },
+  { id: 'heights', name: 'blox heights', x: 3950, y: 480, r: 260 },
 ];
 
 const FORTUNES = [
@@ -90,13 +95,14 @@ const SIX_LINES = [
   'name fx looks good on u. the shop did that',
 ];
 const SIX_PATH = [
-  { x: 800, y: 360 }, { x: 1150, y: 470 }, { x: 800, y: 660 }, { x: 450, y: 470 },
+  { x: 2400, y: 1330 }, { x: 3950, y: 1600 }, { x: 3900, y: 620 }, { x: 2400, y: 1100 },
+  { x: 700, y: 900 }, { x: 650, y: 2100 }, { x: 2400, y: 2560 }, { x: 2900, y: 1700 },
 ];
 
 // Six's position is a pure function of time: walk each leg in 9s, pause
 // 2.6s, loop. No server tick needed and every client sees the same Six.
 function sixState(now) {
-  const leg = 9000, pause = 2600, cyc = (leg + pause) * SIX_PATH.length;
+  const leg = 15000, pause = 2600, cyc = (leg + pause) * SIX_PATH.length;
   const t = now % cyc;
   const i = Math.floor(t / (leg + pause));
   const lt = t - i * (leg + pause);
@@ -141,10 +147,10 @@ function createWorld(ctx) {
     for (let i = 0; i < 24; i++) {
       const x = 70 + Math.random() * (MAP_W - 140);
       const y = 70 + Math.random() * (MAP_H - 140);
-      if (dist(x, y, 800, 500) < 110) continue; // not in the fountain
+      if (dist(x, y, 2400, 1500) < 110) continue; // not in the fountain
       return { x: Math.round(x), y: Math.round(y) };
     }
-    return { x: 200, y: 200 };
+    return { x: 300, y: 300 };
   }
   function fillShards(now) {
     shards = shards.filter((s) => !s.gold || now - s.born < GOLD_LIFE_MS);
@@ -252,7 +258,7 @@ function createWorld(ctx) {
 
     if (u.pathname === '/api/world/ping' && req.method === 'POST') {
       let p = P.get(me);
-      if (!p) { p = { x: 800, y: 580, dir: 0, at: now, bub: '', bubAt: 0, vc: false, talk: false, fx: '', emote: '', emoteTs: 0, emoteAt: 0, lx: 800, ly: 580, zone: '' }; P.set(me, p); }
+      if (!p) { p = { x: 2400, y: 1700, dir: 0, at: now, bub: '', bubAt: 0, vc: false, talk: false, fx: '', emote: '', emoteTs: 0, emoteAt: 0, lx: 2400, ly: 1700, zone: '' }; P.set(me, p); }
       const ox = p.x, oy = p.y;
       const prevAt = p.at;
       if (b.x != null) p.x = clampN(b.x, 24, MAP_W - 24);
@@ -265,7 +271,7 @@ function createWorld(ctx) {
       let questDone = null;
       // walking feeds the walk quest (delta capped so teleports don't farm)
       const moved = dist(ox, oy, p.x, p.y);
-      if (moved > 1 && moved < 340) questDone = questEvent(me, 'walk', Math.round(moved)) || questDone;
+      if (moved > 1 && moved < 560) questDone = questEvent(me, 'walk', Math.round(moved)) || questDone;
       // emotes: a fresh emote timestamp counts once
       if (b.emote && b.emoteTs && b.emoteTs !== p.emoteTs) {
         p.emote = String(b.emote).slice(0, 12); p.emoteTs = b.emoteTs; p.emoteAt = now;
@@ -313,7 +319,7 @@ function createWorld(ctx) {
       SIG.delete(me);
       const st = statsFor(me);
       J({
-        ok: true, me, players: roster(now), sig, n: P.size + 1,
+        ok: true, me, players: roster(now), sig, n: P.size, bal: (() => { try { return ctx.getBal(me); } catch { return null; } })(),
         shards: shards.map((s) => ({ id: s.id, x: s.x, y: s.y, gold: s.gold })),
         lb: leaderboard(), quest: questView(me),
         today: { shards: st.shards, golds: st.golds },
@@ -329,7 +335,7 @@ function createWorld(ctx) {
       if (!text) { J({ ok: false, err: 'empty' }); return true; }
       SAY_AT.set(me, now);
       let p = P.get(me);
-      if (!p) { p = { x: 800, y: 580, dir: 0, at: now, bub: '', bubAt: 0, vc: false, talk: false, fx: '', emote: '', emoteTs: 0, emoteAt: 0, lx: 800, ly: 580, zone: '' }; P.set(me, p); }
+      if (!p) { p = { x: 2400, y: 1700, dir: 0, at: now, bub: '', bubAt: 0, vc: false, talk: false, fx: '', emote: '', emoteTs: 0, emoteAt: 0, lx: 2400, ly: 1700, zone: '' }; P.set(me, p); }
       p.bub = text; p.bubAt = now; p.at = now;
       const qd = questEvent(me, 'say');
       let bal = null;
@@ -349,7 +355,7 @@ function createWorld(ctx) {
 
     if (u.pathname === '/api/world/wish' && req.method === 'POST') {
       const p = P.get(me);
-      if (!p || dist(p.x, p.y, 800, 500) > 130) { J({ ok: false, err: 'stand at the fountain to wish' }); return true; }
+      if (!p || dist(p.x, p.y, 2400, 1500) > 130) { J({ ok: false, err: 'stand at the fountain to wish' }); return true; }
       const lastW = WISH_AT.get(me) || 0;
       if (now - lastW < 3000) { J({ ok: false, err: 'the fountain needs a sec' }); return true; }
       let bal0 = 0;
@@ -387,13 +393,13 @@ function createWorld(ctx) {
   function page() {
     return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n' +
       '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n' +
-      '<title>the world — 6ixnetworks</title>\n' + ctx.FONT_LINKS +
+      '<title>six\'s network — 6ixnetworks</title>\n' + ctx.FONT_LINKS +
       '\n<style>' + ctx.GALAXY_CSS + '</style>\n<style>' + CSS + '</style>\n</head>\n<body>\n' +
       ctx.STAR_CANVAS + '\n' + ctx.SIDEBAR_HTML + '\n' +
       '<canvas id="wcv"></canvas>\n' +
       '<div id="whud">\n' +
       '  <div class="wleft">\n' +
-      '    <div class="wbrand">✦ the world <span id="wn"></span></div>\n' +
+      '    <div class="wbrand">✦ six\'s network <span id="wn"></span></div><span id="wbal">✦ — coins</span>\n' +
       '    <div id="wquest" hidden><div class="wq-t"></div><div class="wq-bar"><i></i></div><div class="wq-s"></div></div>\n' +
       '    <div id="wlb" hidden></div>\n' +
       '  </div>\n' +
@@ -417,8 +423,9 @@ function createWorld(ctx) {
       '  <input id="win" type="text" maxlength="120" placeholder="say something…" enterkeyhint="send">\n' +
       '  <button id="wsend" type="submit">send</button>\n</form>\n' +
       '<div id="wjoy"><div id="wknob"></div></div>\n' +
-      '<div id="wlogin" hidden><div class="wl-card"><div class="wl-big">the world is for the logged-in</div>' +
-      '<p>make an account or log in, then walk in. collect moon shards, run quests for six, wear ur name fx.</p>' +
+      '<button id="wdash" type="button">dash</button>\n' +
+      '<div id="wlogin" hidden><div class="wl-card"><div class="wl-big">six\'s network is for the logged-in</div>' +
+      '<p>make an account or log in, then walk in. a whole world in here: districts, a lake, a forest, moon shards, quests from six, voice chat.</p>' +
       '<a class="wl-btn" href="/home">go log in</a></div></div>\n' +
       '<script>' + ctx.NOTIF_JS + '</script>\n' +
       '<script>' + CLIENT + '</script>\n' +
