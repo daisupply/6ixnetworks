@@ -15495,6 +15495,49 @@ async function geminiAttempt(model, key, messages, maxTokens, ms, needComplete) 
     return out;
   } finally { clearTimeout(to); }
 }
+// v492 PERSONAL FREE LANE (his pick 2026-11-20): a separate free lane just
+// for @deion + @aiyana, on OTHER providers (groq, then openrouter), so six
+// stays up for them even if google kills the whole gemini pool. keys come
+// from GROQ_API_KEY / OPENROUTER_API_KEY in keys.env - no keys, lane off.
+// ONLY personal accounts ever call this (gated in askGemini below);
+// everybody else and every background job stays on the gemini pool.
+function freeLaneProviders() {
+  const out = [];
+  const g = String(process.env.GROQ_API_KEY || '').trim();
+  if (g) out.push({ name: 'groq', key: g, base: String(process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1').replace(/\/+$/, ''), models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'] });
+  const o = String(process.env.OPENROUTER_API_KEY || '').trim();
+  if (o) out.push({ name: 'openrouter', key: o, base: String(process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1').replace(/\/+$/, ''), models: ['meta-llama/llama-3.3-70b-instruct:free', 'google/gemini-2.0-flash-exp:free'] });
+  return out;
+}
+function geminiToOpenAi(messages) {
+  return (messages || []).map((m) => ({
+    role: m && m.role === 'model' ? 'assistant' : 'user',
+    content: m && Array.isArray(m.parts) ? m.parts.map((p) => (p && p.text) || '').join('') : String((m && m.content) || ''),
+  })).filter((m) => m.content);
+}
+async function askFreeLane(messages, maxTokens) {
+  const providers = freeLaneProviders();
+  if (!providers.length) return null;
+  const oai = geminiToOpenAi(messages);
+  if (!oai.length) return null;
+  for (const p of providers) {
+    for (const model of p.models) {
+      try {
+        const r = await fetch(p.base + '/chat/completions', {
+          method: 'POST', signal: AbortSignal.timeout(15000),
+          headers: { 'content-type': 'application/json', authorization: 'Bearer ' + p.key },
+          body: JSON.stringify({ model, messages: oai, max_tokens: Math.max(64, Math.min(maxTokens || 800, 8000)), temperature: 0.9 }),
+        });
+        if (!r.ok) continue;
+        const j = await r.json().catch(() => null);
+        const out = j && j.choices && j.choices[0] && j.choices[0].message ? String(j.choices[0].message.content || '').trim() : '';
+        if (out) return out;
+      } catch (_) { /* next model / provider */ }
+    }
+  }
+  return null;
+}
+
 async function askGemini(env, messages, maxTokens, lane, needComplete, pUser) {
   // v227 speed: six used to walk 6 models x up to 8 keys ONE AT A TIME with a
   // 25s leash each — one stalled model or dead key and he felt frozen for
@@ -15511,6 +15554,13 @@ async function askGemini(env, messages, maxTokens, lane, needComplete, pUser) {
     geminiWinner = win.model;
     return win.out;
   } catch { /* whole race failed - borrow, then sweep */ }
+  // v492: personal accounts detour to their free lane BEFORE the long pool
+  // sweep - if their keys are quota-dead this answers in ~1s instead of
+  // face-planting through 30s of dead combos first.
+  if (personalAiSlot(pUser) >= 0) {
+    const fl = await askFreeLane(messages, maxTokens);
+    if (fl) return fl;
+  }
   // v395 resilience: BORROW other pool keys BEFORE the same-key sweep. a
   // rate-limited or dead lane key used to burn the whole 6-model sweep on
   // itself (hammering the limit that was already tripped) before other keys
@@ -15560,6 +15610,10 @@ async function askGemini(env, messages, maxTokens, lane, needComplete, pUser) {
         catch (e) { continue; }
       }
     }
+  }
+  if (personalAiSlot(pUser) >= 0) {
+    const fl = await askFreeLane(messages, maxTokens);
+    if (fl) return fl;
   }
   return null;
 }
