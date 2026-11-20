@@ -7166,6 +7166,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 <div class="nwrap">
 <a class="back" href="/home">← 6ixNetworks</a>
 <h1>✦ admin</h1>
+<div style="margin:0 0 8px"><a class="admbtn" href="mailto:bro1@muse.ai" style="text-decoration:none;display:inline-block">email bro</a></div>
 <div id="adMsg" style="min-height:18px;color:#f0abfc;font-size:13.5px;margin:2px 0 4px"></div>
 <div id="adStats"></div>
 <h2 class="asec">confessions</h2>
@@ -17075,6 +17076,48 @@ async function songApi(req, res, u) {
   return true;
 }
 
+// v493 SITE ALERTS -> BRO (his pick 2026-11-20: both flavors). the site
+// emails bro1@muse.ai - bro's own muse mail inbox - when a dm report or a
+// 6ixvid report lands, and batches new signups into at most one email per
+// window. sending rides cloudflare email sending (REST): needs
+// CF_ACCOUNT_ID + a token with email-sending permission in keys.env
+// (CF_EMAIL_TOKEN, else the byod CF_API_TOKEN) and usareme.site onboarded
+// to email sending in the cf dashboard. unconfigured = silent no-op.
+const MAIL_ALERT_TO = 'bro1@muse.ai';
+let mailAlertErrLogged = false;
+async function mailAlert(subject, text) {
+  const acct = String(process.env.CF_ACCOUNT_ID || '').trim();
+  const token = String(process.env.CF_EMAIL_TOKEN || process.env.CF_API_TOKEN || '').trim();
+  if (!acct || !token) return false;
+  const base = String(process.env.CF_EMAIL_API_BASE || 'https://api.cloudflare.com/client/v4').replace(/\/+$/, '');
+  try {
+    const r = await fetch(base + '/accounts/' + acct + '/email/sending/send', {
+      method: 'POST', signal: AbortSignal.timeout(10000),
+      headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token },
+      body: JSON.stringify({ to: MAIL_ALERT_TO, from: { address: 'alerts@usareme.site', name: '6ixnetworks' }, subject: String(subject).slice(0, 120), text: String(text).slice(0, 4000) }),
+    });
+    const j = await r.json().catch(() => null);
+    if (!r.ok || !j || !j.success) { if (!mailAlertErrLogged) { mailAlertErrLogged = true; console.error('mailAlert failed', r.status, j && j.errors ? JSON.stringify(j.errors).slice(0, 200) : ''); } return false; }
+    return true;
+  } catch (e) { if (!mailAlertErrLogged) { mailAlertErrLogged = true; console.error('mailAlert err', e.message); } return false; }
+}
+let signupAlertPending = [];
+let signupAlertLast = 0;
+let signupAlertTimer = null;
+function signupAlert(name) {
+  signupAlertPending.push(String(name));
+  const win = Number(process.env.MAIL_ALERT_SIGNUP_WINDOW_MS || 600000) || 600000;
+  const flush = () => {
+    signupAlertTimer = null;
+    if (!signupAlertPending.length) return;
+    const names = signupAlertPending.splice(0, signupAlertPending.length);
+    signupAlertLast = Date.now();
+    mailAlert('6ixnetworks: ' + names.length + ' new signup' + (names.length > 1 ? 's' : ''), 'new account' + (names.length > 1 ? 's' : '') + ' on 6ixnetworks: ' + names.map((n) => '@' + n).join(', '));
+  };
+  if (Date.now() - signupAlertLast >= win) flush();
+  else if (!signupAlertTimer) signupAlertTimer = setTimeout(flush, Math.max(1000, win - (Date.now() - signupAlertLast)));
+}
+
 async function dmRepApi(req, res, u) {
   if (u.pathname !== '/api/dm/report' || req.method !== 'POST') return false;
   const me = voterUser(req);
@@ -17088,7 +17131,7 @@ async function dmRepApi(req, res, u) {
   const msgs = chatRoomOf(room).msgs.slice(-60).map((m) => ({ u: m.name || '', text: String(m.text || '').slice(0, 500), img: m.img ? 1 : 0, ts: m.ts || 0 }));
   const ex = DMREPORTS.find((r) => r.by === k && r.against === peer && Date.now() - r.at < 600000);
   if (ex) { ex.msgs = msgs; ex.at = Date.now(); }
-  else { DMREPORTS.push({ id: 'dr' + Date.now().toString(36) + (dmRepSeq++), by: k, against: peer, at: Date.now(), msgs }); if (DMREPORTS.length > 40) DMREPORTS.splice(0, DMREPORTS.length - 40); }
+  else { DMREPORTS.push({ id: 'dr' + Date.now().toString(36) + (dmRepSeq++), by: k, against: peer, at: Date.now(), msgs }); if (DMREPORTS.length > 40) DMREPORTS.splice(0, DMREPORTS.length - 40); try { mailAlert('6ixnetworks: dm report', '@' + k + ' reported a dm with @' + peer + ' - ' + msgs.length + ' msgs saved. full convo in /admin under dm reports.'); } catch (e) {} }
   dmRepSave();
   try { pushNotif('deion', { type: 'dmreport', from: k, text: k + ' reported a dm with ' + peer }); } catch (e) {}
   jres(res, 200, { ok: true, saved: msgs.length });
@@ -17220,6 +17263,7 @@ async function vidApi(req, res, u) {
       if (VIDREPORTS.length > 60) VIDREPORTS.splice(0, VIDREPORTS.length - 60);
       vidDataSave();
       try { pushNotif('deion', { type: 'vidreport', from: me, text: me + ' reported ' + against + ' on 6ixvid' }); } catch { }
+      try { mailAlert('6ixnetworks: 6ixvid report', '@' + me + ' reported @' + against + ' on 6ixvid - chat saved in /admin under 6ixvid reports.'); } catch { }
     }
     if (p) vidDissolve(p, null, 'stranger left');
     if (!VIDQ.find((q) => q.u === me)) { VIDQ.push({ u: me, at: Date.now() }); VIDOF.set(me, { mode: 'queue' }); }
@@ -23763,7 +23807,7 @@ const server = http.createServer(async (req, res) => {
         else if (pass.length < 8) out = { ok: false, err: 'password needs 8+ characters' };
         else if (b.email && !validEmail(b.email)) out = { ok: false, err: 'that email looks off — fix it or leave it blank' };
         else if (ACCOUNTS.has(lower)) out = { ok: false, err: 'that name is taken — log in instead' };
-        else { const salt = randHex(16); ACCOUNTS.set(lower, { name, salt, hash: await sha256hex(salt + ':' + pass), disp: '', bio: '', hue: null, av: '', status: '', banner: null, email: validEmail(b.email) || '', created: Date.now() }); persistAcct(lower); const token = randHex(24); SESSIONS.set(token, { name, exp: Date.now() + 30 * 24 * 3600e3 }); persistSess(token); out = { ok: true, user: name, token }; }
+        else { const salt = randHex(16); ACCOUNTS.set(lower, { name, salt, hash: await sha256hex(salt + ':' + pass), disp: '', bio: '', hue: null, av: '', status: '', banner: null, email: validEmail(b.email) || '', created: Date.now() }); persistAcct(lower); try { signupAlert(name); } catch (e) {} const token = randHex(24); SESSIONS.set(token, { name, exp: Date.now() + 30 * 24 * 3600e3 }); persistSess(token); out = { ok: true, user: name, token }; }
       } else {
         const rec = ACCOUNTS.get(lower);
         if (locked) out = { ok: false, err: 'too many tries — wait a few minutes' };
