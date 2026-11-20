@@ -72,6 +72,7 @@ for (var fi = 0; fi < 46; fi++) fires.push({ x: Math.random() * MAP_W, y: Math.r
 var myEmote = '', myEmoteTs = 0;
 var pendingClaim = '', claimAt = 0;
 var insidePad = '';
+var myZone = '', zoneSeen = false;
 var lastBub = {};   // u -> bub text (for chat log)
 var goldKnown = {};
 var questSig = '';
@@ -264,6 +265,22 @@ function enterPortal(pad) {
   setTimeout(function () { location.href = pad.href; }, 160);
 }
 $('wportal').addEventListener('click', function () { if (insidePad) enterPortal(insidePad); });
+$('wwish').addEventListener('click', function () {
+  jpost('/api/world/wish', {}).then(function (r) {
+    if (!r) return;
+    if (!r.ok) { toast(r.err || 'the fountain said no'); return; }
+    if (r.jackpot) {
+      sndQuest();
+      burst(px, py - 10, '#ffd257', 34, 160);
+      floatText(px, py - 46, 'JACKPOT +50c', '#ffd257');
+      toast('✦ THE FOUNTAIN PAID OUT — jackpot! ' + r.fortune, 5200);
+    } else {
+      sndPick(false);
+      burst(px, py - 8, '#a5f3fc', 10, 80);
+      toast('✦ ' + r.fortune, 4200);
+    }
+  });
+});
 
 /* joystick */
 var joyEl = $('wjoy'), knob = $('wknob');
@@ -362,6 +379,11 @@ function ping() {
     if (r.questDone) onQuestDone(r.questDone);
     if (r.quest) renderQuest(r.quest);
     renderLb(r.lb, r.today);
+    if (typeof r.zone === 'string') {
+      if (zoneSeen && r.zone && r.zone !== myZone) toast('— ' + r.zone + ' —', 1800);
+      if (r.zone) myZone = r.zone;
+      zoneSeen = true;
+    }
   });
 }
 setInterval(ping, 900);
@@ -411,6 +433,7 @@ function update(now) {
   if (near) {
     if (insidePad !== near) { insidePad = near; chip.hidden = false; chip.textContent = 'enter ' + near.label + ' →'; chip.style.borderColor = near.c; chip.style.boxShadow = '0 0 26px ' + near.c + '66'; }
   } else { insidePad = ''; chip.hidden = true; }
+  $('wwish').hidden = dist(px, py, 800, 500) > 135;
   // shard proximity -> claim on next ping
   if (!pendingClaim) {
     for (var id in shards) { if (dist(px, py, shards[id].x, shards[id].y) < 34) { pendingClaim = id; claimAt = performance.now(); break; } }

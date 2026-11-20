@@ -37,15 +37,46 @@ const GOLD_PAY = 25;
 const GOLD_EVERY_MS = 240000;
 const GOLD_LIFE_MS = 45000;
 
-const QUEST_POOL = [
-  { id: 'shards5', kind: 'shard', n: 5, pay: 40, t: 'collect 5 moon shards' },
-  { id: 'shards12', kind: 'shard', n: 12, pay: 90, t: 'collect 12 moon shards' },
-  { id: 'portals3', kind: 'portal', n: 3, pay: 35, t: 'step on 3 different portals' },
-  { id: 'chat4', kind: 'say', n: 4, pay: 30, t: 'say 4 things in the plaza' },
-  { id: 'walk1400', kind: 'walk', n: 1400, pay: 45, t: 'walk 1400 steps around the plaza' },
-  { id: 'gold1', kind: 'gold', n: 1, pay: 60, t: 'grab a golden shard' },
-  { id: 'emote3', kind: 'emote', n: 3, pay: 25, t: 'use 3 emotes' },
-  { id: 'shards20', kind: 'shard', n: 20, pay: 140, t: 'collect 20 moon shards' },
+const QUESTS = require('./quests.js');
+
+const ZONES = [
+  { id: 'fountain', name: 'the fountain', x: 800, y: 500, r: 125 },
+  { id: 'stage', name: 'the stage', x: 800, y: 905, r: 140 },
+  { id: 'arcade', name: 'the arcade', x: 180, y: 215, r: 140 },
+  { id: 'theater', name: 'the theater', x: 1420, y: 215, r: 140 },
+  { id: 'lounge', name: 'the chat lounge', x: 110, y: 500, r: 125 },
+  { id: 'party', name: 'the party house', x: 1490, y: 500, r: 125 },
+  { id: 'tube', name: 'tube corner', x: 180, y: 800, r: 135 },
+  { id: 'tiktok', name: 'the tiktok wall', x: 1420, y: 800, r: 135 },
+  { id: 'blox', name: 'blox tower', x: 800, y: 120, r: 125 },
+  { id: 'garden', name: 'the lamp garden', x: 330, y: 360, r: 125 },
+  { id: 'overlook', name: 'the east overlook', x: 1280, y: 620, r: 130 },
+  { id: 'spawn', name: 'spawn plaza', x: 800, y: 700, r: 140 },
+];
+
+const FORTUNES = [
+  'the moon saw ur wish. it is thinking about it',
+  'a golden shard is coming for u. be ready',
+  'someone in the plaza is about to make ur day',
+  'ur next quest pays more than u think',
+  'the lamps hum ur name tonight',
+  'walk east. trust me',
+  'a stranger will say hi. say hi back',
+  'ur luck stat went up by exactly one vibe',
+  'the fountain keeps ur coin. the moon keeps ur secret',
+  'tonight the plaza feels like home because u are in it',
+  'six owes u one. he will not say for what',
+  'a dance is never wasted',
+  'the fireflies voted: ur fit is fine',
+  'something small and good is on its way',
+  'ur shards miss u when u log off',
+  'the theater will play exactly what u need soon',
+  'wish again sometime. the moon likes ur voice',
+  'an old friend is about to log in',
+  'the stage lights look good on u. go stand there',
+  'ur next golden shard is closer than u think',
+  'the fountain says: patience, then sparkle',
+  'somewhere, a portal u have not tried is waiting',
 ];
 
 const SIX_LINES = [
@@ -90,6 +121,7 @@ function createWorld(ctx) {
   const P = new Map();      // user -> {x,y,dir,at,bub,bubAt,vc,talk,fx,emote,emoteTs,lx,ly}
   const SIG = new Map();    // user -> [{from, data, at}]
   const SAY_AT = new Map(); // user -> last say ts
+  const WISH_AT = new Map(); // user -> last wish ts
   const STATS = new Map();  // user -> {day, shards, golds}
   const QUEST = new Map();  // user -> {day, qi, prog, chain, seen:Set}
   let shards = [];          // {id,x,y,gold,born}
@@ -98,6 +130,12 @@ function createWorld(ctx) {
 
   const clampN = (v, lo, hi) => { v = Number(v); if (!isFinite(v)) v = lo; return Math.max(lo, Math.min(hi, v)); };
   const dist = (x1, y1, x2, y2) => Math.hypot(x2 - x1, y2 - y1);
+  function zoneAt(x, y) {
+    let best = '', bs = Infinity;
+    for (const z of ZONES) { const d = dist(x, y, z.x, z.y); if (d < z.r && d - z.r < bs) { bs = d - z.r; best = z.id; } }
+    return best;
+  }
+  function zoneName(id) { const z = ZONES.find((v) => v.id === id); return z ? z.name : ''; }
 
   function spawnPos() {
     for (let i = 0; i < 24; i++) {
@@ -135,34 +173,42 @@ function createWorld(ctx) {
     if (!q || q.day !== day) {
       let h = 0; const seed = user + day;
       for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-      q = { day, qi: h % QUEST_POOL.length, prog: 0, chain: 0, seen: new Set() };
+      q = { day, qi: h % QUESTS.length, prog: 0, chain: 0, seen: new Set() };
       QUEST.set(user, q);
     }
     return q;
   }
   function questView(user) {
     const q = questFor(user);
-    const def = QUEST_POOL[q.qi];
-    return { t: def.t, prog: Math.min(q.prog, def.n), n: def.n, pay: def.pay + q.chain * 10, chain: q.chain };
+    const def = QUESTS[q.qi];
+    return { id: def.id, t: def.t, prog: Math.min(Math.floor(q.prog), def.n), n: def.n, pay: def.pay + q.chain * 10, chain: q.chain };
   }
-  // feed a game event into the user's quest; returns {done, pay} or null
+  // feed a game event into the user's quest; returns {done, pay} or null.
+  // key: portal/zone/meet carry an id (distinct-set or specific target),
+  // emote carries the emote id, walk/vc carry an amount.
   function questEvent(user, kind, key) {
     const q = questFor(user);
-    const def = QUEST_POOL[q.qi];
+    const def = QUESTS[q.qi];
     if (def.kind !== kind) return null;
-    if (kind === 'portal') {
+    if (kind === 'portal' || kind === 'meet' || (kind === 'zone' && !def.zone)) {
       if (q.seen.has(key)) return null;
       q.seen.add(key);
       q.prog = q.seen.size;
-    } else if (kind === 'walk') {
-      q.prog += key; // key carries distance units here
+    } else if (kind === 'zone') {
+      if (def.zone !== key) return null;
+      q.prog += 1;
+    } else if (kind === 'emote') {
+      if (def.emote && def.emote !== key) return null;
+      q.prog += 1;
+    } else if (kind === 'walk' || kind === 'vc') {
+      q.prog += key;
     } else {
       q.prog += 1;
     }
     if (q.prog >= def.n) {
       const pay = def.pay + q.chain * 10;
       q.chain += 1;
-      q.qi = (q.qi + 3) % QUEST_POOL.length;
+      q.qi = (q.qi + 137 + q.chain * 31) % QUESTS.length;
       q.prog = 0;
       q.seen = new Set();
       return { done: true, pay, t: def.t };
@@ -206,8 +252,9 @@ function createWorld(ctx) {
 
     if (u.pathname === '/api/world/ping' && req.method === 'POST') {
       let p = P.get(me);
-      if (!p) { p = { x: 800, y: 580, dir: 0, at: now, bub: '', bubAt: 0, vc: false, talk: false, fx: '', emote: '', emoteTs: 0, emoteAt: 0, lx: 800, ly: 580 }; P.set(me, p); }
+      if (!p) { p = { x: 800, y: 580, dir: 0, at: now, bub: '', bubAt: 0, vc: false, talk: false, fx: '', emote: '', emoteTs: 0, emoteAt: 0, lx: 800, ly: 580, zone: '' }; P.set(me, p); }
       const ox = p.x, oy = p.y;
+      const prevAt = p.at;
       if (b.x != null) p.x = clampN(b.x, 24, MAP_W - 24);
       if (b.y != null) p.y = clampN(b.y, 24, MAP_H - 24);
       if (b.dir != null) p.dir = clampN(b.dir, -Math.PI * 2, Math.PI * 2);
@@ -222,7 +269,21 @@ function createWorld(ctx) {
       // emotes: a fresh emote timestamp counts once
       if (b.emote && b.emoteTs && b.emoteTs !== p.emoteTs) {
         p.emote = String(b.emote).slice(0, 12); p.emoteTs = b.emoteTs; p.emoteAt = now;
-        questDone = questEvent(me, 'emote') || questDone;
+        questDone = questEvent(me, 'emote', p.emote) || questDone;
+      }
+      // zone entry (distinct spots, or a specific spot for targeted quests)
+      const zn = zoneAt(p.x, p.y);
+      if (zn && zn !== p.zone) questDone = questEvent(me, 'zone', zn) || questDone;
+      p.zone = zn;
+      // meeting people: standing close to another player counts them
+      if (QUESTS[questFor(me).qi].kind === 'meet') {
+        for (const [ou, op] of P) { if (ou !== me && dist(p.x, p.y, op.x, op.y) < 95) questDone = questEvent(me, 'meet', ou) || questDone; }
+      }
+      // vc time: near another voice-on player, seconds accumulate
+      if (p.vc) {
+        let nearVc = false;
+        for (const [ou, op] of P) { if (ou !== me && op.vc && dist(p.x, p.y, op.x, op.y) < 230) { nearVc = true; break; } }
+        if (nearVc) questDone = questEvent(me, 'vc', Math.min(2.5, Math.max(0, (now - prevAt) / 1000))) || questDone;
       }
       // shard claim: server validates the distance, then pays
       let got = null;
@@ -256,7 +317,7 @@ function createWorld(ctx) {
         shards: shards.map((s) => ({ id: s.id, x: s.x, y: s.y, gold: s.gold })),
         lb: leaderboard(), quest: questView(me),
         today: { shards: st.shards, golds: st.golds },
-        got, questDone,
+        zone: p.zone ? zoneName(p.zone) : '', got, questDone,
       });
       return true;
     }
@@ -268,7 +329,7 @@ function createWorld(ctx) {
       if (!text) { J({ ok: false, err: 'empty' }); return true; }
       SAY_AT.set(me, now);
       let p = P.get(me);
-      if (!p) { p = { x: 800, y: 580, dir: 0, at: now, bub: '', bubAt: 0, vc: false, talk: false, fx: '', emote: '', emoteTs: 0, emoteAt: 0, lx: 800, ly: 580 }; P.set(me, p); }
+      if (!p) { p = { x: 800, y: 580, dir: 0, at: now, bub: '', bubAt: 0, vc: false, talk: false, fx: '', emote: '', emoteTs: 0, emoteAt: 0, lx: 800, ly: 580, zone: '' }; P.set(me, p); }
       p.bub = text; p.bubAt = now; p.at = now;
       const qd = questEvent(me, 'say');
       let bal = null;
@@ -283,6 +344,22 @@ function createWorld(ctx) {
       let bal = null;
       if (qd && qd.done) { try { bal = await ctx.awardCoins(me, qd.pay); } catch { } }
       J({ ok: true, questDone: qd ? { done: true, pay: qd.pay, t: qd.t, bal } : null, quest: questView(me) });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/wish' && req.method === 'POST') {
+      const p = P.get(me);
+      if (!p || dist(p.x, p.y, 800, 500) > 130) { J({ ok: false, err: 'stand at the fountain to wish' }); return true; }
+      const lastW = WISH_AT.get(me) || 0;
+      if (now - lastW < 3000) { J({ ok: false, err: 'the fountain needs a sec' }); return true; }
+      let bal0 = 0;
+      try { bal0 = ctx.getBal(me); } catch { }
+      if (bal0 < 1) { J({ ok: false, err: 'u need 1 coin to wish' }); return true; }
+      WISH_AT.set(me, now);
+      const jackpot = Math.random() < 0.02;
+      let bal = null;
+      try { bal = await ctx.awardCoins(me, jackpot ? 49 : -1); } catch { }
+      J({ ok: true, fortune: FORTUNES[Math.floor(Math.random() * FORTUNES.length)], jackpot, bal });
       return true;
     }
 
@@ -328,6 +405,7 @@ function createWorld(ctx) {
       '<div id="wtoast" hidden></div>\n' +
       '<div id="wlog"></div>\n' +
       '<button id="wportal" type="button" hidden></button>\n' +
+      '<button id="wwish" type="button" hidden>make a wish — 1 coin</button>\n' +
       '<div id="wemotes">\n' +
       '  <button type="button" data-em="wave">wave</button>\n' +
       '  <button type="button" data-em="dance">dance</button>\n' +

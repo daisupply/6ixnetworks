@@ -18947,6 +18947,7 @@ function worldMod() {
     WORLD_MOD = require('./world/world.js').createWorld({
       voterUser, readJsonBody, scoreDay,
       getFx: (u) => { try { coinsLoad(); const f = COINS.fx[String(u).toLowerCase()]; return (f && FXSHOP[f]) ? f : ''; } catch (e) { return ''; } },
+      getBal: (u) => { try { coinsLoad(); return COINS.bal[String(u).toLowerCase()] || 0; } catch (e) { return 0; } },
       awardCoins: (u, n) => coinsAward(u, n),
       FONT_LINKS, GALAXY_CSS, SIDEBAR_HTML, STAR_CANVAS, NOTIF_JS,
     });
