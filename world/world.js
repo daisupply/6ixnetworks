@@ -487,7 +487,7 @@ function createWorld(ctx) {
     try { w = ctx.getWear(u) || {}; } catch { }
     for (const cat of ['trail', 'hat', 'aura', 'pet', 'face']) {
       const it = w[cat] && SHOP.BY_ID[w[cat]];
-      if (it) out[cat] = { kind: it.kind, c: it.color };
+      if (it) out[cat] = { kind: it.kind, c: it.color, id: it.id, rarity: it.rarity || 'common' };
     }
     return out;
   }
@@ -500,6 +500,7 @@ function createWorld(ctx) {
         bub: (p.bub && now - p.bubAt < 6000) ? p.bub : '',
         emote: (p.emote && now - (p.emoteAt || 0) < 2600) ? p.emote : '',
         wear: p.wear || null,
+        petName: (p.wear && p.wear.pet && p.wear.pet.id) ? ((wload('petname', u) || {})[p.wear.pet.id] || '') : '',
       });
     }
     return out;
@@ -851,6 +852,7 @@ function createWorld(ctx) {
         duelIn: duelInFor(me, now), duel: duelFor(me, now), duelDone: duelDoneFor(me, now),
         prog: progView(me), disc, gotC,
         house: p.house || null,
+        petNames: wload('petname', me) || {},
         crys: CRYSTALS.map((c) => ({ id: c.id, x: c.x, y: c.y, rare: c.rare, got: pg.crystals.indexOf(c.id) >= 0 })),
         lvlUp: (() => { const v = LVLUP.get(me) || null; LVLUP.delete(me); return v; })(),
         achNew: (() => { const v = ACHNEW.get(me) || []; ACHNEW.delete(me); return v; })(),
@@ -1036,6 +1038,19 @@ function createWorld(ctx) {
       return true;
     }
 
+    if (u.pathname === '/api/world/pet-name' && req.method === 'POST') {
+      const it = SHOP.BY_ID[String(b.id || '')];
+      if (!it || it.cat !== 'pet') { J({ ok: false, err: 'bad pet' }, 400); return true; }
+      let owned = false;
+      try { owned = ctx.getInv(me).includes(it.id); } catch { }
+      if (!owned) { J({ ok: false, err: 'u don\'t own that pet' }, 403); return true; }
+      const name = String(b.name || '').replace(/[<>&"']/g, '').trim().slice(0, 14);
+      const all = wload('petname', me) || {};
+      if (name) all[it.id] = name; else delete all[it.id];
+      wsave('petname', me, all);
+      J({ ok: true, names: all });
+      return true;
+    }
     if (u.pathname === '/api/world/house' && req.method === 'GET') {
       const owner = String(u.searchParams.get('u') || me).toLowerCase();
       J(houseView(me, owner));
@@ -1506,7 +1521,8 @@ function createWorld(ctx) {
       '  <div class="wadmin-row"><input id="wadmin-ann" type="text" maxlength="160" placeholder="announce to the whole world\u2026"><button id="wadmin-send" type="button">send</button></div>\n' +
       '  <div class="wadmin-row"><button class="wadmin-ev" data-ev="shardstorm" type="button">force shard storm</button><button class="wadmin-ev" data-ev="goldenhunt" type="button">force golden hunt</button><button class="wadmin-ev" data-ev="off" type="button">events off</button></div>\n' +
       '</div></div>\n' +
-      '<div id="whouse" class="wa-card" hidden><div class="wa-head"><span>\u2726 <span id="whouse-t">ur house</span></span><button id="whouse-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="whouse-body"></div></div>\n' +
+      '<div id="wpets" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 pet journal</span><button id="wpets-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wpets-body"></div></div></div>\n' +
+      '<div id="whouse" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 <span id="whouse-t">ur house</span></span><button id="whouse-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="whouse-body"></div></div></div>\n' +
       '<div id="wduelgo" hidden><div id="wduelgo-t"></div><div id="wduelgo-s"></div></div>\n' +
       '<div id="wlogin" hidden><div class="wl-card"><div class="wl-big">six\'s network is for the logged-in</div>' +
       '<p>make an account or log in, then walk in. a whole world in here: districts, a lake, a forest, moon shards, quests from six, voice chat.</p>' +

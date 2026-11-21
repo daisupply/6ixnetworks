@@ -1271,6 +1271,60 @@ const ITEMS = [
   "color": "#ffd257",
   "kind": "crown",
   "vaultOnly": true
+ },
+ {
+  "id": "s142",
+  "cat": "pet",
+  "name": "moon fox",
+  "rarity": "rare",
+  "price": 450,
+  "color": "#fb923c",
+  "kind": "fox"
+ },
+ {
+  "id": "s143",
+  "cat": "pet",
+  "name": "bubble axolotl",
+  "rarity": "rare",
+  "price": 520,
+  "color": "#f9a8d4",
+  "kind": "axolotl"
+ },
+ {
+  "id": "s144",
+  "cat": "pet",
+  "name": "ember wisp",
+  "rarity": "epic",
+  "price": 800,
+  "color": "#f87171",
+  "kind": "wisp"
+ },
+ {
+  "id": "s145",
+  "cat": "pet",
+  "name": "frost wisp",
+  "rarity": "epic",
+  "price": 820,
+  "color": "#7dd3fc",
+  "kind": "wisp"
+ },
+ {
+  "id": "s146",
+  "cat": "pet",
+  "name": "star dragon",
+  "rarity": "legendary",
+  "price": 1600,
+  "color": "#a78bfa",
+  "kind": "dragon"
+ },
+ {
+  "id": "s147",
+  "cat": "pet",
+  "name": "lil lich",
+  "rarity": "legendary",
+  "price": 1500,
+  "color": "#ffd257",
+  "kind": "skull"
  }
 ];
 const BY_ID = {};

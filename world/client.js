@@ -455,6 +455,14 @@ cv.addEventListener('pointerdown', function (e) {
     if (dist(wx, wy, op.x, op.y) < 36) { tapped = op; break; }
   }
   if (tapped) { openProfile(tapped.u); return; }
+  for (var pu3 in pets) {
+    var pt3 = pets[pu3];
+    if (pt3 && dist(wx, wy, pt3.x, pt3.y) < 26) {
+      if (pu3 === me) { burst(pt3.x, pt3.y - 6, '#f472b6', 10, 60); tone(1180, 0, .09, 'sine', .1, 1560); floatText(pt3.x, pt3.y - 26, pt3.name ? '\u2665 ' + pt3.name : '\u2665 ur buddy', '#f9a8d4'); }
+      else floatText(pt3.x, pt3.y - 26, (pt3.name || pt3.kind) + ' \u00b7 @' + pu3, '#e9e4ff');
+      return;
+    }
+  }
   moveTarget = { x: clamp(wx, 30, MAP_W - 30), y: clamp(wy, 30, MAP_H - 30), at: performance.now() };
 }, { passive: true });
 
@@ -504,10 +512,10 @@ function ping() {
       if (mutedSet[p.u]) p.bub = '';
       var cur = players[p.u];
       if (!cur) {
-        players[p.u] = { u: p.u, x: p.x, y: p.y, tx: p.x, ty: p.y, dir: p.dir, fx: p.fx, vc: p.vc, talk: p.talk, bub: '', bubAt: 0, emote: '', emoteAt: 0, npc: !!p.npc, wear: p.wear || null, hue: (p.hue != null ? p.hue : null) };
+        players[p.u] = { u: p.u, x: p.x, y: p.y, tx: p.x, ty: p.y, dir: p.dir, fx: p.fx, vc: p.vc, talk: p.talk, bub: '', bubAt: 0, emote: '', emoteAt: 0, npc: !!p.npc, wear: p.wear || null, hue: (p.hue != null ? p.hue : null), petName: p.petName || '' };
         cur = players[p.u];
       }
-      cur.tx = p.x; cur.ty = p.y; cur.dir = p.dir; cur.fx = p.fx; cur.vc = p.vc; cur.talk = p.talk; cur.npc = !!p.npc; cur.wear = p.wear || null; cur.hue = (p.hue != null ? p.hue : null);
+      cur.tx = p.x; cur.ty = p.y; cur.dir = p.dir; cur.fx = p.fx; cur.vc = p.vc; cur.talk = p.talk; cur.npc = !!p.npc; cur.wear = p.wear || null; cur.hue = (p.hue != null ? p.hue : null); cur.petName = p.petName || '';
       if (p.bub && p.bub !== cur.bub) {
         cur.bub = p.bub; cur.bubAt = performance.now();
         if (p.u !== me && !p.npc && lastBub[p.u] !== p.bub && dist(px, py, p.x, p.y) < 460) { lastBub[p.u] = p.bub; logLine(p.u, p.bub); }
@@ -622,12 +630,28 @@ function update(now) {
       }
     }
     if (p.wear && p.wear.pet) {
-      var pet = pets[u] || (pets[u] = { x: p.x, y: p.y - 30, kind: p.wear.pet.kind, c: p.wear.pet.c });
-      pet.kind = p.wear.pet.kind; pet.c = p.wear.pet.c;
-      var pa = now / 1500 + u.length * 1.7;
-      var txp = p.x + Math.cos(pa) * 30, typ = p.y - 30 + Math.sin(now / 600 + u.length) * 4;
-      pet.x += (txp - pet.x) * Math.min(1, dt * 3.4);
-      pet.y += (typ - pet.y) * Math.min(1, dt * 3.4);
+      var pet = pets[u] || (pets[u] = { x: p.x, y: p.y - 30, kind: p.wear.pet.kind, c: p.wear.pet.c, hopSeed: Math.random() * 9, lx: p.x, ly: p.y, still: 0 });
+      pet.kind = p.wear.pet.kind; pet.c = p.wear.pet.c; pet.rarity = p.wear.pet.rarity || ''; pet.name = p.petName || ''; pet.owner = u;
+      var pMoved = dist(p.x, p.y, pet.lx || p.x, pet.ly || p.y);
+      pet.still = pMoved > 4 ? 0 : (pet.still || 0) + dt;
+      pet.lx = p.x; pet.ly = p.y;
+      var FLYK = { orb: 1, star: 1, ghost: 1, bat: 1, ufo: 1, wisp: 1, dragon: 1 };
+      var txp, typ;
+      if (FLYK[pet.kind]) {
+        var pa = now / 1500 + u.length * 1.7;
+        txp = p.x + Math.cos(pa) * 30; typ = p.y - 30 + Math.sin(now / 600 + u.length) * 4;
+        pet.hopY = 0;
+      } else {
+        var back = (p.dir || 0) + Math.PI;
+        txp = p.x + Math.cos(back) * 27 + Math.sin(now / 900 + u.length) * 3;
+        typ = p.y + 13 + Math.cos(now / 900 + u.length) * 2;
+        var pd2 = dist(pet.x, pet.y, txp, typ);
+        pet.hopY = (pet.still < 2.5 && pd2 > 7) ? -Math.abs(Math.sin(now / 95 + pet.hopSeed)) * 5.5 : 0;
+      }
+      var pk2 = Math.min(1, dt * (FLYK[pet.kind] ? 3.4 : 5.2));
+      pet.x += (txp - pet.x) * pk2;
+      pet.y += (typ - pet.y) * pk2;
+      if (pet.rarity === 'legendary' && Math.random() < 0.10) parts.push({ x: pet.x + (Math.random() * 14 - 7), y: pet.y + (Math.random() * 10 - 5), vx: 0, vy: -8, at: now, life: 620, c: pet.c, r: 2.1, ts: 'star' });
     } else if (pets[u]) {
       delete pets[u];
     }
@@ -2505,7 +2529,7 @@ function drawHat(g, hat, now) {
   }
 }
 function drawPet(g, pet, now) {
-  var x = pet.x, y = pet.y, c = pet.c;
+  var x = pet.x, y = pet.y + (pet.hopY || 0), c = pet.c;
   g.fillStyle = 'rgba(0,0,0,.3)';
   g.beginPath(); g.ellipse(x, y + 12, 7, 2.6, 0, 0, TAU); g.fill();
   g.fillStyle = c; g.strokeStyle = c;
@@ -2561,12 +2585,72 @@ function drawPet(g, pet, now) {
       g.fillStyle = '#fff7cc';
       g.beginPath(); g.arc(x - 5, y + 0.6, 1.2, 0, TAU); g.arc(x, y + 1.2, 1.2, 0, TAU); g.arc(x + 5, y + 0.6, 1.2, 0, TAU); g.fill();
       break;
+    case 'fox':
+      g.beginPath(); g.ellipse(x + 9, y + 4, 8, 4.4, 0.6, 0, TAU); g.fill();
+      g.beginPath(); g.arc(x, y, 6.8, 0, TAU); g.fill();
+      g.beginPath(); g.moveTo(x - 6.4, y - 3); g.lineTo(x - 5, y - 10); g.lineTo(x - 1.6, y - 5.6); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(x + 6.4, y - 3); g.lineTo(x + 5, y - 10); g.lineTo(x + 1.6, y - 5.6); g.closePath(); g.fill();
+      g.fillStyle = '#fff3e0';
+      g.beginPath(); g.ellipse(x, y + 3.4, 3.6, 2.6, 0, 0, TAU); g.fill();
+      g.fillStyle = '#17102e';
+      g.beginPath(); g.arc(x - 2.4, y - 0.8, 1.1, 0, TAU); g.arc(x + 2.4, y - 0.8, 1.1, 0, TAU); g.fill();
+      break;
+    case 'axolotl':
+      g.strokeStyle = c; g.lineWidth = 2;
+      for (var gi2 = -1; gi2 <= 1; gi2++) {
+        g.beginPath(); g.moveTo(x - 5, y - 2 + gi2 * 3); g.lineTo(x - 10, y - 4 + gi2 * 4); g.stroke();
+        g.beginPath(); g.moveTo(x + 5, y - 2 + gi2 * 3); g.lineTo(x + 10, y - 4 + gi2 * 4); g.stroke();
+      }
+      g.beginPath(); g.arc(x, y, 6.8, 0, TAU); g.fill();
+      g.fillStyle = '#17102e';
+      g.beginPath(); g.arc(x - 2.4, y - 1, 1.1, 0, TAU); g.arc(x + 2.4, y - 1, 1.1, 0, TAU); g.fill();
+      g.strokeStyle = '#17102e'; g.lineWidth = 1.1;
+      g.beginPath(); g.arc(x, y + 1.4, 2.8, 0.15 * Math.PI, 0.85 * Math.PI); g.stroke();
+      break;
+    case 'wisp': {
+      var fl2 = 1 + Math.sin(now / 140 + x) * 0.16;
+      g.shadowColor = c; g.shadowBlur = 13;
+      g.beginPath();
+      g.moveTo(x, y - 10 * fl2);
+      g.quadraticCurveTo(x + 6.4, y - 1, x + 4.6, y + 4);
+      g.quadraticCurveTo(x + 2, y + 8.4, x, y + 8.4);
+      g.quadraticCurveTo(x - 2, y + 8.4, x - 4.6, y + 4);
+      g.quadraticCurveTo(x - 6.4, y - 1, x, y - 10 * fl2);
+      g.fill(); g.shadowBlur = 0;
+      g.fillStyle = 'rgba(255,255,255,.85)';
+      g.beginPath(); g.arc(x - 1.8, y + 0.6, 1.2, 0, TAU); g.arc(x + 1.8, y + 0.6, 1.2, 0, TAU); g.fill();
+      break;
+    }
+    case 'dragon': {
+      var fl3 = Math.sin(now / 150) * 3.4;
+      g.beginPath(); g.ellipse(x - 8, y - 4 - fl3, 7, 3.2, -0.6, 0, TAU); g.fill();
+      g.beginPath(); g.ellipse(x + 8, y - 4 - fl3, 7, 3.2, 0.6, 0, TAU); g.fill();
+      g.beginPath(); g.ellipse(x, y + 1, 5.6, 6.8, 0, 0, TAU); g.fill();
+      g.beginPath(); g.arc(x, y - 6, 4.6, 0, TAU); g.fill();
+      g.beginPath(); g.moveTo(x - 3.6, y - 9); g.lineTo(x - 2.4, y - 13); g.lineTo(x - 0.8, y - 9.6); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(x + 3.6, y - 9); g.lineTo(x + 2.4, y - 13); g.lineTo(x + 0.8, y - 9.6); g.closePath(); g.fill();
+      g.fillStyle = '#17102e';
+      g.beginPath(); g.arc(x - 1.8, y - 6.4, 1, 0, TAU); g.arc(x + 1.8, y - 6.4, 1, 0, TAU); g.fill();
+      break;
+    }
     default:
       g.shadowColor = c; g.shadowBlur = 12;
       g.beginPath(); g.arc(x, y, 6, 0, TAU); g.fill();
       g.shadowBlur = 0;
       g.fillStyle = 'rgba(255,255,255,.75)';
       g.beginPath(); g.arc(x - 2, y - 2, 2, 0, TAU); g.fill();
+  }
+  if (pet.rarity === 'epic' || pet.rarity === 'legendary') {
+    g.strokeStyle = pet.rarity === 'legendary' ? 'rgba(255,210,87,.5)' : 'rgba(240,171,252,.45)';
+    g.lineWidth = 1.2;
+    g.beginPath(); g.ellipse(x, y + 12, 9, 3.2, 0, 0, TAU); g.stroke();
+  }
+  if (pet.name) {
+    g.font = '700 8.5px Inter, sans-serif'; g.textAlign = 'center';
+    g.fillStyle = 'rgba(5,3,14,.6)';
+    var nwt = g.measureText(pet.name).width;
+    rr(g, x - nwt / 2 - 4, y + 15, nwt + 8, 11, 5); g.fill();
+    g.fillStyle = '#f9d8ec'; g.fillText(pet.name, x, y + 23.5);
   }
 }
 function openShop() {
@@ -2843,6 +2927,7 @@ var lastEventId = -1, partyInvFrom = '';
 function socialTick(r) {
   var ab = $('wadminbtn'); if (ab) ab.hidden = !r.isAdmin;
   if (r.weather) WX = r.weather;
+  if (r.petNames) myPetNames = r.petNames;
   var nhouse = r.house || null;
   if (nhouse !== myHouse) { myHouse = nhouse; HOUSE_VIEW = null; decorOn = false; placeFid = null; if (myHouse) loadHouse(myHouse); }
   if (r.ann && r.ann.at !== lastAnnAt) { lastAnnAt = r.ann.at; toast('\u2726 six announces: ' + r.ann.text, 6500); sndQuest(); }
@@ -2930,6 +3015,7 @@ var HUB_DEFS = [
   ['six cents shop', '<circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M2 3h3l2.6 12.5a1.5 1.5 0 0 0 1.5 1.2h7.9a1.5 1.5 0 0 0 1.5-1.2L20.5 7H6"/>', function () { openShop(); }],
   ['ur stuff', '<path d="M6 8h12l1.2 12H4.8L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>', function () { openInv(); }],
   ['ur house', '<path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>', function () { openHouse(); }],
+  ['pets', '<circle cx="7.5" cy="8" r="1.8"/><circle cx="12" cy="5.8" r="1.8"/><circle cx="16.5" cy="8" r="1.8"/><path d="M12 11c2.9 0 5.4 2.2 5.4 4.7 0 1.9-1.5 3.1-3.3 3.1-1 0-1.5-.4-2.1-.4s-1.1.4-2.1.4c-1.8 0-3.3-1.2-3.3-3.1C6.6 13.2 9.1 11 12 11Z"/>', function () { openPets(); }],
   ['world map', '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/>', function () { openMap2(); }],
   ['quest journal', '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>', function () { openJournal(); }],
   ['achievements', '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>', function () { openAch(); }],
@@ -3304,6 +3390,59 @@ $('whouse-body').addEventListener('click', function (e) {
 });
 $('whouse-x').addEventListener('click', closeHouse);
 window.__house = { open: openHouse, close: closeHouse };
+
+
+/* ================= pets v2 ================= */
+var myPetNames = {};
+function openPets() { $('wpets').hidden = false; renderPets(); }
+function closePets() { $('wpets').hidden = true; }
+function renderPets() {
+  var body = $('wpets-body'); if (!body) return;
+  var pets = (window.WSHOP || []).filter(function (it) { return it.cat === 'pet'; });
+  var ownedN = pets.filter(function (it) { return myInv.indexOf(it.id) >= 0; }).length;
+  var h = '<div class="hs-note" style="margin-bottom:8px">' + ownedN + ' / ' + pets.length + ' companions adopted · tap a pet in the world to say hi</div><div class="pet-grid">';
+  pets.forEach(function (it) {
+    var owned = myInv.indexOf(it.id) >= 0;
+    var eq = myWearIds.pet === it.id;
+    var given = myPetNames[it.id] || '';
+    h += '<div class="pet-card"><canvas width="56" height="56" data-petprev="' + it.id + '"></canvas><div class="pet-nm">' + escH(it.name) + '</div>' + (given ? '<div class="pet-given">“' + escH(given) + '”</div>' : '') + '<div class="pet-meta">' + it.rarity + (owned ? ' · adopted' : ' · ¢' + it.price) + '</div>';
+    if (owned) {
+      h += '<button class="hs-btn" data-pet="equip" data-id="' + it.id + '">' + (eq ? 'following u ✓' : 'call over') + '</button> <button class="hs-btn" data-pet="rename" data-id="' + it.id + '">name</button>';
+    } else {
+      h += '<button class="hs-btn" data-pet="adopt" data-id="' + it.id + '">adopt · ¢' + it.price + '</button>';
+    }
+    h += '</div>';
+  });
+  h += '</div>';
+  body.innerHTML = h;
+  body.querySelectorAll('canvas[data-petprev]').forEach(function (cv2) {
+    var it = null;
+    (window.WSHOP || []).forEach(function (x) { if (x.id === cv2.getAttribute('data-petprev')) it = x; });
+    if (!it) return;
+    var g2 = cv2.getContext('2d');
+    drawPet(g2, { x: 28, y: 30, kind: it.kind, c: it.color, rarity: it.rarity, name: '' }, 1400);
+  });
+}
+$('wpets-body').addEventListener('click', function (e) {
+  var t = e.target.closest('[data-pet]'); if (!t) return;
+  var act = t.getAttribute('data-pet'), id = t.getAttribute('data-id');
+  if (act === 'equip') {
+    var eq = myWearIds.pet === id;
+    jpost('/api/world/shopequip', { cat: 'pet', id: eq ? '' : id }).then(function (r) { if (r && r.ok) { myWearIds = r.wearIds || myWearIds; renderPets(); } else toast((r && r.err) || 'nope'); });
+  } else if (act === 'adopt') {
+    jpost('/api/world/shopbuy', { id: id }).then(function (r) {
+      if (r && r.ok) { myInv = r.inv || myInv; toast('adopted ✦ they\'ll follow u anywhere'); renderPets(); }
+      else toast((r && r.err) || 'can\'t adopt that one');
+    });
+  } else if (act === 'rename') {
+    var cur = myPetNames[id] || '';
+    var nm = window.prompt('name ur companion (blank = clear):', cur);
+    if (nm === null) return;
+    jpost('/api/world/pet-name', { id: id, name: nm }).then(function (r) { if (r && r.ok) { myPetNames = r.names || {}; renderPets(); } else toast((r && r.err) || 'nope'); });
+  }
+});
+$('wpets-x').addEventListener('click', closePets);
+window.__pets = { open: openPets, close: closePets };
 
 window.__admin = { open: openAdmin, close: closeAdmin };
 function profSocial(u) {
