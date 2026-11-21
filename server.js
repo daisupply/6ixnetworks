@@ -11387,7 +11387,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style>
     <div id="heroSug" hidden></div>
   </form>
   <div style="margin-top:12px">${ENG_HTML}</div>
-  <div class="hchips"><a href="/yt">6ixtube</a><a href="/tiktok">tiktok</a><a href="/gs">games</a><a href="/movies">6ixflix</a><a href="/news">news</a><a href="/confess">confessions</a><a href="/chat">6ixchat</a><a href="/ai">ask six</a></div>
+  <div class="hchips"><a href="/yt">6ixtube</a><a href="/tiktok">tiktok</a><a href="/gs">games</a><a href="/movies">6ixflix</a><a href="/news">news</a><a href="/confess">confessions</a><a href="/chat">6ixchat</a><a href="/ai">ask six</a><a href="/linkgen">link gen</a></div>
   <div class="statCard"><div class="scTime" id="scTime">--:--</div><div class="scDate" id="scDate"></div><div class="scRow scBatt"><svg width="23" height="13" viewBox="0 0 25 13" fill="none" aria-hidden="true"><rect x="0.7" y="0.7" width="20" height="11.6" rx="3.2" stroke="currentColor" stroke-opacity=".55"/><rect id="scBatFill" x="2.7" y="2.7" width="0" height="7.6" rx="1.6" fill="currentColor"/><path d="M23.2 4.4v4.2a2.3 2.3 0 0 0 0-4.2z" fill="currentColor" fill-opacity=".55"/></svg><span id="scBat">battery unavailable</span></div><div class="scDiv"></div><div class="scRow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.4"/><path d="M3.6 19c.6-2.9 2.7-4.4 5.4-4.4s4.8 1.5 5.4 4.4"/><path d="M15.8 5.1a3.4 3.4 0 0 1 0 5.8M17.9 14.9c1.6.7 2.7 1.9 3.1 4.1"/></svg><span><b id="scOn">–</b> <span id="scOnW">users</span> online</span></div></div>
   <script>
   (function(){
@@ -23339,6 +23339,9 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === '/home') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(isBotReq(req) ? studyPage() : homeServed());
+  }
+  if (u.pathname === '/linkgen' || u.pathname === '/linkgen.html') {
+    try { const lgData = SITES_FS.readFileSync(SITES_PATH.join(__dirname, 'linkgen.html')); res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(lgData); } catch (e) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('not found'); }
   }
   if (u.pathname === '/search') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
