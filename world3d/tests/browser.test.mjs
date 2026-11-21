@@ -406,8 +406,10 @@ ok(page._errs.length === 0, 'desktop: zero page errors', page._errs.slice(0, 3))
   await pollState(mp, (x) => x.speed > 4, 12000);
   await touch('touchStart', [{ x: ctrls.zone.x, y: ctrls.zone.y - 60, id: 5 }, { x: 300, y: 420, id: 6 }]);
   await touch('touchMove', [{ x: ctrls.zone.x, y: ctrls.zone.y - 60, id: 5 }, { x: 210, y: 420, id: 6 }]);
-  await sleep(900);
-  const camS = await state(mp);
+  // poll for the yaw change instead of a fixed sleep: under heavy CPU
+  // throttling a fixed window can contain zero frames (v542 run: dyaw
+  // exactly 0 with the stick driving fine — rAF starvation, not logic).
+  const camS = await pollState(mp, (x) => Math.abs(x.camYaw - cam0) > 0.15 && x.speed > 2, 20000) || await state(mp);
   ok(camS && Math.abs(camS.camYaw - cam0) > 0.15 && camS.speed > 2, 'phone: second finger rotates camera WHILE joystick drives', camS && { dyaw: camS.camYaw - cam0, speed: camS.speed });
   await touch('touchEnd', []);
   const rest = await pollState(mp, (x) => x.speed < 1, 12000);

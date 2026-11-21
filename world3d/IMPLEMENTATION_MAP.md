@@ -112,3 +112,5 @@ belongs to the live tab, and deleting it would respawn them.
 - Cleanup: `pagehide` sends the leave beacon and disposes the scene,
   materials, textures, renderer; listeners are removed; pointer lock
   is exited. WebGL context loss shows the ERROR state with retry.
+
+Art direction (palette, districts, construction rules): `world3d/ART_DIRECTION.md` — v542 added buildTown() to client3d.js (gazebo well, sakura, streets, north storefront row, houses, park) on top of the v540 plaza; interiors land per-building from v543.

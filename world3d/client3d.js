@@ -478,9 +478,9 @@ function buildWorld() {
   // district buildings: window-lit facades + neon signs (the 2d pads, in 3d)
   const districts = [
     { x: -62, z: -52, w: 26, d: 16, h: 13, name: 'ARCADE', col: '#a78bfa', seed: 7 },
-    { x: 58, z: -54, w: 26, d: 16, h: 13, name: 'THEATER', col: '#f472b6', seed: 21 },
-    { x: -64, z: 46, w: 22, d: 13, h: 10, name: 'BLOX', col: '#38bdf8', seed: 33 },
-    { x: 62, z: 48, w: 22, d: 13, h: 10, name: 'CHAT', col: '#4ade80', seed: 48 },
+    { x: 58, z: -54, w: 26, d: 16, h: 13, name: 'LIBRARY', col: '#ffb36b', seed: 21 },
+    { x: -64, z: 46, w: 22, d: 13, h: 10, name: 'APARTMENTS', col: '#f9a8d4', seed: 33 },
+    { x: 62, z: 48, w: 22, d: 13, h: 10, name: 'REC CENTER', col: '#4ade80', seed: 48 },
     { x: 0, z: -80, w: 30, d: 14, h: 9, name: '6IX MUSIC', col: '#ffd257', seed: 59 },
   ];
   districts.forEach((b) => {
@@ -506,6 +506,316 @@ function buildWorld() {
   mGeo.setAttribute('position', new THREE.BufferAttribute(mPos, 3));
   motes = new THREE.Points(mGeo, new THREE.PointsMaterial({ color: 0xa78bfa, size: 0.09, transparent: true, opacity: 0.55, depthWrite: false }));
   scene.add(motes);
+  buildTown();
+}
+
+
+/* ---------- v542: the town dressing (art direction in ART_DIRECTION.md)
+ * additive set-building on top of the v540 plaza: gazebo over the
+ * Wishing Well, sakura, flower beds, streets, the north storefront row,
+ * residential houses, the park. every solid registers its colliders;
+ * repeated dressing is instanced. interiors arrive per-building in
+ * later versions — storefronts here are glass + lit diorama shells. */
+let swayers = [], fallsTex = null;
+function buildTown() {
+  const rnd = mulberry32(542);
+  const M = (c, o) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.85, metalness: 0.02 }, o || {}));
+  const box = (w, h, d, mat, x, y, z, ry) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); if (ry) m.rotation.y = ry; m.castShadow = true; m.receiveShadow = true; scene.add(m); return m; };
+  const cyl = (rt, rb, h, mat, x, y, z, seg) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg || 10), mat); m.position.set(x, y, z); m.castShadow = true; scene.add(m); return m; };
+  const wood = M(0x6b4226, { roughness: 0.9 }), woodDark = M(0x3d2417, { roughness: 0.95 });
+  const stone = M(0x4a4470, { roughness: 0.95 }), brass = M(0xc9a227, { roughness: 0.35, metalness: 0.7 });
+  const flowerSpots = [];
+  function hipRoof(x, z, w, d, hTop, roofH, mat) {
+    const m = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 4), mat);
+    m.scale.set(w * 0.75, roofH, d * 0.75); m.rotation.y = Math.PI / 4;
+    m.position.set(x, hTop + roofH / 2, z); m.castShadow = true; scene.add(m); return m;
+  }
+  const shingleTex = canvasTex(128, 128, (g, w, h) => {
+    g.fillStyle = '#171233'; g.fillRect(0, 0, w, h);
+    g.fillStyle = 'rgba(120,100,220,.16)';
+    for (let y = 0; y < h; y += 16) for (let x = ((y / 16) % 2) * 16; x < w; x += 32) g.fillRect(x, y, 30, 13);
+  }, 3, 3);
+  const shingle = M(0xffffff, { map: shingleTex, roughness: 0.95 });
+
+  /* ----- gazebo over the Wishing Well (the fountain stays the well) ----- */
+  {
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * TAU + Math.PI / 6, gx = Math.cos(a) * 9.5, gz = Math.sin(a) * 9.5;
+      cyl(0.16, 0.22, 5.4, wood, gx, 2.7, gz);
+      box(0.5, 0.18, 0.5, woodDark, gx, 0.09, gz);
+      addCollider(gx, gz, 0.34);
+    }
+    const beam = new THREE.Mesh(new THREE.TorusGeometry(9.5, 0.2, 8, 40), wood);
+    beam.rotation.x = Math.PI / 2; beam.position.y = 5.45; scene.add(beam);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(12.4, 3.9, 24), shingle);
+    roof.position.y = 7.5; roof.castShadow = true; scene.add(roof);
+    const fin = new THREE.Mesh(new THREE.SphereGeometry(0.42, 12, 10), M(0xffd257, { emissive: 0xffd257, emissiveIntensity: 0.7, roughness: 0.3, metalness: 0.6 }));
+    fin.position.y = 9.75; scene.add(fin);
+    cyl(0.03, 0.03, 0.8, woodDark, 0, 5.1, 0, 6);
+    const lampM = box(0.44, 0.55, 0.44, M(0xffc98a, { emissive: 0xffb36b, emissiveIntensity: 2.2 }), 0, 4.55, 0);
+    lampM.castShadow = false;
+    const gl = new THREE.PointLight(0xffb36b, 650, 32, 2); gl.position.set(0, 4.4, 0); scene.add(gl);
+    // flower ring hugging the gazebo
+    const bed = new THREE.Mesh(new THREE.RingGeometry(10.4, 12.3, 40), M(0x241631, { roughness: 1 }));
+    bed.rotation.x = -Math.PI / 2; bed.position.y = 0.03; bed.receiveShadow = true; scene.add(bed);
+    for (let i = 0; i < 110; i++) { const a = rnd() * TAU, r = 10.7 + rnd() * 1.3; flowerSpots.push([Math.cos(a) * r, Math.sin(a) * r]); }
+  }
+
+  /* ----- sakura: heroes sway, grove trees are instanced ----- */
+  const petalMats = [M(0xf9a8d4, { flatShading: true, roughness: 0.9 }), M(0xf472b6, { flatShading: true, roughness: 0.9 }), M(0xfbcfe8, { flatShading: true, roughness: 0.9 })];
+  function sakura(x, z, s, hero) {
+    const g = new THREE.Group(); g.position.set(x, 0, z);
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16 * s, 0.3 * s, 2.6 * s, 7), M(0x4a2f28, { roughness: 1 }));
+    trunk.position.y = 1.3 * s; trunk.rotation.z = 0.09; trunk.castShadow = true; g.add(trunk);
+    const fol = new THREE.Group(); fol.position.y = 3.1 * s;
+    const blobs = [[0, 0.5, 0, 1.7], [1.1, 0.1, 0.4, 1.25], [-1.05, 0.15, -0.35, 1.2], [0.2, 0.2, -1.0, 1.1]];
+    blobs.forEach((b, i) => {
+      const m = new THREE.Mesh(new THREE.IcosahedronGeometry(b[3] * s, 1), petalMats[i % 3]);
+      m.position.set(b[0] * s, b[1] * s, b[2] * s); m.castShadow = true; fol.add(m);
+    });
+    g.add(fol); scene.add(g);
+    if (hero) swayers.push({ g: fol, ph: rnd() * 6 });
+    addCollider(x, z, 0.55); camSpheres.push({ x, y: 3.2 * s, z, r: 2.3 * s });
+    return g;
+  }
+  [[26, 40], [27, 100], [26, 160], [27, 205], [26, 262], [27, 322]].forEach(([r, deg]) => {
+    const a = deg * Math.PI / 180; sakura(Math.cos(a) * r, Math.sin(a) * r, 0.95 + rnd() * 0.25, true);
+  });
+
+  /* ----- streets: avenues N/S/E/W with sidewalks, crossings, lamps ----- */
+  const asphaltTex = canvasTex(128, 128, (g, w, h) => {
+    g.fillStyle = '#17142a'; g.fillRect(0, 0, w, h);
+    const r2 = mulberry32(7);
+    for (let i = 0; i < 260; i++) { g.fillStyle = r2() > 0.5 ? 'rgba(160,150,220,.05)' : 'rgba(0,0,0,.14)'; g.fillRect(r2() * w, r2() * h, 2, 2); }
+  }, 2, 10);
+  const walkTex = canvasTex(128, 128, (g, w, h) => {
+    g.fillStyle = '#575180'; g.fillRect(0, 0, w, h);
+    g.strokeStyle = 'rgba(16,10,40,.55)'; g.lineWidth = 3; g.strokeRect(1, 1, w - 2, h - 2);
+    g.fillStyle = 'rgba(230,225,255,.05)'; g.fillRect(4, 4, w - 8, 10);
+  }, 1, 12);
+  const asphalt = M(0xffffff, { map: asphaltTex, roughness: 1 }), walkM = M(0xffffff, { map: walkTex, roughness: 1 });
+  function avenue(cx, cz, len, ns) {
+    const road = new THREE.Mesh(new THREE.PlaneGeometry(ns ? 13 : len, ns ? len : 13), asphalt);
+    road.rotation.x = -Math.PI / 2; road.position.set(cx, 0.02, cz); road.receiveShadow = true; scene.add(road);
+    for (const sgn of [-1, 1]) {
+      const sw = new THREE.Mesh(new THREE.PlaneGeometry(ns ? 2.4 : len, ns ? len : 2.4), walkM);
+      sw.rotation.x = -Math.PI / 2;
+      if (ns) sw.position.set(cx + sgn * 7.7, 0.03, cz); else sw.position.set(cx, 0.03, cz + sgn * 7.7);
+      sw.receiveShadow = true; scene.add(sw);
+    }
+    // dashed centre line
+    const dashM = M(0xffd257, { emissive: 0xffd257, emissiveIntensity: 0.25 });
+    for (let d = -len / 2 + 6; d < len / 2 - 4; d += 9) {
+      const dash = new THREE.Mesh(new THREE.PlaneGeometry(ns ? 0.35 : 3.4, ns ? 3.4 : 0.35), dashM);
+      dash.rotation.x = -Math.PI / 2;
+      if (ns) dash.position.set(cx, 0.035, cz + d); else dash.position.set(cx + d, 0.035, cz);
+      scene.add(dash);
+    }
+  }
+  avenue(0, 66, 52, true); avenue(96, 0, 116, false); avenue(-96, 0, 116, false);
+  // north: the storefront row fronts the plaza directly (like the
+  // reference) — a paved apron, not a road through the hall.
+  const apron = new THREE.Mesh(new THREE.PlaneGeometry(96, 15), walkM);
+  apron.rotation.x = -Math.PI / 2; apron.position.set(0, 0.025, -38); apron.receiveShadow = true; scene.add(apron);
+  // crosswalks where the avenues meet the plaza
+  const crossM = M(0xe8e4ff, { roughness: 0.9 });
+  [[0, -37.5, 0], [0, 37.5, 0], [37.5, 0, 1], [-37.5, 0, 1]].forEach(([cx, cz, rot]) => {
+    for (let i = -2; i <= 2; i++) {
+      const st = new THREE.Mesh(new THREE.BoxGeometry(rot ? 0.55 : 2.4, 0.04, rot ? 2.4 : 0.55), crossM);
+      st.position.set(cx + (rot ? 0 : i * 2.6), 0.04, cz + (rot ? i * 2.6 : 0)); scene.add(st);
+    }
+  });
+  // avenue lamps (instanced posts + heads)
+  {
+    const spots = [];
+    for (let z = -84; z <= 84; z += 24) { if (Math.abs(z) > 40) { spots.push([8.6, z]); spots.push([-8.6, z + 12]); } }
+    for (let x = -140; x <= 140; x += 24) { if (Math.abs(x) > 44) { spots.push([x, 8.6]); spots.push([x + 12, -8.6]); } }
+    for (let i = spots.length - 1; i >= 0; i--) { const [sx, sz] = spots[i]; if (Math.abs(sx) < 17 && sz < -40 && sz > -60) spots.splice(i, 1); } // keep lamps out of the grand hall
+    const postIM = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.07, 0.1, 3.6, 6), M(0x14101f, { roughness: 0.6, metalness: 0.4 }), spots.length);
+    const headIM = new THREE.InstancedMesh(new THREE.SphereGeometry(0.3, 10, 8), M(0xffd9a0, { emissive: 0xffc98a, emissiveIntensity: 2.4 }), spots.length);
+    const dum = new THREE.Object3D();
+    spots.forEach(([lx, lz], i) => {
+      dum.position.set(lx, 1.8, lz); dum.updateMatrix(); postIM.setMatrixAt(i, dum.matrix);
+      dum.position.set(lx, 3.75, lz); dum.updateMatrix(); headIM.setMatrixAt(i, dum.matrix);
+      addCollider(lx, lz, 0.3);
+    });
+    scene.add(postIM); scene.add(headIM);
+  }
+  // street name signs
+  function streetSign(x, z, text, ry) {
+    cyl(0.05, 0.05, 2.6, M(0x14101f, { metalness: 0.4, roughness: 0.5 }), x, 1.3, z, 6);
+    const t = canvasTex(256, 48, (g, w, h) => { g.fillStyle = '#1d1440'; g.fillRect(0, 0, w, h); g.font = '800 26px Inter, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#ffd9a0'; g.fillText(text, w / 2, h / 2 + 1); });
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 0.64), new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide }));
+    p.position.set(x, 2.5, z); p.rotation.y = ry; scene.add(p);
+    addCollider(x, z, 0.25);
+  }
+  streetSign(9.4, -35, 'FOUNTAIN AVE', 0.5); streetSign(-9.4, 35, 'SAKURA ROW', -0.5);
+
+  /* ----- north storefront row: glass fronts, lit diorama interiors ----- */
+  function dioramaTex(kind, warm) {
+    return canvasTex(512, 192, (g, w, h) => {
+      const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, warm); gr.addColorStop(1, '#2a1608');
+      g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      g.fillStyle = 'rgba(30,16,6,.9)';
+      if (kind === 'coffee') {
+        g.fillRect(30, 108, 300, 60); g.fillRect(30, 96, 300, 12); // counter
+        for (let i = 0; i < 4; i++) { g.beginPath(); g.arc(390 + i * 28, 52, 9, 0, 7); g.fillStyle = 'rgba(255,190,110,.95)'; g.fill(); g.fillStyle = 'rgba(30,16,6,.9)'; }
+        for (let i = 0; i < 3; i++) { g.fillRect(356 + i * 48, 128, 30, 8); g.fillRect(366 + i * 48, 136, 6, 26); g.fillRect(356 + i * 48, 128, 30, 26); }
+        g.fillRect(36, 26, 120, 52); g.fillStyle = 'rgba(255,220,160,.85)'; g.font = '700 17px Inter'; g.fillText('MENU', 52, 48); g.font = '12px Inter'; g.fillText('mocha .... 40c', 52, 68);
+      } else if (kind === 'clothing') {
+        for (let i = 0; i < 5; i++) { const x = 50 + i * 92; g.fillRect(x, 40, 4, 100); g.beginPath(); g.moveTo(x - 16, 66); g.lineTo(x + 2, 46); g.lineTo(x + 20, 66); g.lineTo(x + 14, 118); g.lineTo(x - 10, 118); g.closePath(); g.fill(); }
+        g.fillRect(330, 130, 130, 34);
+      } else { // grand hall: columns + chandelier dots
+        for (let i = 0; i < 4; i++) g.fillRect(40 + i * 116, 20, 16, 148);
+        for (let i = 0; i < 7; i++) { g.beginPath(); g.arc(90 + i * 56, 44 + (i % 2) * 14, 7, 0, 7); g.fillStyle = 'rgba(255,215,120,.95)'; g.fill(); g.fillStyle = 'rgba(30,16,6,.9)'; }
+        g.fillRect(150, 128, 212, 40);
+      }
+      g.fillStyle = 'rgba(255,200,120,.16)'; g.fillRect(0, 0, w, 10);
+    });
+  }
+  function iconSign(glyph, text, color) {
+    const cv = document.createElement('canvas'); cv.width = 512; cv.height = 128;
+    const g = cv.getContext('2d');
+    g.strokeStyle = color; g.fillStyle = color; g.lineWidth = 7; g.shadowColor = color; g.shadowBlur = 16;
+    g.save(); g.translate(64, 64);
+    if (glyph === 'cup') { g.strokeRect(-24, -12, 42, 32); g.beginPath(); g.arc(24, 4, 10, -1.2, 1.2); g.stroke(); g.beginPath(); g.moveTo(-14, -26); g.quadraticCurveTo(-8, -34, -4, -26); g.moveTo(2, -26); g.quadraticCurveTo(8, -34, 12, -26); g.stroke(); }
+    else if (glyph === 'hanger') { g.beginPath(); g.arc(0, -22, 7, Math.PI, 2.6); g.stroke(); g.beginPath(); g.moveTo(0, -15); g.lineTo(-30, 18); g.lineTo(30, 18); g.closePath(); g.stroke(); }
+    else if (glyph === 'crown') { g.beginPath(); g.moveTo(-30, 16); g.lineTo(-30, -14); g.lineTo(-14, 2); g.lineTo(0, -20); g.lineTo(14, 2); g.lineTo(30, -14); g.lineTo(30, 16); g.closePath(); g.fill(); }
+    g.restore();
+    g.font = '800 52px Inter, system-ui, sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle';
+    g.fillText(text, 118, 68);
+    return new THREE.CanvasTexture(cv);
+  }
+  function storefront(b) {
+    const g = new THREE.Group(); g.position.set(b.x, 0, b.z); scene.add(g);
+    const upper = new THREE.Mesh(new THREE.BoxGeometry(b.w, b.h, b.d), M(0xcfc8ee, { map: windowsTexture(b.seed, b.col), emissive: 0xffffff, emissiveMap: windowsTexture(b.seed, b.col), emissiveIntensity: 0.5 }));
+    upper.position.y = b.h / 2; upper.castShadow = true; upper.receiveShadow = true; g.add(upper);
+    const fz = b.d / 2;
+    // diorama + glass at the face
+    const dio = new THREE.Mesh(new THREE.PlaneGeometry(b.w * 0.86, 3.3), new THREE.MeshBasicMaterial({ map: dioramaTex(b.kind, b.warm) }));
+    dio.position.set(0, 1.85, fz + 0.04); g.add(dio);
+    const glass = new THREE.Mesh(new THREE.PlaneGeometry(b.w * 0.88, 3.5), M(0x8fb8ff, { transparent: true, opacity: 0.18, roughness: 0.08, metalness: 0.4 }));
+    glass.position.set(0, 1.85, fz + 0.1); g.add(glass);
+    // mullions
+    for (let i = -2; i <= 2; i++) { const mull = new THREE.Mesh(new THREE.BoxGeometry(0.14, 3.5, 0.1), woodDark); mull.position.set(i * b.w * 0.18, 1.85, fz + 0.11); g.add(mull); }
+    // awning + sign + door
+    const awnTex = canvasTex(64, 64, (gg, w, h) => { gg.fillStyle = b.awn; gg.fillRect(0, 0, w, h); gg.fillStyle = 'rgba(255,255,255,.85)'; gg.fillRect(0, 0, 12, h); gg.fillRect(32, 0, 12, h); }, 4, 1);
+    const awn = new THREE.Mesh(new THREE.BoxGeometry(b.w * 0.72, 0.16, 2.3), M(0xffffff, { map: awnTex, roughness: 0.9 }));
+    awn.position.set(0, 4.05, fz + 1.05); awn.rotation.x = -0.32; g.add(awn);
+    const board = new THREE.Mesh(new THREE.BoxGeometry(Math.min(b.w * 0.78, 17), 1.7, 0.3), woodDark);
+    board.position.set(0, b.h - 1.15, fz + 0.12); g.add(board);
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(b.w * 0.76, 16.4), 1.55), new THREE.MeshBasicMaterial({ map: iconSign(b.glyph, b.name, b.col), transparent: true, depthWrite: false }));
+    sign.position.set(0, b.h - 1.15, fz + 0.29); g.add(sign);
+    const door = new THREE.Mesh(new THREE.BoxGeometry(1.7, 2.9, 0.14), woodDark);
+    door.position.set(b.w * 0.31, 1.45, fz + 0.09); g.add(door);
+    const knob = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), brass);
+    knob.position.set(b.w * 0.31 - 0.55, 1.45, fz + 0.2); g.add(knob);
+    const step = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.16, 1.1), stone);
+    step.position.set(b.w * 0.31, 0.08, fz + 0.6); g.add(step);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 4), shingle);
+    roof.scale.set(b.w * 0.78, 3.4, b.d * 0.78); roof.rotation.y = Math.PI / 4; roof.position.y = b.h + 1.7; roof.castShadow = true; g.add(roof);
+    // planters with flowers flanking the front
+    for (const sgn of [-1, 1]) {
+      const pl = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.55, 0.8), wood);
+      pl.position.set(sgn * b.w * 0.36, 0.28, fz + 0.75); pl.castShadow = true; g.add(pl);
+      for (let i = 0; i < 7; i++) flowerSpots.push([b.x + sgn * b.w * 0.36 + (rnd() - 0.5) * 2, b.z + fz + 0.75 + (rnd() - 0.5) * 0.5]);
+    }
+    boxColliders.push({ minX: b.x - b.w / 2, maxX: b.x + b.w / 2, minZ: b.z - b.d / 2, maxZ: b.z + b.d / 2 });
+    camBoxes.push({ minX: b.x - b.w / 2 - 0.4, maxX: b.x + b.w / 2 + 0.4, minZ: b.z - b.d / 2 - 0.4, maxZ: b.z + b.d / 2 + 0.4, h: b.h + 3.6 });
+  }
+  storefront({ x: -36, z: -44, w: 24, d: 14, h: 10.5, name: 'COFFEE SHOP', glyph: 'cup', col: '#ffc98a', kind: 'coffee', warm: '#8a5a20', awn: '#7c2d3e', seed: 71 });
+  storefront({ x: 0, z: -50, w: 30, d: 16, h: 16, name: '6IXNETWORKS', glyph: 'crown', col: '#ffd257', kind: 'hall', warm: '#7a5c14', awn: '#31235e', seed: 97 });
+  storefront({ x: 36, z: -44, w: 24, d: 14, h: 10.5, name: 'CLOTHING CO.', glyph: 'hanger', col: '#f3efff', kind: 'clothing', warm: '#6b5a8a', awn: '#1f5f5b', seed: 83 });
+
+  /* ----- hip roofs + awnings on the five district buildings ----- */
+  const districts2 = [
+    { x: -62, z: -52, w: 26, d: 16, h: 13 }, { x: 58, z: -54, w: 26, d: 16, h: 13 },
+    { x: -64, z: 46, w: 22, d: 13, h: 10 }, { x: 62, z: 48, w: 22, d: 13, h: 10 },
+    { x: 0, z: -80, w: 30, d: 14, h: 9 },
+  ];
+  districts2.forEach((b) => {
+    hipRoof(b.x, b.z, b.w + 1.6, b.d + 1.6, b.h + 0.4, 3.4, shingle);
+    const fz = b.z + (b.z < 0 ? b.d / 2 : -b.d / 2), dir = b.z < 0 ? 1 : -1;
+    const awn = box(b.w * 0.5, 0.14, 1.9, M(0x31235e, { roughness: 0.9 }), b.x, 3.6, fz + dir * 0.95);
+    awn.rotation.x = dir * 0.3;
+  });
+
+  /* ----- café terrace in front of the coffee shop ----- */
+  [[-45, -31], [-36, -30], [-27, -31]].forEach(([tx, tz]) => {
+    cyl(0.05, 0.05, 2.3, woodDark, tx, 1.15, tz, 6);
+    const um = new THREE.Mesh(new THREE.ConeGeometry(1.9, 0.7, 10), M(0xf3e5cf, { roughness: 0.9 }));
+    um.position.set(tx, 2.45, tz); um.castShadow = true; scene.add(um);
+    cyl(0.55, 0.45, 0.75, wood, tx, 0.38, tz, 10);
+    addCollider(tx, tz, 0.85);
+    box(0.5, 0.75, 0.5, wood, tx + 1.05, 0.38, tz + 0.3); box(0.5, 0.75, 0.5, wood, tx - 1.05, 0.38, tz - 0.3);
+  });
+
+  /* ----- residential row (west): houses, fences, mailboxes ----- */
+  function house(x, z, ry, wallCol, seed) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g);
+    const base = new THREE.Mesh(new THREE.BoxGeometry(11, 5.5, 9), M(wallCol, { map: windowsTexture(seed, '#ffd9a0'), emissive: 0xffffff, emissiveMap: windowsTexture(seed, '#ffd9a0'), emissiveIntensity: 0.4 }));
+    base.position.y = 2.75; base.castShadow = true; base.receiveShadow = true; g.add(base);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 4), shingle);
+    roof.scale.set(11 * 0.78, 3, 9 * 0.78); roof.rotation.y = Math.PI / 4; roof.position.y = 7; roof.castShadow = true; g.add(roof);
+    const door = new THREE.Mesh(new THREE.BoxGeometry(1.3, 2.4, 0.12), woodDark); door.position.set(0, 1.2, 4.56); g.add(door);
+    const pl = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8), M(0xffd9a0, { emissive: 0xffc98a, emissiveIntensity: 2.4 }));
+    pl.position.set(1.1, 2.2, 4.62); g.add(pl);
+    const mb = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.45, 0.45), M(0x8a2f3e, { roughness: 0.7 })); mb.position.set(4.4, 1.05, 6.4); g.add(mb);
+    const mp = new THREE.Mesh(new THREE.BoxGeometry(0.09, 1.05, 0.09), woodDark); mp.position.set(4.4, 0.5, 6.4); g.add(mp);
+    boxColliders.push({ minX: x - 6, maxX: x + 6, minZ: z - 5, maxZ: z + 5 });
+    camBoxes.push({ minX: x - 6.4, maxX: x + 6.4, minZ: z - 5.4, maxZ: z + 5.4, h: 9 });
+    for (let i = 0; i < 6; i++) flowerSpots.push([x - 5 + i * 2, z + 5.6]);
+  }
+  house(-108, -28, 0.5, 0xb8a8d8, 111); house(-116, 6, 0.9, 0xa8bfd8, 122); house(-104, 40, 0.25, 0xd8b8c8, 133);
+  // picket fences along the residential frontage
+  {
+    const pickets = [];
+    for (let x = -126; x < -88; x += 1.1) { pickets.push([x, -16.5]); pickets.push([x, 52]); }
+    const pIM = new THREE.InstancedMesh(new THREE.BoxGeometry(0.16, 1.05, 0.05), M(0xe8e2f2, { roughness: 0.9 }), pickets.length);
+    const dum = new THREE.Object3D();
+    pickets.forEach(([px2, pz2], i) => { dum.position.set(px2, 0.52, pz2); dum.updateMatrix(); pIM.setMatrixAt(i, dum.matrix); });
+    pIM.castShadow = true; scene.add(pIM);
+  }
+
+  /* ----- the park (east): pond, waterfall, stepping stones, grove ----- */
+  {
+    const pondTex = waterTexture();
+    const pond = new THREE.Mesh(new THREE.CircleGeometry(13, 36), new THREE.MeshStandardMaterial({ map: pondTex, roughness: 0.15, metalness: 0.25, emissive: 0x0d3355, emissiveIntensity: 0.6 }));
+    pond.rotation.x = -Math.PI / 2; pond.position.set(118, 0.04, 12); pond.receiveShadow = true; scene.add(pond);
+    addCollider(118, 12, 13.4);
+    const rim = new THREE.Mesh(new THREE.RingGeometry(13, 14.6, 36), stone);
+    rim.rotation.x = -Math.PI / 2; rim.position.set(118, 0.035, 12); scene.add(rim);
+    // waterfall over stacked rocks at the park's east edge
+    const rockM = M(0x55506e, { flatShading: true, roughness: 1 });
+    [[136, 4, 0, 5, 4.5, 6], [138, 10, 1.8, 4, 3.4, 5], [135, 17, 0.6, 5.5, 5, 5.5]].forEach(([rx, rz, ry2, w, h, d]) => {
+      const r = box(w, h, d, rockM, rx, h / 2, rz); r.rotation.y = ry2; addCollider(rx, rz, Math.max(w, d) / 2);
+    });
+    fallsTex = canvasTex(64, 128, (g, w, h) => {
+      g.fillStyle = '#9fd8ef'; g.fillRect(0, 0, w, h);
+      g.fillStyle = 'rgba(255,255,255,.75)';
+      for (let i = 0; i < 26; i++) g.fillRect((i * 37) % w, (i * 53) % h, 3, 16);
+    }, 1, 2);
+    const falls = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 5.2), new THREE.MeshBasicMaterial({ map: fallsTex, transparent: true, opacity: 0.85 }));
+    falls.position.set(133.5, 2.6, 10.5); falls.rotation.y = -Math.PI / 2.4; falls.rotation.x = 0.12; scene.add(falls);
+    // stepping stones from the avenue to the pond
+    for (let i = 0; i < 6; i++) {
+      const st = cyl(0.85, 0.95, 0.14, stone, 66 + i * 6.4, 0.07, 6 + Math.sin(i * 1.3) * 2.4, 9);
+      st.castShadow = false;
+    }
+    sakura(96, -14, 1.1, true); sakura(100, 34, 1.0, true); sakura(138, 30, 0.95, false); sakura(140, -8, 1.05, false);
+    for (let i = 0; i < 70; i++) { const a = rnd() * TAU, r = 15.5 + rnd() * 3; flowerSpots.push([118 + Math.cos(a) * r, 12 + Math.sin(a) * r]); }
+  }
+
+  /* ----- all flowers, one instanced draw ----- */
+  {
+    const fIM = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.11, 0), M(0xffffff, { roughness: 0.8, flatShading: true }), flowerSpots.length);
+    const dum = new THREE.Object3D(); const palette = [new THREE.Color(0xf472b6), new THREE.Color(0xa78bfa), new THREE.Color(0xffd9a0), new THREE.Color(0xf9a8d4), new THREE.Color(0xffffff)];
+    flowerSpots.forEach(([fx, fz], i) => {
+      dum.position.set(fx, 0.16, fz); dum.scale.set(1, 0.72, 1); dum.rotation.set(rnd() * 3, rnd() * 3, 0); dum.updateMatrix();
+      fIM.setMatrixAt(i, dum.matrix); fIM.setColorAt(i, palette[i % palette.length]);
+    });
+    scene.add(fIM);
+  }
 }
 
 /* ---------- networking: ping-poll presence, like the 2d world ---------- */
@@ -821,6 +1131,8 @@ function loop() {
     pos.needsUpdate = true;
   }
   if (motes) { motes.rotation.y = now / 90000; motes.position.y = Math.sin(now / 3400) * 0.35; }
+  for (const sw of swayers) { sw.g.rotation.z = Math.sin(now / 1600 + sw.ph) * 0.025; sw.g.rotation.x = Math.cos(now / 1900 + sw.ph) * 0.018; }
+  if (fallsTex) fallsTex.offset.y = -((now / 1300) % 1);
 
   // return-portal proximity -> action button
   const nearPortal = Math.hypot(px - PORTAL.x, pz - PORTAL.z) < 5.2;
