@@ -3071,7 +3071,8 @@ function socialTick(r) {
   INST_V = ninst;
   var nrace = r.race || null;
   if (nrace && nrace.flash) { burst(px, py, '#ffd257', 12, 100); sndPop(); if (!nrace.flash.start) floatText(px, py - 34, fmtRaceMs(nrace.flash.t), '#ffd257'); }
-  if (nrace && nrace.fin) { toast('\u2726 ' + nrace.fin.name + ' — ' + fmtRaceMs(nrace.fin.ms) + (nrace.fin.pb ? ' · new pb!' : '') + (nrace.fin.rec ? ' · WORLD RECORD' : '') + (nrace.fin.pay ? ' · +' + nrace.fin.pay + '\u00a2' : ''), 5600); sndQuest(); }
+  if (nrace && nrace.fin && nrace.fin.invalid) { toast('that run was too fast to count — records need a clean run, no teleports', 5600); }
+  else if (nrace && nrace.fin) { toast('\u2726 ' + nrace.fin.name + ' — ' + fmtRaceMs(nrace.fin.ms) + (nrace.fin.pb ? ' · new pb!' : '') + (nrace.fin.rec ? ' · WORLD RECORD' : '') + (nrace.fin.pay ? ' · +' + nrace.fin.pay + '\u00a2' : ''), 5600); sndQuest(); }
   RACE_V = nrace;
   if (nrace && nrace.state === 'running') { RACE_EL.el = nrace.el || 0; RACE_EL.at = performance.now(); }
   if (r.ann && r.ann.at !== lastAnnAt) { lastAnnAt = r.ann.at; toast('\u2726 six announces: ' + r.ann.text, 6500); sndQuest(); }

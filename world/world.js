@@ -308,7 +308,10 @@ function createWorld(ctx) {
   const DUEL_DONE = new Map(); // user -> finished-duel result waiting for their next ping
   const TP_OK = new Set();     // users allowed one server-sanctioned teleport (portals, fast travel)
   const MTOK = new Map();      // minigame play token -> {user, game, at}
-  const BUYLOCK = new Set();   // users with a shop purchase in flight
+  const BUYLOCK = new Set();   // users with a purchase in flight (operation-scoped: set on entry, cleared in finally)
+  const CRAFT_INFLIGHT = new Set(); // users with a craft in flight
+  const GUILD_INFLIGHT = new Set(); // users with a guild create/claim in flight
+  const SKILL_INFLIGHT = new Set(); // users with a skill milestone payout in flight
   const PROG = new Map();      // user -> progression record (persisted in cfg:wdata 'prog')
   const LVLUP = new Map();     // user -> {lvl, title} waiting for their next ping
   const ACHNEW = new Map();    // user -> [{name, reward}] waiting for their next ping
@@ -521,6 +524,7 @@ function createWorld(ctx) {
   }
 
   function prune(now) {
+    if (MTOK.size > 50) { for (const [k, v] of MTOK) if (now - v.at > 300000) MTOK.delete(k); }
     for (const [u, p] of P) if (now - p.at > STALE_MS) {
       P.delete(u); SIG.delete(u); PINV.delete(u); DUEL_CH.delete(u); FISH.delete(u); STUN.delete(u); BOSS_HIT_CD.delete(u); DUN_HIT_CD.delete(u); RACES.delete(u); RACE_FLASH.delete(u); RACE_FIN.delete(u);
       TINV.delete(u); MAT_GOT.delete(u);
@@ -589,9 +593,17 @@ function createWorld(ctx) {
     if (wload('guild', user) === gid) wsave('guild', user, null);
   }
   function raceWeekKey(now) { return Math.floor((now / 86400000 + 3) / 7); }
+  function raceMinMs(C) {
+    let d = 0;
+    for (let i = 1; i < C.pts.length; i++) d += dist(C.pts[i - 1][0], C.pts[i - 1][1], C.pts[i][0], C.pts[i][1]);
+    // checkpoints can be clipped at their radius edge, so the shortest legal
+    // path is well under the center-to-center sum; 490 is the fastest mount
+    return Math.floor(d * 0.62 / 490 * 1000);
+  }
   function finishRace(me, rc, now) {
     const C = RACE_COURSES[rc.course];
     const ms = now - rc.t0;
+    if (ms < raceMinMs(C)) return { course: rc.course, name: C.name, ms, pb: false, rec: false, pay: 0, invalid: true };
     const pb = wload('racepb', me) || {};
     const isPb = !pb[rc.course] || ms < pb[rc.course];
     if (isPb) { pb[rc.course] = ms; wsave('racepb', me, pb); }
@@ -968,7 +980,6 @@ function createWorld(ctx) {
     prune(now);
     fillShards(now);
     evTick(now, worldEvent(now));
-    evTick(now, worldEvent(now));
 
   /* ---- M9: materials + crafting + trading ---- */
   const SKILL_TITLES = ['novice', 'apprentice', 'adept', 'skilled', 'expert', 'master'];
@@ -1014,7 +1025,11 @@ function createWorld(ctx) {
     return { with: iAmA ? tr.b : tr.a, mine: { items: mo.items.map(nm), cents: mo.cents }, theirs: { items: to.items.map(nm), cents: to.cents }, myLock: iAmA ? tr.la : tr.lb, theirLock: iAmA ? tr.lb : tr.la, myConf: iAmA ? tr.ca : tr.cb, theirConf: iAmA ? tr.cb : tr.ca };
   }
   async function execTrade(tr) {
+    // re-entry guard: two confirms landing together must never run the swap twice
+    if (tr.exec) return { ok: false, err: 'trade already completing' };
+    tr.exec = true;
     const A = tr.a, B = tr.b;
+    // snapshots for validation + rollback
     let invA = [], invB = [];
     try { invA = ctx.getInv(A) || []; } catch { }
     try { invB = ctx.getInv(B) || []; } catch { }
@@ -1024,18 +1039,35 @@ function createWorld(ctx) {
     try { balA = ctx.getCents(A) || 0; } catch { }
     try { balB = ctx.getCents(B) || 0; } catch { }
     if (!valid || balA < tr.oa.cents || balB < tr.ob.cents) { endTrade(tr, 'trade fell through \u2014 stuff changed'); return { ok: false, err: 'trade fell through \u2014 stuff changed' }; }
+    // close the session BEFORE mutating anything: no second confirm, view or
+    // timeout path can touch this trade again once execution starts
+    TRADES.delete(tr.id); TRADE_OF.delete(A); TRADE_OF.delete(B);
     const nA = invA.filter((id) => !tr.oa.items.includes(id)).concat(tr.ob.items);
     const nB = invB.filter((id) => !tr.ob.items.includes(id)).concat(tr.oa.items);
-    try { ctx.setInv(A, nA); } catch { }
-    try { ctx.setInv(B, nB); } catch { }
     const netA = tr.ob.cents - tr.oa.cents;
-    try { if (netA) await ctx.awardCents(A, netA); } catch { }
-    try { if (netA) await ctx.awardCents(B, -netA); } catch { }
+    try {
+      ctx.setInv(A, nA);
+      ctx.setInv(B, nB);
+      if (netA) { await ctx.awardCents(A, netA); await ctx.awardCents(B, -netA); }
+      // verify the swap actually landed before calling it done
+      const vA = ctx.getInv(A) || [], vB = ctx.getInv(B) || [];
+      const okSwap = tr.oa.items.every((id) => vB.includes(id)) && tr.ob.items.every((id) => vA.includes(id))
+        && (ctx.getCents(A) || 0) === balA + netA && (ctx.getCents(B) || 0) === balB - netA;
+      if (!okSwap) throw new Error('trade verify failed');
+    } catch (e) {
+      // rollback: restore both inventories and balances, tell both players
+      try { ctx.setInv(A, invA); } catch { }
+      try { ctx.setInv(B, invB); } catch { }
+      try { const cA = ctx.getCents(A) || 0; if (cA !== balA) await ctx.awardCents(A, balA - cA); } catch { }
+      try { const cB = ctx.getCents(B) || 0; if (cB !== balB) await ctx.awardCents(B, balB - cB); } catch { }
+      TRADE_FLASH.set(A, { msg: 'trade failed \u2014 everything was put back', at: Date.now() });
+      TRADE_FLASH.set(B, { msg: 'trade failed \u2014 everything was put back', at: Date.now() });
+      return { ok: false, err: 'trade failed \u2014 everything was put back' };
+    }
     txLog(A, 'trade', netA, 'with @' + B);
     txLog(B, 'trade', -netA, 'with @' + A);
     const pgTA = progFor(A); pgTA.c.trade = (pgTA.c.trade || 0) + 1; progSave(A);
     const pgTB = progFor(B); pgTB.c.trade = (pgTB.c.trade || 0) + 1; progSave(B);
-    endTrade(tr, null);
     TRADE_FLASH.set(A, { msg: 'trade done with @' + B, at: Date.now() });
     TRADE_FLASH.set(B, { msg: 'trade done with @' + A, at: Date.now() });
     return { ok: true };
@@ -1207,7 +1239,7 @@ function createWorld(ctx) {
         awardXp(me, 12);
         achCheck(me);
       }
-      const sig = SIG.get(me) || [];
+      const sig = (SIG.get(me) || []).filter((s2) => now - s2.at < 30000);
       SIG.delete(me);
       const st = statsFor(me);
       if (Math.random() < 0.08) achCheck(me);
@@ -1357,6 +1389,7 @@ function createWorld(ctx) {
       if (!z || !(pgT.zones || []).includes(zid)) { J({ ok: false, err: 'u havent discovered that zone yet' }, 400); return true; }
       if (now - (TRAVEL_AT.get(me) || 0) < 10000) { J({ ok: false, err: 'fast travel is recharging (10s)' }, 429); return true; }
       TRAVEL_AT.set(me, now);
+      RACES.delete(me);
       const p = P.get(me);
       if (p) { TP_OK.add(me); p.x = z.x; p.y = z.y; p.lx = z.x; p.ly = z.y; }
       J({ ok: true, x: z.x, y: z.y });
@@ -1534,14 +1567,21 @@ function createWorld(ctx) {
       if (gids.length >= 200) { J({ ok: false, err: 'too many guilds rn' }, 400); return true; }
       if (gids.some((gid) => reg[gid].name.toLowerCase() === name.toLowerCase())) { J({ ok: false, err: 'that name is taken' }, 400); return true; }
       if (gids.some((gid) => reg[gid].tag === tag)) { J({ ok: false, err: 'that tag is taken' }, 400); return true; }
+      if (GUILD_INFLIGHT.has(me)) { J({ ok: false, err: 'already on it — one sec' }, 429); return true; }
       let bal0 = 0;
-      try { bal0 = ctx.getCents(me); } catch (e) {}
+      try { bal0 = ctx.getCents(me) || 0; } catch (e) {}
       if (bal0 < 500) { J({ ok: false, err: 'a guild charter costs 500 six cents (u have ' + bal0 + ')' }, 400); return true; }
-      try { await ctx.awardCents(me, -500); } catch (e) {}
+      GUILD_INFLIGHT.add(me);
+      let nb = null;
+      try { nb = await ctx.awardCents(me, -500); } catch (e) { nb = null; }
+      let balNow = null;
+      try { balNow = ctx.getCents(me); } catch { }
+      if (typeof nb !== 'number' || balNow == null || balNow === bal0) { GUILD_INFLIGHT.delete(me); J({ ok: false, err: 'payment glitched — u were not charged' }, 500); return true; }
       const gid = 'g' + (hashStr(name.toLowerCase() + ':' + now) % 1000000007).toString(36);
       reg[gid] = { name, tag, color, emblem, open: !!b.open, owner: me, xp: 0, created: now, members: { [me]: 'owner' }, wk: null };
       guildSaveReg(reg);
       wsave('guild', me, gid);
+      GUILD_INFLIGHT.delete(me);
       J({ ok: true, gid });
       return true;
     }
@@ -1677,7 +1717,15 @@ function createWorld(ctx) {
       got.push(ms);
       wsave('guildclaim', me, { key: wkKey, got });
       let bal = null;
-      try { bal = await ctx.awardCents(me, 25); } catch (e) {}
+      try { bal = await ctx.awardCents(me, 25); } catch (e) { bal = null; }
+      if (typeof bal !== 'number' || bal < 25) {
+        // payout did not land — un-record the claim so it can be retried
+        const claims2 = wload('guildclaim', me) || {};
+        const got2 = (claims2.key === wkKey ? (claims2.got || []) : []).filter((x) => x !== ms);
+        wsave('guildclaim', me, { key: wkKey, got: got2 });
+        J({ ok: false, err: 'payout glitched \u2014 try claiming again' }, 500);
+        return true;
+      }
       txLog(me, 'guild', 25, 'weekly milestone ' + ms);
       J({ ok: true, amt: 25, bal });
       return true;
@@ -1693,7 +1741,17 @@ function createWorld(ctx) {
         for (const [ml, pay] of SKILL_PAY) if (lvl >= ml && (paid[sd.id] || 0) < ml) { paid[sd.id] = ml; paidNow += pay; }
         return { id: sd.id, name: sd.name, c: sd.c, count, lvl, nextAt: lvl >= 10 ? null : Math.ceil(sd.per * (lvl + 1) * (lvl + 1)), title: SKILL_TITLES[Math.min(5, Math.floor(lvl / 2))] };
       });
-      if (paidNow > 0) { try { await ctx.awardCents(me, paidNow); } catch { } wsave('skillpay', me, paid); txLog(me, 'skill milestones', paidNow); }
+      if (paidNow > 0) {
+        if (SKILL_INFLIGHT.has(me)) { paidNow = 0; }
+        else {
+          SKILL_INFLIGHT.add(me);
+          let okPay = false;
+          try { const nb = await ctx.awardCents(me, paidNow); okPay = typeof nb === 'number'; } catch { okPay = false; }
+          if (okPay) { wsave('skillpay', me, paid); txLog(me, 'skill milestones', paidNow); }
+          else paidNow = 0;
+          SKILL_INFLIGHT.delete(me);
+        }
+      }
       J({ ok: true, skills: list, paidNow });
       return true;
     }
@@ -1707,23 +1765,30 @@ function createWorld(ctx) {
       return true;
     }
     if (u.pathname === '/api/world/craft' && req.method === 'POST') {
-      const r = RECIPES.find((x) => x.out === String(b.id || ''));
-      if (!r) { J({ ok: false, err: 'no such recipe' }, 400); return true; }
-      const bp = P.get(me);
-      if (!bp || bp.house || bp.inst || dist(bp.x, bp.y, 3950, 1600) >= 240) { J({ ok: false, err: 'crafting happens at the shop tent workbench' }, 400); return true; }
-      let inv = []; try { inv = ctx.getInv(me) || []; } catch { }
-      if (inv.includes(r.out)) { J({ ok: false, err: 'u already have that one' }, 400); return true; }
-      const mats = matsOf(me);
-      for (const [m, n] of Object.entries(r.needs)) if ((mats[m] || 0) < n) { J({ ok: false, err: 'not enough ' + MATS[m].name }, 400); return true; }
-      for (const [m, n] of Object.entries(r.needs)) mats[m] -= n;
-      wsave('mats', me, mats);
-      inv.push(r.out);
-      try { ctx.setInv(me, inv); } catch { }
-      txLog(me, 'craft', 0, SHOP.BY_ID[r.out].name);
-      const pgCr = progFor(me); pgCr.c.craft = (pgCr.c.craft || 0) + 1; progSave(me);
-      awardXp(me, 10);
-      J({ ok: true, made: SHOP.BY_ID[r.out].name });
-      return true;
+      if (CRAFT_INFLIGHT.has(me)) { J({ ok: false, err: 'already crafting \u2014 one sec' }, 429); return true; }
+      CRAFT_INFLIGHT.add(me);
+      try {
+        const r = RECIPES.find((x) => x.out === String(b.id || ''));
+        if (!r) { J({ ok: false, err: 'no such recipe' }, 400); return true; }
+        const bp = P.get(me);
+        if (!bp || bp.house || bp.inst || dist(bp.x, bp.y, 3950, 1600) >= 240) { J({ ok: false, err: 'crafting happens at the shop tent workbench' }, 400); return true; }
+        let inv = []; try { inv = ctx.getInv(me) || []; } catch { }
+        if (inv.includes(r.out)) { J({ ok: false, err: 'u already have that one' }, 400); return true; }
+        const mats = matsOf(me);
+        for (const [m, n] of Object.entries(r.needs)) if ((mats[m] || 0) < n) { J({ ok: false, err: 'not enough ' + MATS[m].name }, 400); return true; }
+        const matsBefore = Object.assign({}, mats);
+        for (const [m, n] of Object.entries(r.needs)) mats[m] -= n;
+        wsave('mats', me, mats);
+        inv.push(r.out);
+        let granted = false;
+        try { ctx.setInv(me, inv); granted = (ctx.getInv(me) || []).includes(r.out); } catch { granted = false; }
+        if (!granted) { wsave('mats', me, matsBefore); J({ ok: false, err: 'craft glitched \u2014 ur materials were put back' }, 500); return true; }
+        txLog(me, 'craft', 0, SHOP.BY_ID[r.out].name);
+        const pgCr = progFor(me); pgCr.c.craft = (pgCr.c.craft || 0) + 1; progSave(me);
+        awardXp(me, 10);
+        J({ ok: true, made: SHOP.BY_ID[r.out].name });
+        return true;
+      } finally { CRAFT_INFLIGHT.delete(me); }
     }
     if (u.pathname === '/api/world/trade' && req.method === 'POST') {
       const act = String(b.act || '');
@@ -1751,6 +1816,7 @@ function createWorld(ctx) {
       const tr = tid ? TRADES.get(tid) : null;
       if (act === 'cancel') { if (tr) endTrade(tr, 'trade cancelled'); J({ ok: true }); return true; }
       if (!tr) { J({ ok: false, err: 'no trade going' }, 400); return true; }
+      if (nowT - tr.at > 150000) { endTrade(tr, 'trade timed out'); J({ ok: false, err: 'trade timed out' }, 400); return true; }
       const mineK = tr.a === me ? 'oa' : 'ob';
       const myLockK = tr.a === me ? 'la' : 'lb', myConfK = tr.a === me ? 'ca' : 'cb';
       if (act === 'set') {
@@ -1955,17 +2021,21 @@ function createWorld(ctx) {
       if (price < 0) { J({ ok: false, err: 'bad item' }, 400); return true; }
       if (kind === 'style' && houseOf(me).style === id) { J({ ok: false, err: 'ur house already looks like that' }); return true; }
       let bal0 = 0;
-      try { bal0 = ctx.getCents(me); } catch { }
+      try { bal0 = ctx.getCents(me) || 0; } catch { }
       if (bal0 < price) { J({ ok: false, err: 'not enough six cents (need ' + price + ')' }); return true; }
       BUYLOCK.add(me);
-      setTimeout(() => BUYLOCK.delete(me), 1500);
-      let bal = bal0;
-      try { bal = await ctx.awardCents(me, -price); } catch { }
-      if (kind === 'style') { const h = houseOf(me); h.style = id; houseSave(me, h); }
-      else { const f = furnInv(me); f.push(id); wsave('furn', me, f); }
-      txLog(me, 'house', -price, label);
-      J({ ok: true, bal, view: houseView(me, me) });
-      return true;
+      try {
+        let bal = null;
+        try { bal = await ctx.awardCents(me, -price); } catch { bal = null; }
+        let balNow = null;
+        try { balNow = ctx.getCents(me); } catch { }
+        if (typeof bal !== 'number' || balNow == null || (balNow === bal0 && price > 0)) { J({ ok: false, err: 'payment glitched — u were not charged' }, 500); return true; }
+        if (kind === 'style') { const h = houseOf(me); h.style = id; houseSave(me, h); }
+        else { const f = furnInv(me); f.push(id); wsave('furn', me, f); }
+        txLog(me, 'house', -price, label);
+        J({ ok: true, bal: balNow, view: houseView(me, me) });
+        return true;
+      } finally { BUYLOCK.delete(me); }
     }
     if (u.pathname === '/api/world/house-place' && req.method === 'POST') {
       const p = P.get(me);
@@ -2024,6 +2094,25 @@ function createWorld(ctx) {
       return true;
     }
 
+    // plausibility floor per engine: a genuine run cannot finish faster than
+    // this (set far below real human times; it exists to stop scripts that
+    // submit a max score the instant the old flat 2s window opens)
+    function mgMinMs(g, pts) {
+      const p = g.params || {};
+      switch (g.engine) {
+        case 'pop': case 'catch': return Math.floor((p.secs || 20) * 900);
+        case 'plat': case 'race': return Math.floor((p.secs || 40) * 250);
+        case 'rhythm': return Math.max(4000, Math.floor((p.notes || 20) * 60000 / (p.bpm || 100) * 0.3));
+        case 'memory': return Math.max(2000, (p.len || 6) * 350);
+        case 'react': return Math.max(2000, (p.rounds || 5) * 500);
+        case 'stack': return Math.max(2000, (p.levels || 10) * 400);
+        case 'slide': return Math.max(2500, (p.size || 3) * (p.size || 3) * 300);
+        case 'quiz': return 6000;
+        case 'snake': return 5000;
+        case 'maze': return 2500;
+        default: return 2000;
+      }
+    }
     if (u.pathname === '/api/world/mini-start' && req.method === 'POST') {
       const g = GAMES_MOD.BY_ID[String(b.game || '')];
       if (!g) { J({ ok: false, err: 'no such minigame' }, 400); return true; }
@@ -2038,18 +2127,22 @@ function createWorld(ctx) {
       if (!g) { J({ ok: false, err: 'no such minigame' }, 400); return true; }
       const pts = Math.floor(Number(b.points));
       if (!Number.isFinite(pts) || pts < 0 || pts > g.maxPoints) { J({ ok: false, err: 'score out of range' }, 400); return true; }
+      // rate limit first: a rejected submit must never burn the one-shot token
+      if (now - (lastMini.get(me) || 0) < 10000) { J({ ok: false, err: 'too fast \u2014 give it a few seconds' }, 429); return true; }
       // a score only pays against a live play session: started via mini-start,
       // one-shot, right game, right player, at least 2s of actual play.
       const tk = MTOK.get(String(b.token || ''));
       let live = false;
       if (tk && tk.user === me && tk.game === g.id && now - tk.at >= 2000 && now - tk.at <= 240000) { live = true; MTOK.delete(String(b.token || '')); }
+      // per-engine plausibility floor: finishing faster than a real run can
+      // possibly take makes the session practice, same as an invalid token
+      if (live && now - tk.at < mgMinMs(g, pts)) live = false;
       if (!live) {
         let bal0 = null;
         try { bal0 = ctx.getCents(me); } catch { }
         J({ ok: true, cents: 0, paid: false, practice: true, playsLeft: null, bal: bal0 });
         return true;
       }
-      if (now - (lastMini.get(me) || 0) < 10000) { J({ ok: false, err: 'too fast — give it a few seconds' }, 429); return true; }
       lastMini.set(me, now);
       const mday = ctx.scoreDay();
       let rec = MGPLAY.get(me);
@@ -2093,24 +2186,36 @@ function createWorld(ctx) {
     if (u.pathname === '/api/world/shopbuy' && req.method === 'POST') {
       if (BUYLOCK.has(me)) { J({ ok: false, err: 'one purchase at a time' }, 429); return true; }
       BUYLOCK.add(me);
-      setTimeout(() => BUYLOCK.delete(me), 1500);
-      const it = SHOP.BY_ID[String(b.id || '')];
-      if (!it) { J({ ok: false, err: 'no such item' }, 400); return true; }
-      if (it.vaultOnly) { J({ ok: false, err: 'that one is not for sale — it waits somewhere hidden' }); return true; }
-      if (it.craftOnly) { J({ ok: false, err: 'that one is crafted, not bought — open the crafting panel' }); return true; }
-      let inv = [];
-      try { inv = ctx.getInv(me); } catch { }
-      if (inv.includes(it.id)) { J({ ok: false, err: 'u already own that' }); return true; }
-      let bal = 0;
-      try { bal = ctx.getCents(me); } catch { }
-      if (bal < it.price) { J({ ok: false, err: 'not enough six cents', bal }); return true; }
-      try { bal = await ctx.awardCents(me, -it.price); } catch { }
-      inv.push(it.id);
-      try { ctx.setInv(me, inv); } catch { }
-      txLog(me, 'shop', -it.price, it.name);
-      const pgb = progFor(me); pgb.c.buy = (pgb.c.buy || 0) + 1; progSave(me); achCheck(me);
-      J({ ok: true, bal, inv });
-      return true;
+      try {
+        const it = SHOP.BY_ID[String(b.id || '')];
+        if (!it) { J({ ok: false, err: 'no such item' }, 400); return true; }
+        if (it.vaultOnly) { J({ ok: false, err: 'that one is not for sale — it waits somewhere hidden' }); return true; }
+        if (it.craftOnly) { J({ ok: false, err: 'that one is crafted, not bought — open the crafting panel' }); return true; }
+        let inv = [];
+        try { inv = ctx.getInv(me) || []; } catch { }
+        if (inv.includes(it.id)) { J({ ok: false, err: 'u already own that' }); return true; }
+        let bal0 = 0;
+        try { bal0 = ctx.getCents(me) || 0; } catch { }
+        if (bal0 < it.price) { J({ ok: false, err: 'not enough six cents', bal: bal0 }); return true; }
+        // charge first, and only grant once the charge has verifiably landed
+        let bal = null;
+        try { bal = await ctx.awardCents(me, -it.price); } catch { bal = null; }
+        let balNow = null;
+        try { balNow = ctx.getCents(me); } catch { }
+        if (typeof bal !== 'number' || balNow == null || (balNow === bal0 && it.price > 0)) { J({ ok: false, err: 'payment glitched — u were not charged' }, 500); return true; }
+        inv.push(it.id);
+        let granted = false;
+        try { ctx.setInv(me, inv); granted = (ctx.getInv(me) || []).includes(it.id); } catch { granted = false; }
+        if (!granted) {
+          try { await ctx.awardCents(me, it.price); } catch { }
+          J({ ok: false, err: 'grant glitched — u were refunded' }, 500);
+          return true;
+        }
+        txLog(me, 'shop', -it.price, it.name);
+        const pgb = progFor(me); pgb.c.buy = (pgb.c.buy || 0) + 1; progSave(me); achCheck(me);
+        J({ ok: true, bal: balNow, inv });
+        return true;
+      } finally { BUYLOCK.delete(me); }
     }
     if (u.pathname === '/api/world/shopequip' && req.method === 'POST') {
       const cat = String(b.cat || '');
@@ -2158,6 +2263,7 @@ function createWorld(ctx) {
       const p = P.get(me);
       if (!d || !p) { J({ ok: false, err: 'no door here' }); return true; }
       if (dist(p.x, p.y, d.fx, d.fy) > 110) { J({ ok: false, err: 'stand at the door first' }); return true; }
+      RACES.delete(me);
       TP_OK.add(me);
       p.x = d.tx; p.y = d.ty;
       J({ ok: true, x: d.tx, y: d.ty });
@@ -2244,6 +2350,13 @@ function createWorld(ctx) {
       const to = String(b.to || '');
       if (!to || to === me || !P.has(to) || b.data == null) { J({ ok: false }); return true; }
       if (blocksOf(me).includes(to) || blocksOf(to).includes(me)) { J({ ok: true }); return true; }
+      // signaling payloads are WebRTC messages only: a plain object with a
+      // known type, small enough to ride a ping payload
+      const sdata = b.data;
+      if (!sdata || typeof sdata !== 'object' || Array.isArray(sdata) || (sdata.t !== 'offer' && sdata.t !== 'answer' && sdata.t !== 'ice')) { J({ ok: false }); return true; }
+      let sdLen = 0;
+      try { sdLen = JSON.stringify(sdata).length; } catch { J({ ok: false }); return true; }
+      if (sdLen > 16384) { J({ ok: false }); return true; }
       const sigWin = (SIG_WIN.get(me) || []).filter((t) => now - t < 2000);
       if (sigWin.length >= 40) { J({ ok: true }); return true; }
       sigWin.push(now); SIG_WIN.set(me, sigWin);
