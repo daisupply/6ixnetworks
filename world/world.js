@@ -293,7 +293,7 @@ function createWorld(ctx) {
   function progView(user) {
     const pg = progFor(user);
     const lvl = levelOf(pg.xp || 0);
-    return { xp: pg.xp || 0, lvl, title: titleOf(lvl), cur: (pg.xp || 0) - lvlAt(lvl), need: lvlAt(lvl + 1) - lvlAt(lvl), playSec: Math.floor(pg.playSec || 0), zones: (pg.zones || []).length, ach: Object.keys(pg.ach || {}).length, crystals: (pg.crystals || []).length };
+    return { xp: pg.xp || 0, lvl, title: titleOf(lvl), cur: (pg.xp || 0) - lvlAt(lvl), need: lvlAt(lvl + 1) - lvlAt(lvl), playSec: Math.floor(pg.playSec || 0), zones: (pg.zones || []).length, zonesList: pg.zones || [], ach: Object.keys(pg.ach || {}).length, crystals: (pg.crystals || []).length };
   }
   const ACHS = [
     { id: 'first-steps', name: 'first steps', desc: 'spend a minute inside the world', cat: 'progression', reward: 5, test: (pg) => (pg.playSec || 0) >= 60 },
@@ -381,10 +381,13 @@ function createWorld(ctx) {
       shards.push({ id: 's' + (shardSeq++), x: p.x, y: p.y, gold: false, born: now });
       normal++;
     }
-    if (now >= nextGoldAt) {
+    const evNow = worldEvent(now);
+    const goldAlive = shards.filter((s) => s.gold).length;
+    if (now >= nextGoldAt || (evNow && evNow.type === 'goldenhunt' && goldAlive < 3 && now - lastHuntGold >= 20000)) {
       const p = spawnPos();
       shards.push({ id: 'g' + (shardSeq++), x: p.x, y: p.y, gold: true, born: now });
       nextGoldAt = now + GOLD_EVERY_MS;
+      lastHuntGold = now;
     }
   }
 
@@ -609,6 +612,9 @@ function createWorld(ctx) {
     if ((pg.story || 0) < STORY.length) return STORY[pg.story || 0];
     return QUESTS[questFor(user).qi];
   }
+  function dchalGameId() {
+    return GAMES_MOD.GAMES[hashStr('dchal:' + ctx.scoreDay()) % GAMES_MOD.GAMES.length].id;
+  }
   function dailyView(user) {
     const pg = progFor(user);
     const d = dailyFor(user, pg);
@@ -620,6 +626,46 @@ function createWorld(ctx) {
     const def = WEEKLY_POOL[w.i];
     return { t: def.t, prog: Math.min(Math.floor(w.prog), def.n), n: def.n, pay: def.pay, done: !!w.done };
   }
+  // ---- world events: a 5-minute window in every 20-minute cycle ----
+  function worldEvent(now) {
+    if (FORCE_EV) { if (now < FORCE_EV.endsAt) return FORCE_EV; FORCE_EV = null; }
+    const CYC = 20 * 60 * 1000, WIN = 5 * 60 * 1000;
+    const cyc = Math.floor(now / CYC), ph = now - cyc * CYC;
+    if (ph < CYC - WIN) return null;
+    return { type: cyc % 2 === 0 ? 'shardstorm' : 'goldenhunt', endsAt: (cyc + 1) * CYC, id: cyc };
+  }
+  let lastHuntGold = 0;
+  let FORCE_EV = null;
+  let ANN = null;
+  // ---- parties ----
+  const PARTIES = new Map();
+  const PINV = new Map();
+  let partySeq = 1;
+  function partyOf(user) {
+    for (const [id, pt] of PARTIES) if (pt.members.includes(user)) return { id, leader: pt.leader, members: pt.members.slice() };
+    return null;
+  }
+  function partyView(user) {
+    const pt = partyOf(user);
+    return pt ? { leader: pt.leader, members: pt.members } : null;
+  }
+  function partyRemove(user) {
+    const pt = partyOf(user);
+    if (!pt) return;
+    const rec = PARTIES.get(pt.id);
+    rec.members = rec.members.filter((m) => m !== user);
+    if (!rec.members.length) { PARTIES.delete(pt.id); return; }
+    if (rec.leader === user) rec.leader = rec.members[0];
+  }
+  function blocksOf(user) { return wload('blocks', user) || []; }
+  function lvlOfXp(xp) { let l = 1; while (xp >= 60 * l * (l + 1) / 2) l++; return l; }
+
+  const TRAVEL_AT = new Map();
+  function weatherOf(now) {
+    const kinds = ['clear', 'clear', 'rain', 'fog', 'clear', 'stars'];
+    return kinds[hashStr('wx:' + Math.floor(now / 3600000)) % kinds.length];
+  }
+
   async function api(req, res, u) {
     if (!u.pathname.startsWith('/api/world/')) return false;
     const J = (o, code) => { res.writeHead(code || 200, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); return true; };
@@ -699,7 +745,8 @@ function createWorld(ctx) {
           const st = statsFor(me);
           st.shards += 1;
           if (s.gold) st.golds += 1;
-          const amt = s.gold ? GOLD_PAY : SHARD_PAY;
+          let amt = s.gold ? GOLD_PAY : SHARD_PAY;
+          if (!s.gold && worldEvent(now) && worldEvent(now).type === 'shardstorm') amt *= 2;
           let bal = null;
           try { bal = await ctx.awardCents(me, amt); } catch { }
           got = { amt, gold: !!s.gold, bal };
@@ -745,7 +792,7 @@ function createWorld(ctx) {
       const st = statsFor(me);
       if (Math.random() < 0.08) achCheck(me);
       J({
-        ok: true, me, players: roster(now), sig, n: P.size, bal: (() => { try { return ctx.getCents(me); } catch { return null; } })(),
+        ok: true, me, players: roster(now).filter((pl) => pl.npc || pl.u === me || (!(wload('blocks', me) || []).includes(pl.u) && !(wload('blocks', pl.u) || []).includes(me))), sig, n: P.size, bal: (() => { try { return ctx.getCents(me); } catch { return null; } })(),
         inv: (() => { try { return ctx.getInv(me); } catch { return []; } })(),
         wearIds: (() => { try { return ctx.getWear(me); } catch { return {}; } })(),
         shards: shards.map((s) => ({ id: s.id, x: s.x, y: s.y, gold: s.gold })),
@@ -758,6 +805,14 @@ function createWorld(ctx) {
         lvlUp: (() => { const v = LVLUP.get(me) || null; LVLUP.delete(me); return v; })(),
         achNew: (() => { const v = ACHNEW.get(me) || []; ACHNEW.delete(me); return v; })(),
         dqDone: (() => { const v = DQ_DONE.get(me) || []; DQ_DONE.delete(me); return v; })(),
+        dchal: { id: dchalGameId(), done: wload('dchal', me) === ctx.scoreDay() },
+        party: partyView(me),
+        partyInv: (() => { const iv = PINV.get(me); return iv && now - iv.at < 90000 ? { from: iv.from } : null; })(),
+        event: worldEvent(now),
+        myBlocks: wload('blocks', me) || [],
+        ann: ANN && now - ANN.at < 120000 ? ANN : null,
+        isAdmin: !!ctx.isAdmin(me),
+        weather: weatherOf(now),
       });
       return true;
     }
@@ -776,6 +831,158 @@ function createWorld(ctx) {
       let bal = null;
       if (qd && qd.done) { try { bal = await ctx.awardCents(me, qd.pay); } catch { } txLog(me, 'quest', qd.pay, qd.t); pgs.c.quest = (pgs.c.quest || 0) + 1; awardXp(me, 12); achCheck(me); }
       J({ ok: true, questDone: qd ? { done: true, pay: qd.pay, t: qd.t, bal } : null, quest: questView(me) });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/party' && req.method === 'POST') {
+      const act = String(b.act || '');
+      const target = String(b.user || '').toLowerCase();
+      if (act === 'invite') {
+        if (!target || target === me || !P.has(target)) { J({ ok: false, err: 'they are not in the world rn' }, 400); return true; }
+        if (blocksOf(me).includes(target) || blocksOf(target).includes(me)) { J({ ok: false, err: 'blocked' }, 400); return true; }
+        let pt = partyOf(me);
+        if (!pt) { const id = 'p' + (partySeq++); PARTIES.set(id, { leader: me, members: [me] }); pt = { id, leader: me, members: [me] }; }
+        if (pt.members.includes(target)) { J({ ok: false, err: 'already in ur party' }, 400); return true; }
+        if (pt.members.length >= 5) { J({ ok: false, err: 'party is full (5)' }, 400); return true; }
+        const tp = partyOf(target);
+        if (tp && tp.id !== pt.id) { J({ ok: false, err: 'they are in another party' }, 400); return true; }
+        PINV.set(target, { from: me, pid: pt.id, at: now });
+        J({ ok: true });
+        return true;
+      }
+      if (act === 'accept') {
+        const iv = PINV.get(me);
+        if (!iv || now - iv.at > 90000) { J({ ok: false, err: 'invite expired' }, 400); return true; }
+        PINV.delete(me);
+        const rec = PARTIES.get(iv.pid);
+        if (!rec) { J({ ok: false, err: 'that party ended' }, 400); return true; }
+        if (rec.members.length >= 5) { J({ ok: false, err: 'party is full (5)' }, 400); return true; }
+        partyRemove(me);
+        rec.members.push(me);
+        J({ ok: true, party: partyView(me) });
+        return true;
+      }
+      if (act === 'decline') { PINV.delete(me); J({ ok: true }); return true; }
+      if (act === 'leave') { partyRemove(me); J({ ok: true }); return true; }
+      if (act === 'kick') {
+        const pt = partyOf(me);
+        if (!pt || pt.leader !== me || !pt.members.includes(target)) { J({ ok: false, err: 'only the leader kicks, and only members' }, 400); return true; }
+        partyRemove(target);
+        J({ ok: true, party: partyView(me) });
+        return true;
+      }
+      J({ ok: false, err: 'bad act' }, 400);
+      return true;
+    }
+
+    if (u.pathname === '/api/world/block' && req.method === 'POST') {
+      const target = String(b.user || '').toLowerCase();
+      if (!target || target === me) { J({ ok: false, err: 'bad user' }, 400); return true; }
+      const cur = (wload('blocks', me) || []).slice();
+      const ix = cur.indexOf(target);
+      if (b.act === 'unblock') { if (ix >= 0) cur.splice(ix, 1); }
+      else if (ix < 0) { cur.push(target); const mp = partyOf(me); if (mp && mp.members.includes(target)) partyRemove(target); }
+      wsave('blocks', me, cur.slice(0, 200));
+      J({ ok: true, blocks: cur });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/report' && req.method === 'POST') {
+      const target = String(b.user || '').toLowerCase();
+      const why = String(b.why || '').replace(/\s+/g, ' ').trim().slice(0, 140);
+      if (!target || target === me) { J({ ok: false, err: 'bad user' }, 400); return true; }
+      const reps = (ctx.wget('reports') || []).slice();
+      reps.push({ by: me, user: target, why, at: now });
+      while (reps.length > 200) reps.shift();
+      try { ctx.wset('reports', reps); } catch { }
+      J({ ok: true });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/boards' && req.method === 'GET') {
+      const all = ctx.wget('prog') || {};
+      const rows = Object.keys(all).map((u2) => {
+        const p = all[u2] || {};
+        return { u: u2, xp: p.xp || 0, lvl: lvlOfXp(p.xp || 0), quests: (p.c || {}).quest || 0, shards: (p.c || {}).shard || 0, ach: Object.keys(p.ach || {}).length, crystals: (p.crystals || []).length };
+      });
+      const top = (k) => rows.slice().sort((a, b2) => b2[k] - a[k]).slice(0, 10).map((r) => ({ u: r.u, v: r[k], lvl: r.lvl }));
+      J({ ok: true, boards: {
+        levels: rows.slice().sort((a, b2) => b2.xp - a.xp).slice(0, 10).map((r) => ({ u: r.u, v: r.xp, lvl: r.lvl })),
+        quests: top('quests'), shards: top('shards'), ach: top('ach'), crystals: top('crystals'),
+      } });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/travel' && req.method === 'POST') {
+      const zid = String(b.zone || '');
+      const z = ZONES.find((zz) => zz.id === zid);
+      const pgT = progFor(me);
+      if (!z || !(pgT.zones || []).includes(zid)) { J({ ok: false, err: 'u havent discovered that zone yet' }, 400); return true; }
+      if (now - (TRAVEL_AT.get(me) || 0) < 10000) { J({ ok: false, err: 'fast travel is recharging (10s)' }, 429); return true; }
+      TRAVEL_AT.set(me, now);
+      const p = P.get(me);
+      if (p) { TP_OK.add(me); p.x = z.x; p.y = z.y; p.lx = z.x; p.ly = z.y; }
+      J({ ok: true, x: z.x, y: z.y });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/preset' && req.method === 'POST') {
+      const slot = Math.floor(Number(b.slot));
+      const allPr = ctx.wget('presets') || {};
+      const minePr = allPr[me] || {};
+      if (b.act === 'get') { J({ ok: true, presets: minePr }); return true; }
+      if (!(slot >= 1 && slot <= 3)) { J({ ok: false, err: 'bad slot' }, 400); return true; }
+      if (b.act === 'save') {
+        let wear = {};
+        try { wear = ctx.getWear(me) || {}; } catch { }
+        minePr[slot] = wear;
+        allPr[me] = minePr;
+        try { ctx.wset('presets', allPr); } catch { }
+        J({ ok: true, presets: minePr });
+        return true;
+      }
+      if (b.act === 'apply') {
+        const saved = minePr[slot];
+        if (!saved) { J({ ok: false, err: 'nothing saved in that slot yet' }, 400); return true; }
+        let inv = [];
+        try { inv = ctx.getInv(me) || []; } catch { }
+        const wear = {};
+        for (const cat of ['trail', 'hat', 'aura', 'pet', 'face']) { if (saved[cat] && inv.includes(saved[cat])) wear[cat] = saved[cat]; }
+        try { ctx.setWear(me, wear); } catch { }
+        const p = P.get(me);
+        if (p) p.wear = wearOf(me);
+        J({ ok: true, wear });
+        return true;
+      }
+      J({ ok: false, err: 'bad act' }, 400);
+      return true;
+    }
+
+    if (u.pathname === '/api/world/admin' && req.method === 'GET') {
+      if (!ctx.isAdmin(me)) { J({ ok: false, err: 'admins only' }, 403); return true; }
+      const progAll = ctx.wget('prog') || {};
+      let circ = 0;
+      for (const u2 of Object.keys(progAll)) { try { circ += ctx.getCents(u2) || 0; } catch { } }
+      const txAll = ctx.wget('tx') || {};
+      const recent = [];
+      for (const [u2, list] of Object.entries(txAll)) for (const t of (list || [])) recent.push({ u: u2, kind: t.kind, amt: t.amt, what: t.what, at: t.at });
+      recent.sort((a, b2) => b2.at - a.at);
+      J({ ok: true, online: P.size, players: Object.keys(progAll).length, centsInCirc: circ, parties: PARTIES.size, event: worldEvent(now), weather: weatherOf(now), reports: (ctx.wget('reports') || []).slice(-20).reverse(), recentTx: recent.slice(0, 20) });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/admin' && req.method === 'POST') {
+      if (!ctx.isAdmin(me)) { J({ ok: false, err: 'admins only' }, 403); return true; }
+      if (b.act === 'announce') { ANN = { text: String(b.text || '').replace(/\s+/g, ' ').trim().slice(0, 160), at: now }; J({ ok: true }); return true; }
+      if (b.act === 'event') {
+        const t = String(b.type || '');
+        if (t === 'off') FORCE_EV = null;
+        else if (t === 'shardstorm' || t === 'goldenhunt') FORCE_EV = { type: t, endsAt: now + 5 * 60 * 1000, id: 'f' + now };
+        else { J({ ok: false, err: 'bad type' }, 400); return true; }
+        J({ ok: true, event: worldEvent(now) });
+        return true;
+      }
+      J({ ok: false, err: 'bad act' }, 400);
       return true;
     }
 
@@ -831,9 +1038,23 @@ function createWorld(ctx) {
         try { dailyEvent(me, 'mini'); } catch { }
         const pgm = progFor(me); pgm.c.mini = (pgm.c.mini || 0) + 1; progSave(me); awardXp(me, 4); achCheck(me);
       }
+      let pb = null, newBest = false, dchalBonus = 0;
+      if (pts > 0) {
+        const allPb = ctx.wget('pb') || {};
+        const mine = allPb[me] || {};
+        if (pts > (mine[g.id] || 0)) { mine[g.id] = pts; allPb[me] = mine; try { ctx.wset('pb', allPb); } catch { } newBest = true; }
+        pb = mine[g.id] || pts;
+        if (paid && g.id === dchalGameId() && wload('dchal', me) !== mday) {
+          wsave('dchal', me, mday);
+          dchalBonus = 15;
+          coins += 15;
+          try { await ctx.awardCents(me, 15); } catch { }
+          txLog(me, 'daily challenge', 15, g.name);
+        }
+      }
       let bal = null;
       try { bal = ctx.getCents(me); } catch { }
-      J({ ok: true, cents: coins, paid, playsLeft: Math.max(0, 3 - (rec.plays[g.id] || 0)), bal });
+      J({ ok: true, cents: coins, paid, playsLeft: Math.max(0, 3 - (rec.plays[g.id] || 0)), bal, pb, newBest, dchalBonus });
       return true;
     }
     if (u.pathname === '/api/world/tx' && req.method === 'GET') {
@@ -991,6 +1212,7 @@ function createWorld(ctx) {
     if (u.pathname === '/api/world/signal' && req.method === 'POST') {
       const to = String(b.to || '');
       if (!to || to === me || !P.has(to) || b.data == null) { J({ ok: false }); return true; }
+      if (blocksOf(me).includes(to) || blocksOf(to).includes(me)) { J({ ok: true }); return true; }
       let arr = SIG.get(to);
       if (!arr) { arr = []; SIG.set(to, arr); }
       arr.push({ from: me, data: b.data, at: now });
@@ -1021,6 +1243,8 @@ function createWorld(ctx) {
       '    <div class="wbrand"><span class="wstar">✦</span> six\'s network <span id="wn"></span></div><span id="wbal">¢ — six cents</span>\n' +
       '    <div id="wlvlrow"><span id="wlvl">Lv 1 · newcomer</span><span id="wxp"><i></i></span></div>\n' +
       '    <div id="wquest" hidden><div class="wq-t"></div><div class="wq-bar"><i></i></div><div class="wq-s"></div></div>\n' +
+      '    <div id="wevent" hidden></div>\n' +
+      '    <div id="wparty" hidden></div>\n' +
       '    <div id="wlb" hidden></div>\n' +
       '  </div>\n' +
       '  <div class="wbtns">\n' +
@@ -1028,6 +1252,9 @@ function createWorld(ctx) {
       '    <button id="wgames" type="button" title="minigames"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.2-.022.63-.022 1.41a5 5 0 0 0 8.303 4.743 1 1 0 0 1 .984-.27h.066a1 1 0 0 1 .984.27A5 5 0 0 0 21.32 10c0-.78-.016-1.21-.022-1.41A4 4 0 0 0 17.32 5z"/></svg></button>\n' +
       '    <button id="wcharbtn" type="button" title="your character"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>\n' +
       '    <button id="wachbtn" type="button" title="achievements"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></button>\n' +
+      '    <button id="wboardsbtn" type="button" title="leaderboards"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M8 17v-6"/><path d="M13 17V7"/><path d="M18 17v-9"/></svg></button>\n' +
+      '    <button id="whubbtn" type="button" title="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></button>\n' +
+      '    <button id="wadminbtn" type="button" title="world admin" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.6-3 8.4-7 10-4-1.6-7-5.4-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></button>\n' +
       '    <button id="wmic" type="button" title="voice chat"></button>\n' +
       '    <a class="wleave" href="/home" title="leave">✕</a>\n' +
       '  </div>\n</div>\n' +
@@ -1086,9 +1313,44 @@ function createWorld(ctx) {
       '<div id="wprof" hidden><div class="wprof-card">\n' +
       '  <div id="wprof-banner"></div><button id="wprof-x" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>\n' +
       '  <div class="wprof-body"><div id="wprof-av"></div><div id="wprof-name"></div><div id="wprof-user"></div><div id="wprof-meta"></div><div id="wprof-badges"></div><div id="wprof-stats"></div><div id="wprof-wear"></div>\n' +
-      '  <div class="wprof-acts"><button id="wprof-add" type="button">add friend</button><button id="wprof-battle" type="button">battle</button><a id="wprof-link" href="#">full profile</a></div></div>\n' +
+      '  <div class="wprof-acts"><button id="wprof-add" type="button">add friend</button><button id="wprof-battle" type="button">battle</button><a id="wprof-link" href="#">full profile</a></div>\n' +
+      '  <div class="wprof-acts2"><button id="wprof-invite" type="button">party invite</button><button id="wprof-mute" type="button">mute</button><button id="wprof-block" type="button">block</button><button id="wprof-report" type="button">report</button></div></div>\n' +
       '</div></div>\n' +
       '<div id="wduel" hidden><span id="wduel-t"></span><button id="wduel-yes" type="button">accept</button><button id="wduel-no" type="button">nah</button></div>\n' +
+      '<div id="wparty-inv" hidden><span id="wparty-inv-t"></span><button id="wparty-yes" type="button">join party</button><button id="wparty-no" type="button">nah</button></div>\n' +
+      '<div id="wboards" hidden><div class="wa-card">\n' +
+      '  <div class="wa-head"><span>\u2726 leaderboards</span><button id="wboards-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
+      '  <div id="wboards-body"></div>\n' +
+      '</div></div>\n' +
+      '<div id="whub" hidden><div class="wa-card">\n' +
+      '  <div class="wa-head"><span>\u2726 six\'s network</span><button id="whub-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
+      '  <div id="whub-grid"></div>\n' +
+      '</div></div>\n' +
+      '<div id="winv" hidden><div class="wa-card">\n' +
+      '  <div class="wa-head"><span>\u2726 ur stuff</span><button id="winv-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
+      '  <input id="winv-q" type="search" placeholder="search ur items\u2026" autocomplete="off">\n' +
+      '  <div id="winv-cats"></div>\n' +
+      '  <div id="winv-presets"></div>\n' +
+      '  <div id="winv-grid"></div>\n' +
+      '</div></div>\n' +
+      '<div id="wmap2" hidden><div class="wa-card">\n' +
+      '  <div class="wa-head"><span>\u2726 world map</span><button id="wmap2-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
+      '  <canvas id="wmap2-cv" width="640" height="430"></canvas>\n' +
+      '  <div class="wmap2-hint">tap a discovered zone to fast travel (10s recharge)</div>\n' +
+      '</div></div>\n' +
+      '<div id="wsettings" hidden><div class="wa-card">\n' +
+      '  <div class="wa-head"><span>\u2726 settings</span><button id="wsettings-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
+      '  <label class="wset-row"><span>volume</span><input id="wset-vol" type="range" min="0" max="100" step="1"></label>\n' +
+      '  <label class="wset-row"><span>ambient music</span><input id="wset-music" type="checkbox"></label>\n' +
+      '  <label class="wset-row"><span>sound effects</span><input id="wset-sfx" type="checkbox"></label>\n' +
+      '  <div class="wset-note">the world breathes: day + night cycle, weather rolls in, six hums under everything.</div>\n' +
+      '</div></div>\n' +
+      '<div id="wadmin" hidden><div class="wa-card">\n' +
+      '  <div class="wa-head"><span>\u2726 world admin</span><button id="wadmin-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
+      '  <div id="wadmin-body"></div>\n' +
+      '  <div class="wadmin-row"><input id="wadmin-ann" type="text" maxlength="160" placeholder="announce to the whole world\u2026"><button id="wadmin-send" type="button">send</button></div>\n' +
+      '  <div class="wadmin-row"><button class="wadmin-ev" data-ev="shardstorm" type="button">force shard storm</button><button class="wadmin-ev" data-ev="goldenhunt" type="button">force golden hunt</button><button class="wadmin-ev" data-ev="off" type="button">events off</button></div>\n' +
+      '</div></div>\n' +
       '<div id="wduelgo" hidden><div id="wduelgo-t"></div><div id="wduelgo-s"></div></div>\n' +
       '<div id="wlogin" hidden><div class="wl-card"><div class="wl-big">six\'s network is for the logged-in</div>' +
       '<p>make an account or log in, then walk in. a whole world in here: districts, a lake, a forest, moon shards, quests from six, voice chat.</p>' +
