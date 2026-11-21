@@ -1261,6 +1261,16 @@ const ITEMS = [
   "price": 190,
   "color": "#f472b6",
   "kind": "blank"
+ },
+ {
+  "id": "s141",
+  "cat": "hat",
+  "name": "vault crown",
+  "rarity": "legendary",
+  "price": 99999,
+  "color": "#ffd257",
+  "kind": "crown",
+  "vaultOnly": true
  }
 ];
 const BY_ID = {};

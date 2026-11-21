@@ -8,7 +8,7 @@ var lerp = function (a, b, k) { return a + (b - a) * k; };
 var dist = function (x1, y1, x2, y2) { var dx = x2 - x1, dy = y2 - y1; return Math.sqrt(dx * dx + dy * dy); };
 var TAU = Math.PI * 2;
 
-var MAP_W = 4800, MAP_H = 3000;
+var MAP_W = 6400, MAP_H = 4200;
 var FOUNTAIN = { x: 2400, y: 1500 };
 var LAKE = { x1: 1480, y1: 2260, x2: 3320, y2: 2940 };
 var PIER = { x1: 2352, y1: 2240, x2: 2448, y2: 2580 };
@@ -72,9 +72,50 @@ for (var fi2 = 0; fi2 < 130; fi2++) {
   var fa = srnd() * TAU, fd = Math.sqrt(srnd()) * 300;
   FLOWERS.push({ x: 700 + Math.cos(fa) * fd, y: 900 + Math.sin(fa) * fd * 0.8, c: ['#f9a8d4', '#c4b5fd', '#fde68a', '#a5f3fc'][fi2 % 4], ph: srnd() * TAU });
 }
+/* ---- v507 districts: doors, sky pads, neon buildings, cave decor ---- */
+var DOORS = [
+  { id: 'arcade-in', x: 5600, y: 1680, label: 'enter the underground arcade' },
+  { id: 'arcade-out', x: 5650, y: 3600, label: 'back to the neon district' },
+  { id: 'sky-up', x: 5650, y: 640, label: 'climb to the sky islands' },
+  { id: 'sky-down', x: 5650, y: 430, label: 'back to the rooftops' },
+  { id: 'vault-in', x: 2100, y: 3980, label: 'slip into the vault' },
+  { id: 'vault-out', x: 5300, y: 3970, label: 'back to the caves' }
+];
+var SKY_PADS = [
+  { x: 5650, y: 430, rx: 150, ry: 64 }, { x: 5400, y: 380, rx: 120, ry: 52 },
+  { x: 5200, y: 250, rx: 140, ry: 60 }, { x: 5650, y: 180, rx: 150, ry: 62 },
+  { x: 6150, y: 300, rx: 140, ry: 60 }
+];
+var SKY_BRIDGES = [[5650, 430, 5400, 380], [5400, 380, 5200, 250], [5200, 250, 5650, 180], [5650, 180, 6150, 300], [6150, 300, 5650, 430]];
+var SKYSTARS = [];
+for (var ss = 0; ss < 80; ss++) SKYSTARS.push({ x: 4900 + srnd() * 1460, y: 80 + srnd() * 380, ph: srnd() * TAU });
+var BUILDINGS = [];
+(function () {
+  var cols = ['#f472b6', '#38bdf8', '#a78bfa', '#ffd257', '#34d399'];
+  [{ x: 4980, w: 300 }, { x: 5980, w: 320 }].forEach(function (rw, ri) {
+    var k = 0;
+    for (var by = 700; by <= 1380; by += 235) {
+      BUILDINGS.push({ x: rw.x, y: by, w: rw.w, h: 170 + Math.floor(srnd() * 40), c: cols[(ri * 3 + k++) % 5], sd: srnd() * 100 });
+    }
+  });
+})();
+var CRYSDECOR = [];
+for (var cd = 0; cd < 46; cd++) CRYSDECOR.push({ x: 260 + srnd() * 2100, y: 3160 + srnd() * 960, s: 3 + srnd() * 6, c: ['#67e8f9', '#c4b5fd', '#f0abfc'][cd % 3], ph: srnd() * TAU });
+var CAVEROCKS = [];
+for (var cr = 0; cr < 14; cr++) CAVEROCKS.push({ x: 260 + srnd() * 2100, y: 3160 + srnd() * 960, r: 14 + srnd() * 30 });
+var SUNKENREEDS = [];
+for (var sr2 = 0; sr2 < 60; sr2++) SUNKENREEDS.push({ x: 2480 + srnd() * 2280, y: 3160 + srnd() * 960, h: 8 + srnd() * 10, ph: srnd() * TAU });
+var EASTROCKS = [];
+for (var er = 0; er < 10; er++) EASTROCKS.push({ x: 5000 + srnd() * 1200, y: 2000 + srnd() * 1000, r: 10 + srnd() * 22 });
+var BENCHES = [{ x: 2255, y: 1575 }, { x: 2545, y: 1575 }, { x: 2255, y: 1425 }, { x: 2545, y: 1425 }];
+var BOARD = { x: 2620, y: 1390 };
+[[5500, 800], [5800, 800], [5500, 1150], [5800, 1150], [5500, 1500], [5800, 1500], [2500, 3250], [3600, 3250], [4800, 3250]].forEach(function (lp) { LAMPS.push({ x: lp[0], y: lp[1], ph: srnd() * TAU }); });
+
 var OBS = [{ x: FOUNTAIN.x, y: FOUNTAIN.y, r: 74 }];
 TREES.forEach(function (t) { OBS.push({ x: t.x, y: t.y, r: 15 }); });
 STALLS.forEach(function (s) { OBS.push({ x: s.x, y: s.y, r: 30 }); });
+BUILDINGS.forEach(function (b) { OBS.push({ x: b.x + b.w / 2, y: b.y + b.h / 2, r: Math.min(b.w, b.h) / 2.2 }); });
+BENCHES.forEach(function (b) { OBS.push({ x: b.x, y: b.y, r: 16 }); });
 
 function hueOf(name) { var h = 0; for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360; return h; }
 function tileShade(x, y) { var h = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return h - Math.floor(h); }
@@ -115,6 +156,7 @@ var joy = { id: null, x: 0, y: 0 };
 var cam = { x: 2400, y: 1700 };
 var players = {};
 var shards = {};
+var crys = {};
 var parts = [];
 var floats = [];
 var fires = [];
@@ -124,6 +166,8 @@ var pendingClaim = '', claimAt = 0;
 var insidePad = '';
 var myZone = '', zoneSeen = false;
 var wactMode = '';
+var wactLabelShown = '';
+var nearDoorId = '';
 var dashUntil = 0, dashCd = 0, dashDir = 0;
 var lastBub = {};
 var moveTarget = null;
@@ -345,6 +389,24 @@ $('wportal').addEventListener('click', function () { if (insidePad) enterPortal(
 $('wact').addEventListener('click', function () {
   if (wactMode === 'shop') { openShop(); return; }
   if (wactMode === 'cab') { openArcade(); return; }
+  if (wactMode === 'door') {
+    jpost('/api/world/door', { id: nearDoorId }).then(function (r) {
+      if (!r || !r.ok) { toast((r && r.err) || 'the door said no'); return; }
+      px = r.x; py = r.y; vx = 0; vy = 0; moveTarget = null; cam.x = px; cam.y = py;
+      sndPortal(); burst(px, py, '#a78bfa', 18, 120);
+    });
+    return;
+  }
+  if (wactMode === 'vault') {
+    jpost('/api/world/vault-claim', {}).then(function (r) {
+      if (!r || !r.ok) { toast((r && r.err) || 'not yet'); return; }
+      myInv = r.inv || myInv;
+      sndQuest(); burst(px, py - 10, '#ffd257', 34, 160);
+      floatText(px, py - 46, 'VAULT CROWN', '#ffd257');
+      toast('\u2726 u claimed the vault crown — equip it from the shop, hats tab', 4600);
+    });
+    return;
+  }
   if (wactMode !== 'wish') return;
   jpost('/api/world/wish', {}).then(function (r) {
     if (!r) return;
@@ -400,7 +462,7 @@ function renderQuest(q) {
   if (sig === questSig) return;
   questSig = sig;
   el.hidden = false;
-  el.querySelector('.wq-t').textContent = '✦ quest: ' + q.t;
+  el.querySelector('.wq-t').textContent = q.story ? ('\u2726 story ' + q.step + '/6: ' + q.t) : ('\u2726 quest: ' + q.t);
   el.querySelector('.wq-bar i').style.width = Math.round(100 * q.prog / Math.max(1, q.n)) + '%';
   el.querySelector('.wq-s').textContent = q.prog + ' / ' + q.n + ' · pays ¢' + q.pay + (q.chain ? ' · chain ×' + (q.chain + 1) : '');
 }
@@ -460,6 +522,13 @@ function ping() {
       }
     });
     Object.keys(shards).forEach(function (id) { if (!sSeen[id]) delete shards[id]; });
+    (r.crys || []).forEach(function (c) { crys[c.id] = c; });
+    if (r.gotC) {
+      sndPick(true);
+      burst(px, py - 8, '#f0abfc', 22, 130);
+      floatText(px, py - 40, '+\u00a2' + r.gotC.amt, '#f0abfc');
+      toast('\u2726 ' + r.gotC.rare + ' crystal found — +\u00a2' + r.gotC.amt, 3000);
+    }
     if (pendingClaim && !sSeen[pendingClaim]) pendingClaim = '';
     (r.sig || []).forEach(function (s) { handleSignal(s.from, s.data); });
     vcTick(r.players || []);
@@ -470,6 +539,10 @@ function ping() {
       pendingClaim = '';
     }
     if (r.questDone) onQuestDone(r.questDone);
+    (r.dqDone || []).forEach(function (d) {
+      sndQuest();
+      toast((d.weekly ? '\u2726 WEEKLY quest done: ' : '\u2726 daily quest done: ') + d.t + ' \u2014 +\u00a2' + d.pay, 4400);
+    });
     if (r.quest) renderQuest(r.quest);
     if (r.prog) renderProg(r.prog);
     if (r.disc) toast('discovered — ' + r.disc.zone + ' · +6 xp', 2600);
@@ -577,17 +650,22 @@ function update(now) {
   var nearCab = false;
   for (var ci = 0; ci < CABS.length; ci++) { if (dist(px, py, CABS[ci].x, CABS[ci].y) < 82) { nearCab = true; break; } }
   var wact = $('wact'), actMode = '', actLabel = '';
-  if (dist(px, py, TENT.x, TENT.y) < 105) { actMode = 'shop'; actLabel = 'six cents shop'; }
+  nearDoorId = '';
+  for (var di = 0; di < DOORS.length; di++) { if (dist(px, py, DOORS[di].x, DOORS[di].y) < 58) { nearDoorId = DOORS[di].id; break; } }
+  if (nearDoorId) { actMode = 'door'; for (var dj = 0; dj < DOORS.length; dj++) if (DOORS[dj].id === nearDoorId) actLabel = DOORS[dj].label; }
+  else if (myZone === 'the vault' && myInv.indexOf('s141') < 0 && dist(px, py, 5650, 3970) < 120) { actMode = 'vault'; actLabel = 'claim the vault crown'; }
+  else if (dist(px, py, TENT.x, TENT.y) < 105) { actMode = 'shop'; actLabel = 'six cents shop'; }
   else if (nearCab) { actMode = 'cab'; actLabel = 'play minigames'; }
   else if (dist(px, py, FOUNTAIN.x, FOUNTAIN.y) < 135) { actMode = 'wish'; actLabel = 'make a wish · 1 six cent'; }
   if (actMode) {
-    if (wactMode !== actMode) {
+    if (wactMode !== actMode || wactLabelShown !== actLabel) {
       wactMode = actMode;
+      wactLabelShown = actLabel;
       wact.className = 'm-' + actMode;
       wact.querySelector('.wact-t').textContent = actLabel;
     }
     wact.hidden = false;
-  } else { wactMode = ''; wact.hidden = true; }
+  } else { wactMode = ''; wactLabelShown = ''; wact.hidden = true; }
   if (!pendingClaim) {
     for (var id in shards) { if (dist(px, py, shards[id].x, shards[id].y) < 54) { pendingClaim = id; claimAt = performance.now(); break; } }
   }
@@ -664,7 +742,7 @@ function drawTree(g, t, now) {
 function drawNameTag(g, p, now, byOpt) {
   var by = byOpt != null ? byOpt : (p._by != null ? p._by : p.y);
   var fxc = FXC[p.fx || ''] || FXC[''];
-  var label = p.npc ? 'six ✦' : p.u;
+  var label = p.npc ? (p.u + ' ✦') : p.u;
   g.font = '700 12px Inter, sans-serif';
   var tw = g.measureText(label).width;
   g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 5; g.shadowOffsetY = 1;
@@ -874,7 +952,9 @@ function render(now) {
   var tints = [
     [2400, 1500, 900, 'rgba(139,124,255,0.055)'], [650, 2100, 620, 'rgba(52,211,153,0.075)'],
     [700, 900, 430, 'rgba(52,211,153,0.06)'], [3950, 520, 540, 'rgba(216,208,255,0.06)'],
-    [3950, 1600, 520, 'rgba(251,146,60,0.05)']
+    [3950, 1600, 520, 'rgba(251,146,60,0.05)'], [5600, 1150, 700, 'rgba(244,114,182,0.05)'],
+    [1200, 3650, 700, 'rgba(103,232,249,0.05)'], [5650, 3970, 480, 'rgba(255,210,87,0.05)'],
+    [5650, 280, 520, 'rgba(196,181,253,0.06)']
   ];
   tints.forEach(function (t) {
     if (!inV(t[0], t[1], t[2])) return;
@@ -922,6 +1002,138 @@ function render(now) {
     g.fillRect(PIER.x1 - 4, PIER.y1 + 30, 8, 14); g.fillRect(PIER.x2 - 4, PIER.y1 + 30, 8, 14);
     g.fillRect(PIER.x1 - 4, PIER.y2 - 44, 8, 14); g.fillRect(PIER.x2 - 4, PIER.y2 - 44, 8, 14);
   }
+  /* ---- v507 districts ---- */
+  if (VX1 > 4880 && VY1 > 40 && VX0 < 6400 && VY0 < 480) {
+    g.fillStyle = '#0a0618'; g.fillRect(4880, 40, 1520, 440);
+    SKYSTARS.forEach(function (s) {
+      if (!inV(s.x, s.y)) return;
+      g.globalAlpha = 0.35 + 0.4 * Math.abs(Math.sin(now / 900 + s.ph));
+      g.fillStyle = '#dcd6ff'; g.beginPath(); g.arc(s.x, s.y, 1.4, 0, TAU); g.fill();
+    });
+    g.globalAlpha = 1;
+    SKY_BRIDGES.forEach(function (b) {
+      g.strokeStyle = '#3a2a1c'; g.lineWidth = 15; g.beginPath(); g.moveTo(b[0], b[1]); g.lineTo(b[2], b[3]); g.stroke();
+      g.strokeStyle = 'rgba(255,217,160,.35)'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(b[0], b[1] - 7); g.lineTo(b[2], b[3] - 7); g.stroke();
+    });
+    SKY_PADS.forEach(function (pd) {
+      if (!inV(pd.x, pd.y, 190)) return;
+      g.fillStyle = '#241a45';
+      g.beginPath(); g.moveTo(pd.x - pd.rx * 0.7, pd.y + 6); g.lineTo(pd.x + pd.rx * 0.7, pd.y + 6); g.lineTo(pd.x, pd.y + pd.ry + 64); g.closePath(); g.fill();
+      var pgr = g.createRadialGradient(pd.x, pd.y - 6, 8, pd.x, pd.y, pd.rx);
+      pgr.addColorStop(0, '#2e2361'); pgr.addColorStop(1, '#1d1440');
+      g.fillStyle = pgr; g.beginPath(); g.ellipse(pd.x, pd.y, pd.rx, pd.ry, 0, 0, TAU); g.fill();
+      g.strokeStyle = 'rgba(196,181,253,.5)'; g.lineWidth = 2; g.stroke();
+    });
+  }
+  if (VX1 > 4880 && VX0 < 6400 && VY1 > 500 && VY0 < 1780) {
+    g.fillStyle = '#171233'; g.fillRect(4880, 500, 1500, 1280);
+    g.strokeStyle = 'rgba(244,114,182,.28)'; g.lineWidth = 2; g.strokeRect(4890, 510, 1480, 1260);
+    g.fillStyle = '#1d1440'; g.fillRect(5450, 520, 400, 180);
+    g.strokeStyle = 'rgba(125,211,252,.45)'; g.lineWidth = 2; g.strokeRect(5450, 520, 400, 180);
+    g.fillStyle = 'rgba(243,239,255,.6)'; g.font = '700 11px Inter, sans-serif'; g.textAlign = 'center';
+    g.fillText('the rooftops', 5650, 545);
+    BUILDINGS.forEach(function (b) {
+      if (!inV(b.x + b.w / 2, b.y + b.h / 2, 260)) return;
+      g.fillStyle = 'rgba(0,0,0,.45)'; g.beginPath(); g.ellipse(b.x + b.w / 2, b.y + b.h + 8, b.w / 2, 12, 0, 0, TAU); g.fill();
+      var fg = g.createLinearGradient(0, b.y, 0, b.y + b.h);
+      fg.addColorStop(0, '#221a4a'); fg.addColorStop(1, '#150f30');
+      g.fillStyle = fg; g.fillRect(b.x, b.y, b.w, b.h);
+      g.fillStyle = b.c; g.shadowColor = b.c; g.shadowBlur = 14; g.fillRect(b.x, b.y, b.w, 4); g.shadowBlur = 0;
+      for (var wc = 0; wc < 5; wc++) for (var wr2 = 0; wr2 < 4; wr2++) {
+        if (tileShade(b.sd + wc * 3.1, wr2 * 7.7) < 0.42) continue;
+        g.fillStyle = (wc + wr2) % 3 === 0 ? 'rgba(255,217,160,.85)' : 'rgba(165,243,252,.7)';
+        g.fillRect(b.x + 18 + wc * ((b.w - 30) / 5), b.y + 22 + wr2 * ((b.h - 36) / 4), 15, 10);
+      }
+      g.strokeStyle = 'rgba(139,124,255,.35)'; g.lineWidth = 1.5; g.strokeRect(b.x, b.y, b.w, b.h);
+    });
+  }
+  if (VX1 > 180 && VX0 < 2420 && VY1 > 3100 && VY0 < 4200) {
+    g.fillStyle = '#0d0a1f'; g.fillRect(180, 3100, 2240, 1080);
+    g.fillStyle = 'rgba(4,2,12,.3)'; g.fillRect(180, 3100, 2240, 1080);
+    CAVEROCKS.forEach(function (r) {
+      if (!inV(r.x, r.y, 40)) return;
+      g.fillStyle = '#2c2752'; g.beginPath(); g.ellipse(r.x, r.y, r.r, r.r * 0.7, 0, Math.PI, TAU); g.fill();
+      g.fillStyle = 'rgba(196,181,253,.12)'; g.beginPath(); g.ellipse(r.x - r.r * 0.25, r.y - r.r * 0.3, r.r * 0.45, r.r * 0.2, -0.4, 0, TAU); g.fill();
+    });
+    g.globalCompositeOperation = 'lighter';
+    CRYSDECOR.forEach(function (c) {
+      if (!inV(c.x, c.y, 60)) return;
+      var pu = 0.7 + 0.3 * Math.sin(now / 700 + c.ph);
+      var cg2 = g.createRadialGradient(c.x, c.y, 1, c.x, c.y, 30 * pu);
+      cg2.addColorStop(0, 'rgba(165,243,252,.20)'); cg2.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = cg2; g.beginPath(); g.arc(c.x, c.y, 30 * pu, 0, TAU); g.fill();
+      g.fillStyle = c.c; g.save(); g.translate(c.x, c.y); g.rotate(c.ph);
+      g.beginPath(); g.moveTo(0, -c.s * 1.7); g.lineTo(c.s * 0.8, 0); g.lineTo(0, c.s * 1.7); g.lineTo(-c.s * 0.8, 0); g.closePath(); g.fill();
+      g.restore();
+    });
+    g.globalCompositeOperation = 'source-over';
+  }
+  if (VX1 > 2420 && VX0 < 4820 && VY1 > 3100 && VY0 < 4200) {
+    g.fillStyle = '#12102a'; g.fillRect(2420, 3100, 2400, 1080);
+    SUNKENREEDS.forEach(function (r) {
+      if (!inV(r.x, r.y)) return;
+      g.strokeStyle = 'rgba(110,231,183,.4)'; g.lineWidth = 1.6;
+      g.beginPath(); g.moveTo(r.x, r.y); g.quadraticCurveTo(r.x + 3, r.y - r.h * 0.6, r.x + 6 + Math.sin(now / 800 + r.ph) * 2, r.y - r.h); g.stroke();
+    });
+  }
+  if (VX1 > 4920 && VX0 < 6400 && VY1 > 2000 && VY0 < 3720) {
+    EASTROCKS.forEach(function (r) {
+      if (!inV(r.x, r.y, 30)) return;
+      g.fillStyle = '#4b4468'; g.beginPath(); g.ellipse(r.x, r.y, r.r, r.r * 0.72, 0, Math.PI, TAU); g.fill();
+    });
+  }
+  if (VX1 > 4920 && VX0 < 6400 && VY1 > 3220 && VY0 < 3720) {
+    g.fillStyle = '#14102b'; g.fillRect(4920, 3220, 1460, 500);
+    g.fillStyle = '#1c1440'; g.fillRect(5060, 3380, 1180, 240);
+    g.strokeStyle = 'rgba(167,139,250,.55)'; g.lineWidth = 2.5; g.strokeRect(4920, 3220, 1460, 500);
+    g.fillStyle = 'rgba(196,181,253,.85)'; g.font = '800 17px Inter, sans-serif'; g.textAlign = 'center';
+    g.shadowColor = '#8b7cff'; g.shadowBlur = 12;
+    g.fillText('U N D E R G R O U N D   A R C A D E', 5650, 3300);
+    g.shadowBlur = 0;
+  }
+  if (VX1 > 5020 && VX0 < 6280 && VY1 > 3740 && VY0 < 4200) {
+    g.fillStyle = '#171126'; g.fillRect(5020, 3740, 1260, 440);
+    g.strokeStyle = 'rgba(255,210,87,.6)'; g.lineWidth = 2.5; g.strokeRect(5020, 3740, 1260, 440);
+    [[5080, 3800], [6220, 3800], [5080, 4120], [6220, 4120]].forEach(function (pl) {
+      g.fillStyle = '#241a38'; g.beginPath(); g.arc(pl[0], pl[1], 15, 0, TAU); g.fill();
+      g.fillStyle = '#ffd257'; g.shadowColor = '#ffd257'; g.shadowBlur = 12; g.beginPath(); g.arc(pl[0], pl[1], 5, 0, TAU); g.fill(); g.shadowBlur = 0;
+    });
+    g.fillStyle = '#241a38'; g.beginPath(); g.arc(5650, 3970, 44, 0, TAU); g.fill();
+    g.strokeStyle = 'rgba(255,210,87,.7)'; g.lineWidth = 2; g.stroke();
+    g.fillStyle = '#ffd257'; g.shadowColor = '#ffd257'; g.shadowBlur = 18;
+    g.beginPath();
+    g.moveTo(5628, 3982); g.lineTo(5634, 3948); g.lineTo(5644, 3968); g.lineTo(5650, 3942); g.lineTo(5656, 3968); g.lineTo(5666, 3948); g.lineTo(5672, 3982); g.closePath(); g.fill();
+    g.shadowBlur = 0;
+    g.fillStyle = 'rgba(243,239,255,.65)'; g.font = '700 11px Inter, sans-serif'; g.textAlign = 'center';
+    g.fillText('the vault crown', 5650, 4032);
+  }
+  BENCHES.forEach(function (b) {
+    if (!inV(b.x, b.y, 50)) return;
+    g.fillStyle = '#3a2a1c'; g.fillRect(b.x - 22, b.y - 5, 44, 9);
+    g.fillStyle = '#4a3624'; g.fillRect(b.x - 22, b.y - 12, 44, 5);
+    g.fillStyle = '#2a1e12'; g.fillRect(b.x - 18, b.y + 4, 5, 7); g.fillRect(b.x + 13, b.y + 4, 5, 7);
+  });
+  if (inV(BOARD.x, BOARD.y, 110)) {
+    g.fillStyle = '#2a1e12'; g.fillRect(BOARD.x - 42, BOARD.y + 8, 6, 30); g.fillRect(BOARD.x + 36, BOARD.y + 8, 6, 30);
+    g.fillStyle = '#241a38'; rr(g, BOARD.x - 50, BOARD.y - 42, 100, 56, 7); g.fill();
+    g.strokeStyle = 'rgba(255,210,87,.55)'; g.lineWidth = 1.6; g.stroke();
+    g.fillStyle = '#ffd257'; g.font = '800 12px Inter, sans-serif'; g.textAlign = 'center';
+    g.fillText('✦ board', BOARD.x, BOARD.y - 22);
+    g.fillStyle = 'rgba(243,239,255,.5)';
+    g.fillRect(BOARD.x - 36, BOARD.y - 12, 72, 3); g.fillRect(BOARD.x - 36, BOARD.y - 2, 56, 3); g.fillRect(BOARD.x - 36, BOARD.y + 8, 64, 3);
+  }
+  DOORS.forEach(function (d) {
+    if (!inV(d.x, d.y, 90)) return;
+    var pu2 = 1 + Math.sin(now / 480 + d.x) * 0.06;
+    g.globalCompositeOperation = 'lighter';
+    var dg = g.createRadialGradient(d.x, d.y, 2, d.x, d.y, 52);
+    dg.addColorStop(0, 'rgba(167,139,250,.30)'); dg.addColorStop(1, 'rgba(167,139,250,0)');
+    g.fillStyle = dg; g.beginPath(); g.ellipse(d.x, d.y, 52, 24, 0, 0, TAU); g.fill();
+    g.globalCompositeOperation = 'source-over';
+    g.strokeStyle = '#a78bfa'; g.lineWidth = 2.6; g.shadowColor = '#a78bfa'; g.shadowBlur = 10;
+    g.beginPath(); g.ellipse(d.x, d.y, 26 * pu2, 12 * pu2, 0, 0, TAU); g.stroke();
+    g.shadowBlur = 0;
+  });
   /* flowers + rocks */
   FLOWERS.forEach(function (f) {
     if (!inV(f.x, f.y)) return;
@@ -1067,6 +1279,22 @@ function render(now) {
     g.fillStyle = 'rgba(0,0,0,.35)';
     g.beginPath(); g.ellipse(s.x, s.y + 12, 8, 3, 0, 0, TAU); g.fill();
   });
+  /* crystals (server collectibles) */
+  Object.keys(crys).forEach(function (id) {
+    var c = crys[id];
+    if (c.got || !inV(c.x, c.y, 50)) return;
+    var col = c.rare === 'mythic' ? '#ffd257' : c.rare === 'epic' ? '#f0abfc' : c.rare === 'rare' ? '#c4b5fd' : '#a5f3fc';
+    var bob2 = Math.sin(now / 460 + c.x) * 4;
+    g.globalCompositeOperation = 'lighter';
+    var cg3 = g.createRadialGradient(c.x, c.y + bob2, 1, c.x, c.y + bob2, 26);
+    cg3.addColorStop(0, 'rgba(240,171,252,.32)'); cg3.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = cg3; g.beginPath(); g.arc(c.x, c.y + bob2, 26, 0, TAU); g.fill();
+    g.globalCompositeOperation = 'source-over';
+    g.save(); g.translate(c.x, c.y + bob2); g.rotate(now / 900 + c.x);
+    g.shadowColor = col; g.shadowBlur = 14; g.fillStyle = col;
+    g.beginPath(); g.moveTo(0, -10); g.lineTo(7, 0); g.lineTo(0, 10); g.lineTo(-7, 0); g.closePath(); g.fill();
+    g.restore();
+  });
   if (moveTarget) {
     var mtAge = (now - moveTarget.at) / 1000;
     g.strokeStyle = 'rgba(165,243,252,.75)'; g.lineWidth = 2;
@@ -1152,6 +1380,11 @@ function drawMap(camX, camY) {
   g.fillStyle = 'rgba(16,10,34,.85)'; g.fillRect(0, 0, W, H);
   g.fillStyle = 'rgba(56,120,220,.5)'; g.fillRect(LAKE.x1 * sx, LAKE.y1 * sy, (LAKE.x2 - LAKE.x1) * sx, (LAKE.y2 - LAKE.y1) * sy);
   g.fillStyle = 'rgba(52,211,153,.35)'; g.beginPath(); g.arc(650 * sx, 2100 * sy, 430 * sx, 0, TAU); g.fill();
+  g.fillStyle = 'rgba(244,114,182,.4)'; g.fillRect(4880 * sx, 500 * sy, 1500 * sx, 1280 * sy);
+  g.fillStyle = 'rgba(103,232,249,.28)'; g.fillRect(180 * sx, 3100 * sy, 2240 * sx, 1080 * sy);
+  g.fillStyle = 'rgba(196,181,253,.45)'; g.fillRect(4950 * sx, 110 * sy, 1400 * sx, 420 * sy);
+  g.fillStyle = 'rgba(255,210,87,.5)'; g.fillRect(5020 * sx, 3740 * sy, 1260 * sx, 440 * sy);
+  g.fillStyle = 'rgba(167,139,250,.4)'; g.fillRect(4920 * sx, 3220 * sy, 1460 * sx, 500 * sy);
   PORTALS.forEach(function (pad) { g.fillStyle = pad.c; g.beginPath(); g.arc(pad.x * sx, pad.y * sy, 2.4, 0, TAU); g.fill(); });
   Object.keys(shards).forEach(function (id) { var s = shards[id]; if (!s.gold) return; g.fillStyle = '#ffd257'; g.fillRect(s.x * sx - 1.4, s.y * sy - 1.4, 2.8, 2.8); });
   Object.keys(players).forEach(function (u) {
@@ -2281,6 +2514,39 @@ $('wachbtn').addEventListener('click', openAch);
 $('wach-x').addEventListener('click', closeAch);
 $('wach').addEventListener('click', function (e) { if (e.target === $('wach')) closeAch(); });
 window.__ach = { open: openAch, close: closeAch };
+/* quest journal */
+function jqRow(label, t, prog, n, pay, done, say) {
+  var pct = Math.min(100, Math.round(100 * prog / Math.max(1, n)));
+  return '<div class="jq-row' + (done ? ' done' : '') + '"><div class="jq-top"><span class="jq-k">' + label + '</span><span class="jq-pay">' + (done ? 'done' : '\u00a2' + pay) + '</span></div>' +
+    '<div class="jq-t">' + t + '</div><div class="jq-bar"><i style="width:' + pct + '%"></i></div>' +
+    '<div class="jq-s">' + Math.floor(prog) + ' / ' + n + '</div>' + (say ? '<div class="jq-say">' + say + '</div>' : '') + '</div>';
+}
+function renderJournal(r) {
+  var h = '';
+  if (r.story && !r.story.doneAll) h += jqRow('six storyline · step ' + r.story.step + ' of ' + r.story.total, r.chain.t, r.chain.prog, r.chain.n, r.chain.pay, false, r.chain.say ? ('\u201c' + r.chain.say + ' \u2014 six\u201d') : '');
+  else h += jqRow('quest chain \u00d7' + (r.chain.chain + 1), r.chain.t, r.chain.prog, r.chain.n, r.chain.pay, false, '');
+  h += '<div class="jq-sec">today</div>';
+  (r.daily || []).forEach(function (d) { h += jqRow('daily', d.t, d.prog, d.n, d.pay, d.done, ''); });
+  h += '<div class="jq-sec">this week</div>';
+  if (r.weekly) h += jqRow('weekly', r.weekly.t, r.weekly.prog, r.weekly.n, r.weekly.pay, r.weekly.done, '');
+  $('wjournal-body').innerHTML = h;
+}
+function openJournal() {
+  $('wjournal').hidden = false;
+  document.body.classList.add('wov');
+  $('wjournal-body').innerHTML = '<div class="jq-row">asking six\u2026</div>';
+  fetch('/api/world/quests', { headers: { accept: 'application/json' } }).then(function (x) { return x.json(); }).then(function (r) {
+    if (!r || !r.ok) { $('wjournal-body').innerHTML = '<div class="jq-row">couldnt load the journal</div>'; return; }
+    renderJournal(r);
+  }).catch(function () { $('wjournal-body').innerHTML = '<div class="jq-row">couldnt load the journal</div>'; });
+}
+function closeJournal() { $('wjournal').hidden = true; document.body.classList.remove('wov'); }
+$('wjournal-x').addEventListener('click', closeJournal);
+$('wjournal').addEventListener('click', function (e) { if (e.target === $('wjournal')) closeJournal(); });
+$('wquest').addEventListener('click', openJournal);
+$('wquest').style.cursor = 'pointer';
+$('wquest').title = 'tap for the quest journal';
+window.__journal = { open: openJournal, close: closeJournal };
 
 /* character customization */
 var CHAR_HUES = [258, 282, 305, 340, 12, 32, 55, 95, 145, 174, 200, 222];
