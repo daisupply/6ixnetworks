@@ -8,7 +8,7 @@ var lerp = function (a, b, k) { return a + (b - a) * k; };
 var dist = function (x1, y1, x2, y2) { var dx = x2 - x1, dy = y2 - y1; return Math.sqrt(dx * dx + dy * dy); };
 var TAU = Math.PI * 2;
 
-var MAP_W = 6400, MAP_H = 7600;
+var MAP_W = 6400, MAP_H = 8900;
 var FOUNTAIN = { x: 2400, y: 1500 };
 var LAKE = { x1: 1480, y1: 2260, x2: 3320, y2: 2940 };
 var PIER = { x1: 2352, y1: 2240, x2: 2448, y2: 2580 };
@@ -1380,6 +1380,22 @@ function render(now) {
     g.fillText(pad.sub, pad.x, pad.y + 36);
   });
   /* shards */
+  if (CW_VIEW && CW_IN) {
+    var cwR = CW_VIEW.rect;
+    g.fillStyle = '#241a3f'; g.fillRect(cwR.x - 34, cwR.y - 34, cwR.w + 68, cwR.h + 68);
+    g.fillStyle = CW_TILE_COLORS.grass; g.fillRect(cwR.x, cwR.y, cwR.w, cwR.h);
+    var cwTiles = CW_VIEW.tiles || {};
+    Object.keys(cwTiles).forEach(function (k) { var p = k.split(','); g.fillStyle = CW_TILE_COLORS[cwTiles[k]] || '#000'; g.fillRect(cwR.x + Number(p[0]) * 40, cwR.y + Number(p[1]) * 40, 40, 40); });
+    (CW_VIEW.props || []).forEach(function (pr) { drawCwProp(g, pr.k, cwR.x + pr.tx * 40 + 20, cwR.y + pr.ty * 40 + 20, 15, now); });
+    g.strokeStyle = 'rgba(167,139,250,.55)'; g.lineWidth = 3; g.strokeRect(cwR.x, cwR.y, cwR.w, cwR.h);
+    var cwSp = CW_VIEW.spawn || { tx: 16, ty: 12 };
+    g.fillStyle = 'rgba(243,239,255,.85)'; g.font = '700 15px Inter, sans-serif'; g.textAlign = 'center';
+    g.fillText(CW_VIEW.name, cwR.x + cwSp.tx * 40 + 20, cwR.y + cwSp.ty * 40 - 26);
+    var cwDoorX = cwR.x + cwR.w / 2, cwDoorY = cwR.y + cwR.h - 22;
+    g.save(); g.strokeStyle = 'rgba(255,210,87,.8)'; g.lineWidth = 3; g.shadowColor = '#ffd257'; g.shadowBlur = 12 + Math.sin(now / 300) * 5;
+    g.beginPath(); g.arc(cwDoorX, cwDoorY, 15, 0, TAU); g.stroke(); g.restore();
+    g.fillStyle = 'rgba(255,210,87,.9)'; g.font = '700 11px Inter, sans-serif'; g.fillText('exit', cwDoorX, cwDoorY + 30);
+  }
   if (MATCH_V && MATCH_V.game === 'spleef' && MATCH_V.tiles && MATCH_V.arena) {
     var ar = MATCH_V.arena, tn = ar.size / ar.tile, ax0 = ar.x - ar.size / 2, ay0 = ar.y - ar.size / 2;
     for (var ty2 = 0; ty2 < tn; ty2++) for (var tx2 = 0; tx2 < tn; tx2++) {
@@ -3170,6 +3186,14 @@ function socialTick(r) {
   if (r.gotMatch) toast('treasure grabbed — ' + r.gotMatch.score + ' so far', 1600);
   MATCH_V = r.match || null;
   updateMatchChip();
+  var serverCw = r.cw || null;
+  if (serverCw) {
+    CW_IN = true;
+    if (!CW_VIEW || CW_VIEW.id !== serverCw.id || CW_VIEW.v !== serverCw.v) {
+      fetch('/api/world/cw-layout?id=' + encodeURIComponent(serverCw.id)).then(function (x) { return x.json(); }).then(function (o) { if (o && o.ok) { CW_VIEW = o.world; updateCwChip(); } }).catch(function () {});
+    }
+  } else if (CW_IN) { CW_IN = false; CW_VIEW = null; }
+  updateCwChip();
   if (MATCH_V && !$('wmatch').hidden) renderMatch();
   var bar = $('wparty-inv');
   if (r.partyInv && r.partyInv.from) {
@@ -3644,6 +3668,152 @@ $('wreplay-body').addEventListener('click', function (e) {
 });
 $('wreplay-body').addEventListener('input', function (e) { if (e.target && e.target.id === 'rp-scrub' && RP) { RP.t = RP.dur * Number(e.target.value) / 1000; drawReplay(); } });
 window.__replay = { open: openReplays, close: closeReplays };
+/* ---- E10: created worlds ---- */
+var CW_VIEW = null, CW_IN = false, CW_DATA = null, CW_EDIT = null, CW_TOOL = 'grass', CW_MODE = 'tile', CW_Q = '';
+var CW_TILE_COLORS = { grass: '#1d3a2a', stone: '#3d434f', wood: '#4a3421', sand: '#8a734a', water: '#14406e', snow: '#c9d4ea', lava: '#b33a12', void: '#05030d' };
+var CW_TILE_LIST = ['grass', 'stone', 'wood', 'sand', 'water', 'snow', 'lava', 'void'];
+var CW_PROP_LIST = ['tree', 'pine', 'rock', 'lamp', 'flowers', 'sign', 'crystal', 'fountain', 'bush', 'torch', 'shroom', 'table'];
+function openCw() { $('wcw').hidden = false; document.body.classList.add('wov'); loadCw(); }
+function closeCw() { $('wcw').hidden = true; document.body.classList.remove('wov'); CW_EDIT = null; }
+function loadCw() {
+  var el = $('wcw-body'); el.innerHTML = '<div class="wnote">loading worlds\u2026</div>';
+  fetch('/api/world/cworlds' + (CW_Q ? '?q=' + encodeURIComponent(CW_Q) : '')).then(function (x) { return x.json(); }).then(function (o) {
+    if (!o || !o.ok) { el.innerHTML = '<div class="wnote">could not load worlds</div>'; return; }
+    CW_DATA = o; renderCwHome();
+  }).catch(function () { el.innerHTML = '<div class="wnote">could not load worlds</div>'; });
+}
+function renderCwHome() {
+  var o = CW_DATA, el = $('wcw-body');
+  var h = '';
+  if (CW_IN && CW_VIEW) h += '<div class="mt-row"><div class="mt-info"><div class="mt-name">ur inside: ' + hsEsc(CW_VIEW.name) + '</div><div class="mt-sub">by @' + hsEsc(CW_VIEW.owner) + '</div></div><button class="hs-btn gold" data-cw="leave">leave world</button></div>';
+  h += '<div class="cw-search"><input id="cw-q" class="hs-in" type="text" placeholder="search worlds or creators" value="' + hsEsc(CW_Q) + '"><button class="hs-btn" data-cw="search">search</button></div>';
+  h += '<div class="hs-sec">my worlds (' + o.mine.length + '/3)</div>';
+  if (o.mine.length < 3) h += '<div class="cw-search"><input id="cw-newname" class="hs-in" type="text" maxlength="32" placeholder="name a new world"><button class="hs-btn gold" data-cw="create">create</button></div>';
+  h += o.mine.map(function (w) {
+    return '<div class="mt-row"><div class="mt-info"><div class="mt-name">' + hsEsc(w.name) + ' <span class="mt-sub">' + w.pub + '</span></div><div class="mt-sub">' + w.visits + ' visits · ' + w.likes + ' likes' + (w.desc ? ' · ' + hsEsc(w.desc) : '') + '</div></div>' +
+      '<button class="hs-btn" data-cw="visit" data-id="' + w.id + '">visit</button><button class="hs-btn" data-cw="edit" data-id="' + w.id + '">edit</button><button class="hs-btn" data-cw="pub" data-id="' + w.id + '">' + (w.pub === 'public' ? 'make private' : 'make public') + '</button><button class="hs-btn" data-cw="del" data-id="' + w.id + '">delete</button></div>';
+  }).join('');
+  h += '<div class="hs-sec">discover</div>';
+  h += o.public.length ? o.public.map(function (w) {
+    var liked = (o.myLikes || []).includes(w.id);
+    return '<div class="mt-row"><div class="mt-info"><div class="mt-name">' + hsEsc(w.name) + '</div><div class="mt-sub">by @' + hsEsc(w.owner) + ' · ' + w.visits + ' visits · ' + w.likes + ' likes' + (w.desc ? ' · ' + hsEsc(w.desc) : '') + '</div></div>' +
+      '<button class="hs-btn" data-cw="visit" data-id="' + w.id + '">visit</button><button class="hs-btn' + (liked ? ' gold' : '') + '" data-cw="like" data-id="' + w.id + '">' + (liked ? 'liked' : 'like') + '</button><button class="hs-btn" data-cw="report" data-id="' + w.id + '">report</button></div>';
+  }).join('') : '<div class="wnote">no public worlds yet \u2014 make the first one</div>';
+  if (o.reports) {
+    h += '<div class="hs-sec">mod: reports</div>' + (o.reports.length ? o.reports.map(function (r) {
+      return '<div class="mt-row"><div class="mt-info"><div class="mt-name">' + hsEsc(r.name || r.id) + '</div><div class="mt-sub">by @' + hsEsc(r.owner || '?') + ' · reported by @' + hsEsc(r.by) + '</div></div><button class="hs-btn" data-cw="unlist" data-id="' + r.id + '">unlist</button><button class="hs-btn" data-cw="moddelete" data-id="' + r.id + '">delete</button></div>';
+    }).join('') : '<div class="wnote">no reports</div>');
+  }
+  el.innerHTML = h;
+}
+function openCwEditor(id) {
+  var w = (CW_DATA.mine || []).find(function (x) { return x.id === id; });
+  if (!w) return;
+  CW_EDIT = { id: w.id, name: w.name, desc: w.desc, pub: w.pub, tiles: JSON.parse(JSON.stringify(w.tiles || {})), props: JSON.parse(JSON.stringify(w.props || [])), spawn: { tx: (w.spawn && w.spawn.tx) || 16, ty: (w.spawn && w.spawn.ty) || 12 } };
+  CW_TOOL = 'grass'; CW_MODE = 'tile';
+  renderCwEditor();
+}
+function renderCwEditor() {
+  var e = CW_EDIT, el = $('wcw-body');
+  el.innerHTML = '<button class="hs-btn" data-cw="back">back to worlds</button>' +
+    '<div class="hs-sec">editing: ' + hsEsc(e.name) + '</div>' +
+    '<div class="cw-pal">' + CW_TILE_LIST.map(function (t) { return '<button data-cwtool="' + t + '" data-cwmode="tile"><span class="cw-dot" style="background:' + CW_TILE_COLORS[t] + '"></span>' + t + '</button>'; }).join('') + '</div>' +
+    '<div class="cw-pal">' + CW_PROP_LIST.map(function (t) { return '<button data-cwtool="' + t + '" data-cwmode="prop">' + t + '</button>'; }).join('') + '</div>' +
+    '<div class="cw-pal"><button data-cwtool="erase" data-cwmode="tile">eraser</button><button data-cwtool="spawn" data-cwmode="spawn">set spawn</button></div>' +
+    '<canvas id="wcw-cv" width="640" height="480"></canvas>' +
+    '<div class="wnote">paint tiles, drop props (one per cell), set where visitors land. tiles are decor \u2014 no collision. hit save to publish.</div>' +
+    '<div class="cw-search"><input id="cw-metaname" class="hs-in" type="text" maxlength="32" value="' + hsEsc(e.name) + '"><input id="cw-metadesc" class="hs-in" type="text" maxlength="90" placeholder="description" value="' + hsEsc(e.desc || '') + '"></div>' +
+    '<div class="rp-controls"><button class="hs-btn gold" data-cw="save">save world</button><button class="hs-btn" data-cw="savemeta">save name / desc</button></div>';
+  markCwTool(); drawCwEditor();
+  var cv = $('wcw-cv');
+  cv.addEventListener('pointerdown', function (ev) { ev.preventDefault(); try { cv.setPointerCapture(ev.pointerId); } catch (err) {} cwPaint(ev); });
+  cv.addEventListener('pointermove', function (ev) { if (ev.buttons & 1) cwPaint(ev); });
+}
+function markCwTool() {
+  Array.prototype.forEach.call(document.querySelectorAll('[data-cwtool]'), function (b) { b.classList.toggle('on', b.getAttribute('data-cwtool') === CW_TOOL && b.getAttribute('data-cwmode') === CW_MODE); });
+}
+function cwPaint(ev) {
+  var cv = $('wcw-cv'); if (!cv || !CW_EDIT) return;
+  var r = cv.getBoundingClientRect();
+  var tx = Math.max(0, Math.min(31, Math.floor((ev.clientX - r.left) / r.width * 32)));
+  var ty = Math.max(0, Math.min(23, Math.floor((ev.clientY - r.top) / r.height * 24)));
+  var e = CW_EDIT, k = tx + ',' + ty;
+  if (CW_MODE === 'spawn') e.spawn = { tx: tx, ty: ty };
+  else if (CW_TOOL === 'erase') { delete e.tiles[k]; e.props = e.props.filter(function (p) { return !(p.tx === tx && p.ty === ty); }); }
+  else if (CW_MODE === 'prop') { e.props = e.props.filter(function (p) { return !(p.tx === tx && p.ty === ty); }); e.props.push({ tx: tx, ty: ty, k: CW_TOOL }); }
+  else e.tiles[k] = CW_TOOL;
+  drawCwEditor();
+}
+function drawCwEditor() {
+  var cv = $('wcw-cv'); if (!cv || !CW_EDIT) return;
+  var g = cv.getContext('2d'), e = CW_EDIT, S = 20;
+  g.fillStyle = CW_TILE_COLORS.grass; g.fillRect(0, 0, 640, 480);
+  Object.keys(e.tiles).forEach(function (k) { var p = k.split(','); g.fillStyle = CW_TILE_COLORS[e.tiles[k]] || '#000'; g.fillRect(Number(p[0]) * S, Number(p[1]) * S, S, S); });
+  g.strokeStyle = 'rgba(255,255,255,.06)'; g.lineWidth = 1;
+  for (var gx = 0; gx <= 32; gx++) { g.beginPath(); g.moveTo(gx * S, 0); g.lineTo(gx * S, 480); g.stroke(); }
+  for (var gy = 0; gy <= 24; gy++) { g.beginPath(); g.moveTo(0, gy * S); g.lineTo(640, gy * S); g.stroke(); }
+  e.props.forEach(function (p) { drawCwProp(g, p.k, p.tx * S + S / 2, p.ty * S + S / 2, 8, 0); });
+  g.save(); g.translate(e.spawn.tx * S + S / 2, e.spawn.ty * S + S / 2); g.fillStyle = '#ffd257'; g.shadowColor = '#ffd257'; g.shadowBlur = 8; star4(g, 0, 0, 8, 0); g.fill(); g.restore();
+}
+function drawCwProp(g, k, x, y, s, now) {
+  g.save(); g.translate(x, y);
+  if (k === 'tree') { g.fillStyle = '#5a4028'; g.fillRect(-s * 0.14, s * 0.2, s * 0.28, s * 0.7); g.fillStyle = '#2e7d46'; g.beginPath(); g.arc(0, -s * 0.25, s * 0.85, 0, 6.29); g.fill(); g.fillStyle = '#3fa55e'; g.beginPath(); g.arc(-s * 0.3, -s * 0.5, s * 0.5, 0, 6.29); g.fill(); }
+  else if (k === 'pine') { g.fillStyle = '#5a4028'; g.fillRect(-s * 0.12, s * 0.4, s * 0.24, s * 0.5); g.fillStyle = '#1d5c38'; g.beginPath(); g.moveTo(0, -s); g.lineTo(s * 0.7, s * 0.2); g.lineTo(-s * 0.7, s * 0.2); g.closePath(); g.fill(); g.beginPath(); g.moveTo(0, -s * 0.55); g.lineTo(s * 0.85, s * 0.55); g.lineTo(-s * 0.85, s * 0.55); g.closePath(); g.fill(); }
+  else if (k === 'rock') { g.fillStyle = '#7a8194'; g.beginPath(); g.moveTo(-s * 0.9, s * 0.6); g.lineTo(-s * 0.4, -s * 0.5); g.lineTo(s * 0.3, -s * 0.8); g.lineTo(s * 0.9, s * 0.1); g.lineTo(s * 0.6, s * 0.6); g.closePath(); g.fill(); g.fillStyle = 'rgba(255,255,255,.18)'; g.beginPath(); g.moveTo(-s * 0.4, -s * 0.5); g.lineTo(s * 0.3, -s * 0.8); g.lineTo(s * 0.2, -s * 0.1); g.closePath(); g.fill(); }
+  else if (k === 'lamp') { g.strokeStyle = '#2c2c38'; g.lineWidth = Math.max(2, s * 0.16); g.beginPath(); g.moveTo(0, s); g.lineTo(0, -s * 0.4); g.stroke(); g.save(); g.shadowColor = '#ffd98a'; g.shadowBlur = 14; g.fillStyle = '#ffe9b0'; g.beginPath(); g.arc(0, -s * 0.55, s * 0.34, 0, 6.29); g.fill(); g.restore(); }
+  else if (k === 'flowers') { var fc = ['#f472b6', '#ffd257', '#c084fc']; for (var fi = 0; fi < 3; fi++) { g.fillStyle = fc[fi]; g.beginPath(); g.arc((fi - 1) * s * 0.5, (fi % 2 ? -s * 0.2 : s * 0.25), s * 0.22, 0, 6.29); g.fill(); } }
+  else if (k === 'sign') { g.fillStyle = '#5a4028'; g.fillRect(-s * 0.1, -s * 0.1, s * 0.2, s); g.fillStyle = '#8a6844'; g.fillRect(-s * 0.85, -s * 0.85, s * 1.7, s * 0.8); g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 1.5; g.strokeRect(-s * 0.85, -s * 0.85, s * 1.7, s * 0.8); }
+  else if (k === 'crystal') { g.save(); g.shadowColor = '#a78bfa'; g.shadowBlur = 12; g.fillStyle = '#8b5cf6'; g.beginPath(); g.moveTo(0, -s); g.lineTo(s * 0.55, 0); g.lineTo(0, s); g.lineTo(-s * 0.55, 0); g.closePath(); g.fill(); g.restore(); g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.moveTo(0, -s); g.lineTo(s * 0.55, 0); g.lineTo(0, 0); g.closePath(); g.fill(); }
+  else if (k === 'fountain') { g.fillStyle = '#565e70'; g.beginPath(); g.arc(0, 0, s, 0, 6.29); g.fill(); g.fillStyle = '#2b6cb0'; g.beginPath(); g.arc(0, 0, s * 0.72, 0, 6.29); g.fill(); g.fillStyle = '#90cdf4'; g.beginPath(); g.arc(0, 0, s * 0.3, 0, 6.29); g.fill(); }
+  else if (k === 'bush') { g.fillStyle = '#245c36'; g.beginPath(); g.arc(-s * 0.4, s * 0.2, s * 0.55, 0, 6.29); g.arc(s * 0.4, s * 0.2, s * 0.55, 0, 6.29); g.arc(0, -s * 0.25, s * 0.6, 0, 6.29); g.fill(); }
+  else if (k === 'torch') { g.strokeStyle = '#5a4028'; g.lineWidth = Math.max(2, s * 0.18); g.beginPath(); g.moveTo(0, s); g.lineTo(0, -s * 0.2); g.stroke(); var fl = 1 + Math.sin(now / 110 + x) * 0.15; g.save(); g.shadowColor = '#ff9d3c'; g.shadowBlur = 12; g.fillStyle = '#ffb03c'; g.beginPath(); g.arc(0, -s * 0.45, s * 0.3 * fl, 0, 6.29); g.fill(); g.restore(); }
+  else if (k === 'shroom') { g.fillStyle = '#e8dcc8'; g.fillRect(-s * 0.18, -s * 0.05, s * 0.36, s * 0.75); g.fillStyle = '#d6455b'; g.beginPath(); g.arc(0, -s * 0.05, s * 0.8, 3.14, 0); g.fill(); g.fillStyle = 'rgba(255,255,255,.8)'; g.beginPath(); g.arc(-s * 0.3, -s * 0.35, s * 0.13, 0, 6.29); g.arc(s * 0.25, -s * 0.5, s * 0.1, 0, 6.29); g.fill(); }
+  else if (k === 'table') { g.fillStyle = '#6e4f2e'; g.fillRect(-s * 0.9, -s * 0.35, s * 1.8, s * 0.35); g.fillRect(-s * 0.7, 0, s * 0.22, s * 0.6); g.fillRect(s * 0.48, 0, s * 0.22, s * 0.6); }
+  g.restore();
+}
+function visitCw(id) {
+  jpost('/api/world/cw-enter', { id: id }).then(function (r) {
+    if (!r || !r.ok) { toast((r && r.err) || 'cannot enter', 2400); return; }
+    CW_VIEW = r.world; CW_IN = true; px = r.x; py = r.y; closeCw(); updateCwChip();
+    toast('welcome to ' + r.world.name, 2600);
+  });
+}
+function exitCw() {
+  jpost('/api/world/cw-exit', {}).then(function (r) {
+    if (r && r.ok) { px = r.x; py = r.y; }
+    CW_IN = false; CW_VIEW = null; updateCwChip();
+  });
+}
+function updateCwChip() {
+  var chip = $('wcw-chip'); if (!chip) return;
+  if (CW_IN && CW_VIEW) { chip.hidden = false; chip.textContent = 'in ' + CW_VIEW.name + ' \u2014 tap to leave'; }
+  else chip.hidden = true;
+}
+$('wcw-x').addEventListener('click', closeCw);
+$('wcw').addEventListener('click', function (e) { if (e.target === $('wcw')) closeCw(); });
+$('wcw-chip').addEventListener('click', function () { exitCw(); });
+$('wcw-body').addEventListener('click', function (e) {
+  var tool = e.target.closest('[data-cwtool]');
+  if (tool) { CW_TOOL = tool.getAttribute('data-cwtool'); CW_MODE = tool.getAttribute('data-cwmode'); markCwTool(); return; }
+  var t = e.target.closest('[data-cw]'); if (!t) return;
+  var act = t.getAttribute('data-cw'), id = t.getAttribute('data-id');
+  if (act === 'search') { CW_Q = ($('cw-q') || {}).value || ''; loadCw(); }
+  else if (act === 'create') { var nm = (($('cw-newname') || {}).value || '').trim(); if (!nm) { toast('name ur world first', 2000); return; } jpost('/api/world/cw', { act: 'create', name: nm }).then(function (r) { if (r && r.ok) { toast('world created \u2014 hit edit to build it', 2600); loadCw(); } else toast((r && r.err) || 'nope', 2400); }); }
+  else if (act === 'visit') visitCw(id);
+  else if (act === 'leave') exitCw();
+  else if (act === 'edit') openCwEditor(id);
+  else if (act === 'back') { CW_EDIT = null; renderCwHome(); }
+  else if (act === 'pub') { var w = (CW_DATA.mine || []).find(function (x) { return x.id === id; }); if (w) jpost('/api/world/cw', { act: 'meta', id: id, pub: w.pub === 'public' ? 'private' : 'public' }).then(function (r) { if (r && r.ok) loadCw(); else toast((r && r.err) || 'nope', 2000); }); }
+  else if (act === 'del') { if (!t.dataset.armed) { t.dataset.armed = '1'; t.textContent = 'sure?'; return; } jpost('/api/world/cw', { act: 'delete', id: id }).then(function (r) { if (r && r.ok) { toast('world deleted', 2000); loadCw(); } else toast((r && r.err) || 'nope', 2000); }); }
+  else if (act === 'like') jpost('/api/world/cw', { act: 'like', id: id }).then(function (r) { if (r && r.ok) loadCw(); else toast((r && r.err) || 'nope', 2000); });
+  else if (act === 'report') jpost('/api/world/cw', { act: 'report', id: id }).then(function (r) { toast(r && r.ok ? 'reported \u2014 a mod will look' : ((r && r.err) || 'nope'), 2400); });
+  else if (act === 'unlist') jpost('/api/world/cw', { act: 'unlist', id: id }).then(function (r) { if (r && r.ok) { toast('unlisted', 1800); loadCw(); } else toast((r && r.err) || 'nope', 2000); });
+  else if (act === 'moddelete') jpost('/api/world/cw', { act: 'moddelete', id: id }).then(function (r) { if (r && r.ok) { toast('deleted', 1800); loadCw(); } else toast((r && r.err) || 'nope', 2000); });
+  else if (act === 'save') { if (CW_EDIT) jpost('/api/world/cw', { act: 'save', id: CW_EDIT.id, tiles: CW_EDIT.tiles, props: CW_EDIT.props, spawn: CW_EDIT.spawn }).then(function (r) { if (r && r.ok) { toast('world saved + live', 2400); CW_EDIT = null; loadCw(); } else toast((r && r.err) || 'save failed', 2400); }); }
+  else if (act === 'savemeta') { if (CW_EDIT) jpost('/api/world/cw', { act: 'meta', id: CW_EDIT.id, name: ($('cw-metaname') || {}).value || CW_EDIT.name, desc: ($('cw-metadesc') || {}).value || '' }).then(function (r) { if (r && r.ok) { toast('saved', 1800); CW_EDIT = null; loadCw(); } else toast((r && r.err) || 'nope', 2000); }); }
+});
+window.__cw = { open: openCw, close: closeCw };
+
 
 
 $('wfriends-x').addEventListener('click', closeFriends);
@@ -3699,6 +3869,7 @@ var HUB_DEFS = [
   ['friends', '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3 2.8-4.5 5.5-4.5s4.9 1.5 5.5 4.5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.6c2.3.2 4.1 1.6 4.7 4.4"/>', function () { openFriends(); }],
   ['arcade matches', '<path d="M6 9h12l1.5 9a2 2 0 0 1-2 2.3h-11A2 2 0 0 1 4.5 18L6 9zM6 9a6 6 0 0 1 12 0M9.5 13.5h.01M14.5 13.5h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>', function () { openMatch(); }],
   ['replays', '<path d="M8 5.5v13l11-6.5z" fill="currentColor"/>', function () { openReplays(); }],
+  ['created worlds', '<path d="M12 3l2.1 5.3L20 9l-4.2 3.9L17 19l-5-2.9L7 19l1.2-6.1L4 9l5.9-.7z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>', function () { openCw(); }],
   ['character', '<circle cx="12" cy="8" r="4"/><path d="M4 21c.8-3.6 4-5.5 8-5.5s7.2 1.9 8 5.5"/>', function () { openChar(); }],
   ['emotes', '<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5c1 1.2 2.2 1.8 3.5 1.8s2.5-.6 3.5-1.8"/><path d="M9 9.5h.01M15 9.5h.01"/>', function () { var ep = $('wemotes'); if (ep) ep.hidden = !ep.hidden; }],
   ['settings', '<circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.14-1.4l2-1.55-2-3.46-2.36.95a7 7 0 0 0-2.42-1.4L13.7 2.6h-3.4l-.38 2.54a7 7 0 0 0-2.42 1.4l-2.36-.95-2 3.46 2 1.55a7 7 0 0 0 0 2.8l-2 1.55 2 3.46 2.36-.95a7 7 0 0 0 2.42 1.4l.38 2.54h3.4l.38-2.54a7 7 0 0 0 2.42-1.4l2.36.95 2-3.46-2-1.55c.1-.45.14-.92.14-1.4Z"/>', function () { openSettings(); }],

@@ -31,7 +31,7 @@ const fs = require('fs');
 const path = require('path');
 
 const MAP_W = 6400;
-const MAP_H = 7600; // 4200 of overworld + housing band (4400+) + crypt band (6460+)
+const MAP_H = 8900; // 4200 of overworld + housing band (4400+) + crypt band (6460+) + created-worlds band (7760+)
 const STALE_MS = 7000;
 const RACE_COURSES = {
   skyline: { name: 'skyline sprint', startLabel: 'the sky islands (climb from the rooftops)', r: 85, pts: [[5650, 430], [5400, 380], [5200, 250], [5650, 180], [6150, 300], [5650, 430]] },
@@ -739,6 +739,7 @@ function createWorld(ctx) {
   function actOf(u, p, now) {
     if (!p) return '';
     if (p.inst) return 'in the crypt';
+    if (p.cw) return 'in a created world';
     if (FISH.has(u)) return 'fishing';
     if (RACES.has(u)) return 'racing';
     if (bossLive(now) && dist(p.x, p.y, 2400, 2600) < 650) return 'at the lich';
@@ -763,6 +764,28 @@ function createWorld(ctx) {
   function matchOf(user) { const id = MATCH_OF.get(user); return id ? MATCHES.get(id) || null : null; }
   function matchFx(user, fx) { if (!MATCH_FX.has(user)) MATCH_FX.set(user, []); const q = MATCH_FX.get(user); q.push(fx); if (q.length > 6) q.shift(); }
   function payMatch(m, r) { try { const pr = ctx.awardCents(r.u, r.amt); if (pr && pr.catch) pr.catch(() => {}); } catch { } txLog(r.u, 'match', r.amt, MATCH_GAMES[m.game].name + ' — ' + (r.note || '')); }
+  /* ---- E10: created worlds ---- */
+  const CW_RECT = { x: 2560, y: 7760, w: 1280, h: 960 };
+  const CW_TILES = ['grass', 'stone', 'wood', 'sand', 'water', 'snow', 'lava', 'void'];
+  const CW_PROPS = ['tree', 'pine', 'rock', 'lamp', 'flowers', 'sign', 'crystal', 'fountain', 'bush', 'torch', 'shroom', 'table'];
+  const CW_VISIT_CD = new Map();
+  function cwStore() { const s = wload('cworlds', '_cworlds'); if (s && s.worlds) return s; return { seq: 0, worlds: {}, reports: [] }; }
+  function cwSaveStore(s) { wsave('cworlds', '_cworlds', s); }
+  function cwGet(id) { const s = cwStore(); return s.worlds[id] || null; }
+  function cwCanEnter(user, w) { return !!w && (w.pub === 'public' || w.owner === user || ctx.isAdmin(user)); }
+  function cwMeta(w) { return { id: w.id, name: w.name, desc: w.desc, owner: w.owner, pub: w.pub, visits: w.visits || 0, likes: (w.likes || []).length, v: w.v || 1 }; }
+  function cwLayout(w) { return { id: w.id, name: w.name, owner: w.owner, v: w.v || 1, tiles: w.tiles || {}, props: w.props || [], spawn: w.spawn || { tx: 16, ty: 12 }, rect: CW_RECT }; }
+  function cwValidLayout(tiles, props, spawn) {
+    if (!tiles || typeof tiles !== 'object' || Array.isArray(tiles)) return 'bad tiles';
+    const keys = Object.keys(tiles);
+    if (keys.length > 768) return 'too many tiles';
+    for (const k of keys) { const parts = k.split(','); const tx = Number(parts[0]), ty = Number(parts[1]); if (!(tx >= 0 && tx < 32 && ty >= 0 && ty < 24) || !CW_TILES.includes(tiles[k])) return 'bad tile ' + k; }
+    if (!Array.isArray(props) || props.length > 120) return 'too many props';
+    const cells = new Set();
+    for (const pr of props) { if (!pr || !(pr.tx >= 0 && pr.tx < 32 && pr.ty >= 0 && pr.ty < 24) || !CW_PROPS.includes(pr.k)) return 'bad prop'; const ck = pr.tx + ',' + pr.ty; if (cells.has(ck)) return 'two props share a cell'; cells.add(ck); }
+    if (!spawn || !(spawn.tx >= 0 && spawn.tx < 32 && spawn.ty >= 0 && spawn.ty < 24)) return 'bad spawn';
+    return null;
+  }
   function saveReplay(m, now) {
     if (!m.rec || m.rec.samples.length < 4 || m.replaySaved) return;
     m.replaySaved = true;
@@ -1497,7 +1520,9 @@ function createWorld(ctx) {
         }
       }
       { const mmFrz = matchOf(me); if (mmFrz && mmFrz.game === 'hs' && mmFrz.phase === 'hide' && mmFrz.seeker === me) { p.x = HS_ARENA.x; p.y = HS_ARENA.y; } }
-      if (!p.house && !p.inst && p.y > 4380) p.y = 4380;
+      if (!p.house && !p.inst && !p.cw && p.y > 4380) p.y = 4380;
+      if (p.cw && !cwGet(p.cw)) { p.cw = null; p.cwFrom = null; TP_OK.add(me); p.x = 2400; p.y = 1700; }
+      if (p.cw) { p.x = clampN(p.x, CW_RECT.x + 16, CW_RECT.x + CW_RECT.w - 16); p.y = clampN(p.y, CW_RECT.y + 16, CW_RECT.y + CW_RECT.h - 16); }
       if (b.dir != null) p.dir = clampN(b.dir, -Math.PI * 2, Math.PI * 2);
       p.vc = !!b.vc;
       p.talk = !!b.talk;
@@ -1685,7 +1710,7 @@ function createWorld(ctx) {
       const st = statsFor(me);
       if (Math.random() < 0.08) achCheck(me);
       J({
-        ok: true, me, players: roster(now).filter((pl) => (pl.npc ? (!p.house && !p.inst) : ((((P.get(pl.u) || {}).house || null) === (p.house || null)) && (((P.get(pl.u) || {}).inst || null) === (p.inst || null)))) && (pl.npc || pl.u === me || (!(wload('blocks', me) || []).includes(pl.u) && !(wload('blocks', pl.u) || []).includes(me)))), sig, n: P.size, bal: (() => { try { return ctx.getCents(me); } catch { return null; } })(),
+        ok: true, me, players: roster(now).filter((pl) => (pl.npc ? (!p.house && !p.inst && !p.cw) : ((((P.get(pl.u) || {}).house || null) === (p.house || null)) && (((P.get(pl.u) || {}).inst || null) === (p.inst || null)) && (((P.get(pl.u) || {}).cw || null) === (p.cw || null)))) && (pl.npc || pl.u === me || (!(wload('blocks', me) || []).includes(pl.u) && !(wload('blocks', pl.u) || []).includes(me)))), sig, n: P.size, bal: (() => { try { return ctx.getCents(me); } catch { return null; } })(),
         inv: (() => { try { return ctx.getInv(me); } catch { return []; } })(),
         wearIds: (() => { try { return ctx.getWear(me); } catch { return {}; } })(),
         shards: shards.map((s) => ({ id: s.id, x: s.x, y: s.y, gold: s.gold })),
@@ -1721,6 +1746,7 @@ function createWorld(ctx) {
         poke: (() => { const pk = POKE.get(me); if (!pk) return null; POKE.delete(me); return now - pk.at < 30000 ? { from: pk.from } : null; })(),
         ann: ANN && now - ANN.at < 120000 ? ANN : null,
         isAdmin: !!ctx.isAdmin(me),
+        cw: p.cw ? (() => { const w = cwGet(p.cw); return w ? { id: w.id, name: w.name, owner: w.owner, v: w.v || 1 } : null; })() : null,
         weather: weatherOf(now),
       });
       return true;
@@ -1743,6 +1769,126 @@ function createWorld(ctx) {
       return true;
     }
 
+    if (u.pathname === '/api/world/cworlds' && req.method === 'GET') {
+      const store = cwStore();
+      const q = (u.searchParams.get('q') || '').toLowerCase();
+      const mine = Object.values(store.worlds).filter((w) => w.owner === me).map((w) => ({ ...cwMeta(w), tiles: w.tiles || {}, props: w.props || [], spawn: w.spawn || { tx: 16, ty: 12 } }));
+      let pubs = Object.values(store.worlds).filter((w) => w.pub === 'public' && w.owner !== me);
+      if (q) pubs = pubs.filter((w) => w.name.toLowerCase().includes(q) || w.owner.toLowerCase().includes(q));
+      pubs.sort((a, b) => ((b.likes || []).length + (b.visits || 0)) - ((a.likes || []).length + (a.visits || 0)));
+      const out = { ok: true, mine, public: pubs.slice(0, 40).map(cwMeta), myLikes: Object.values(store.worlds).filter((w) => (w.likes || []).includes(me)).map((w) => w.id) };
+      if (ctx.isAdmin(me)) out.reports = (store.reports || []).slice(-30).reverse();
+      J(out);
+      return true;
+    }
+    if (u.pathname === '/api/world/cw-layout' && req.method === 'GET') {
+      const w = cwGet(u.searchParams.get('id') || '');
+      if (!w) { J({ ok: false, err: 'world not found' }, 404); return true; }
+      if (!cwCanEnter(me, w)) { J({ ok: false, err: 'that world is private' }, 403); return true; }
+      J({ ok: true, world: cwLayout(w) });
+      return true;
+    }
+    if (u.pathname === '/api/world/cw-enter' && req.method === 'POST') {
+      const w = cwGet(String(b.id || ''));
+      if (!w) { J({ ok: false, err: 'world not found' }, 404); return true; }
+      if (!cwCanEnter(me, w)) { J({ ok: false, err: 'that world is private' }, 403); return true; }
+      const p = P.get(me);
+      if (!p) { J({ ok: false, err: 'enter the world first' }, 400); return true; }
+      if (matchOf(me)) matchLeave(me);
+      const cdK = me + ':' + w.id;
+      if (!CW_VISIT_CD.has(cdK) || now - CW_VISIT_CD.get(cdK) > 600000) { CW_VISIT_CD.set(cdK, now); w.visits = (w.visits || 0) + 1; const st = cwStore(); st.worlds[w.id] = w; wsave('cworlds', '_cworlds', st); }
+      if (!p.cw) p.cwFrom = { x: p.x, y: p.y };
+      p.house = null; p.inst = null; p.cw = w.id;
+      TP_OK.add(me);
+      const sp = w.spawn || { tx: 16, ty: 12 };
+      p.x = CW_RECT.x + sp.tx * 40 + 20; p.y = CW_RECT.y + sp.ty * 40 + 20; p.at = now;
+      J({ ok: true, x: p.x, y: p.y, world: cwLayout(w) });
+      return true;
+    }
+    if (u.pathname === '/api/world/cw-exit' && req.method === 'POST') {
+      const p = P.get(me);
+      if (!p) { J({ ok: false, err: 'enter the world first' }, 400); return true; }
+      const back = p.cwFrom || { x: 2400, y: 1700 };
+      p.cw = null; p.cwFrom = null;
+      TP_OK.add(me);
+      p.x = back.x; p.y = back.y; p.at = now;
+      J({ ok: true, x: p.x, y: p.y });
+      return true;
+    }
+    if (u.pathname === '/api/world/cw' && req.method === 'POST') {
+      const act = String(b.act || '');
+      const store = cwStore();
+      if (act === 'create') {
+        const name = cleanText(String(b.name || ''), 32);
+        if (!name) { J({ ok: false, err: 'name ur world' }, 400); return true; }
+        const mineN = Object.values(store.worlds).filter((w) => w.owner === me).length;
+        if (mineN >= 3) { J({ ok: false, err: 'u already have 3 worlds' }, 400); return true; }
+        if (Object.keys(store.worlds).length >= 300) { J({ ok: false, err: 'the multiverse is full' }, 400); return true; }
+        const id = 'w' + (++store.seq) + 'x' + now.toString(36);
+        store.worlds[id] = { id, owner: me, name, desc: cleanText(String(b.desc || ''), 90), pub: 'public', tiles: {}, props: [], spawn: { tx: 16, ty: 12 }, v: 1, at: now, visits: 0, likes: [] };
+        cwSaveStore(store);
+        J({ ok: true, id });
+        return true;
+      }
+      const w = cwGet(String(b.id || ''));
+      if (act === 'unlist' || act === 'moddelete') {
+        if (!ctx.isAdmin(me)) { J({ ok: false, err: 'admins only' }, 403); return true; }
+        if (!w) { J({ ok: false, err: 'world not found' }, 404); return true; }
+        if (act === 'unlist') { w.pub = 'private'; store.worlds[w.id] = w; }
+        else delete store.worlds[w.id];
+        cwSaveStore(store);
+        J({ ok: true });
+        return true;
+      }
+      if (!w) { J({ ok: false, err: 'world not found' }, 404); return true; }
+      if (act === 'save') {
+        if (w.owner !== me) { J({ ok: false, err: 'not ur world' }, 403); return true; }
+        const err = cwValidLayout(b.tiles, b.props, b.spawn);
+        if (err) { J({ ok: false, err }, 400); return true; }
+        if (JSON.stringify(b.tiles).length + JSON.stringify(b.props).length > 60000) { J({ ok: false, err: 'layout too large' }, 400); return true; }
+        w.tiles = b.tiles; w.props = b.props; w.spawn = { tx: Number(b.spawn.tx), ty: Number(b.spawn.ty) }; w.v = (w.v || 1) + 1;
+        store.worlds[w.id] = w; cwSaveStore(store);
+        J({ ok: true, v: w.v });
+        return true;
+      }
+      if (act === 'meta') {
+        if (w.owner !== me) { J({ ok: false, err: 'not ur world' }, 403); return true; }
+        if (b.name != null) { const nm = cleanText(String(b.name), 32); if (!nm) { J({ ok: false, err: 'name ur world' }, 400); return true; } w.name = nm; }
+        if (b.desc != null) w.desc = cleanText(String(b.desc), 90);
+        if (b.pub === 'public' || b.pub === 'private') w.pub = b.pub;
+        store.worlds[w.id] = w; cwSaveStore(store);
+        J({ ok: true });
+        return true;
+      }
+      if (act === 'delete') {
+        if (w.owner !== me) { J({ ok: false, err: 'not ur world' }, 403); return true; }
+        delete store.worlds[w.id]; cwSaveStore(store);
+        J({ ok: true });
+        return true;
+      }
+      if (act === 'like') {
+        if (w.owner === me) { J({ ok: false, err: 'cannot like ur own world' }, 400); return true; }
+        if (w.pub !== 'public') { J({ ok: false, err: 'that world is private' }, 403); return true; }
+        w.likes = w.likes || [];
+        const ix = w.likes.indexOf(me);
+        if (ix >= 0) w.likes.splice(ix, 1); else w.likes.push(me);
+        store.worlds[w.id] = w; cwSaveStore(store);
+        J({ ok: true, likes: w.likes.length, liked: ix < 0 });
+        return true;
+      }
+      if (act === 'report') {
+        if (w.owner === me) { J({ ok: false, err: 'cannot report ur own world' }, 400); return true; }
+        store.reports = store.reports || [];
+        if (store.reports.some((r) => r.id === w.id && r.by === me && now - r.at < 86400000)) { J({ ok: false, err: 'already reported' }, 400); return true; }
+        store.reports.push({ id: w.id, name: w.name, owner: w.owner, by: me, at: now });
+        store.reports = store.reports.slice(-100);
+        cwSaveStore(store);
+        J({ ok: true });
+        return true;
+      }
+      J({ ok: false, err: 'unknown act' }, 400);
+      return true;
+    }
     if (u.pathname === '/api/world/replays' && req.method === 'GET') {
       J({ ok: true, replays: wload('replays', me) || [] });
       return true;
@@ -1787,6 +1933,8 @@ function createWorld(ctx) {
       return true;
     }
     if (u.pathname === '/api/world/match' && req.method === 'POST') {
+      const pMeCw = P.get(me);
+      if (pMeCw && pMeCw.cw) { J({ ok: false, err: 'leave the created world first' }, 400); return true; }
       const act = String(b.act || '');
       if (act === 'create') {
         const game = String(b.game || '');
@@ -3406,6 +3554,11 @@ function createWorld(ctx) {
       '  <div class="wa-head"><span>\u2726 ur people</span><button id="wfriends-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
       '  <div id="wfriends-body"></div>\n' +
       '</div></div>\n' +
+      '<div id="wcw" hidden><div class="wa-card">\n' +
+      '<div class="wa-head"><span>created worlds</span><button id="wcw-x" type="button" aria-label="close"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div>\n' +
+      '<div id="wcw-body"></div>\n' +
+      '</div></div>\n' +
+      '<div id="wcw-chip" class="mt-chip" hidden></div>\n' +
       '<div id="wreplay" hidden><div class="wa-card">\n' +
       '<div class="wa-head"><span>match replays</span><button id="wreplay-x" type="button" aria-label="close"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div>\n' +
       '<div id="wreplay-body"></div>\n' +
