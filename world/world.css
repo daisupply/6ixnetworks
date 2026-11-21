@@ -31,8 +31,8 @@ body{display:block;padding:0;margin:0;overflow:hidden;background:#07040f}
 .jq-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#8b7cff,#c4b5fd)}
 .jq-s{font:600 10.5px Inter,sans-serif;color:#b7aee0;margin-top:4px}
 .jq-say{font:600 11.5px Inter,sans-serif;color:#ffd9a0;margin-top:5px;font-style:italic}
-#whub,#winv,#wmap2,#wsettings,#wadmin,#whouse,#wpets,#wfish{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(5,3,14,.55);padding:18px}
-#whub[hidden],#winv[hidden],#wmap2[hidden],#wsettings[hidden],#wadmin[hidden],#whouse[hidden],#wpets[hidden],#wfish[hidden]{display:none!important}
+#whub,#winv,#wmap2,#wsettings,#wadmin,#whouse,#wpets,#wfish,#wrace,#wguild{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(5,3,14,.55);padding:18px}
+#whub[hidden],#winv[hidden],#wmap2[hidden],#wsettings[hidden],#wadmin[hidden],#whouse[hidden],#wpets[hidden],#wfish[hidden],#wrace[hidden],#wguild[hidden]{display:none!important}
 #whub-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .hub-btn{display:flex;align-items:center;gap:10px;font:inherit;font-size:13.5px;font-weight:800;color:#f3efff;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:13px 14px;cursor:pointer;text-align:left}
 .hub-btn svg{width:20px;height:20px;color:#a78bfa;flex:none}
@@ -52,7 +52,38 @@ body{display:block;padding:0;margin:0;overflow:hidden;background:#07040f}
 .inv-dot{width:16px;height:16px;border-radius:50%;box-shadow:0 0 8px rgba(255,255,255,.25)}
 .inv-nm{font-size:13px;font-weight:800;color:#f3efff}
 .inv-meta{font-size:10.5px;font-weight:700;color:#a79fd0;text-transform:uppercase;letter-spacing:.06em}
-#wmap2-cv{width:100%;height:auto;border-radius:12px;border:1px solid rgba(255,255,255,.09);cursor:pointer}
+#wmap2 .wa-card{width:min(940px,97vw)}
+#wmap2-cv{width:100%;height:auto;border-radius:12px;border:1px solid rgba(255,255,255,.09);cursor:grab;touch-action:none}
+#wmap2-cv:active{cursor:grabbing}
+.wmap2-bar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:10px}
+.wmap2-bar button{padding:7px 13px;border-radius:99px;border:1px solid rgba(139,124,255,.45);background:rgba(139,124,255,.12);color:#e6e1ff;font:700 12px Inter,sans-serif;cursor:pointer}
+.wmap2-bar button:hover{background:rgba(139,124,255,.25)}
+#wmap2-info{font:600 12px Inter,sans-serif;color:#c9c2e8;margin-left:2px}
+.rc-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:15px;padding:13px 15px;margin-top:10px}
+.rc-name{font:800 15.5px Inter,sans-serif;color:#fff}
+.rc-sub{font:600 11.5px Inter,sans-serif;color:#a79fd0;margin-top:2px}
+.rc-row{display:flex;justify-content:space-between;gap:10px;font:600 12.5px Inter,sans-serif;color:#d8d2f0;margin-top:7px}
+.rc-row b{color:#ffd257}
+.rc-wk{font:600 12px Inter,sans-serif;color:#bdb4e4;margin-top:3px}
+.rc-start{margin-top:11px;width:100%;padding:10px;border-radius:12px;border:1px solid rgba(255,210,87,.55);background:linear-gradient(135deg,rgba(255,210,87,.22),rgba(255,94,168,.12));color:#ffe9a8;font:800 13.5px Inter,sans-serif;cursor:pointer}
+.rc-quit{margin-top:11px;width:100%;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:#d8d2f0;font:800 13.5px Inter,sans-serif;cursor:pointer}
+.gu-head{display:flex;align-items:center;gap:12px;margin-top:4px}
+.gu-emb{width:46px;height:46px;flex:none;border-radius:14px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.16)}
+.gu-name{font:900 18px Inter,sans-serif;color:#fff}
+.gu-tag{font:800 11px Inter,sans-serif;letter-spacing:.08em}
+.gu-mem{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid rgba(255,255,255,.05);font:600 13px Inter,sans-serif;color:#e6e1ff}
+.gu-dot{width:8px;height:8px;border-radius:50%;flex:none}
+.gu-rank{margin-left:auto;font:700 10.5px Inter,sans-serif;color:#a79fd0;text-transform:uppercase;letter-spacing:.06em}
+.gu-act{padding:4px 9px;border-radius:8px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:#d8d2f0;font:700 11px Inter,sans-serif;cursor:pointer}
+.gu-inp{width:100%;padding:10px 12px;border-radius:11px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:#fff;font:600 13.5px Inter,sans-serif;box-sizing:border-box}
+.gu-sw{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}
+.gu-swatch{width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+.gu-swatch.sel{border-color:#fff}
+.gu-emb-b{width:38px;height:38px;border-radius:11px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#d8d2f0;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.gu-emb-b.sel{border-color:#ffd257;color:#ffd257}
+.gu-chat{max-height:170px;overflow-y:auto;margin-top:8px;display:flex;flex-direction:column;gap:4px;scrollbar-width:thin}
+.gu-msg{font:600 12.5px Inter,sans-serif;color:#d8d2f0;background:rgba(255,255,255,.04);border-radius:9px;padding:6px 9px}
+.gu-msg b{color:#ffd257}
 .wmap2-hint{font:600 11.5px Inter,sans-serif;color:#a79fd0;margin-top:8px;text-align:center}
 .wset-row{display:flex;align-items:center;justify-content:space-between;gap:14px;font:700 13.5px Inter,sans-serif;color:#f3efff;padding:10px 2px;border-bottom:1px solid rgba(255,255,255,.06)}
 .wset-row input[type=range]{flex:1;max-width:200px;accent-color:#8b7cff}
@@ -156,7 +187,7 @@ body{display:block;padding:0;margin:0;overflow:hidden;background:#07040f}
 .wa-head span:first-child,.wg-head #wg-title{flex:0 1 auto}
 #wa-count{color:rgba(243,239,255,.5);font-size:12.5px;font-weight:600}
 #wg-score{margin-left:auto;color:#ffd257;font-size:14px;font-weight:800}
-#wa-x,#wg-x,#wsh-x,#wchar-x,#wach-x,#wjournal-x,#wboards-x,#whub-x,#winv-x,#wmap2-x,#wsettings-x,#wadmin-x,#whouse-x,#wpets-x,#wfish-x{margin-left:auto;width:34px;height:34px;flex:none;display:flex;align-items:center;justify-content:center;padding:0;border-radius:50%;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.06);color:rgba(243,239,255,.85);cursor:pointer;transition:background .15s,transform .1s}
+#wa-x,#wg-x,#wsh-x,#wchar-x,#wach-x,#wjournal-x,#wboards-x,#whub-x,#winv-x,#wmap2-x,#wsettings-x,#wadmin-x,#whouse-x,#wpets-x,#wfish-x,#wrace-x,#wguild-x{margin-left:auto;width:34px;height:34px;flex:none;display:flex;align-items:center;justify-content:center;padding:0;border-radius:50%;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.06);color:rgba(243,239,255,.85);cursor:pointer;transition:background .15s,transform .1s}
 #wa-x:hover,#wg-x:hover,#wsh-x:hover,#wchar-x:hover,#wach-x:hover,#wjournal-x:hover,#wboards-x:hover,#whub-x:hover,#winv-x:hover,#wmap2-x:hover,#wsettings-x:hover,#wadmin-x:hover{background:rgba(255,255,255,.14);color:#fff}
 #wa-x:active,#wg-x:active,#wsh-x:active,#wchar-x:active,#wach-x:active,#wjournal-x:active,#wboards-x:active,#whub-x:active,#winv-x:active,#wmap2-x:active,#wsettings-x:active,#wadmin-x:active{transform:scale(.92)}
 #wa-x svg,#wg-x svg,#wsh-x svg,#wchar-x svg,#wach-x svg,#wjournal-x svg,#wboards-x svg,#whub-x svg,#winv-x svg,#wmap2-x svg,#wsettings-x svg,#wadmin-x svg{flex:none;display:block}
@@ -223,7 +254,7 @@ body.wov #wportal,body.wov #wact,body.wov #wemotebtn,body.wov #wdash{display:non
 
 /* shell law: the site chrome flattens every <button> to border-radius:8px
    !important — the world re-asserts its own shapes. */
-#wdash,#wemotebtn,.wbtns button,#wa-x,#wg-x,#wsh-x,#wchar-x,#wprof-x,#wach-x,#wjournal-x,#wboards-x,#whub-x,#winv-x,#wmap2-x,#wsettings-x,#wadmin-x,#whouse-x,#wpets-x,#wfish-x{border-radius:50%!important}
+#wdash,#wemotebtn,.wbtns button,#wa-x,#wg-x,#wsh-x,#wchar-x,#wprof-x,#wach-x,#wjournal-x,#wboards-x,#whub-x,#winv-x,#wmap2-x,#wsettings-x,#wadmin-x,#whouse-x,#wpets-x,#wfish-x,#wrace-x,#wguild-x{border-radius:50%!important}
 #wportal,#wact,#wsend,#wemotes button,.wsh-card button,#wg-result button,#wsh-tabs button{border-radius:999px!important}
 .wa-item,.mg-quiz button,.mg-dpad button{border-radius:12px!important}
 #wdash svg,#wemotebtn svg{flex:none}

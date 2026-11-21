@@ -1424,6 +1424,16 @@ const ITEMS = [
   "price": 2600,
   "color": "#ffd257",
   "kind": "rod4"
+ },
+ {
+  "id": "s159",
+  "cat": "pet",
+  "name": "crypt shade",
+  "rarity": "epic",
+  "price": 0,
+  "color": "#8b7fd4",
+  "kind": "skull",
+  "vaultOnly": true
  }
 ];
 const BY_ID = {};

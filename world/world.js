@@ -31,8 +31,12 @@ const fs = require('fs');
 const path = require('path');
 
 const MAP_W = 6400;
-const MAP_H = 6400; // 4200 of overworld + a housing-interior band below (4400+)
+const MAP_H = 7600; // 4200 of overworld + housing band (4400+) + crypt band (6460+)
 const STALE_MS = 7000;
+const RACE_COURSES = {
+  skyline: { name: 'skyline sprint', startLabel: 'the sky islands (climb from the rooftops)', r: 85, pts: [[5650, 430], [5400, 380], [5200, 250], [5650, 180], [6150, 300], [5650, 430]] },
+  grandtour: { name: 'the grand tour', startLabel: 'spawn plaza', r: 135, pts: [[2400, 1700], [700, 900], [650, 2100], [2400, 2400], [3950, 1600], [3950, 480], [3400, 750], [2400, 1700]] }
+};
 const SHARD_TARGET = 40;
 const SHARD_PAY = 3;
 const GOLD_PAY = 25;
@@ -226,6 +230,13 @@ const MOUNT_SPEED = { board: 350, scooter: 365, bike: 400, hover: 415, cloud: 44
     return inLake || onPier;
   }
   function fishWeek(now) { return Math.floor((now / 86400000 + 3) / 7); }
+  const BOSS_POS = { x: 2400, y: 2620 };
+  const BOSS_CYCLE = 1500000, BOSS_LIVE_FROM = 1200000;
+  let BOSS = null;
+  const STUN = new Map(), BOSS_HIT_CD = new Map(), DUN_HIT_CD = new Map();
+  const DUNGEONS = new Map();
+  const CRYPT_GATE = { x: 5050, y: 3550 };
+  function bossLive(now) { return (now % BOSS_CYCLE) >= BOSS_LIVE_FROM; }
   function fishBoard(now, fb) {
     fb = fb || {};
     if (fb.wk !== fishWeek(now)) return [];
@@ -283,6 +294,9 @@ function createWorld(ctx) {
 
   const P = new Map();      // user -> {x,y,dir,at,bub,bubAt,vc,talk,fx,emote,emoteTs,lx,ly}
   const SIG = new Map();
+  const RACES = new Map();
+  const RACE_FLASH = new Map();
+  const RACE_FIN = new Map();
   const SIG_WIN = new Map(); // per-sender signal timestamps (rate guard)    // user -> [{from, data, at}]
   const SAY_AT = new Map(); // user -> last say ts
   const WISH_AT = new Map(); // user -> last wish ts
@@ -321,6 +335,7 @@ function createWorld(ctx) {
     const after = levelOf(pg.xp);
     if (after > before) LVLUP.set(user, { lvl: after, title: titleOf(after) });
     progSave(user);
+    guildXpAdd(user, amt);
   }
   function progView(user) {
     const pg = progFor(user);
@@ -505,11 +520,180 @@ function createWorld(ctx) {
 
   function prune(now) {
     for (const [u, p] of P) if (now - p.at > STALE_MS) {
-      P.delete(u); SIG.delete(u); PINV.delete(u); DUEL_CH.delete(u);
+      P.delete(u); SIG.delete(u); PINV.delete(u); DUEL_CH.delete(u); FISH.delete(u); STUN.delete(u); BOSS_HIT_CD.delete(u); DUN_HIT_CD.delete(u); RACES.delete(u); RACE_FLASH.delete(u); RACE_FIN.delete(u);
+      if (p.inst) { const dg = DUNGEONS.get(p.inst); if (dg) { dg.members.delete(u); if (!dg.members.size) DUNGEONS.delete(p.inst); } }
       for (const [did, d] of DUELS) if (!d.settled && (d.a === u || d.b === u)) DUELS.delete(did);
       const pt = partyOf(u);
       if (pt && !pt.members.some((m) => m !== u && P.has(m))) for (const m of pt.members.slice()) partyRemove(m);
     }
+  }
+
+  function cryptOrigin(instId) { const s = hashStr(instId) % 4; return { x: 300 + (s % 2) * 2400, y: 6460 + Math.floor(s / 2) * 600 }; }
+  function bossEnsure(now) {
+    const c = Math.floor(now / BOSS_CYCLE);
+    if (!BOSS || BOSS.cycle !== c) BOSS = { cycle: c, hp: 900, max: 900, dead: false, dmg: new Map(), hits: new Map(), slamAt: now + 12000 };
+    return bossLive(now) ? BOSS : null;
+  }
+  function bossPhase() { if (!BOSS) return 1; const f = BOSS.hp / BOSS.max; return f > 0.66 ? 1 : f > 0.33 ? 2 : 3; }
+  function bossTick(now) {
+    const bs = bossEnsure(now); if (!bs || bs.dead) return;
+    if (now >= bs.slamAt) {
+      const R = bossPhase() >= 2 ? 170 : 140;
+      for (const [u, p] of P) { if (!p.house && !p.inst && dist(p.x, p.y, BOSS_POS.x, BOSS_POS.y) < R) STUN.set(u, now + 3000); }
+      bs.slamAt = now + (bossPhase() >= 2 ? 9000 : 12000);
+    }
+  }
+  function bossView(me, now) {
+    const bs = bossEnsure(now); if (!bs) return null;
+    bossTick(now);
+    return { x: BOSS_POS.x, y: BOSS_POS.y, hp: Math.max(0, Math.round(bs.hp)), max: bs.max, dead: bs.dead, phase: bossPhase(), slamIn: Math.max(0, bs.slamAt - now), stun: Math.max(0, (STUN.get(me) || 0) - now) };
+  }
+
+
+  const GINV = new Map();
+  const GMSG = new Map();
+  const GSAY_CD = new Map();
+  const GUILD_EMBLEMS = ['star', 'moon', 'bolt', 'wave', 'gem', 'crown', 'leaf', 'ghost'];
+  const GUILD_MS = [10, 25, 50];
+  function guildReg() { return wload('guilds', '_guilds') || {}; }
+  function guildSaveReg(reg) { wsave('guilds', '_guilds', reg); }
+  function guildOf(user) { const gid = wload('guild', user); if (!gid) return null; const g = guildReg()[gid]; return g ? { gid, g } : null; }
+  function guildTagOf(user) { const go = guildOf(user); return go ? go.g.tag : null; }
+  function guildLvl(xp) { return Math.floor(Math.sqrt((xp || 0) / 120)) + 1; }
+  function guildWkScore(g, now) { const wk = raceWeekKey(now); if (!g.wk || g.wk.key !== wk) return 0; return (g.wk.race || 0) + (g.wk.crypt || 0) + (g.wk.boss || 0); }
+  function guildWkBump(user, kind, now) {
+    const go = guildOf(user); if (!go) return;
+    const wk = raceWeekKey(now);
+    if (!go.g.wk || go.g.wk.key !== wk) go.g.wk = { key: wk, race: 0, crypt: 0, boss: 0 };
+    go.g.wk[kind] = (go.g.wk[kind] || 0) + 1;
+    const reg = guildReg(); reg[go.gid] = go.g; guildSaveReg(reg);
+  }
+  function guildXpAdd(user, amt) {
+    const go = guildOf(user); if (!go) return;
+    go.g.xp = (go.g.xp || 0) + amt;
+    const reg = guildReg(); reg[go.gid] = go.g; guildSaveReg(reg);
+  }
+  function guildJoin(user, gid) {
+    const reg = guildReg(); const g = reg[gid]; if (!g) return false;
+    g.members[user] = 'member'; reg[gid] = g; guildSaveReg(reg);
+    wsave('guild', user, gid);
+    return true;
+  }
+  function guildRemoveMember(gid, user) {
+    const reg = guildReg(); const g = reg[gid]; if (!g) return;
+    delete g.members[user]; reg[gid] = g; guildSaveReg(reg);
+    if (wload('guild', user) === gid) wsave('guild', user, null);
+  }
+  function raceWeekKey(now) { return Math.floor((now / 86400000 + 3) / 7); }
+  function finishRace(me, rc, now) {
+    const C = RACE_COURSES[rc.course];
+    const ms = now - rc.t0;
+    const pb = wload('racepb', me) || {};
+    const isPb = !pb[rc.course] || ms < pb[rc.course];
+    if (isPb) { pb[rc.course] = ms; wsave('racepb', me, pb); }
+    const recs = wload('racerec', '_racerec') || {};
+    const oldRec = recs[rc.course] || null;
+    const isRec = !!oldRec && oldRec.u !== me && ms < oldRec.ms;
+    if (!oldRec || ms < oldRec.ms) { recs[rc.course] = { u: me, ms }; wsave('racerec', '_racerec', recs); }
+    const wk = raceWeekKey(now);
+    const wdat = wload('racewk', '_racewk') || { wk, rows: {} };
+    if (wdat.wk !== wk) { wdat.wk = wk; wdat.rows = {}; }
+    if (!wdat.rows[rc.course]) wdat.rows[rc.course] = {};
+    if (!wdat.rows[rc.course][me] || ms < wdat.rows[rc.course][me]) wdat.rows[rc.course][me] = ms;
+    wsave('racewk', '_racewk', wdat);
+    const day = ctx.scoreDay();
+    const rd = wload('raceday', me) || {};
+    const n = rd.day === day ? (rd.n || 0) : 0;
+    let pay = 0;
+    if (n < 3) {
+      pay = 40 + (isPb ? 15 : 0) + (isRec ? 50 : 0);
+      if (pay > 0) { try { const pr = ctx.awardCents(me, pay); if (pr && pr.catch) pr.catch(() => {}); } catch (e) {} txLog(me, 'race', pay, C.name); }
+    }
+    wsave('raceday', me, { day, n: n + 1 });
+    awardXp(me, 20);
+    const pg = progFor(me); pg.c.race = (pg.c.race || 0) + 1; progSave(me);
+    guildWkBump(me, 'race', now);
+    return { course: rc.course, name: C.name, ms, pb: isPb, rec: isRec, pay };
+  }
+  function raceTick(me, now) {
+    const rc = RACES.get(me); if (!rc) return;
+    if (now - rc.at > 600000) { RACES.delete(me); return; }
+    const p = P.get(me); if (!p || p.house || p.inst) return;
+    const C = RACE_COURSES[rc.course]; if (!C) { RACES.delete(me); return; }
+    const cp = C.pts[rc.idx]; if (!cp) return;
+    if (dist(p.x, p.y, cp[0], cp[1]) > C.r) return;
+    rc.at = now;
+    if (!rc.t0) { rc.t0 = now; rc.idx = 1; RACE_FLASH.set(me, { i: 0, start: true }); return; }
+    rc.splits.push(now - rc.t0);
+    const crossed = rc.idx;
+    rc.idx++;
+    if (rc.idx >= C.pts.length) { const fin = finishRace(me, rc, now); RACES.delete(me); if (fin) RACE_FIN.set(me, fin); }
+    else RACE_FLASH.set(me, { i: crossed, t: now - rc.t0 });
+  }
+  function raceView(me, now) {
+    raceTick(me, now);
+    const flash = RACE_FLASH.get(me) || null; RACE_FLASH.delete(me);
+    const fin = RACE_FIN.get(me) || null; RACE_FIN.delete(me);
+    const rc = RACES.get(me);
+    if (!rc) return (flash || fin) ? { flash, fin } : null;
+    const C = RACE_COURSES[rc.course];
+    const cp = C.pts[Math.min(rc.idx, C.pts.length - 1)];
+    return { course: rc.course, name: C.name, state: rc.t0 ? 'running' : 'armed', idx: rc.idx, n: C.pts.length, cp: { x: cp[0], y: cp[1] }, r: C.r, el: rc.t0 ? now - rc.t0 : 0, flash, fin };
+  }
+  function dungeonOf(me) { const p = P.get(me); return (p && p.inst) ? (DUNGEONS.get(p.inst) || null) : null; }
+  function spawnWave(dg, wave) {
+    const o = dg.origin;
+    const defs = wave === 1 ? [40, 40, 40] : wave === 2 ? [55, 55, 55, 55] : [60, 60];
+    dg.shades = defs.map((hp, i) => ({ id: 'w' + wave + 's' + i, x: o.x + 190 + i * 150, y: o.y + 120 + (i % 2) * 110, hp, max: hp }));
+    if (wave === 3) dg.shades.push({ id: 'warden', x: o.x + 550, y: o.y + 150, hp: 240, max: 240, boss: true });
+    dg.wave = wave;
+  }
+  async function progressWaves(dg, now) {
+    if (dg.state !== 'fighting' || dg.shades.length) return;
+    if (dg.wave < 3) { spawnWave(dg, dg.wave + 1); return; }
+    dg.state = 'won';
+    const day = ctx.scoreDay();
+    for (const m of Array.from(dg.members)) {
+      const pg = progFor(m); pg.c.crypt = (pg.c.crypt || 0) + 1; progSave(m);
+      guildWkBump(m, 'crypt', now);
+      awardXp(m, 40);
+      const cd = wload('cryptday', m) || {};
+      const runs = cd.day === day ? (cd.n || 0) : 0;
+      if (runs < 3) {
+        try { await ctx.awardCents(m, 120); } catch { }
+        txLog(m, 'crypt', 120, 'sunken crypt cleared');
+        if (Math.random() < 0.25) { try { const inv = ctx.getInv(m) || []; if (!inv.includes('s159')) { inv.push('s159'); ctx.setInv(m, inv); } } catch { } }
+        wsave('cryptday', m, { day, n: runs + 1 });
+      }
+      achCheck(m);
+    }
+  }
+  function tickDungeon(dg, now) {
+    const dt = Math.min(2.5, Math.max(0, (now - dg.lastTick) / 1000));
+    dg.lastTick = now;
+    if (dg.state !== 'fighting') return;
+    for (const s of dg.shades) {
+      let bu = null, bp = null, bd = 1e9;
+      for (const m of dg.members) { const mp = P.get(m); if (!mp) continue; const d = dist(s.x, s.y, mp.x, mp.y); if (d < bd) { bd = d; bu = m; bp = mp; } }
+      if (bp && bd > 4) { const sp = (s.boss ? 46 : 62) * dt; s.x += (bp.x - s.x) / bd * Math.min(sp, bd); s.y += (bp.y - s.y) / bd * Math.min(sp, bd); }
+      if (bp && bd < 30 && now - (dg.hitCd.get(bu) || 0) > 1200) {
+        dg.hitCd.set(bu, now);
+        dg.hearts[bu] = (dg.hearts[bu] || 0) - 1;
+        s.x += (s.x - bp.x) * 1.4; s.y += (s.y - bp.y) * 1.4;
+        if (dg.hearts[bu] <= 0) {
+          dg.members.delete(bu); delete dg.hearts[bu];
+          bp.inst = null; bp.x = CRYPT_GATE.x; bp.y = CRYPT_GATE.y + 60; TP_OK.add(bu);
+          if (!dg.members.size) { DUNGEONS.delete(dg.id); return; }
+        }
+      }
+    }
+    if (!dg.shades.length) progressWaves(dg, now).catch(() => { });
+  }
+  function instView(me, now) {
+    const dg = dungeonOf(me); if (!dg) return null;
+    tickDungeon(dg, now);
+    if (!DUNGEONS.has(dg.id)) return null;
+    return { wave: dg.wave, state: dg.state, hearts: dg.hearts[me] || 0, ox: dg.origin.x, oy: dg.origin.y, members: Array.from(dg.members), shades: dg.shades.map((s) => ({ id: s.id, x: Math.round(s.x), y: Math.round(s.y), hp: Math.max(0, Math.ceil(s.hp)), max: s.max, boss: !!s.boss })) };
   }
   function wearOf(u) {
     const out = { trail: null, hat: null, aura: null, pet: null, face: null, mount: null, rod: null };
@@ -531,6 +715,7 @@ function createWorld(ctx) {
         emote: (p.emote && now - (p.emoteAt || 0) < 2600) ? p.emote : '',
         wear: p.wear || null,
         petName: (p.wear && p.wear.pet && p.wear.pet.id) ? ((wload('petname', u) || {})[p.wear.pet.id] || '') : '',
+        gtag: guildTagOf(u),
       });
     }
     return out;
@@ -788,7 +973,7 @@ function createWorld(ctx) {
           }
         }
       }
-      if (!p.house && p.y > 4380) p.y = 4380;
+      if (!p.house && !p.inst && p.y > 4380) p.y = 4380;
       if (b.dir != null) p.dir = clampN(b.dir, -Math.PI * 2, Math.PI * 2);
       p.vc = !!b.vc;
       p.talk = !!b.talk;
@@ -821,7 +1006,7 @@ function createWorld(ctx) {
       // meeting people: standing close to another player counts them (the
       // loop always runs so daily/weekly meet quests progress too — the
       // event itself no-ops for quests that are not meet-kind)
-      for (const [ou, op] of P) { if (ou !== me && (op.house || null) === (p.house || null) && dist(p.x, p.y, op.x, op.y) < 95) questDone = questEvent(me, 'meet', ou) || questDone; }
+      for (const [ou, op] of P) { if (ou !== me && (op.house || null) === (p.house || null) && (op.inst || null) === (p.inst || null) && dist(p.x, p.y, op.x, op.y) < 95) questDone = questEvent(me, 'meet', ou) || questDone; }
       // vc time: near another voice-on player, seconds accumulate
       if (p.vc) {
         let nearVc = false;
@@ -890,7 +1075,7 @@ function createWorld(ctx) {
       const st = statsFor(me);
       if (Math.random() < 0.08) achCheck(me);
       J({
-        ok: true, me, players: roster(now).filter((pl) => (pl.npc ? !p.house : (((P.get(pl.u) || {}).house || null) === (p.house || null))) && (pl.npc || pl.u === me || (!(wload('blocks', me) || []).includes(pl.u) && !(wload('blocks', pl.u) || []).includes(me)))), sig, n: P.size, bal: (() => { try { return ctx.getCents(me); } catch { return null; } })(),
+        ok: true, me, players: roster(now).filter((pl) => (pl.npc ? (!p.house && !p.inst) : ((((P.get(pl.u) || {}).house || null) === (p.house || null)) && (((P.get(pl.u) || {}).inst || null) === (p.inst || null)))) && (pl.npc || pl.u === me || (!(wload('blocks', me) || []).includes(pl.u) && !(wload('blocks', pl.u) || []).includes(me)))), sig, n: P.size, bal: (() => { try { return ctx.getCents(me); } catch { return null; } })(),
         inv: (() => { try { return ctx.getInv(me); } catch { return []; } })(),
         wearIds: (() => { try { return ctx.getWear(me); } catch { return {}; } })(),
         shards: shards.map((s) => ({ id: s.id, x: s.x, y: s.y, gold: s.gold })),
@@ -900,6 +1085,12 @@ function createWorld(ctx) {
         duelIn: duelInFor(me, now), duel: duelFor(me, now), duelDone: duelDoneFor(me, now),
         prog: progView(me), disc, gotC,
         house: p.house || null,
+        boss: bossView(me, now),
+        inst: instView(me, now),
+        race: raceView(me, now),
+        guildInv: (GINV.get(me) || []).filter((v) => now - v.at < 120000),
+        guildMsgs: (() => { const q = GMSG.get(me) || []; GMSG.delete(me); return q; })(),
+        myGuildTag: guildTagOf(me),
         petNames: wload('petname', me) || {},
         crys: CRYSTALS.map((c) => ({ id: c.id, x: c.x, y: c.y, rare: c.rare, got: pg.crystals.indexOf(c.id) >= 0 })),
         lvlUp: (() => { const v = LVLUP.get(me) || null; LVLUP.delete(me); return v; })(),
@@ -1003,13 +1194,14 @@ function createWorld(ctx) {
       const all = ctx.wget('prog') || {};
       const rows = Object.keys(all).map((u2) => {
         const p = all[u2] || {};
-        return { u: u2, xp: p.xp || 0, lvl: lvlOfXp(p.xp || 0), quests: (p.c || {}).quest || 0, shards: (p.c || {}).shard || 0, ach: Object.keys(p.ach || {}).length, crystals: (p.crystals || []).length };
+        return { u: u2, xp: p.xp || 0, lvl: lvlOfXp(p.xp || 0), quests: (p.c || {}).quest || 0, shards: (p.c || {}).shard || 0, ach: Object.keys(p.ach || {}).length, crystals: (p.crystals || []).length, crypt: (p.c || {}).crypt || 0 };
       });
       const top = (k) => rows.slice().sort((a, b2) => b2[k] - a[k]).slice(0, 10).map((r) => ({ u: r.u, v: r[k], lvl: r.lvl }));
       J({ ok: true, boards: {
         levels: rows.slice().sort((a, b2) => b2.xp - a.xp).slice(0, 10).map((r) => ({ u: r.u, v: r.xp, lvl: r.lvl })),
         quests: top('quests'), shards: top('shards'), ach: top('ach'), crystals: top('crystals'),
         fish: fishBoard(Date.now(), wload('fishbest', '_fishbest') || {}),
+        crypt: top('crypt'),
       } });
       return true;
     }
@@ -1087,6 +1279,321 @@ function createWorld(ctx) {
       return true;
     }
 
+    if (u.pathname === '/api/world/boss-hit' && req.method === 'POST') {
+      const now3 = Date.now();
+      const bs = bossEnsure(now3);
+      if (!bs) { J({ ok: false, err: 'the lich is not risen' }, 400); return true; }
+      if (bs.dead) { J({ ok: false, err: 'already felled' }, 400); return true; }
+      if ((STUN.get(me) || 0) > now3) { J({ ok: false, err: 'stunned by the slam' }, 400); return true; }
+      if (now3 - (BOSS_HIT_CD.get(me) || 0) < 450) { J({ ok: false, err: 'too fast' }, 429); return true; }
+      const bp = P.get(me);
+      if (!bp || bp.house || bp.inst || dist(bp.x, bp.y, BOSS_POS.x, BOSS_POS.y) > 280) { J({ ok: false, err: 'get closer to the lich' }, 400); return true; }
+      BOSS_HIT_CD.set(me, now3);
+      bossTick(now3);
+      const ph = bossPhase();
+      const dmg = Math.round((8 + Math.random() * 7) * (ph >= 3 ? 1.25 : 1));
+      bs.hp -= dmg;
+      bs.dmg.set(me, (bs.dmg.get(me) || 0) + dmg);
+      bs.hits.set(me, (bs.hits.get(me) || 0) + 1);
+      let rewards = null;
+      if (bs.hp <= 0 && !bs.dead) {
+        bs.dead = true; bs.hp = 0;
+        let tot = 0; for (const v of bs.dmg.values()) tot += v;
+        rewards = {};
+        for (const [u2, d2] of bs.dmg) {
+          const share = Math.max(5, Math.round(600 * d2 / Math.max(1, tot)));
+          try { await ctx.awardCents(u2, share); } catch { }
+          txLog(u2, 'boss', share, 'the drowned lich');
+          if ((bs.hits.get(u2) || 0) >= 5) awardXp(u2, 30);
+          const pg2 = progFor(u2); pg2.c.boss = (pg2.c.boss || 0) + 1; progSave(u2);
+          rewards[u2] = share;
+          guildWkBump(u2, 'boss', now3);
+        }
+        achCheck(me);
+      }
+      J({ ok: true, dmg, hp: Math.max(0, Math.round(bs.hp)), dead: bs.dead, urShare: rewards ? (rewards[me] || 0) : null });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/race-start' && req.method === 'POST') {
+      const cid = String(b.course || '');
+      const C = RACE_COURSES[cid];
+      if (!C) { J({ ok: false, err: 'no such course' }, 400); return true; }
+      const p = P.get(me);
+      if (!p || p.house || p.inst) { J({ ok: false, err: 'not out in the world rn' }, 400); return true; }
+      if (dist(p.x, p.y, C.pts[0][0], C.pts[0][1]) > 300) { J({ ok: false, err: 'get to the start first — ' + C.startLabel }, 400); return true; }
+      RACES.set(me, { course: cid, idx: 0, t0: 0, splits: [], at: now });
+      J({ ok: true });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/race-quit' && req.method === 'POST') {
+      RACES.delete(me);
+      J({ ok: true });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/races' && req.method === 'GET') {
+      const pb = wload('racepb', me) || {};
+      const recs = wload('racerec', '_racerec') || {};
+      const wk = raceWeekKey(now);
+      const wdat = wload('racewk', '_racewk') || { wk, rows: {} };
+      const rows = wdat.wk === wk ? (wdat.rows || {}) : {};
+      const rc = RACES.get(me);
+      const courses = Object.keys(RACE_COURSES).map((cid) => {
+        const C = RACE_COURSES[cid];
+        const wkRows = rows[cid] || {};
+        const wkTop = Object.keys(wkRows).map((u2) => ({ u: u2, ms: wkRows[u2] })).sort((a, b) => a.ms - b.ms).slice(0, 5);
+        return { id: cid, name: C.name, startLabel: C.startLabel, n: C.pts.length, pb: pb[cid] || null, rec: recs[cid] || null, wkTop, myWk: wkRows[me] || null };
+      });
+      J({ ok: true, courses, active: rc ? { course: rc.course, state: rc.t0 ? 'running' : 'armed', idx: rc.idx, n: RACE_COURSES[rc.course].pts.length } : null });
+      return true;
+    }
+
+
+    if (u.pathname === '/api/world/guild' && req.method === 'GET') {
+      const qu = u.searchParams.get('u');
+      if (qu) {
+        const go = guildOf(String(qu).toLowerCase());
+        J({ ok: true, guild: go ? { name: go.g.name, tag: go.g.tag, color: go.g.color, emblem: go.g.emblem, rank: go.g.members[String(qu).toLowerCase()] || 'member', lvl: guildLvl(go.g.xp) } : null });
+        return true;
+      }
+      const reg = guildReg();
+      const list = Object.keys(reg).map((gid) => { const g = reg[gid]; return { gid, name: g.name, tag: g.tag, color: g.color, emblem: g.emblem, lvl: guildLvl(g.xp), n: Object.keys(g.members).length, open: !!g.open }; }).sort((a, b) => b.n - a.n).slice(0, 30);
+      const go = guildOf(me);
+      let mine = null;
+      if (go) {
+        const g = go.g;
+        const rankOrd = { owner: 0, officer: 1, member: 2 };
+        const members = Object.keys(g.members).map((u2) => ({ u: u2, rank: g.members[u2], online: P.has(u2) })).sort((a, b) => (rankOrd[a.rank] - rankOrd[b.rank]) || (a.u < b.u ? -1 : 1));
+        const claims = wload('guildclaim', me) || {};
+        const wkKey = raceWeekKey(now);
+        const got = claims.key === wkKey ? (claims.got || []) : [];
+        const score = guildWkScore(g, now);
+        mine = { gid: go.gid, name: g.name, tag: g.tag, color: g.color, emblem: g.emblem, open: !!g.open, owner: g.owner, xp: g.xp || 0, lvl: guildLvl(g.xp), myRank: g.members[me] || 'member', members, wk: { score, race: (g.wk && g.wk.key === wkKey) ? (g.wk.race || 0) : 0, crypt: (g.wk && g.wk.key === wkKey) ? (g.wk.crypt || 0) : 0, boss: (g.wk && g.wk.key === wkKey) ? (g.wk.boss || 0) : 0, milestones: GUILD_MS.map((m) => ({ at: m, hit: score >= m, claimed: got.indexOf(m) >= 0 })) } };
+      }
+      J({ ok: true, mine, list, invites: (GINV.get(me) || []).filter((v) => now - v.at < 120000) });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/guild-create' && req.method === 'POST') {
+      if (guildOf(me)) { J({ ok: false, err: 'ur already in a guild — leave it first' }, 400); return true; }
+      const name = String(b.name || '').replace(/[<>&"'\\]/g, '').trim().replace(/\s+/g, ' ');
+      const tag = String(b.tag || '').replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 4);
+      const emblem = GUILD_EMBLEMS.indexOf(String(b.emblem || '')) >= 0 ? String(b.emblem) : 'star';
+      const color = Math.max(0, Math.min(359, Math.round(Number(b.color) || 265)));
+      if (name.length < 3 || name.length > 16) { J({ ok: false, err: 'guild name is 3-16 chars' }, 400); return true; }
+      if (tag.length < 2) { J({ ok: false, err: 'tag is 2-4 letters/numbers' }, 400); return true; }
+      const reg = guildReg();
+      const gids = Object.keys(reg);
+      if (gids.length >= 200) { J({ ok: false, err: 'too many guilds rn' }, 400); return true; }
+      if (gids.some((gid) => reg[gid].name.toLowerCase() === name.toLowerCase())) { J({ ok: false, err: 'that name is taken' }, 400); return true; }
+      if (gids.some((gid) => reg[gid].tag === tag)) { J({ ok: false, err: 'that tag is taken' }, 400); return true; }
+      let bal0 = 0;
+      try { bal0 = ctx.getCents(me); } catch (e) {}
+      if (bal0 < 500) { J({ ok: false, err: 'a guild charter costs 500 six cents (u have ' + bal0 + ')' }, 400); return true; }
+      try { await ctx.awardCents(me, -500); } catch (e) {}
+      const gid = 'g' + (hashStr(name.toLowerCase() + ':' + now) % 1000000007).toString(36);
+      reg[gid] = { name, tag, color, emblem, open: !!b.open, owner: me, xp: 0, created: now, members: { [me]: 'owner' }, wk: null };
+      guildSaveReg(reg);
+      wsave('guild', me, gid);
+      J({ ok: true, gid });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/guild-join' && req.method === 'POST') {
+      if (guildOf(me)) { J({ ok: false, err: 'ur already in a guild' }, 400); return true; }
+      const gid = String(b.gid || '');
+      const reg = guildReg(); const g = reg[gid];
+      if (!g) { J({ ok: false, err: 'no such guild' }, 400); return true; }
+      const invited = (GINV.get(me) || []).some((v) => v.gid === gid && now - v.at < 120000);
+      if (!g.open && !invited) { J({ ok: false, err: 'that guild is invite-only' }, 400); return true; }
+      if (Object.keys(g.members).length >= 30) { J({ ok: false, err: 'that guild is full (30)' }, 400); return true; }
+      guildJoin(me, gid);
+      GINV.set(me, (GINV.get(me) || []).filter((v) => v.gid !== gid));
+      J({ ok: true });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/guild-answer' && req.method === 'POST') {
+      const gid = String(b.gid || '');
+      GINV.set(me, (GINV.get(me) || []).filter((v) => v.gid !== gid));
+      if (b.yes) {
+        if (guildOf(me)) { J({ ok: false, err: 'ur already in a guild' }, 400); return true; }
+        const reg = guildReg(); const g = reg[gid];
+        if (!g) { J({ ok: false, err: 'that guild is gone' }, 400); return true; }
+        if (Object.keys(g.members).length >= 30) { J({ ok: false, err: 'that guild is full (30)' }, 400); return true; }
+        guildJoin(me, gid);
+      }
+      J({ ok: true });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/guild-leave' && req.method === 'POST') {
+      const go = guildOf(me);
+      if (!go) { J({ ok: false, err: 'ur not in a guild' }, 400); return true; }
+      if (go.g.owner === me && Object.keys(go.g.members).length > 1) { J({ ok: false, err: 'owners transfer or disband first' }, 400); return true; }
+      if (go.g.owner === me) {
+        const reg = guildReg(); delete reg[go.gid]; guildSaveReg(reg);
+        wsave('guild', me, null);
+      } else guildRemoveMember(go.gid, me);
+      J({ ok: true });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/guild-disband' && req.method === 'POST') {
+      const go = guildOf(me);
+      if (!go || go.g.owner !== me) { J({ ok: false, err: 'only the owner can disband' }, 403); return true; }
+      const reg = guildReg(); delete reg[go.gid]; guildSaveReg(reg);
+      for (const u2 of Object.keys(go.g.members)) if (wload('guild', u2) === go.gid) wsave('guild', u2, null);
+      J({ ok: true });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/guild-invite' && req.method === 'POST') {
+      const go = guildOf(me);
+      if (!go || (go.g.members[me] !== 'owner' && go.g.members[me] !== 'officer')) { J({ ok: false, err: 'only owners + officers invite' }, 403); return true; }
+      const to = String(b.to || '').toLowerCase();
+      if (!to || to === me || !P.has(to)) { J({ ok: false, err: 'they arent online rn' }, 400); return true; }
+      if (guildOf(to)) { J({ ok: false, err: 'theyre already in a guild' }, 400); return true; }
+      if (Object.keys(go.g.members).length >= 30) { J({ ok: false, err: 'guild is full (30)' }, 400); return true; }
+      const arr = (GINV.get(to) || []).filter((v) => v.gid !== go.gid);
+      arr.push({ gid: go.gid, from: me, name: go.g.name, tag: go.g.tag, at: now });
+      GINV.set(to, arr.slice(-5));
+      J({ ok: true });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/guild-kick' && req.method === 'POST') {
+      const go = guildOf(me);
+      const target = String(b.u || '').toLowerCase();
+      if (!go || !target || target === me || !go.g.members[target]) { J({ ok: false, err: 'bad kick' }, 400); return true; }
+      const myRank = go.g.members[me], tRank = go.g.members[target];
+      if (myRank !== 'owner' && !(myRank === 'officer' && tRank === 'member')) { J({ ok: false, err: 'cant kick them' }, 403); return true; }
+      guildRemoveMember(go.gid, target);
+      J({ ok: true });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/guild-rank' && req.method === 'POST') {
+      const go = guildOf(me);
+      const target = String(b.u || '').toLowerCase();
+      const rank = String(b.rank || '');
+      if (!go || go.g.owner !== me || !go.g.members[target] || target === me || (rank !== 'officer' && rank !== 'member')) { J({ ok: false, err: 'bad rank change' }, 400); return true; }
+      const reg = guildReg(); reg[go.gid].members[target] = rank; guildSaveReg(reg);
+      J({ ok: true });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/guild-transfer' && req.method === 'POST') {
+      const go = guildOf(me);
+      const target = String(b.u || '').toLowerCase();
+      if (!go || go.g.owner !== me || !go.g.members[target] || target === me) { J({ ok: false, err: 'bad transfer' }, 400); return true; }
+      const reg = guildReg();
+      reg[go.gid].members[target] = 'owner'; reg[go.gid].members[me] = 'officer'; reg[go.gid].owner = target;
+      guildSaveReg(reg);
+      J({ ok: true });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/guild-open' && req.method === 'POST') {
+      const go = guildOf(me);
+      if (!go || go.g.owner !== me) { J({ ok: false, err: 'owner only' }, 403); return true; }
+      const reg = guildReg(); reg[go.gid].open = !!b.open; guildSaveReg(reg);
+      J({ ok: true });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/guild-say' && req.method === 'POST') {
+      const go = guildOf(me);
+      if (!go) { J({ ok: false, err: 'ur not in a guild' }, 400); return true; }
+      if (now - (GSAY_CD.get(me) || 0) < 600) { J({ ok: false, err: 'too fast' }, 429); return true; }
+      const text = String(b.text || '').replace(/[<>&]/g, '').trim().slice(0, 200);
+      if (!text) { J({ ok: false, err: 'empty' }, 400); return true; }
+      GSAY_CD.set(me, now);
+      for (const u2 of Object.keys(go.g.members)) {
+        if (u2 === me || !P.has(u2)) continue;
+        const q = GMSG.get(u2) || []; q.push({ from: me, text, at: now }); GMSG.set(u2, q.slice(-20));
+      }
+      J({ ok: true });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/guild-claim' && req.method === 'POST') {
+      const go = guildOf(me);
+      if (!go) { J({ ok: false, err: 'ur not in a guild' }, 400); return true; }
+      const ms = Number(b.ms);
+      if (GUILD_MS.indexOf(ms) < 0) { J({ ok: false, err: 'bad milestone' }, 400); return true; }
+      if (guildWkScore(go.g, now) < ms) { J({ ok: false, err: 'ur guild hasnt hit that milestone this week' }, 400); return true; }
+      const wkKey = raceWeekKey(now);
+      const claims = wload('guildclaim', me) || {};
+      const got = claims.key === wkKey ? (claims.got || []) : [];
+      if (got.indexOf(ms) >= 0) { J({ ok: false, err: 'already claimed' }, 400); return true; }
+      got.push(ms);
+      wsave('guildclaim', me, { key: wkKey, got });
+      let bal = null;
+      try { bal = await ctx.awardCents(me, 25); } catch (e) {}
+      txLog(me, 'guild', 25, 'weekly milestone ' + ms);
+      J({ ok: true, amt: 25, bal });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/dungeon-enter' && req.method === 'POST') {
+      const now3 = Date.now();
+      const bp = P.get(me);
+      if (!bp || dist(bp.x, bp.y, CRYPT_GATE.x, CRYPT_GATE.y) > 140) { J({ ok: false, err: 'the crypt gate is in the crystal caves' }, 400); return true; }
+      if (bp.inst) { J({ ok: false, err: 'already inside' }, 400); return true; }
+      const pt = partyOf(me);
+      if (pt && pt.leader !== me) { J({ ok: false, err: 'only the party leader can open the crypt' }, 400); return true; }
+      const leader = pt ? pt.leader : me;
+      const instId = 'crypt:' + leader;
+      let dg = DUNGEONS.get(instId);
+      if (dg && dg.state === 'fighting') { J({ ok: false, err: 'ur party is already inside' }, 400); return true; }
+      const members = (pt ? pt.members : [me]).filter((m) => P.has(m));
+      const origin = cryptOrigin(instId);
+      dg = { id: instId, leader, origin, members: new Set(members), hearts: {}, hitCd: new Map(), wave: 0, shades: [], state: 'fighting', lastTick: now3, startedAt: now3 };
+      for (const m of members) dg.hearts[m] = 3;
+      DUNGEONS.set(instId, dg);
+      spawnWave(dg, 1);
+      for (const m of members) { const mp = P.get(m); mp.x = origin.x + 550; mp.y = origin.y + 420; mp.inst = instId; TP_OK.add(m); }
+      J({ ok: true, members, wave: 1, x: origin.x + 550, y: origin.y + 420 });
+      return true;
+    }
+    if (u.pathname === '/api/world/dungeon-exit' && req.method === 'POST') {
+      const bp = P.get(me);
+      if (!bp || !bp.inst) { J({ ok: false, err: 'not inside' }, 400); return true; }
+      const dg = DUNGEONS.get(bp.inst);
+      if (dg) { dg.members.delete(me); if (!dg.members.size) DUNGEONS.delete(bp.inst); }
+      bp.inst = null; bp.x = CRYPT_GATE.x; bp.y = CRYPT_GATE.y + 60; TP_OK.add(me);
+      J({ ok: true, x: CRYPT_GATE.x, y: CRYPT_GATE.y + 60 });
+      return true;
+    }
+    if (u.pathname === '/api/world/dungeon-hit' && req.method === 'POST') {
+      const now3 = Date.now();
+      const dg = dungeonOf(me);
+      if (!dg || dg.state !== 'fighting') { J({ ok: false, err: 'no fight here' }, 400); return true; }
+      if (now3 - (DUN_HIT_CD.get(me) || 0) < 400) { J({ ok: false, err: 'too fast' }, 429); return true; }
+      const sid = String(b.shade || '');
+      const sh = dg.shades.find((s2) => s2.id === sid);
+      if (!sh) { J({ ok: false, err: 'that shade is gone' }, 400); return true; }
+      const bp = P.get(me);
+      if (!bp || dist(bp.x, bp.y, sh.x, sh.y) > 250) { J({ ok: false, err: 'too far from the shade' }, 400); return true; }
+      DUN_HIT_CD.set(me, now3);
+      tickDungeon(dg, now3);
+      const dmg = 10 + Math.round(Math.random() * 6);
+      sh.hp -= dmg;
+      let killed = false, pay = 0;
+      if (sh.hp <= 0) {
+        killed = true;
+        dg.shades = dg.shades.filter((s2) => s2.id !== sid);
+        pay = sh.boss ? 30 : 4;
+        try { await ctx.awardCents(me, pay); } catch { }
+        txLog(me, 'crypt', pay, sh.boss ? 'the crypt warden' : 'crypt shade');
+        await progressWaves(dg, now3);
+      }
+      J({ ok: true, dmg, killed, pay, wave: dg.wave, state: dg.state });
+      return true;
+    }
     if (u.pathname === '/api/world/fish' && req.method === 'GET') {
       let inv = [];
       try { inv = ctx.getInv(me) || []; } catch { }
@@ -1515,6 +2022,14 @@ function createWorld(ctx) {
     return true;
   }
 
+  function iceExtra() {
+    const urls = String(process.env.WORLD_TURN_URLS || '').split(',').map((s) => s.trim()).filter(Boolean);
+    if (!urls.length) return [];
+    const out = { urls };
+    if (process.env.WORLD_TURN_USER) out.username = process.env.WORLD_TURN_USER;
+    if (process.env.WORLD_TURN_PASS) out.credential = process.env.WORLD_TURN_PASS;
+    return [out];
+  }
   function page() {
     return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n' +
       '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n' +
@@ -1619,7 +2134,8 @@ function createWorld(ctx) {
       '</div></div>\n' +
       '<div id="wmap2" hidden><div class="wa-card">\n' +
       '  <div class="wa-head"><span>\u2726 world map</span><button id="wmap2-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
-      '  <canvas id="wmap2-cv" width="640" height="430"></canvas>\n' +
+      '  <canvas id="wmap2-cv" width="1120" height="760"></canvas>\n' +
+      '  <div class="wmap2-bar"><button id="wmap2-me" type="button">center on me</button><button id="wmap2-zin" type="button">zoom +</button><button id="wmap2-zout" type="button">zoom -</button><span id="wmap2-info"></span></div>\n' +
       '  <div class="wmap2-hint">tap a discovered zone to fast travel (10s recharge)</div>\n' +
       '</div></div>\n' +
       '<div id="wsettings" hidden><div class="wa-card">\n' +
@@ -1636,6 +2152,8 @@ function createWorld(ctx) {
       '  <div class="wadmin-row"><button class="wadmin-ev" data-ev="shardstorm" type="button">force shard storm</button><button class="wadmin-ev" data-ev="goldenhunt" type="button">force golden hunt</button><button class="wadmin-ev" data-ev="off" type="button">events off</button></div>\n' +
       '</div></div>\n' +
       '<div id="wfish" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 fishing</span><button id="wfish-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wfish-body"></div></div></div>\n' +
+      '<div id="wrace" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 races</span><button id="wrace-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wrace-body"></div></div></div>\n' +
+      '<div id="wguild" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 guild</span><button id="wguild-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wguild-body"></div></div></div>\n' +
       '<div id="wpets" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 pet journal</span><button id="wpets-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wpets-body"></div></div></div>\n' +
       '<div id="whouse" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 <span id="whouse-t">ur house</span></span><button id="whouse-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="whouse-body"></div></div></div>\n' +
       '<div id="wduelgo" hidden><div id="wduelgo-t"></div><div id="wduelgo-s"></div></div>\n' +
@@ -1643,7 +2161,7 @@ function createWorld(ctx) {
       '<p>make an account or log in, then walk in. a whole world in here: districts, a lake, a forest, moon shards, quests from six, voice chat.</p>' +
       '<a class="wl-btn" href="/home">go log in</a></div></div>\n' +
       '<script>' + ctx.NOTIF_JS + '</script>\n' +
-      '<script>window.WGAMES=' + JSON.stringify(GAMES_MOD.GAMES) + ';window.WCABS=' + JSON.stringify(GAMES_MOD.CABINETS) + ';window.WSHOP=' + JSON.stringify(SHOP.ITEMS) + ';</script>\n' +
+      '<script>window.WGAMES=' + JSON.stringify(GAMES_MOD.GAMES) + ';window.WCABS=' + JSON.stringify(GAMES_MOD.CABINETS) + ';window.WSHOP=' + JSON.stringify(SHOP.ITEMS) + ';window.WICE=' + JSON.stringify(iceExtra()) + ';</script>\n' +
       '<script>' + CLIENT + '</script>\n' +
       '</body>\n</html>';
   }
