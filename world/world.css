@@ -378,6 +378,7 @@ body.wov #wportal,body.wov #wact,body.wov #wemotebtn,body.wov #wdash{display:non
 .hs-row{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:10px;background:rgba(255,255,255,.045);margin-bottom:6px;font-size:12.5px}
 .hs-row .hs-nm{flex:1;min-width:0}
 .hs-row .hs-pr{color:#ffd257;font-weight:800;white-space:nowrap}
+.hs-in{flex:1;min-width:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:9px;color:#f3efff;padding:7px 10px;font-size:16px;font-family:Inter,sans-serif}
 .hs-btn{appearance:none;border:1px solid rgba(167,139,250,.45);background:rgba(139,124,255,.16);color:#efeaff;border-radius:999px;padding:5px 12px;font:700 11.5px Inter,sans-serif;cursor:pointer;white-space:nowrap}
 .hs-btn.on{background:#8b7cff;color:#fff;border-color:#8b7cff}
 .hs-btn:disabled{opacity:.45;cursor:default}

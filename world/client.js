@@ -731,7 +731,7 @@ function update(now) {
   else if (INST_V && nearestShade() && dist(px, py, nearestShade().x, nearestShade().y) < 250) { actMode = 'dstrike'; actLabel = 'strike the shade'; }
   else if (BOSS_V && !BOSS_V.dead && dist(px, py, BOSS_V.x, BOSS_V.y) < 280) { actMode = 'bstrike'; actLabel = BOSS_V.stun > 0 ? 'stunned\u2026' : 'strike the lich'; }
   else if (!INST_V && dist(px, py, 5050, 3550) < 120) { actMode = 'crypt'; actLabel = 'enter the sunken crypt'; }
-  else if (myHouse && HOUSE_VIEW && HOUSE_VIEW.origin && dist(px, py, HOUSE_VIEW.origin.x + 430, HOUSE_VIEW.origin.y + 520) < 72) { actMode = 'hexit'; actLabel = 'leave the house'; }
+  else if (myHouse && HOUSE_VIEW && HOUSE_VIEW.origin && dist(px, py, HOUSE_VIEW.origin.x + houseFW() / 2, HOUSE_VIEW.origin.y + houseFH() - 40) < 72) { actMode = 'hexit'; actLabel = 'leave the house'; }
   else if (!myHouse && nearHousePlot()) { actMode = 'house'; actLabel = 'enter ur house'; }
   else if (nearDoorId) { actMode = 'door'; for (var dj = 0; dj < DOORS.length; dj++) if (DOORS[dj].id === nearDoorId) actLabel = DOORS[dj].label; }
   else if (myZone === 'the vault' && myInv.indexOf('s141') < 0 && dist(px, py, 5650, 3970) < 120) { actMode = 'vault'; actLabel = 'claim the vault crown'; }
@@ -4245,14 +4245,15 @@ function renderHouseDecor(g, now) {
   }
   if (!myHouse || !HOUSE_VIEW || !HOUSE_VIEW.origin) return;
   var o = HOUSE_VIEW.origin, sc = HOUSE_STYLE_C[HOUSE_VIEW.style] || HOUSE_STYLE_C.cottage;
-  if (!inV9(o.x + 430, o.y + 280, 1100)) return;
-  g.fillStyle = '#050310'; g.fillRect(o.x - 700, o.y - 620, 2260, 1800);
-  g.fillStyle = sc.floor; g.fillRect(o.x, o.y, 860, 560);
+  if (!inV9(o.x + houseFW() / 2, o.y + houseFH() / 2, 1500)) return;
+  g.fillStyle = '#050310'; g.fillRect(o.x - 700, o.y - 620, 3000, 2200);
+  var FW = houseFW(), FH = houseFH();
+  g.fillStyle = sc.floor; g.fillRect(o.x, o.y, FW, FH);
   g.fillStyle = sc.floor2;
-  for (var fx2 = 0; fx2 < 860; fx2 += 80) g.fillRect(o.x + fx2, o.y, 40, 560);
+  for (var fx2 = 0; fx2 < FW; fx2 += 80) g.fillRect(o.x + fx2, o.y, 40, FH);
   g.strokeStyle = 'rgba(255,255,255,.045)'; g.lineWidth = 1;
-  for (var gx2 = 0; gx2 <= 20; gx2++) { g.beginPath(); g.moveTo(o.x + gx2 * 40 + .5, o.y); g.lineTo(o.x + gx2 * 40 + .5, o.y + 560); g.stroke(); }
-  for (var gy2 = 0; gy2 <= 14; gy2++) { g.beginPath(); g.moveTo(o.x, o.y + gy2 * 40 + .5); g.lineTo(o.x + 860, o.y + gy2 * 40 + .5); g.stroke(); }
+  for (var gx2 = 0; gx2 <= houseGW(); gx2++) { g.beginPath(); g.moveTo(o.x + gx2 * 40 + .5, o.y); g.lineTo(o.x + gx2 * 40 + .5, o.y + FH); g.stroke(); }
+  for (var gy2 = 0; gy2 <= FH / 40; gy2++) { g.beginPath(); g.moveTo(o.x, o.y + gy2 * 40 + .5); g.lineTo(o.x + FW, o.y + gy2 * 40 + .5); g.stroke(); }
   (HOUSE_VIEW.items || []).forEach(function (it) {
     var cx3 = o.x + it.gx * 40 + 20, cy3 = o.y + it.gy * 40 + 20;
     g.save(); g.translate(cx3, cy3); g.rotate((it.r || 0) * Math.PI / 180); drawFurnShape(g, it.f, 40, now); g.restore();
@@ -4275,7 +4276,7 @@ function decorTap(e) {
   var cp = camPos();
   var wx = e.clientX + cp.x, wy = e.clientY + cp.y, o = HOUSE_VIEW.origin;
   var gx = Math.floor((wx - o.x) / 40), gy = Math.floor((wy - o.y) / 40);
-  if (gx < 0 || gx >= 20 || gy < 0 || gy >= 12) return;
+  if (gx < 0 || gx >= houseGW() || gy < 0 || gy >= houseGH()) return;
   if (placeFid) {
     var fid = placeFid;
     jpost('/api/world/house-place', { fid: fid, gx: gx, gy: gy, rot: placeRot }).then(function (r) {
@@ -4293,11 +4294,23 @@ cv.addEventListener('pointermove', function (e) {
   if (!decorOn || !HOUSE_VIEW || !HOUSE_VIEW.origin) { ghostCell = null; return; }
   var cp = camPos();
   var gx = Math.floor((e.clientX + cp.x - HOUSE_VIEW.origin.x) / 40), gy = Math.floor((e.clientY + cp.y - HOUSE_VIEW.origin.y) / 40);
-  ghostCell = (gx >= 0 && gx < 20 && gy >= 0 && gy < 12) ? { gx: gx, gy: gy } : null;
+  ghostCell = (gx >= 0 && gx < houseGW() && gy >= 0 && gy < houseGH()) ? { gx: gx, gy: gy } : null;
 });
+function houseGW() { return (HOUSE_VIEW && HOUSE_VIEW.gw) || 20; }
+function houseGH() { return (HOUSE_VIEW && HOUSE_VIEW.gh) || 12; }
+function houseFW() { return houseGW() * 40 + 60; }
+function houseFH() { return houseGH() * 40 + 80; }
 function openHouse() { $('whouse').hidden = false; renderHousePanel(); }
 function closeHouse() { $('whouse').hidden = true; }
 function hsEsc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+var HEART_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 20s-6.5-4.3-9-8.6C1 8 3 4.5 6.6 4.5c2 0 3.4 1.1 4.4 2.6 1-1.5 2.4-2.6 4.4-2.6C19 4.5 21 8 19 11.4 16.5 15.7 12 20 12 20z"/></svg>';
+function bookHtml(v) {
+  var h = '<div class="hs-sec">guestbook</div>';
+  var book = v.book || [];
+  h += book.length ? book.map(function (e, ix) { return '<div class="hs-row"><span class="hs-nm"><b>@' + hsEsc(e.u) + '</b> ' + hsEsc(e.t) + '</span>' + (v.mine ? '<button class="hs-btn" data-hs="book-del" data-ix="' + ix + '">del</button>' : '') + '</div>'; }).join('') : '<span class="hs-note">no notes yet — visitors sign from inside</span>';
+  h += '<div class="hs-row"><input id="whouse-book-in" class="hs-in" maxlength="90" placeholder="leave a note…"><button class="hs-btn" data-hs="book-post" data-u="' + hsEsc(v.owner) + '">sign</button></div>';
+  return h;
+}
 function renderHousePanel() {
   var body = $('whouse-body'); if (!body) return;
   var v = HOUSE_VIEW;
@@ -4306,19 +4319,23 @@ function renderHousePanel() {
   if (!myHouse) {
     h += '<div class="hs-row"><span class="hs-nm">every player has a house on maple row — step to any plot door and hit enter</span></div>';
     h += '<button class="hs-btn" data-hs="enter-mine">enter ur house</button>';
-    h += '<div class="hs-sec">visit a neighbor (online + visitable)</div><div id="whouse-visits"><span class="hs-note">looking around the row…</span></div>';
+    h += '<div class="hs-sec">the neighborhood — every house on the row, most hearted first</div><div id="whouse-visits"><span class="hs-note">looking around the row…</span></div>';
     body.innerHTML = h;
     fetch('/api/world/houses', { headers: { 'accept': 'application/json' } }).then(function (r) { return r.json(); }).then(function (r2) {
       var box = $('whouse-visits'); if (!box) return;
-      if (!r2 || !r2.houses || !r2.houses.length) { box.innerHTML = '<span class="hs-note">nobody else is in the world rn</span>'; return; }
-      box.innerHTML = r2.houses.map(function (hh) { return '<div class="hs-row"><span class="hs-nm">@' + hsEsc(hh.u) + ' · ' + hsEsc((HOUSE_STYLE_C[hh.style] && hh.style) || hh.style) + '</span><button class="hs-btn" data-hs="visit" data-u="' + hsEsc(hh.u) + '">visit</button></div>'; }).join('');
+      if (!r2 || !r2.houses || !r2.houses.length) { box.innerHTML = '<span class="hs-note">no houses on the row yet</span>'; return; }
+      box.innerHTML = r2.houses.map(function (hh) { return '<div class="hs-row"><span class="hs-nm">' + (hh.name ? hsEsc(hh.name) + ' · ' : '') + '@' + hsEsc(hh.u) + ' · ' + hsEsc(hh.style) + (hh.size > 1 ? ' · ' + (hh.size === 3 ? 'grand' : 'spacious') : '') + (hh.online ? ' · <span style="color:#4ade80">online</span>' : '') + '<br><span class="hs-pr">' + (hh.hearts || 0) + ' hearts</span></span>' + (hh.canEnter ? '<button class="hs-btn" data-hs="visit" data-u="' + hsEsc(hh.u) + '">visit</button>' : '<span class="hs-pr">locked</span>') + '<button class="hs-btn" data-hs="heart" data-u="' + hsEsc(hh.u) + '">' + HEART_SVG + '</button></div>'; }).join('');
     }).catch(function () { });
     return;
   }
   if (!v) { body.innerHTML = '<span class="hs-note">loading ur house…</span>'; return; }
   var mine = v.mine;
   if (mine) {
-    h += '<div class="hs-sec">who can visit</div><div class="hs-row">' + ['public', 'party', 'private'].map(function (lv) { return '<button class="hs-btn' + (v.pub === lv ? ' on' : '') + '" data-hs="priv" data-lv="' + lv + '">' + lv + '</button>'; }).join('') + '</div>';
+    h += '<div class="hs-sec">who can visit</div><div class="hs-row">' + ['public', 'friends', 'party', 'private'].map(function (lv) { return '<button class="hs-btn' + (v.pub === lv ? ' on' : '') + '" data-hs="priv" data-lv="' + lv + '">' + lv + '</button>'; }).join('') + '</div>';
+    h += '<div class="hs-sec">house name</div><div class="hs-row"><input id="whouse-name-in" class="hs-in" maxlength="28" placeholder="name ur house" value="' + hsEsc(v.name || '') + '"><button class="hs-btn" data-hs="rename">save</button></div>';
+    h += '<div class="hs-row"><span class="hs-nm">hearts: ' + (v.hearts || 0) + ' · room: ' + ((v.sizes && v.sizes[v.size]) ? v.sizes[v.size].name : 'cozy') + ' (' + v.gw + '×' + v.gh + ' grid)</span></div>';
+    h += '<div class="hs-sec">expand the room</div>' + [1, 2, 3].map(function (sn) { var sd = (v.sizes || {})[sn] || {}; if (sn === v.size) return '<div class="hs-row"><span class="hs-nm">' + hsEsc(sd.name || '') + '</span><span class="hs-pr">current</span></div>'; if (sn === v.size + 1) return '<div class="hs-row"><span class="hs-nm">' + hsEsc(sd.name || '') + '</span><span class="hs-pr">¢' + sd.price + '</span><button class="hs-btn" data-hs="buysize" data-id="' + sn + '">expand</button></div>'; return '<div class="hs-row"><span class="hs-nm">' + hsEsc(sd.name || '') + '</span><span class="hs-pr">expand in order</span></div>'; }).join('');
+    h += bookHtml(v);
     h += '<div class="hs-sec">house style</div>' + Object.keys(v.styles || {}).map(function (sid) { var st = v.styles[sid]; return '<div class="hs-row"><span class="hs-nm">' + hsEsc(st.name) + '</span>' + (v.style === sid ? '<span class="hs-pr">current</span>' : '<span class="hs-pr">¢' + st.price + '</span><button class="hs-btn" data-hs="buystyle" data-id="' + sid + '">buy</button>') + '</div>'; }).join('');
     h += '<div class="hs-sec">decorate</div><div class="hs-row"><button class="hs-btn' + (decorOn ? ' on' : '') + '" data-hs="decor">' + (decorOn ? 'decorating: ON (tap floor to place / pick up)' : 'start decorating') + '</button>' + (placeFid ? '<button class="hs-btn" data-hs="rot">rotate: ' + placeRot + '°</button><button class="hs-btn" data-hs="cancelplace">done placing</button>' : '') + '</div>';
     var placedCount = {};
@@ -4330,7 +4347,9 @@ function renderHousePanel() {
     h += ownedIds.length ? '<div class="hs-grid">' + ownedIds.map(function (fid) { var def = (v.furn || {})[fid] || {}; var left = counts[fid] - (placedCount[fid] || 0); return '<div class="hs-item' + (placeFid === fid ? ' sel' : '') + '" data-hs="pick" data-id="' + fid + '">' + hsEsc(def.name || fid) + '<span class="hs-pr">' + (left > 0 ? left + ' to place' : 'all placed') + '</span></div>'; }).join('') + '</div>' : '<span class="hs-note">nothing yet — the furniture shop is right below</span>';
     h += '<div class="hs-sec">furniture shop</div><div class="hs-grid">' + Object.keys(v.furn || {}).map(function (fid) { var def = v.furn[fid]; return '<div class="hs-item" data-hs="buyfurn" data-id="' + fid + '">' + hsEsc(def.name) + (def.rare ? ' · ' + def.rare : '') + (def.seasonal ? ' · seasonal' : '') + '<span class="hs-pr">¢' + def.price + '</span></div>'; }).join('') + '</div>';
   } else {
-    h += '<div class="hs-row"><span class="hs-nm">ur visiting @' + hsEsc(v.owner) + ' — look around, the door mat at the bottom leaves</span></div><button class="hs-btn" data-hs="leave">leave</button>';
+    h += '<div class="hs-row"><span class="hs-nm">' + (v.name ? hsEsc(v.name) + ' — ' : '') + 'ur visiting @' + hsEsc(v.owner) + ' — look around, the door mat at the bottom leaves</span></div><button class="hs-btn" data-hs="leave">leave</button>';
+    h += '<div class="hs-row"><span class="hs-nm">hearts: ' + (v.hearts || 0) + '</span><button class="hs-btn" data-hs="heart" data-u="' + hsEsc(v.owner) + '">' + HEART_SVG + ' ' + (v.myHeart ? 'hearted' : 'heart this house') + '</button></div>';
+    h += bookHtml(v);
   }
   body.innerHTML = h;
 }
@@ -4342,6 +4361,11 @@ $('whouse-body').addEventListener('click', function (e) {
   else if (act === 'leave') { closeHouse(); exitHouse(); }
   else if (act === 'priv') { jpost('/api/world/house-privacy', { level: t.getAttribute('data-lv') }).then(function (r) { if (r && r.ok) { HOUSE_VIEW.pub = r.pub; renderHousePanel(); } else toast((r && r.err) || 'nope'); }); }
   else if (act === 'buystyle') { jpost('/api/world/house-buy', { kind: 'style', id: t.getAttribute('data-id') }).then(function (r) { if (r && r.ok) { HOUSE_VIEW = r.view; toast('new house style ✦'); renderHousePanel(); } else toast((r && r.err) || 'can\'t buy that'); }); }
+  else if (act === 'buysize') { jpost('/api/world/house-buy', { kind: 'size', id: t.getAttribute('data-id') }).then(function (r) { if (r && r.ok) { HOUSE_VIEW = r.view; toast('room expanded ✦'); renderHousePanel(); } else toast((r && r.err) || 'could not expand'); }); }
+  else if (act === 'rename') { var ni = $('whouse-name-in'); jpost('/api/world/house-name', { name: ni ? ni.value : '' }).then(function (r) { if (r && r.ok) { if (HOUSE_VIEW) HOUSE_VIEW.name = r.name; toast('house named ✦'); renderHousePanel(); } else toast((r && r.err) || 'nope'); }); }
+  else if (act === 'heart') { var hu = t.getAttribute('data-u'); jpost('/api/world/house-heart', { owner: hu }).then(function (r) { if (r && r.ok) { toast(r.mine ? 'hearted — ' + r.hearts + ' total' : 'heart removed'); if (myHouse) loadHouse(myHouse); else renderHousePanel(); } else toast((r && r.err) || 'nope'); }); }
+  else if (act === 'book-post') { var bi = $('whouse-book-in'); jpost('/api/world/house-book', { owner: t.getAttribute('data-u'), text: bi ? bi.value : '' }).then(function (r) { if (r && r.ok) { toast('signed the guestbook ✦'); if (myHouse) loadHouse(myHouse); } else toast((r && r.err) || 'nope'); }); }
+  else if (act === 'book-del') { jpost('/api/world/house-book', { owner: me, act: 'del', ix: Number(t.getAttribute('data-ix')) }).then(function (r) { if (r && r.ok) { if (HOUSE_VIEW) HOUSE_VIEW.book = r.book; renderHousePanel(); } else toast((r && r.err) || 'nope'); }); }
   else if (act === 'buyfurn') { jpost('/api/world/house-buy', { kind: 'furn', id: t.getAttribute('data-id') }).then(function (r) { if (r && r.ok) { HOUSE_VIEW = r.view; toast('bought — it\'s in ur furniture'); renderHousePanel(); } else toast((r && r.err) || 'can\'t buy that'); }); }
   else if (act === 'decor') { decorOn = !decorOn; if (!decorOn) placeFid = null; renderHousePanel(); }
   else if (act === 'pick') { if (!decorOn) decorOn = true; placeFid = t.getAttribute('data-id'); renderHousePanel(); toast('tap the floor to place it · rotate from the panel'); }

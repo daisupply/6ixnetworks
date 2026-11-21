@@ -734,7 +734,7 @@ function createWorld(ctx) {
     return out;
   }
   function equippedIds(u) { let w = {}; try { w = ctx.getWear(u) || {}; } catch { } return new Set(Object.values(w).filter(Boolean)); }
-  const POKE = new Map(); const POKE_CD = new Map();
+  const POKE = new Map(); const POKE_CD = new Map(); const BOOK_CD = new Map();
   function actOf(u, p, now) {
     if (!p) return '';
     if (p.inst) return 'in the crypt';
@@ -1091,6 +1091,11 @@ function createWorld(ctx) {
   const FURN_BY = {};
   for (const fid of Object.keys(FURN)) FURN_BY[fid] = Object.assign({ id: fid }, FURN[fid]);
   function houseOf(user) { const h = wload('house', user); return h && typeof h === 'object' ? h : { style: 'cottage', pub: 'public', items: [] }; }
+  const HOUSE_SIZES = { 1: { name: 'cozy', gw: 20, gh: 12, price: 0 }, 2: { name: 'spacious', gw: 26, gh: 14, price: 800 }, 3: { name: 'grand', gw: 32, gh: 16, price: 2000 } };
+  function houseSize(h) { const s = h && Number(h.size); return HOUSE_SIZES[s] ? s : 1; }
+  function houseDims(h) { const s = houseSize(h); const d = HOUSE_SIZES[s]; return { size: s, gw: d.gw, gh: d.gh, fw: d.gw * 40 + 60, fh: d.gh * 40 + 80, cap: 30 + s * 30 }; }
+  function cleanText(s, max) { return String(s == null ? '' : s).replace(/[<>&\u0000-\u001f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max); }
+  function houseHearts(owner) { const a = wload('hhearts', owner); return Array.isArray(a) ? a : []; }
   function houseSave(user, h) { wsave('house', user, h); }
   function furnInv(user) { const f = wload('furn', user); return Array.isArray(f) ? f : []; }
   function houseOrigin(user) { const s = hashStr('house:' + user) % 18; return { x: 300 + (s % 6) * 1020, y: 4460 + Math.floor(s / 6) * 620 }; }
@@ -1099,12 +1104,14 @@ function createWorld(ctx) {
     const h = houseOf(owner);
     if (h.pub === 'public') return true;
     if (h.pub === 'party') { const pt = partyOf(me); return !!(pt && pt.members.includes(owner)); }
+    if (h.pub === 'friends') { try { return (ctx.friendsOf ? ctx.friendsOf(owner) : []).includes(me); } catch { return false; } }
     return false;
   }
   function houseView(me, owner) {
     const h = houseOf(owner);
     const can = canEnterHouse(me, owner);
-    return { ok: true, owner, style: h.style, pub: h.pub, mine: me === owner, canEnter: can, items: can ? (h.items || []) : [], origin: can ? houseOrigin(owner) : null, styles: HOUSE_STYLES, furn: FURN_BY, myFurn: me === owner ? furnInv(me) : [] };
+    const dm = houseDims(h); const hearts = houseHearts(owner);
+    return { ok: true, owner, name: h.name || '', style: h.style, pub: h.pub, mine: me === owner, canEnter: can, items: can ? (h.items || []) : [], origin: can ? houseOrigin(owner) : null, styles: HOUSE_STYLES, sizes: HOUSE_SIZES, size: dm.size, gw: dm.gw, gh: dm.gh, hearts: hearts.length, myHeart: hearts.includes(me), book: can ? (h.book || []) : [], furn: FURN_BY, myFurn: me === owner ? furnInv(me) : [] };
   }
 
   async function api(req, res, u) {
@@ -2463,9 +2470,24 @@ function createWorld(ctx) {
       return true;
     }
     if (u.pathname === '/api/world/houses' && req.method === 'GET') {
-      const out = [];
-      for (const [usr] of P) { if (usr !== me && canEnterHouse(me, usr)) out.push({ u: usr, style: houseOf(usr).style }); }
-      J({ ok: true, houses: out.slice(0, 30) });
+      const all = ctx.wget('house') || {};
+      const rows = [];
+      for (const usr of Object.keys(all)) {
+        if (usr === me) continue;
+        const hh = houseOf(usr);
+        if (hh.pub === 'private') continue;
+        const hearts = houseHearts(usr);
+        rows.push({ u: usr, name: hh.name || '', style: hh.style, size: houseSize(hh), pub: hh.pub, hearts: hearts.length, myHeart: hearts.includes(me), online: P.has(usr), canEnter: canEnterHouse(me, usr) });
+      }
+      for (const [usr] of P) {
+        if (usr === me || rows.some((r) => r.u === usr)) continue;
+        if (!canEnterHouse(me, usr)) continue;
+        const hh = houseOf(usr);
+        const hearts = houseHearts(usr);
+        rows.push({ u: usr, name: hh.name || '', style: hh.style, size: houseSize(hh), pub: hh.pub, hearts: hearts.length, myHeart: hearts.includes(me), online: true, canEnter: true });
+      }
+      rows.sort((a, b) => (b.hearts - a.hearts) || ((b.online ? 1 : 0) - (a.online ? 1 : 0)) || a.u.localeCompare(b.u));
+      J({ ok: true, houses: rows.slice(0, 60) });
       return true;
     }
     if (u.pathname === '/api/world/house-enter' && req.method === 'POST') {
@@ -2476,7 +2498,8 @@ function createWorld(ctx) {
       const o = houseOrigin(owner);
       p.house = owner;
       TP_OK.add(me);
-      p.x = o.x + 430; p.y = o.y + 460; p.at = now;
+      const dmE = houseDims(houseOf(owner));
+      p.x = o.x + Math.round(dmE.fw / 2); p.y = o.y + dmE.fh - 100; p.at = now;
       J({ ok: true, x: p.x, y: p.y, owner });
       return true;
     }
@@ -2494,9 +2517,11 @@ function createWorld(ctx) {
       const kind = String(b.kind || ''), id = String(b.id || '');
       let price = -1, label = '';
       if (kind === 'style' && HOUSE_STYLES[id]) { price = HOUSE_STYLES[id].price; label = HOUSE_STYLES[id].name; }
+      else if (kind === 'size' && HOUSE_SIZES[Number(id)]) { price = HOUSE_SIZES[Number(id)].price; label = HOUSE_SIZES[Number(id)].name + ' room'; }
       else if (kind === 'furn' && FURN[id]) { price = FURN[id].price; label = FURN[id].name; }
       if (price < 0) { J({ ok: false, err: 'bad item' }, 400); return true; }
       if (kind === 'style' && houseOf(me).style === id) { J({ ok: false, err: 'ur house already looks like that' }); return true; }
+      if (kind === 'size') { const curS = houseSize(houseOf(me)); if (Number(id) !== curS + 1) { J({ ok: false, err: Number(id) <= curS ? 'ur house is already that big' : 'expand one step at a time' }); return true; } }
       let bal0 = 0;
       try { bal0 = ctx.getCents(me) || 0; } catch { }
       if (bal0 < price) { J({ ok: false, err: 'not enough six cents (need ' + price + ')' }); return true; }
@@ -2508,6 +2533,7 @@ function createWorld(ctx) {
         try { balNow = ctx.getCents(me); } catch { }
         if (typeof bal !== 'number' || balNow == null || (balNow === bal0 && price > 0)) { J({ ok: false, err: 'payment glitched — u were not charged' }, 500); return true; }
         if (kind === 'style') { const h = houseOf(me); h.style = id; houseSave(me, h); }
+        else if (kind === 'size') { const h = houseOf(me); h.size = Number(id); houseSave(me, h); }
         else { const f = furnInv(me); f.push(id); wsave('furn', me, f); }
         txLog(me, 'house', -price, label);
         J({ ok: true, bal: balNow, view: houseView(me, me) });
@@ -2521,10 +2547,11 @@ function createWorld(ctx) {
       const def = FURN[fid];
       const gx = Math.round(Number(b.gx)), gy = Math.round(Number(b.gy));
       const rot = [0, 90, 180, 270].includes(Number(b.rot)) ? Number(b.rot) : 0;
-      if (!def || !(gx >= 0 && gx < 20 && gy >= 0 && gy < 12)) { J({ ok: false, err: 'bad placement' }, 400); return true; }
+      const dmP = houseDims(houseOf(me));
+      if (!def || !(gx >= 0 && gx < dmP.gw && gy >= 0 && gy < dmP.gh)) { J({ ok: false, err: 'bad placement' }, 400); return true; }
       const h = houseOf(me);
       h.items = h.items || [];
-      if (h.items.length >= 60) { J({ ok: false, err: 'house is full (60 pieces)' }); return true; }
+      if (h.items.length >= dmP.cap) { J({ ok: false, err: 'house is full (' + dmP.cap + ' pieces)' }); return true; }
       const owned = furnInv(me).filter((f) => f === fid).length;
       const placed = h.items.filter((it) => it.f === fid).length;
       if (placed >= owned) { J({ ok: false, err: 'u don\'t have another one of those' }); return true; }
@@ -2550,11 +2577,56 @@ function createWorld(ctx) {
     }
     if (u.pathname === '/api/world/house-privacy' && req.method === 'POST') {
       const level = String(b.level || '');
-      if (!['public', 'party', 'private'].includes(level)) { J({ ok: false, err: 'bad level' }, 400); return true; }
+      if (!['public', 'friends', 'party', 'private'].includes(level)) { J({ ok: false, err: 'bad level' }, 400); return true; }
       const h = houseOf(me);
       h.pub = level;
       houseSave(me, h);
       J({ ok: true, pub: level });
+      return true;
+    }
+    if (u.pathname === '/api/world/house-name' && req.method === 'POST') {
+      const nm = cleanText(b.name, 28);
+      if (!nm) { J({ ok: false, err: 'give it a name first' }, 400); return true; }
+      const h = houseOf(me); h.name = nm; houseSave(me, h);
+      J({ ok: true, name: nm });
+      return true;
+    }
+    if (u.pathname === '/api/world/house-heart' && req.method === 'POST') {
+      const owner = String(b.owner || '').toLowerCase();
+      if (!owner || owner === me) { J({ ok: false, err: 'not ur own house' }, 400); return true; }
+      if (blocksOf(me).includes(owner) || blocksOf(owner).includes(me)) { J({ ok: false, err: 'blocked' }, 400); return true; }
+      const arr = houseHearts(owner).slice();
+      const ix = arr.indexOf(me);
+      let mine = false;
+      if (ix >= 0) arr.splice(ix, 1); else { arr.push(me); mine = true; }
+      wsave('hhearts', owner, arr.slice(0, 1000));
+      J({ ok: true, hearts: arr.length, mine });
+      return true;
+    }
+    if (u.pathname === '/api/world/house-book' && req.method === 'POST') {
+      const owner = String(b.owner || me).toLowerCase();
+      const h = houseOf(owner);
+      if (b.act === 'del') {
+        if (owner !== me) { J({ ok: false, err: 'only the owner clears the guestbook' }, 403); return true; }
+        const ix = Number(b.ix);
+        h.book = h.book || [];
+        if (!(ix >= 0 && ix < h.book.length)) { J({ ok: false, err: 'no such note' }, 400); return true; }
+        h.book.splice(ix, 1); houseSave(me, h);
+        J({ ok: true, book: h.book });
+        return true;
+      }
+      const p = P.get(me);
+      if (!p || p.house !== owner) { J({ ok: false, err: 'u sign the guestbook from inside the house' }, 403); return true; }
+      if (blocksOf(owner).includes(me)) { J({ ok: false, err: 'blocked' }, 403); return true; }
+      if (now - (BOOK_CD.get(me) || 0) < 10000) { J({ ok: false, err: 'give it a sec' }, 429); return true; }
+      const text = cleanText(b.text, 90);
+      if (!text) { J({ ok: false, err: 'write something first' }, 400); return true; }
+      BOOK_CD.set(me, now);
+      h.book = h.book || [];
+      h.book.unshift({ u: me, t: text, at: now });
+      h.book = h.book.slice(0, 30);
+      houseSave(owner, h);
+      J({ ok: true, book: h.book });
       return true;
     }
     if (u.pathname === '/api/world/portal' && req.method === 'POST') {
