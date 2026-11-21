@@ -748,7 +748,7 @@ function createWorld(ctx) {
     return '';
   }
   /* ---- E7: arcade matches (real multiplayer, server-authoritative) ---- */
-  const MATCHES = new Map(); const MATCH_OF = new Map(); const MATCH_FX = new Map(); let matchSeq = 1;
+  const MATCHES = new Map(); const MATCH_OF = new Map(); const MATCH_FX = new Map(); let matchSeq = 1; let replaySeq = 0;
   const MATCH_GAMES = {
     hs: { name: 'hide & seek', min: 2, max: 6, dur: 120000 },
     rush: { name: 'treasure rush', min: 2, max: 6, dur: 90000 },
@@ -763,6 +763,23 @@ function createWorld(ctx) {
   function matchOf(user) { const id = MATCH_OF.get(user); return id ? MATCHES.get(id) || null : null; }
   function matchFx(user, fx) { if (!MATCH_FX.has(user)) MATCH_FX.set(user, []); const q = MATCH_FX.get(user); q.push(fx); if (q.length > 6) q.shift(); }
   function payMatch(m, r) { try { const pr = ctx.awardCents(r.u, r.amt); if (pr && pr.catch) pr.catch(() => {}); } catch { } txLog(r.u, 'match', r.amt, MATCH_GAMES[m.game].name + ' — ' + (r.note || '')); }
+  function saveReplay(m, now) {
+    if (!m.rec || m.rec.samples.length < 4 || m.replaySaved) return;
+    m.replaySaved = true;
+    try {
+      const results = m.results || [];
+      const rid = 'r' + (++replaySeq) + 'x' + now.toString(36);
+      let samples = m.rec.samples;
+      const payload = { id: rid, game: m.game, at: now, members: m.membersAll || m.members.slice(), results: results.map((r) => ({ u: r.u, amt: r.amt, note: r.note })), samples };
+      while (JSON.stringify(payload).length > 120000 && samples.length > 40) { samples = samples.filter((_, ix) => ix % 2 === 0); payload.samples = samples; }
+      const store = wload('replaystore', '_replays') || {};
+      store[rid] = payload;
+      const keys = Object.keys(store).sort((a, b) => (store[b].at || 0) - (store[a].at || 0));
+      for (const k of keys.slice(80)) delete store[k];
+      wsave('replaystore', '_replays', store);
+      for (const u of payload.members) { const list = wload('replays', u) || []; list.unshift({ id: rid, game: m.game, at: now, members: payload.members.slice(), win: results.length ? results[0].u : null }); wsave('replays', u, list.slice(0, 5)); }
+    } catch (e) {}
+  }
   function matchSettle(m, now) {
     if (m.settled) return; m.settled = true; m.phase = 'done'; m.at = now;
     const mem = m.members.slice();
@@ -802,6 +819,7 @@ function createWorld(ctx) {
     m.results = results;
     for (const r of results) payMatch(m, r);
     for (const u of mem) { awardXp(u, 15); matchFx(u, { t: 'done', game: m.game }); }
+    saveReplay(m, now);
   }
   function hsTick(m, now) {
     const sp = P.get(m.seeker);
@@ -832,6 +850,10 @@ function createWorld(ctx) {
       if (m.phase === 'live' && m.game === 'spleef') spleefTick(m, now);
       if (m.phase === 'live' && m.game === 'trivia') triviaTick(m, now);
       if (m.phase === 'live' && m.game === 'parkour') parkourTick(m, now);
+      if ((m.phase === 'live' || m.phase === 'hide') && m.members.length) {
+        if (!m.rec) { m.rec = { start: now, samples: [] }; m.membersAll = m.members.slice(); }
+        if (now - (m.lastRec || 0) >= 500 && m.rec.samples.length < 720) { m.lastRec = now; m.rec.samples.push({ t: now - m.rec.start, ps: m.members.map((u) => { const p = P.get(u); return p ? [Math.round(p.x), Math.round(p.y)] : null; }) }); }
+      }
       if (m.phase === 'live' && now - m.at >= m.dur) matchSettle(m, now);
       if (m.game === 'race' && m.phase === 'live' && m.members.every((u) => m.times.has(u) || !P.has(u))) matchSettle(m, now);
       if (m.phase === 'done' && now - m.at >= 20000) { for (const u of m.members.slice()) MATCH_OF.delete(u); MATCHES.delete(m.id); }
@@ -844,13 +866,14 @@ function createWorld(ctx) {
     const wasSeeker = m.seeker === user;
     m.members = m.members.filter((x) => x !== user);
     m.scores.delete(user); if (m.caught) m.caught.delete(user); if (m.times) m.times.delete(user);
-    if (!m.members.length) { MATCHES.delete(m.id); return; }
+    if (!m.members.length) { if (!m.settled && (m.phase === 'live' || m.phase === 'hide')) saveReplay(m, Date.now()); MATCHES.delete(m.id); return; }
     if (m.host === user) m.host = m.members[0];
     if ((m.phase === 'live' || m.phase === 'hide') && m.game === 'hs' && wasSeeker && !m.settled) {
       m.results = m.members.map((u) => ({ u, amt: 40, note: 'the seeker gave up' }));
       for (const r of m.results) payMatch(m, r);
       for (const u of m.members) matchFx(u, { t: 'done', game: m.game });
       m.settled = true; m.phase = 'done'; m.at = Date.now();
+      saveReplay(m, Date.now());
     }
   }
   /* ---- E8: arcade wave 2 — spleef, trivia battle, parkour trials ---- */
@@ -1720,6 +1743,39 @@ function createWorld(ctx) {
       return true;
     }
 
+    if (u.pathname === '/api/world/replays' && req.method === 'GET') {
+      J({ ok: true, replays: wload('replays', me) || [] });
+      return true;
+    }
+    if (u.pathname === '/api/world/replay' && req.method === 'GET') {
+      const store = wload('replaystore', '_replays') || {};
+      const rp = store[u.searchParams.get('id') || ''];
+      if (!rp) { J({ ok: false, err: 'replay not found' }, 404); return true; }
+      if (!rp.members.includes(me)) { J({ ok: false, err: 'that replay is not urs' }, 403); return true; }
+      J({ ok: true, replay: rp });
+      return true;
+    }
+    if (u.pathname === '/api/world/photos' && req.method === 'GET') {
+      J({ ok: true, photos: wload('photos', me) || [] });
+      return true;
+    }
+    if (u.pathname === '/api/world/photo' && req.method === 'POST') {
+      if (b.act === 'del') {
+        const list = wload('photos', me) || [];
+        const ix = Number(b.ix);
+        if (ix >= 0 && ix < list.length) { list.splice(ix, 1); wsave('photos', me, list); }
+        J({ ok: true, photos: list });
+        return true;
+      }
+      const img = String(b.img || '');
+      if (!img.startsWith('data:image/jpeg;base64,') && !img.startsWith('data:image/png;base64,')) { J({ ok: false, err: 'bad image' }, 400); return true; }
+      if (img.length > 30000) { J({ ok: false, err: 'image too large' }, 400); return true; }
+      const list = wload('photos', me) || [];
+      list.unshift({ img, at: Date.now() });
+      wsave('photos', me, list.slice(0, 8));
+      J({ ok: true, count: Math.min(8, list.length) });
+      return true;
+    }
     if (u.pathname === '/api/world/matches' && req.method === 'GET') {
       const lobbies = [];
       for (const m of MATCHES.values()) if (m.phase === 'lobby') lobbies.push({ id: m.id, game: m.game, name: MATCH_GAMES[m.game].name, host: m.host, n: m.members.length, max: MATCH_GAMES[m.game].max });
@@ -1736,7 +1792,7 @@ function createWorld(ctx) {
         const game = String(b.game || '');
         if (!MATCH_GAMES[game]) { J({ ok: false, err: 'no such game' }, 400); return true; }
         if (matchOf(me)) { J({ ok: false, err: 'ur already in a match — leave it first' }, 400); return true; }
-        const m = { id: 'm' + (matchSeq++), game, host: me, members: [me], phase: 'lobby', at: now, scores: new Map(), caught: new Set(), entered: new Set(), times: new Map(), teams: new Map(), settled: false, dur: MATCH_GAMES[game].dur, seeker: null, course: game === 'race' ? 'skyline' : null, treasures: null, results: null, lastTag: 0, tiles: null, elimOrder: [], q: null, qn: 0, qOrder: null, qAnswered: null, qFirst: false, prog: null, liveAt: 0, finAt: 0, lastTick: 0 };
+        const m = { id: 'm' + (matchSeq++), game, host: me, members: [me], phase: 'lobby', at: now, scores: new Map(), caught: new Set(), entered: new Set(), times: new Map(), teams: new Map(), settled: false, dur: MATCH_GAMES[game].dur, seeker: null, course: game === 'race' ? 'skyline' : null, treasures: null, results: null, lastTag: 0, tiles: null, elimOrder: [], q: null, qn: 0, qOrder: null, qAnswered: null, qFirst: false, prog: null, liveAt: 0, finAt: 0, lastTick: 0, rec: null, lastRec: 0 };
         MATCHES.set(m.id, m); MATCH_OF.set(me, m.id);
         J({ ok: true, match: matchViewFor(me) });
         return true;
@@ -3350,6 +3406,10 @@ function createWorld(ctx) {
       '  <div class="wa-head"><span>\u2726 ur people</span><button id="wfriends-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
       '  <div id="wfriends-body"></div>\n' +
       '</div></div>\n' +
+      '<div id="wreplay" hidden><div class="wa-card">\n' +
+      '<div class="wa-head"><span>match replays</span><button id="wreplay-x" type="button" aria-label="close"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div>\n' +
+      '<div id="wreplay-body"></div>\n' +
+      '</div></div>\n' +
       '<div id="wmatch" hidden><div class="wa-card">\n' +
       '    <button id="wmatch-x" aria-label="close">&times;</button>\n' +
       '    <h3 class="wa-h">arcade matches</h3>\n' +
@@ -3396,7 +3456,7 @@ function createWorld(ctx) {
       '<div id="wtrade" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 trade</span><button id="wtrade-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wtrade-body"></div></div></div>\n' +
       '<div id="wcraft" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 crafting</span><button id="wcraft-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wcraft-body"></div></div></div>\n' +
       '<div id="wskills" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 skills</span><button id="wskills-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wskills-body"></div></div></div>\n' +
-      '<div id="wphoto" hidden><button id="wphoto-x" type="button">done</button><div id="wphoto-bar"><div id="wphoto-frames"><button type="button" data-frame="none">no frame</button><button type="button" data-frame="star" class="on">star</button><button type="button" data-frame="polaroid">polaroid</button><button type="button" data-frame="film">film</button></div><button id="wphoto-shut" type="button">SNAP</button><div id="wphoto-gal"></div></div></div>\n' +
+      '<div id="wphoto" hidden><button id="wphoto-x" type="button">done</button><div id="wphoto-bar"><div id="wphoto-frames"><button type="button" data-frame="none">no frame</button><button type="button" data-frame="star" class="on">star</button><button type="button" data-frame="polaroid">polaroid</button><button type="button" data-frame="film">film</button></div><div id="wphoto-filters"><button type="button" data-filter="none" class="on">no filter</button><button type="button" data-filter="moon">moonlight</button><button type="button" data-filter="dusk">dusk</button><button type="button" data-filter="mono">mono</button></div><button id="wphoto-shut" type="button">SNAP</button><div id="wphoto-gal"></div><div id="wphoto-album"></div></div></div>\n' +
       '<div id="wpets" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 pet journal</span><button id="wpets-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wpets-body"></div></div></div>\n' +
       '<div id="whouse" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 <span id="whouse-t">ur house</span></span><button id="whouse-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="whouse-body"></div></div></div>\n' +
       '<div id="wduelgo" hidden><div id="wduelgo-t"></div><div id="wduelgo-s"></div></div>\n' +

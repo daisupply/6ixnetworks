@@ -3560,6 +3560,91 @@ document.addEventListener('click', function (e) {
   if (e.target && e.target.id === 'wmatch-chip') openMatch();
 });
 window.__match = { open: openMatch, close: closeMatch };
+/* ---- E9: match replays ---- */
+var RP = null, RP_RAF = 0;
+var RP_COLORS = ['#ffd257', '#7c5dfa', '#34d399', '#f472b6', '#38bdf8', '#fb923c', '#e879f9', '#a3e635'];
+var RP_ZONES = [[2400, 1700, 'spawn'], [2400, 1500, 'fountain'], [2400, 1905, 'stage'], [1780, 1215, 'arcade'], [3020, 1215, 'theater'], [2400, 2600, 'lake'], [650, 2100, 'forest'], [900, 3080, 'maple row'], [5050, 3550, 'crypt']];
+function openReplays() { $('wreplay').hidden = false; document.body.classList.add('wov'); loadReplays(); }
+function closeReplays() { $('wreplay').hidden = true; document.body.classList.remove('wov'); stopReplay(); }
+function stopReplay() { if (RP_RAF) cancelAnimationFrame(RP_RAF); RP_RAF = 0; RP = null; }
+function loadReplays() {
+  stopReplay();
+  var el = $('wreplay-body'); el.innerHTML = '<div class="wnote">loading replays\u2026</div>';
+  fetch('/api/world/replays').then(function (x) { return x.json(); }).then(function (o) {
+    var list = (o && o.replays) || [];
+    if (!list.length) { el.innerHTML = '<div class="wnote">no replays yet \u2014 finish a match in the arcade and it lands here</div>'; return; }
+    el.innerHTML = list.map(function (r) {
+      return '<div class="mt-row"><div class="mt-info"><div class="mt-name">' + hsEsc(MATCH_GAME_NAMES[r.game] || r.game) + '</div><div class="mt-sub">' + new Date(r.at).toLocaleString() + ' · ' + r.members.map(function (u) { return '@' + hsEsc(u); }).join(' ') + (r.win ? ' · won by @' + hsEsc(r.win) : '') + '</div></div><button class="hs-btn gold" data-rp="' + hsEsc(r.id) + '">watch</button></div>';
+    }).join('');
+  }).catch(function () { el.innerHTML = '<div class="wnote">could not load replays</div>'; });
+}
+var MATCH_GAME_NAMES = { hs: 'hide & seek', rush: 'treasure rush', derby: 'fishing derby', race: 'team race', spleef: 'spleef', trivia: 'trivia battle', parkour: 'parkour trials' };
+function watchReplay(id) {
+  fetch('/api/world/replay?id=' + encodeURIComponent(id)).then(function (x) { return x.json(); }).then(function (o) {
+    if (!o || !o.ok) { toast((o && o.err) || 'replay unavailable', 2400); return; }
+    var rp = o.replay;
+    var xs = [], ys = [];
+    rp.samples.forEach(function (s) { s.ps.forEach(function (p) { if (p) { xs.push(p[0]); ys.push(p[1]); } }); });
+    var bx0 = Math.min.apply(null, xs) - 160, bx1 = Math.max.apply(null, xs) + 160, by0 = Math.min.apply(null, ys) - 160, by1 = Math.max.apply(null, ys) + 160;
+    var bw = Math.max(300, bx1 - bx0), bh = Math.max(300, by1 - by0);
+    var sc = Math.min(560 / bw, 380 / bh);
+    RP = { data: rp, t: 0, playing: true, speed: 1, last: performance.now(), dur: rp.samples.length ? rp.samples[rp.samples.length - 1].t : 0, bx0: bx0, by0: by0, sc: sc, ox: (560 - bw * sc) / 2, oy: (380 - bh * sc) / 2 };
+    $('wreplay-body').innerHTML = '<button class="hs-btn" data-rpback="1">back to replays</button>' +
+      '<div class="hs-sec">' + hsEsc(MATCH_GAME_NAMES[rp.game] || rp.game) + ' · ' + new Date(rp.at).toLocaleString() + '</div>' +
+      '<div class="wnote">' + rp.results.map(function (r) { return '@' + hsEsc(r.u) + ' +' + r.amt + '\u00a2'; }).join(' · ') + '</div>' +
+      '<canvas id="wreplay-cv" width="560" height="380"></canvas>' +
+      '<div class="rp-controls"><button class="hs-btn" data-rpact="play" id="rp-playbtn">pause</button><input type="range" id="rp-scrub" min="0" max="1000" value="0"><span id="rp-time" class="wnote">0.0s</span><button class="hs-btn" data-rpact="speed" id="rp-speedbtn">1x</button></div>';
+    RP_RAF = requestAnimationFrame(rpLoop);
+  }).catch(function () { toast('replay unavailable', 2400); });
+}
+function rpPosAt(rp, mi, t) {
+  var ss = rp.samples, i = 0;
+  while (i < ss.length - 1 && ss[i + 1].t <= t) i++;
+  var a = ss[i], b = ss[Math.min(i + 1, ss.length - 1)];
+  var pa = a.ps[mi], pb = b.ps[mi];
+  if (!pa && !pb) return null;
+  if (!pa) return pb; if (!pb) return pa;
+  var f = b.t > a.t ? Math.min(1, Math.max(0, (t - a.t) / (b.t - a.t))) : 0;
+  return [pa[0] + (pb[0] - pa[0]) * f, pa[1] + (pb[1] - pa[1]) * f];
+}
+function drawReplay() {
+  var cv = $('wreplay-cv'); if (!cv || !RP) return;
+  var g = cv.getContext('2d'), rp = RP.data;
+  g.fillStyle = '#0d0820'; g.fillRect(0, 0, 560, 380);
+  var X = function (x) { return RP.ox + (x - RP.bx0) * RP.sc; }, Y = function (y) { return RP.oy + (y - RP.by0) * RP.sc; };
+  g.fillStyle = 'rgba(139,124,255,.16)';
+  RP_ZONES.forEach(function (z) { var zx = X(z[0]), zy = Y(z[1]); if (zx < -20 || zy < -20 || zx > 580 || zy > 400) return; g.beginPath(); g.arc(zx, zy, 3, 0, 6.29); g.fill(); g.fillStyle = 'rgba(243,239,255,.4)'; g.font = '9px Inter, sans-serif'; g.textAlign = 'center'; g.fillText(z[2], zx, zy - 6); g.fillStyle = 'rgba(139,124,255,.16)'; });
+  rp.members.forEach(function (u, mi) {
+    var p = rpPosAt(rp, mi, RP.t); if (!p) return;
+    var x = X(p[0]), y = Y(p[1]);
+    g.save(); g.translate(x, y); g.shadowColor = RP_COLORS[mi % 8]; g.shadowBlur = 10;
+    g.fillStyle = RP_COLORS[mi % 8]; g.beginPath(); starPath(g, 10, 0.5, mi * 0.7); g.fill(); g.restore();
+    g.fillStyle = 'rgba(243,239,255,.9)'; g.font = '600 10px Inter, sans-serif'; g.textAlign = 'center'; g.fillText('@' + u, x, y + 22);
+  });
+}
+function rpLoop(ts) {
+  if (!RP) { RP_RAF = 0; return; }
+  var dt = Math.min(100, ts - RP.last); RP.last = ts;
+  if (RP.playing) { RP.t += dt * RP.speed; if (RP.t >= RP.dur) { RP.t = RP.dur; RP.playing = false; } }
+  drawReplay();
+  var sc = $('rp-scrub'); if (sc && document.activeElement !== sc) sc.value = RP.dur ? Math.round(1000 * RP.t / RP.dur) : 0;
+  var tm = $('rp-time'); if (tm) tm.textContent = (RP.t / 1000).toFixed(1) + 's / ' + (RP.dur / 1000).toFixed(1) + 's';
+  var pb = $('rp-playbtn'); if (pb) pb.textContent = RP.playing ? 'pause' : (RP.t >= RP.dur ? 'replay' : 'play');
+  RP_RAF = requestAnimationFrame(rpLoop);
+}
+$('wreplay-x').addEventListener('click', closeReplays);
+$('wreplay').addEventListener('click', function (e) { if (e.target === $('wreplay')) closeReplays(); });
+$('wreplay-body').addEventListener('click', function (e) {
+  var w = e.target.closest('[data-rp]'); if (w) { watchReplay(w.getAttribute('data-rp')); return; }
+  if (e.target.closest('[data-rpback]')) { loadReplays(); return; }
+  var a = e.target.closest('[data-rpact]'); if (!a || !RP) return;
+  var act = a.getAttribute('data-rpact');
+  if (act === 'play') { if (RP.t >= RP.dur) RP.t = 0; RP.playing = !RP.playing; }
+  if (act === 'speed') { RP.speed = RP.speed >= 4 ? 1 : RP.speed * 2; a.textContent = RP.speed + 'x'; }
+});
+$('wreplay-body').addEventListener('input', function (e) { if (e.target && e.target.id === 'rp-scrub' && RP) { RP.t = RP.dur * Number(e.target.value) / 1000; drawReplay(); } });
+window.__replay = { open: openReplays, close: closeReplays };
+
 
 $('wfriends-x').addEventListener('click', closeFriends);
 $('wfriends').addEventListener('click', function (e) { if (e.target === $('wfriends')) closeFriends(); });
@@ -3613,6 +3698,7 @@ var HUB_DEFS = [
   ['season 1', '<path d="M12 2v20"/><path d="M4 6l16 12"/><path d="M20 6L4 18"/><path d="M12 2l-2 3m2-3 2 3"/><path d="M12 22l-2-3m2 3 2-3"/>', function () { openSeason(); }],
   ['friends', '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3 2.8-4.5 5.5-4.5s4.9 1.5 5.5 4.5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.6c2.3.2 4.1 1.6 4.7 4.4"/>', function () { openFriends(); }],
   ['arcade matches', '<path d="M6 9h12l1.5 9a2 2 0 0 1-2 2.3h-11A2 2 0 0 1 4.5 18L6 9zM6 9a6 6 0 0 1 12 0M9.5 13.5h.01M14.5 13.5h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>', function () { openMatch(); }],
+  ['replays', '<path d="M8 5.5v13l11-6.5z" fill="currentColor"/>', function () { openReplays(); }],
   ['character', '<circle cx="12" cy="8" r="4"/><path d="M4 21c.8-3.6 4-5.5 8-5.5s7.2 1.9 8 5.5"/>', function () { openChar(); }],
   ['emotes', '<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5c1 1.2 2.2 1.8 3.5 1.8s2.5-.6 3.5-1.8"/><path d="M9 9.5h.01M15 9.5h.01"/>', function () { var ep = $('wemotes'); if (ep) ep.hidden = !ep.hidden; }],
   ['settings', '<circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.14-1.4l2-1.55-2-3.46-2.36.95a7 7 0 0 0-2.42-1.4L13.7 2.6h-3.4l-.38 2.54a7 7 0 0 0-2.42 1.4l-2.36-.95-2 3.46 2 1.55a7 7 0 0 0 0 2.8l-2 1.55 2 3.46 2.36-.95a7 7 0 0 0 2.42 1.4l.38 2.54h3.4l.38-2.54a7 7 0 0 0 2.42-1.4l2.36.95 2-3.46-2-1.55c.1-.45.14-.92.14-1.4Z"/>', function () { openSettings(); }],
@@ -4212,8 +4298,16 @@ function renderSkills() {
 $('wskills-x').addEventListener('click', closeSkills);
 window.__skills = { open: openSkills, close: closeSkills };
 var PHOTO_FRAME = 'star';
+var PHOTO_FILTER = 'none';
 function photoList() { try { return JSON.parse(localStorage.getItem('wphotos') || '[]'); } catch (e) { return []; } }
-function openPhoto() { document.body.classList.add('wphoto'); $('wphoto').hidden = false; renderPhotoGal(); }
+function openPhoto() { document.body.classList.add('wphoto'); $('wphoto').hidden = false; renderPhotoGal(); renderAlbum(); }
+function renderAlbum() {
+  var el = $('wphoto-album'); if (!el) return;
+  fetch('/api/world/photos').then(function (x) { return x.json(); }).then(function (o) {
+    var list = (o && o.photos) || [];
+    el.innerHTML = list.length ? '<span class="alb-label">ALBUM</span>' + list.map(function (p, i) { return '<span class="alb"><img src="' + p.img + '" alt="album snap"><button type="button" data-albdel="' + i + '" aria-label="delete snap"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></span>'; }).join('') : '';
+  }).catch(function () {});
+}
 function closePhoto() { document.body.classList.remove('wphoto'); $('wphoto').hidden = true; }
 function renderPhotoGal() {
   var gal = $('wphoto-gal'); if (!gal) return;
@@ -4227,6 +4321,9 @@ function snapPhoto() {
   var g = out.getContext('2d');
   g.drawImage(src, 0, 0);
   var W = out.width, H = out.height;
+  if (PHOTO_FILTER === 'mono') { try { g.filter = 'grayscale(1) contrast(1.06)'; g.drawImage(out, 0, 0); g.filter = 'none'; } catch (e) {} }
+  else if (PHOTO_FILTER === 'moon') { g.fillStyle = 'rgba(88,80,236,.15)'; g.fillRect(0, 0, W, H); g.fillStyle = 'rgba(8,4,36,.14)'; g.fillRect(0, 0, W, H); }
+  else if (PHOTO_FILTER === 'dusk') { g.fillStyle = 'rgba(255,138,42,.15)'; g.fillRect(0, 0, W, H); g.fillStyle = 'rgba(80,10,60,.08)'; g.fillRect(0, 0, W, H); }
   var cap = "six's network \u2726 @" + me + ' \u00b7 ' + new Date().toLocaleDateString();
   if (PHOTO_FRAME === 'star') {
     g.strokeStyle = 'rgba(255,210,87,.9)'; g.lineWidth = Math.max(3, W * 0.006);
@@ -4253,12 +4350,15 @@ function snapPhoto() {
     var list = photoList(); list.unshift({ at: Date.now(), img: th.toDataURL('image/jpeg', 0.72) });
     try { localStorage.setItem('wphotos', JSON.stringify(list.slice(0, 10))); } catch (e) {}
     renderPhotoGal();
+    try { var ath = document.createElement('canvas'); var asc = 320 / W; ath.width = 320; ath.height = Math.max(1, Math.round(H * asc)); ath.getContext('2d').drawImage(out, 0, 0, ath.width, ath.height); jpost('/api/world/photo', { img: ath.toDataURL('image/jpeg', 0.55) }).then(function () { renderAlbum(); }); } catch (e) {}
     toast('\u2726 snap saved \u2014 full shot downloaded + a copy in the gallery', 3200);
   });
 }
 $('wphoto-shut').addEventListener('click', snapPhoto);
 $('wphoto-x').addEventListener('click', closePhoto);
 $('wphoto-frames').addEventListener('click', function (e) { var b = e.target.closest('[data-frame]'); if (!b) return; PHOTO_FRAME = b.getAttribute('data-frame'); Array.prototype.forEach.call($('wphoto-frames').children, function (x) { x.classList.toggle('on', x === b); }); });
+$('wphoto-filters').addEventListener('click', function (e) { var b = e.target.closest('[data-filter]'); if (!b) return; PHOTO_FILTER = b.getAttribute('data-filter'); Array.prototype.forEach.call($('wphoto-filters').children, function (x) { x.classList.toggle('on', x === b); }); });
+$('wphoto-album').addEventListener('click', function (e) { var b = e.target.closest('[data-albdel]'); if (!b) return; jpost('/api/world/photo', { act: 'del', ix: Number(b.getAttribute('data-albdel')) }).then(function () { renderAlbum(); }); });
 window.__photo = { open: openPhoto, close: closePhoto, snap: snapPhoto };
 $('wguild').addEventListener('click', function (e) { if (e.target === $('wguild')) closeGuild(); });
 window.__guild = { open: openGuild, close: closeGuild };
