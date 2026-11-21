@@ -1388,6 +1388,42 @@ const ITEMS = [
   "price": 2200,
   "color": "#a78bfa",
   "kind": "dragonm"
+ },
+ {
+  "id": "s155",
+  "cat": "rod",
+  "name": "bamboo rod",
+  "rarity": "common",
+  "price": 250,
+  "color": "#d6a860",
+  "kind": "rod1"
+ },
+ {
+  "id": "s156",
+  "cat": "rod",
+  "name": "carbon rod",
+  "rarity": "rare",
+  "price": 700,
+  "color": "#94a3b8",
+  "kind": "rod2"
+ },
+ {
+  "id": "s157",
+  "cat": "rod",
+  "name": "moonlit rod",
+  "rarity": "epic",
+  "price": 1500,
+  "color": "#7dd3fc",
+  "kind": "rod3"
+ },
+ {
+  "id": "s158",
+  "cat": "rod",
+  "name": "lich rod",
+  "rarity": "legendary",
+  "price": 2600,
+  "color": "#ffd257",
+  "kind": "rod4"
  }
 ];
 const BY_ID = {};

@@ -203,6 +203,34 @@ const CRYSTALS = [
 // Intra-world doors: the server validates the player is standing at the
 // from-point, then sanctions the teleport (TP_OK) and moves them itself.
 const MOUNT_SPEED = { board: 350, scooter: 365, bike: 400, hover: 415, cloud: 440, rocket: 465, dragonm: 490 };
+  const ROD_LUCK = { rod1: 1, rod2: 1.5, rod3: 2.1, rod4: 2.8 };
+  const FISH_SPECIES = [
+    { id: 'minnow', name: 'moon minnow', band: 'common', pay: 6, c: '#a5f3fc', w: 18, w0: 0.1, w1: 0.4 },
+    { id: 'perch', name: 'puddle perch', band: 'common', pay: 8, c: '#93c5fd', w: 16, w0: 0.2, w1: 0.8 },
+    { id: 'guppy', name: 'gloom guppy', band: 'common', pay: 7, c: '#c4b5fd', w: 16, w0: 0.1, w1: 0.3 },
+    { id: 'boot', name: 'old boot', band: 'junk', pay: 0, c: '#78716c', w: 6, w0: 0.5, w1: 0.5 },
+    { id: 'silver', name: 'silverfin', band: 'rare', pay: 16, c: '#e2e8f0', w: 11, w0: 0.5, w1: 1.6 },
+    { id: 'koi', name: 'ember koi', band: 'rare', pay: 20, c: '#fb923c', w: 10, w0: 0.6, w1: 2.0 },
+    { id: 'eel', name: 'void eel', band: 'epic', pay: 38, c: '#a78bfa', w: 6, w0: 1.0, w1: 3.4 },
+    { id: 'carp', name: 'crystal carp', band: 'epic', pay: 45, c: '#7dd3fc', w: 5, w0: 1.2, w1: 4.0 },
+    { id: 'levi', name: 'moon leviathan', band: 'legendary', pay: 120, c: '#f0abfc', w: 2.2, w0: 6, w1: 18 },
+    { id: 'lich', name: 'lichfish', band: 'legendary', pay: 150, c: '#ffd257', w: 1.8, w0: 4, w1: 12 },
+    { id: 'aurelia', name: 'aurelia, the drowned star', band: 'mythic', pay: 400, c: '#fff3c4', w: 0.5, w0: 2, w1: 5 },
+  ];
+  const FISH_BAND_I = { junk: 0, common: 0, rare: 1, epic: 2, legendary: 3, mythic: 4 };
+  const FISH = new Map();
+  function fishSpot(p) {
+    if (!p) return false;
+    const inLake = p.x > 1480 - 90 && p.x < 3320 + 90 && p.y > 2260 - 90 && p.y < 2940 + 90;
+    const onPier = p.x > 2352 - 24 && p.x < 2448 + 24 && p.y > 2240 - 24 && p.y < 2580 + 24;
+    return inLake || onPier;
+  }
+  function fishWeek(now) { return Math.floor((now / 86400000 + 3) / 7); }
+  function fishBoard(now, fb) {
+    fb = fb || {};
+    if (fb.wk !== fishWeek(now)) return [];
+    return Object.keys(fb.rows || {}).map((u2) => ({ u: u2, v: fb.rows[u2].w, sp: fb.rows[u2].sp })).sort((a, b2) => b2.v - a.v).slice(0, 10);
+  }
 const PORTAL_PADS = { games: [1780, 1215], movies: [3020, 1215], blox: [2400, 1120], chat: [1710, 1500], party: [3090, 1500], yt: [1780, 1800], tiktok: [3020, 1800], music: [2400, 1905] };
 const DOORS = {
   'arcade-in': { fx: 5600, fy: 1680, tx: 5650, ty: 3600 },
@@ -301,6 +329,7 @@ function createWorld(ctx) {
   }
   const ACHS = [
     { id: 'first-steps', name: 'first steps', desc: 'spend a minute inside the world', cat: 'progression', reward: 5, test: (pg) => (pg.playSec || 0) >= 60 },
+    { id: 'angler', name: 'angler', desc: 'catch 25 fish at the moonlit lake', cat: 'world', reward: 60, test: (pg) => ((pg.c || {}).fish || 0) >= 25 },
     { id: 'rising-star', name: 'rising star', desc: 'reach level 5', cat: 'progression', reward: 50, test: (pg) => levelOf(pg.xp || 0) >= 5 },
     { id: 'world-veteran', name: 'world veteran', desc: 'reach level 10', cat: 'progression', reward: 150, test: (pg) => levelOf(pg.xp || 0) >= 10 },
     { id: 'wanderer', name: 'wanderer', desc: 'discover 5 locations', cat: 'exploration', reward: 20, test: (pg) => (pg.zones || []).length >= 5 },
@@ -483,10 +512,10 @@ function createWorld(ctx) {
     }
   }
   function wearOf(u) {
-    const out = { trail: null, hat: null, aura: null, pet: null, face: null, mount: null };
+    const out = { trail: null, hat: null, aura: null, pet: null, face: null, mount: null, rod: null };
     let w = {};
     try { w = ctx.getWear(u) || {}; } catch { }
-    for (const cat of ['trail', 'hat', 'aura', 'pet', 'face', 'mount']) {
+    for (const cat of ['trail', 'hat', 'aura', 'pet', 'face', 'mount', 'rod']) {
       const it = w[cat] && SHOP.BY_ID[w[cat]];
       if (it) out[cat] = { kind: it.kind, c: it.color, id: it.id, rarity: it.rarity || 'common' };
     }
@@ -980,6 +1009,7 @@ function createWorld(ctx) {
       J({ ok: true, boards: {
         levels: rows.slice().sort((a, b2) => b2.xp - a.xp).slice(0, 10).map((r) => ({ u: r.u, v: r.xp, lvl: r.lvl })),
         quests: top('quests'), shards: top('shards'), ach: top('ach'), crystals: top('crystals'),
+        fish: fishBoard(Date.now(), wload('fishbest', '_fishbest') || {}),
       } });
       return true;
     }
@@ -1018,7 +1048,7 @@ function createWorld(ctx) {
         let inv = [];
         try { inv = ctx.getInv(me) || []; } catch { }
         const wear = {};
-        for (const cat of ['trail', 'hat', 'aura', 'pet', 'face', 'mount']) { if (saved[cat] && inv.includes(saved[cat])) wear[cat] = saved[cat]; }
+        for (const cat of ['trail', 'hat', 'aura', 'pet', 'face', 'mount', 'rod']) { if (saved[cat] && inv.includes(saved[cat])) wear[cat] = saved[cat]; }
         try { ctx.setWear(me, wear); } catch { }
         const p = P.get(me);
         if (p) p.wear = wearOf(me);
@@ -1057,6 +1087,71 @@ function createWorld(ctx) {
       return true;
     }
 
+    if (u.pathname === '/api/world/fish' && req.method === 'GET') {
+      let inv = [];
+      try { inv = ctx.getInv(me) || []; } catch { }
+      const wof = wearOf(me);
+      const fd = wload('fishday', me) || {};
+      const day = ctx.scoreDay();
+      J({ ok: true, species: FISH_SPECIES.map((s) => ({ id: s.id, name: s.name, band: s.band, pay: s.pay, c: s.c })), log: wload('fishlog', me) || {}, rods: ['s155', 's156', 's157', 's158'].map((id) => { const it = SHOP.BY_ID[id]; return { id, name: it.name, price: it.price, luck: ROD_LUCK[it.kind], owned: inv.includes(id), equipped: !!(wof.rod && wof.rod.id === id) }; }), daily: { n: fd.day === day ? (fd.n || 0) : 0, need: 3, paid: fd.day === day && !!fd.paid }, best: fishBoard(Date.now(), wload('fishbest', '_fishbest') || {}) });
+      return true;
+    }
+    if (u.pathname === '/api/world/fish-cast' && req.method === 'POST') {
+      const p = P.get(me);
+      if (!fishSpot(p)) { J({ ok: false, err: 'fish from the lake shore or the pier' }, 400); return true; }
+      const wof = wearOf(me);
+      if (!wof.rod) { J({ ok: false, err: 'u need a rod equipped — grab one in the fishing panel' }, 400); return true; }
+      const luck = ROD_LUCK[wof.rod.kind] || 1;
+      const waitMs = Math.max(1600, Math.round((2200 + Math.random() * 4200) * (1 - (luck - 1) * 0.12)));
+      FISH.set(me, { biteAt: Date.now() + waitMs, luck });
+      J({ ok: true, waitMs });
+      return true;
+    }
+    if (u.pathname === '/api/world/fish-reel' && req.method === 'POST') {
+      const rec = FISH.get(me);
+      if (!rec) { J({ ok: false, err: 'no line in the water' }, 400); return true; }
+      const p = P.get(me);
+      if (!fishSpot(p)) { FISH.delete(me); J({ ok: false, err: 'u wandered off — line pulled in' }, 400); return true; }
+      const now2 = Date.now();
+      if (now2 < rec.biteAt - 150) { FISH.delete(me); J({ ok: false, err: 'too soon — scared it off' }); return true; }
+      if (now2 > rec.biteAt + 900) { FISH.delete(me); J({ ok: false, err: 'too late — it slipped away' }); return true; }
+      FISH.delete(me);
+      let tot = 0;
+      const ws = FISH_SPECIES.map((s) => { const w2 = s.w * Math.pow(rec.luck, FISH_BAND_I[s.band] * 0.25); tot += w2; return w2; });
+      let roll = Math.random() * tot, sp = FISH_SPECIES[0];
+      for (let i = 0; i < FISH_SPECIES.length; i++) { roll -= ws[i]; if (roll <= 0) { sp = FISH_SPECIES[i]; break; } }
+      const kg = Math.round((sp.w0 + Math.random() * (sp.w1 - sp.w0)) * 10) / 10;
+      let bal = null;
+      if (sp.pay > 0) { try { bal = await ctx.awardCents(me, sp.pay); } catch { } txLog(me, 'fish', sp.pay, sp.name); }
+      awardXp(me, 4);
+      const pg = progFor(me);
+      pg.c.fish = (pg.c.fish || 0) + 1;
+      achCheck(me);
+      const log = wload('fishlog', me) || {};
+      const le = log[sp.id] || { n: 0, max: 0 };
+      le.n += 1; le.max = Math.max(le.max, kg);
+      log[sp.id] = le;
+      wsave('fishlog', me, log);
+      const day = ctx.scoreDay();
+      const fd = wload('fishday', me) || {};
+      const fdN = (fd.day === day ? (fd.n || 0) : 0) + 1;
+      let dailyBonus = 0;
+      if (fdN >= 3 && !(fd.day === day && fd.paid)) {
+        dailyBonus = 25;
+        try { bal = await ctx.awardCents(me, 25); } catch { }
+        txLog(me, 'fish', 25, 'daily catch bonus');
+        wsave('fishday', me, { day, n: fdN, paid: true });
+      } else wsave('fishday', me, { day, n: fdN, paid: fd.day === day && !!fd.paid });
+      if (sp.band !== 'junk') {
+        const fb = wload('fishbest', '_fishbest') || {};
+        const wk = fishWeek(now2);
+        const rows = (fb.wk === wk && fb.rows) ? fb.rows : {};
+        if (!rows[me] || rows[me].w < kg) rows[me] = { sp: sp.name, w: kg };
+        wsave('fishbest', '_fishbest', { wk, rows });
+      }
+      J({ ok: true, sp: { id: sp.id, name: sp.name, band: sp.band, pay: sp.pay, c: sp.c }, kg, bal, dailyBonus, first: le.n === 1 });
+      return true;
+    }
     if (u.pathname === '/api/world/pet-name' && req.method === 'POST') {
       const it = SHOP.BY_ID[String(b.id || '')];
       if (!it || it.cat !== 'pet') { J({ ok: false, err: 'bad pet' }, 400); return true; }
@@ -1269,7 +1364,7 @@ function createWorld(ctx) {
     }
     if (u.pathname === '/api/world/shopequip' && req.method === 'POST') {
       const cat = String(b.cat || '');
-      if (!['trail', 'hat', 'aura', 'pet', 'face', 'mount'].includes(cat)) { J({ ok: false, err: 'bad category' }, 400); return true; }
+      if (!['trail', 'hat', 'aura', 'pet', 'face', 'mount', 'rod'].includes(cat)) { J({ ok: false, err: 'bad category' }, 400); return true; }
       let wear = {};
       try { wear = ctx.getWear(me); } catch { }
       if (b.id == null || b.id === '') { delete wear[cat]; }
@@ -1540,6 +1635,7 @@ function createWorld(ctx) {
       '  <div class="wadmin-row"><input id="wadmin-ann" type="text" maxlength="160" placeholder="announce to the whole world\u2026"><button id="wadmin-send" type="button">send</button></div>\n' +
       '  <div class="wadmin-row"><button class="wadmin-ev" data-ev="shardstorm" type="button">force shard storm</button><button class="wadmin-ev" data-ev="goldenhunt" type="button">force golden hunt</button><button class="wadmin-ev" data-ev="off" type="button">events off</button></div>\n' +
       '</div></div>\n' +
+      '<div id="wfish" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 fishing</span><button id="wfish-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wfish-body"></div></div></div>\n' +
       '<div id="wpets" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 pet journal</span><button id="wpets-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wpets-body"></div></div></div>\n' +
       '<div id="whouse" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 <span id="whouse-t">ur house</span></span><button id="whouse-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="whouse-body"></div></div></div>\n' +
       '<div id="wduelgo" hidden><div id="wduelgo-t"></div><div id="wduelgo-s"></div></div>\n' +

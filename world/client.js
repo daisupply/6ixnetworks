@@ -407,7 +407,10 @@ $('wact').addEventListener('click', function () {
     });
     return;
   }
-  if (wactMode === 'house') { enterHouse(me); return; }
+    if (wactMode === 'reel') { reelLine(); return; }
+    if (wactMode === 'waitfish') { clearFishing(); jpost('/api/world/fish-reel', {}).catch(function () {}); return; }
+    if (wactMode === 'fish') { if (myWearIds.rod) castLine(); else openFish(); return; }
+    if (wactMode === 'house') { enterHouse(me); return; }
   if (wactMode === 'hexit') { exitHouse(); return; }
   if (wactMode !== 'wish') return;
   jpost('/api/world/wish', {}).then(function (r) {
@@ -606,6 +609,7 @@ function update(now) {
   var mntIt2 = myWearIds.mount ? WBY[myWearIds.mount] : null;
   var flyM = !!(mntIt2 && (mntIt2.kind === 'cloud' || mntIt2.kind === 'dragonm'));
   var speed = dashing ? 660 : (mntIt2 ? (MOUNT_SPD[mntIt2.kind] || 350) : (keys['shift'] ? 372 : 258)) * ((inWater && !flyM) ? 0.72 : 1);
+  if (FISHING && moving) clearFishing();
   if (dashing) { ix = Math.cos(dashDir); iy = Math.sin(dashDir); }
   var accel = dashing ? 4200 : 1500;
   vx += clamp(ix * speed - vx, -accel * dt, accel * dt);
@@ -686,7 +690,9 @@ function update(now) {
   var wact = $('wact'), actMode = '', actLabel = '';
   nearDoorId = '';
   for (var di = 0; di < DOORS.length; di++) { if (dist(px, py, DOORS[di].x, DOORS[di].y) < 58) { nearDoorId = DOORS[di].id; break; } }
-  if (myHouse && HOUSE_VIEW && HOUSE_VIEW.origin && dist(px, py, HOUSE_VIEW.origin.x + 430, HOUSE_VIEW.origin.y + 520) < 72) { actMode = 'hexit'; actLabel = 'leave the house'; }
+  if (FISHING) { actMode = FISHING.stage === 'bite' ? 'reel' : 'waitfish'; actLabel = FISHING.stage === 'bite' ? 'REEL IT!' : 'line out… tap to pull in'; }
+  else if (nearShore()) { actMode = 'fish'; actLabel = myWearIds.rod ? 'cast a line' : 'fish (need a rod)'; }
+  else if (myHouse && HOUSE_VIEW && HOUSE_VIEW.origin && dist(px, py, HOUSE_VIEW.origin.x + 430, HOUSE_VIEW.origin.y + 520) < 72) { actMode = 'hexit'; actLabel = 'leave the house'; }
   else if (!myHouse && nearHousePlot()) { actMode = 'house'; actLabel = 'enter ur house'; }
   else if (nearDoorId) { actMode = 'door'; for (var dj = 0; dj < DOORS.length; dj++) if (DOORS[dj].id === nearDoorId) actLabel = DOORS[dj].label; }
   else if (myZone === 'the vault' && myInv.indexOf('s141') < 0 && dist(px, py, 5650, 3970) < 120) { actMode = 'vault'; actLabel = 'claim the vault crown'; }
@@ -1165,6 +1171,7 @@ function render(now) {
     g.fillRect(BOARD.x - 36, BOARD.y - 12, 72, 3); g.fillRect(BOARD.x - 36, BOARD.y - 2, 56, 3); g.fillRect(BOARD.x - 36, BOARD.y + 8, 64, 3);
   }
   renderHouseDecor(g, now);
+  drawFishing(g, now);
   DOORS.forEach(function (d) {
     if (!inV(d.x, d.y, 90)) return;
     var pu2 = 1 + Math.sin(now / 480 + d.x) * 0.06;
@@ -2670,7 +2677,7 @@ function openShop() {
 }
 function closeShop() { window.__shopOpen = false; $('wshop').hidden = true; document.body.classList.remove('wov'); }
 function renderShopTabs() {
-  var tabs = [['all', 'all'], ['trail', 'trails'], ['hat', 'hats'], ['aura', 'auras'], ['pet', 'pets'], ['face', 'faces'], ['mount', 'mounts'], ['mine', 'my stuff']];
+  var tabs = [['all', 'all'], ['trail', 'trails'], ['hat', 'hats'], ['aura', 'auras'], ['pet', 'pets'], ['face', 'faces'], ['mount', 'mounts'], ['rod', 'rods'], ['mine', 'my stuff']];
   var wrap = $('wsh-tabs');
   wrap.innerHTML = '';
   tabs.forEach(function (t) {
@@ -2985,7 +2992,8 @@ function openBoards() {
       bdSection('most quests done', b.quests, function (v) { return v + ' quests'; }) +
       bdSection('shard hunters', b.shards, function (v) { return v + ' shards'; }) +
       bdSection('achievement hunters', b.ach, function (v) { return v + ' unlocked'; }) +
-      bdSection('crystal keepers', b.crystals, function (v) { return v + ' crystals'; });
+      bdSection('crystal keepers', b.crystals, function (v) { return v + ' crystals'; }) +
+      (b.fish && b.fish.length ? '<div class="jq-sec">biggest catches this week</div>' + b.fish.map(function (r2, i) { return '<div class="bd-row"><span class="bd-rank">' + (i + 1) + '</span><span class="bd-name">@' + escH(r2.u) + '</span><span class="bd-val">' + r2.v + 'kg ' + escH(r2.sp) + '</span></div>'; }).join('') : '');
   }).catch(function () { $('wboards-body').innerHTML = '<div class="jq-row">couldnt load the boards</div>'; });
 }
 function closeBoards() { $('wboards').hidden = true; document.body.classList.remove('wov'); }
@@ -3022,6 +3030,7 @@ var HUB_DEFS = [
   ['ur stuff', '<path d="M6 8h12l1.2 12H4.8L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>', function () { openInv(); }],
   ['ur house', '<path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>', function () { openHouse(); }],
   ['mount up', '<circle cx="5.5" cy="17.5" r="2.4"/><circle cx="18.5" cy="17.5" r="2.4"/><path d="M5.5 17.5 10 8h5l3.5 9.5M10 8 8.2 4.5H5.8"/>', function () { openShop(); shopTab = 'mount'; renderShopTabs(); renderShopGrid(); }],
+  ['fishing', '<path d="M14 3v9.5"/><path d="M14 12.5c0 3 2.5 3.4 2.5 6a4.5 4.5 0 1 1-6.4-4"/><circle cx="14" cy="3" r="1.4"/>', function () { openFish(); }],
   ['pets', '<circle cx="7.5" cy="8" r="1.8"/><circle cx="12" cy="5.8" r="1.8"/><circle cx="16.5" cy="8" r="1.8"/><path d="M12 11c2.9 0 5.4 2.2 5.4 4.7 0 1.9-1.5 3.1-3.3 3.1-1 0-1.5-.4-2.1-.4s-1.1.4-2.1.4c-1.8 0-3.3-1.2-3.3-3.1C6.6 13.2 9.1 11 12 11Z"/>', function () { openPets(); }],
   ['world map', '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/>', function () { openMap2(); }],
   ['quest journal', '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>', function () { openJournal(); }],
@@ -3525,6 +3534,100 @@ function drawMount(g, p, now, walking) {
   }
   g.restore();
 }
+
+
+/* ================= fishing ================= */
+var FISHING = null;
+function nearShore() {
+  return (px > LAKE.x1 - 90 && px < LAKE.x2 + 90 && py > LAKE.y1 - 90 && py < LAKE.y2 + 90) || (px > PIER.x1 - 24 && px < PIER.x2 + 24 && py > PIER.y1 - 24 && py < PIER.y2 + 24);
+}
+function clearFishing(msg) {
+  if (!FISHING) return;
+  if (FISHING.t1) clearTimeout(FISHING.t1);
+  if (FISHING.t2) clearTimeout(FISHING.t2);
+  FISHING = null;
+  if (msg) floatText(px, py - 34, msg, '#a5f3fc');
+}
+function castLine() {
+  jpost('/api/world/fish-cast', {}).then(function (r) {
+    if (!r || !r.ok) { toast((r && r.err) || 'cant fish here', ''); return; }
+    var bx = px + Math.cos(dir) * 54, by = py + Math.sin(dir) * 54;
+    FISHING = { stage: 'wait', bx: bx, by: by, t1: 0, t2: 0 };
+    tone(520, 0, .12, 'sine', .08, 300);
+    FISHING.t1 = setTimeout(function () {
+      if (!FISHING) return;
+      FISHING.stage = 'bite';
+      tone(1240, 0, .1, 'square', .09, 900); tone(1560, .09, .12, 'square', .09, 1100);
+      burst(FISHING.bx, FISHING.by, '#a5f3fc', 8, 46);
+      FISHING.t2 = setTimeout(function () { clearFishing('it got away…'); }, 950);
+    }, r.waitMs);
+  });
+}
+function reelLine() {
+  if (!FISHING) return;
+  var f = FISHING;
+  if (f.t1) clearTimeout(f.t1);
+  if (f.t2) clearTimeout(f.t2);
+  FISHING = null;
+  jpost('/api/world/fish-reel', {}).then(function (r) {
+    if (!r) return;
+    if (r.ok) {
+      burst(f.bx, f.by, r.sp.c, 16, 70);
+      tone(760, 0, .12, 'triangle', .12, 1180);
+      floatText(px, py - 38, (r.first ? 'NEW ✦ ' : '') + r.sp.name + ' · ' + r.kg + 'kg' + (r.sp.pay ? ' · +¢' + r.sp.pay : ''), r.sp.c);
+      if (r.dailyBonus) toast('daily catch bonus ✦ +¢25', '');
+    } else if (r.err) floatText(px, py - 34, r.err, '#fca5a5');
+  });
+}
+function drawFishing(g, now) {
+  if (!FISHING) return;
+  var bob = FISHING.stage === 'bite' ? 3.4 : Math.sin(now / 300) * 1.4;
+  g.strokeStyle = 'rgba(233,228,255,.4)'; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(px + Math.cos(dir) * 14, py - 6 + Math.sin(dir) * 6); g.lineTo(FISHING.bx, FISHING.by + bob); g.stroke();
+  g.strokeStyle = 'rgba(165,243,252,.35)';
+  g.beginPath(); g.ellipse(FISHING.bx, FISHING.by + 3, 8 + Math.sin(now / 400) * 2, 3, 0, 0, TAU); g.stroke();
+  g.fillStyle = '#f8fafc';
+  g.beginPath(); g.arc(FISHING.bx, FISHING.by + bob, 3.4, 0, TAU); g.fill();
+  g.fillStyle = '#ef4444';
+  g.beginPath(); g.arc(FISHING.bx, FISHING.by + bob, 3.4, Math.PI, TAU); g.fill();
+  if (FISHING.stage === 'bite') {
+    g.font = '900 17px Inter, sans-serif'; g.textAlign = 'center';
+    g.fillStyle = '#ffd257';
+    g.fillText('!', FISHING.bx, FISHING.by - 14 + Math.sin(now / 90) * 2);
+  }
+}
+function openFish() { $('wfish').hidden = false; renderFish(); }
+function closeFish() { $('wfish').hidden = true; }
+function renderFish() {
+  var body = $('wfish-body'); if (!body) return;
+  body.innerHTML = '<div class="hs-note">checking the lake…</div>';
+  fetch('/api/world/fish', { headers: { accept: 'application/json' } }).then(function (x) { return x.json(); }).then(function (r) {
+    if (!r || !r.ok) { body.innerHTML = '<div class="hs-note">couldnt load fishing</div>'; return; }
+    var caught = Object.keys(r.log || {}).length;
+    var h = '<div class="hs-note">fish the moonlit lake shore or the pier · catch 3 in a day for a +¢25 bonus · u are ' + (nearShore() ? 'at the water rn' : 'not near the lake') + '</div>';
+    h += '<div class="hs-sec">daily catch — ' + Math.min(r.daily.n, r.daily.need) + ' / ' + r.daily.need + (r.daily.paid ? ' · bonus paid ✓' : '') + '</div>';
+    h += '<div class="hs-sec">ur rod</div><div class="hs-grid">' + r.rods.map(function (rd) {
+      return '<div class="hs-item" data-fish="' + (rd.owned ? 'equiprod' : 'buyrod') + '" data-id="' + rd.id + '">' + hsEsc(rd.name) + ' · luck ×' + rd.luck + (rd.equipped ? ' · in hand ✓' : rd.owned ? ' · tap to hold' : '') + '<span class="hs-pr">' + (rd.owned ? '' : '¢' + rd.price) + '</span></div>';
+    }).join('') + '</div>';
+    h += '<div class="hs-sec">species journal — ' + caught + ' / ' + r.species.length + ' found</div><div class="fish-grid">' + r.species.map(function (s) {
+      var le = (r.log || {})[s.id];
+      return '<div class="fish-card' + (le ? '' : ' uncaught') + '"><div class="fish-dot" style="background:' + (le ? s.c : '#3b3355') + ';box-shadow:0 0 12px ' + (le ? s.c : 'transparent') + '"></div><div class="pet-nm">' + (le ? hsEsc(s.name) : '???') + '</div><div class="pet-meta">' + s.band + (le ? ' · ×' + le.n + ' · best ' + le.max + 'kg' : ' · ¢' + s.pay) + '</div></div>';
+    }).join('') + '</div>';
+    if (r.best && r.best.length) h += '<div class="hs-sec">biggest catches this week</div>' + r.best.map(function (b2, i) { return '<div class="hs-row"><span class="hs-nm">' + (i + 1) + '. @' + hsEsc(b2.u) + '</span><span class="hs-pr">' + b2.v + 'kg ' + hsEsc(b2.sp) + '</span></div>'; }).join('');
+    body.innerHTML = h;
+  }).catch(function () { body.innerHTML = '<div class="hs-note">couldnt load fishing</div>'; });
+}
+$('wfish-body').addEventListener('click', function (e) {
+  var t = e.target.closest('[data-fish]'); if (!t) return;
+  var act = t.getAttribute('data-fish'), id = t.getAttribute('data-id');
+  if (act === 'buyrod') {
+    jpost('/api/world/shopbuy', { id: id }).then(function (r) { if (r && r.ok) { myInv = r.inv || myInv; toast('rod got ✦ hold it from here'); renderFish(); } else toast((r && r.err) || 'cant buy that'); });
+  } else if (act === 'equiprod') {
+    jpost('/api/world/shopequip', { cat: 'rod', id: id }).then(function (r) { if (r && r.ok) { myWearIds = r.wearIds || myWearIds; renderFish(); } else toast((r && r.err) || 'nope'); });
+  }
+});
+$('wfish-x').addEventListener('click', closeFish);
+window.__fish = { open: openFish, close: closeFish };
 
 window.__admin = { open: openAdmin, close: closeAdmin };
 function profSocial(u) {
