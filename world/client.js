@@ -573,6 +573,9 @@ function ping() {
     TREASURE_V = r.treasure || null;
     if (r.gotM) { sndPick(true); burst(px, py - 8, '#fef3c7', 20, 120); floatText(px, py - 40, '+\u00a225 meteor', '#fef3c7'); }
     if (r.gotT) { sndQuest(); burst(px, py - 8, '#ffd257', 30, 150); floatText(px, py - 40, '+\u00a275 treasure', '#ffd257'); toast('\u2726 u found the hidden treasure \u2014 +\u00a275 + materials', 4200); }
+    if (r.gotEvC) { sndQuest(); burst(px, py - 8, '#f0abfc', 26, 140); floatText(px, py - 40, '+\u00a2' + r.gotEvC.amt + ' event crystal', '#f0abfc'); }
+    if (r.gotEvE) { sndQuest(); toast("\u2726 errand complete \u2014 +\u00a2" + r.gotEvE.amt, 3600); }
+    if (r.evRes) { var er = r.evRes; var ENM = { derby: 'fishing derby', tourney: 'race tournament', community: 'community challenge', crystalhunt: 'crystal hunt', errand: "six's errand", lichsurge: 'lich surge', shardstorm: 'shard storm', goldenhunt: 'golden hunt', meteor: 'meteor shower', treasure: 'treasure hunt', doublexp: 'double xp' }; var enm = ENM[er.type] || er.type; if (er.type === 'community') toast(er.met ? '\u2726 community challenge complete \u2014 +\u00a260 for everyone who helped' : '\u2726 community challenge ended \u2014 goal missed this time', 5200); else if (er.prize > 0) toast('\u2726 u placed #' + er.place + ' in the ' + enm + ' \u2014 +\u00a2' + er.prize, 5200); else toast('\u2726 the ' + enm + ' wrapped up \u2014 thanks for playing', 4200); sndQuest(); }
     if (pendingClaim && !sSeen[pendingClaim]) pendingClaim = '';
     (r.sig || []).forEach(function (s) { handleSignal(s.from, s.data); });
     vcTick(r.players || []);
@@ -3055,7 +3058,7 @@ window.__journal = { open: openJournal, close: closeJournal };
 function escH(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]; }); }
 var myParty = null, myPartySet = {}, myBlocks = [], mutedSet = {};
 try { mutedSet = JSON.parse(localStorage.getItem('sixMuted') || '{}'); } catch (e) { mutedSet = {}; }
-var lastEventId = -1, partyInvFrom = '';
+var lastEventId = -1, partyInvFrom = '', lastSoonKey = '';
 function socialTick(r) {
   var ab = $('wadminbtn'); if (ab) ab.hidden = !r.isAdmin;
   if (r.weather) WX = r.weather;
@@ -3117,8 +3120,20 @@ function socialTick(r) {
     ev.hidden = false;
     var EV_TXT = { shardstorm: 'SHARD STORM \u2014 shard \u00a2 doubled', goldenhunt: 'GOLDEN HUNT \u2014 extra gold shards are out', meteor: 'METEOR SHOWER \u2014 catch the fallen stars', treasure: 'TREASURE HUNT \u2014 a chest hides in ' + (r.treasure ? r.treasure.zone : 'the world'), doublexp: 'DOUBLE XP \u2014 all xp doubled' };
     var EV_TOAST = { shardstorm: 'every shard pays double', goldenhunt: 'extra gold shards just dropped', meteor: 'meteors are falling \u2014 stand where they land', treasure: 'a chest is hidden \u2014 the banner names the zone, gold motes mean ur close', doublexp: 'every xp gain is doubled' };
+    EV_TXT.derby = 'FISHING DERBY \u2014 most points wins \u00a2150'; EV_TOAST.derby = 'every catch scores \u00b7 rare fish score more \u00b7 top 3 paid at the end';
+    EV_TXT.tourney = 'RACE TOURNAMENT \u2014 best ' + (r.event.course === 'grandtour' ? 'grand tour' : 'skyline sprint') + ' time wins \u00a2150'; EV_TOAST.tourney = 'run the featured course \u00b7 only ur best time counts';
+    EV_TXT.crystalhunt = 'CRYSTAL HUNT \u2014 3 bonus crystals appeared'; EV_TOAST.crystalhunt = 'bright event crystals worth \u00a260 \u00b7 first come first served';
+    EV_TXT.community = 'COMMUNITY CHALLENGE \u2014 ' + (r.event.goal ? r.event.goal.label : 'work together') + (r.event.goal ? ' (' + r.event.goal.got + '/' + r.event.goal.n + ')' : ''); EV_TOAST.community = 'hit the goal together \u00b7 everyone who helped gets \u00a260';
+    EV_TXT.lichsurge = 'LICH SURGE \u2014 the drowned lich rises NOW'; EV_TOAST.lichsurge = 'the lich is up at the lake out of cycle \u00b7 spoils boosted 50%';
+    EV_TXT.errand = "SIX'S ERRAND \u2014 get to " + (r.event.zoneName || 'the marked zone'); EV_TOAST.errand = 'reach the zone before time runs out \u00b7 +\u00a240';
     ev.textContent = '\u2726 ' + (EV_TXT[r.event.type] || r.event.type) + ' \u00b7 ' + mmss + ' left';
     if (lastEventId !== r.event.id) { lastEventId = r.event.id; toast('\u2726 ' + (EV_TXT[r.event.type] || r.event.type) + ' \u2014 ' + (EV_TOAST[r.event.type] || ''), 4200); sndQuest(); }
+  } else if (r.evSoon) {
+    ev.hidden = false;
+    var SOON_TXT = { derby: 'FISHING DERBY', tourney: 'RACE TOURNAMENT', crystalhunt: 'CRYSTAL HUNT', community: 'COMMUNITY CHALLENGE', lichsurge: 'LICH SURGE', errand: "SIX'S ERRAND", shardstorm: 'SHARD STORM', goldenhunt: 'GOLDEN HUNT', meteor: 'METEOR SHOWER', treasure: 'TREASURE HUNT', doublexp: 'DOUBLE XP' };
+    ev.textContent = '\u2726 ' + (SOON_TXT[r.evSoon.type] || r.evSoon.type) + ' starts in ' + r.evSoon.in + 's';
+    var sk = r.evSoon.type + ':' + Math.ceil(r.evSoon.in / 30);
+    if (lastSoonKey !== sk && r.evSoon.in <= 60) { lastSoonKey = sk; toast('\u2726 ' + (SOON_TXT[r.evSoon.type] || r.evSoon.type) + ' starts in ' + r.evSoon.in + 's', 3600); }
   } else ev.hidden = true;
 }
 $('wparty-yes').addEventListener('click', function () { jpost('/api/world/party', { act: 'accept' }).then(function (r) { if (r && r.ok) toast('joined the party \u2726'); else toast('invite fizzled', (r && r.err) || ''); }); $('wparty-inv').hidden = true; });
@@ -3153,6 +3168,29 @@ $('wboardsbtn').addEventListener('click', openBoards);
 $('wboards-x').addEventListener('click', closeBoards);
 $('wboards').addEventListener('click', function (e) { if (e.target === $('wboards')) closeBoards(); });
 window.__boards = { open: openBoards, close: closeBoards };
+var EV_NAMES = { derby: 'fishing derby', tourney: 'race tournament', crystalhunt: 'crystal hunt', community: 'community challenge', lichsurge: 'lich surge', errand: "six's errand", shardstorm: 'shard storm', goldenhunt: 'golden hunt', meteor: 'meteor shower', treasure: 'treasure hunt', doublexp: 'double xp' };
+function openEvents() {
+  $('wevents').hidden = false;
+  document.body.classList.add('wov');
+  $('wevents-body').innerHTML = '<div class="jq-row">checking the skies\u2026</div>';
+  fetch('/api/world/events', { headers: { accept: 'application/json' } }).then(function (x) { return x.json(); }).then(function (r) {
+    if (!r || !r.ok) { $('wevents-body').innerHTML = '<div class="jq-row">couldnt load events</div>'; return; }
+    var h = '';
+    if (r.now) h += '<div class="jq-sec">live now</div><div class="jq-row">\u2726 ' + (EV_NAMES[r.now.type] || r.now.type) + (r.course ? ' \u00b7 ' + escH(r.course) : '') + (r.zoneName ? ' \u00b7 ' + escH(r.zoneName) : '') + '</div>';
+    else if (r.soon) h += '<div class="jq-sec">up next</div><div class="jq-row">\u2726 ' + (EV_NAMES[r.soon.type] || r.soon.type) + ' \u00b7 starts ' + new Date(r.soon.startsAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '</div>';
+    if (r.goal) h += '<div class="jq-sec">community goal</div><div class="jq-row">' + escH(r.goal.label) + ' \u00b7 ' + r.goal.got + '/' + r.goal.n + '</div>';
+    if (r.board && r.board.length) h += bdSection('live standings', r.board, function (v) { return r.now && r.now.type === 'tourney' ? fmtRaceMs(v) : v + ' pts'; });
+    if (r.champs && r.champs.length) h += bdSection('event champions', r.champs.map(function (x) { return { u: x.u, v: x.n }; }), function (v) { return v + (v === 1 ? ' win' : ' wins'); });
+    if (r.last && r.last.length) h += '<div class="jq-sec">recent results</div>' + r.last.slice(0, 5).map(function (e) { var w = e.winners && e.winners.length ? ' \u00b7 won by @' + escH(e.winners[0].u) : (e.goal ? (e.goal.met ? ' \u00b7 goal met' : ' \u00b7 goal missed') : ''); return '<div class="jq-row">\u2726 ' + (EV_NAMES[e.type] || e.type) + w + '</div>'; }).join('');
+    if (r.hist && r.hist.length) h += '<div class="jq-sec">ur event history</div>' + r.hist.slice(0, 8).map(function (e) { return '<div class="jq-row">\u2726 ' + (EV_NAMES[e.type] || e.type) + (e.place ? ' \u00b7 #' + e.place : '') + (e.prize ? ' \u00b7 +\u00a2' + e.prize : '') + '</div>'; }).join('');
+    if (!h) h = '<div class="jq-row">no events yet \u2014 one rolls in every 20 minutes</div>';
+    $('wevents-body').innerHTML = h;
+  }).catch(function () { $('wevents-body').innerHTML = '<div class="jq-row">couldnt load events</div>'; });
+}
+function closeEvents() { $('wevents').hidden = true; document.body.classList.remove('wov'); }
+$('wevents-x').addEventListener('click', closeEvents);
+$('wevents').addEventListener('click', function (e) { if (e.target === $('wevents')) closeEvents(); });
+window.__events = { open: openEvents, close: closeEvents };
 /* settings, ambient audio, hub, inventory, big map, admin */
 var SET = { vol: 0.85, music: true, sfx: true };
 try { var svSet = JSON.parse(localStorage.getItem('sixSettings') || 'null'); if (svSet) SET = Object.assign(SET, svSet); } catch (e) {}
@@ -3196,6 +3234,7 @@ var HUB_DEFS = [
   ['quest journal', '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>', function () { openJournal(); }],
   ['achievements', '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>', function () { openAch(); }],
   ['leaderboards', '<path d="M3 3v18h18"/><path d="M8 17v-6"/><path d="M13 17V7"/><path d="M18 17v-9"/>', function () { openBoards(); }],
+  ['events', '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>', function () { openEvents(); }],
   ['character', '<circle cx="12" cy="8" r="4"/><path d="M4 21c.8-3.6 4-5.5 8-5.5s7.2 1.9 8 5.5"/>', function () { openChar(); }],
   ['emotes', '<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5c1 1.2 2.2 1.8 3.5 1.8s2.5-.6 3.5-1.8"/><path d="M9 9.5h.01M15 9.5h.01"/>', function () { var ep = $('wemotes'); if (ep) ep.hidden = !ep.hidden; }],
   ['settings', '<circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.14-1.4l2-1.55-2-3.46-2.36.95a7 7 0 0 0-2.42-1.4L13.7 2.6h-3.4l-.38 2.54a7 7 0 0 0-2.42 1.4l-2.36-.95-2 3.46 2 1.55a7 7 0 0 0 0 2.8l-2 1.55 2 3.46 2.36-.95a7 7 0 0 0 2.42 1.4l.38 2.54h3.4l.38-2.54a7 7 0 0 0 2.42-1.4l2.36.95 2-3.46-2-1.55c.1-.45.14-.92.14-1.4Z"/>', function () { openSettings(); }],

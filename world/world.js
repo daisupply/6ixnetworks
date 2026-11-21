@@ -236,7 +236,8 @@ const MOUNT_SPEED = { board: 350, scooter: 365, bike: 400, hover: 415, cloud: 44
   const STUN = new Map(), BOSS_HIT_CD = new Map(), DUN_HIT_CD = new Map();
   const DUNGEONS = new Map();
   const CRYPT_GATE = { x: 5050, y: 3550 };
-  function bossLive(now) { return (now % BOSS_CYCLE) >= BOSS_LIVE_FROM; }
+  let SURGE = false;
+  function bossLive(now) { return SURGE || (now % BOSS_CYCLE) >= BOSS_LIVE_FROM; }
   function fishBoard(now, fb) {
     fb = fb || {};
     if (fb.wk !== fishWeek(now)) return [];
@@ -370,6 +371,10 @@ function createWorld(ctx) {
     { id: 'first-game', name: 'first game', desc: 'finish a paid minigame run', cat: 'arcade', reward: 5, test: (pg) => (pg.c.mini || 0) >= 1 },
     { id: 'arcade-regular', name: 'arcade regular', desc: 'finish 25 paid minigame runs', cat: 'arcade', reward: 40, test: (pg) => (pg.c.mini || 0) >= 25 },
     { id: 'arcade-addict', name: 'arcade addict', desc: 'finish 100 paid minigame runs', cat: 'arcade', reward: 120, test: (pg) => (pg.c.mini || 0) >= 100 },
+    { id: 'event-goer', name: 'event goer', desc: 'take part in 5 world events', cat: 'events', reward: 30, test: (pg) => (pg.c.evpart || 0) >= 5 },
+    { id: 'event-regular', name: 'event regular', desc: 'take part in 20 world events', cat: 'events', reward: 80, test: (pg) => (pg.c.evpart || 0) >= 20 },
+    { id: 'champion', name: 'champion', desc: 'win a derby or tournament', cat: 'events', reward: 100, test: (pg) => (pg.c.evwin || 0) >= 1 },
+    { id: 'event-legend', name: 'event legend', desc: 'win 5 derbies or tournaments', cat: 'events', reward: 250, test: (pg) => (pg.c.evwin || 0) >= 5 },
     { id: 'quest-starter', name: 'quest starter', desc: 'complete ur first quest', cat: 'quests', reward: 5, test: (pg) => (pg.c.quest || 0) >= 1 },
     { id: 'quest-pro', name: 'quest pro', desc: 'complete 10 quests', cat: 'quests', reward: 30, test: (pg) => (pg.c.quest || 0) >= 10 },
     { id: 'quest-legend', name: 'quest legend', desc: 'complete 50 quests', cat: 'quests', reward: 100, test: (pg) => (pg.c.quest || 0) >= 50 },
@@ -629,6 +634,7 @@ function createWorld(ctx) {
     awardXp(me, 20);
     const pg = progFor(me); pg.c.race = (pg.c.race || 0) + 1; progSave(me);
     guildWkBump(me, 'race', now);
+    { const evT = worldEvent(now); if (evT && evT.type === 'tourney' && EV_RUN && EV_RUN.id === evT.id && EV_RUN.course === rc.course) { const prev = EV_RUN.scores.get(me); if (prev == null || ms < prev) EV_RUN.scores.set(me, ms); EV_RUN.parts.add(me); } }
     return { course: rc.course, name: C.name, ms, pb: isPb, rec: isRec, pay };
   }
   function raceTick(me, now) {
@@ -867,19 +873,27 @@ function createWorld(ctx) {
     return { t: def.t, prog: Math.min(Math.floor(w.prog), def.n), n: def.n, pay: def.pay, done: !!w.done };
   }
   // ---- world events: a 5-minute window in every 20-minute cycle ----
+  const EV_ROT = ['shardstorm', 'goldenhunt', 'meteor', 'treasure', 'doublexp', 'derby', 'tourney', 'crystalhunt', 'community', 'lichsurge', 'errand'];
   function worldEvent(now) {
     if (FORCE_EV) { if (now < FORCE_EV.endsAt) return FORCE_EV; FORCE_EV = null; }
     const CYC = 20 * 60 * 1000, WIN = 5 * 60 * 1000;
     const cyc = Math.floor(now / CYC), ph = now - cyc * CYC;
     if (ph < CYC - WIN) return null;
-    const EV_ROT = ['shardstorm', 'goldenhunt', 'meteor', 'treasure', 'doublexp'];
     return { type: EV_ROT[cyc % EV_ROT.length], endsAt: (cyc + 1) * CYC, id: cyc };
+  }
+  function nextEventInfo(now) {
+    if (FORCE_EV) return null;
+    const CYC = 20 * 60 * 1000, WIN = 5 * 60 * 1000;
+    const cyc = Math.floor(now / CYC), ph = now - cyc * CYC;
+    if (ph >= CYC - WIN) { const nc = cyc + 1; return { type: EV_ROT[nc % EV_ROT.length], startsAt: nc * CYC + (CYC - WIN) }; }
+    return { type: EV_ROT[cyc % EV_ROT.length], startsAt: cyc * CYC + (CYC - WIN) };
   }
   let lastHuntGold = 0;
   const METEORS = new Map();
   let lastMeteorAt = 0, meteorSeq = 1;
   let TREASURE = null, treasureEvId = null;
   function evTick(now, evNow) {
+    SURGE = !!(evNow && evNow.type === 'lichsurge');
     if (!evNow || evNow.type !== 'meteor') { if (METEORS.size) METEORS.clear(); }
     else {
       for (const [mid, m] of METEORS) if (now - m.landAt > 90000) METEORS.delete(mid);
@@ -899,6 +913,62 @@ function createWorld(ctx) {
   }
   let FORCE_EV = null;
   let ANN = null;
+  // ---- event core v2 (E1): per-instance participation, settlement, history ----
+  let EV_RUN = null;
+  const EV_FLASH = new Map();
+  const DERBY_PTS = { common: 1, uncommon: 2, rare: 3, epic: 5, legendary: 8 };
+  const EV_PRIZES = [150, 75, 40];
+  function evRunFor(evNow) {
+    if (!evNow) return null;
+    if (!EV_RUN || EV_RUN.id !== evNow.id) {
+      EV_RUN = { id: evNow.id, type: evNow.type, scores: new Map(), parts: new Set(), done: new Set(), settled: false, prog: 0, goal: null, course: null, zone: null, bonus: [] };
+      if (evNow.type === 'community') { const kinds = [{ kind: 'fish', n: 25, label: 'catch 25 fish together' }, { kind: 'shard', n: 150, label: 'claim 150 shards together' }, { kind: 'meteor', n: 12, label: 'catch 12 meteors together' }]; EV_RUN.goal = kinds[Math.abs(hashStr('evgoal' + evNow.id)) % kinds.length]; }
+      if (evNow.type === 'tourney') EV_RUN.course = (Math.abs(hashStr('evcourse' + evNow.id)) % 2 === 0) ? 'skyline' : 'grandtour';
+      if (evNow.type === 'errand') { const zs = ZONES.filter((z) => z.y < 4400); EV_RUN.zone = zs[Math.abs(hashStr('everr' + evNow.id)) % zs.length].id; }
+      if (evNow.type === 'crystalhunt') { EV_RUN.bonus = [0, 1, 2].map((i) => { const p = spawnPos(); return { id: 'evc' + evNow.id + '_' + i, x: p.x, y: p.y, pay: 60, taken: false }; }); }
+    }
+    return EV_RUN;
+  }
+  function evPart(user) { if (EV_RUN) EV_RUN.parts.add(user); }
+  function evScore(user, pts) { if (!EV_RUN) return; EV_RUN.parts.add(user); EV_RUN.scores.set(user, (EV_RUN.scores.get(user) || 0) + pts); }
+  function evGoalBump(kind, user) { if (EV_RUN && EV_RUN.type === 'community' && EV_RUN.goal && EV_RUN.goal.kind === kind) { EV_RUN.parts.add(user); EV_RUN.prog = (EV_RUN.prog || 0) + 1; } }
+  async function evSettle(now) {
+    if (!EV_RUN || EV_RUN.settled) return;
+    const evNow = worldEvent(now);
+    if (evNow && evNow.id === EV_RUN.id) return;
+    EV_RUN.settled = true;
+    const run = EV_RUN; EV_RUN = null;
+    const board = [...run.scores.entries()].map(([u2, v]) => ({ u: u2, v })).sort((a, b) => run.type === 'tourney' ? a.v - b.v : b.v - a.v);
+    let winners = [];
+    if ((run.type === 'derby' || run.type === 'tourney') && board.length) {
+      for (let i = 0; i < Math.min(3, board.length); i++) { const w = board[i]; const prize = EV_PRIZES[i]; try { await ctx.awardCents(w.u, prize); } catch { } txLog(w.u, 'event', prize, run.type + ' place ' + (i + 1)); winners.push({ u: w.u, v: w.v, prize }); }
+    }
+    let commMet = false;
+    if (run.type === 'community' && run.goal) {
+      commMet = (run.prog || 0) >= run.goal.n;
+      if (commMet) { for (const u2 of run.parts) { try { await ctx.awardCents(u2, 60); } catch { } txLog(u2, 'event', 60, 'community challenge complete'); } winners = [...run.parts].map((u2) => ({ u: u2, v: 60, prize: 60 })); }
+    }
+    try {
+      const last = wload('evlast', '_events') || [];
+      last.unshift({ id: run.id, type: run.type, at: now, board: board.slice(0, 8), winners, goal: run.goal ? { kind: run.goal.kind, n: run.goal.n, got: run.prog || 0, met: commMet } : null, course: run.course || null });
+      wsave('evlast', '_events', last.slice(0, 12));
+      if (winners.length && (run.type === 'derby' || run.type === 'tourney')) { const wins = wload('evwins', '_events') || {}; wins[winners[0].u] = (wins[winners[0].u] || 0) + 1; wsave('evwins', '_events', wins); }
+    } catch { }
+    for (const u2 of run.parts) {
+      const my = board.find((x) => x.u === u2);
+      const place = my ? board.indexOf(my) + 1 : 0;
+      const win = winners.find((x) => x.u === u2);
+      try {
+        const h = wload('evhist', u2) || [];
+        h.unshift({ type: run.type, at: now, v: my ? my.v : 0, place, prize: win ? win.prize : 0 });
+        wsave('evhist', u2, h.slice(0, 30));
+        const pg = progFor(u2); pg.c.evpart = (pg.c.evpart || 0) + 1;
+        if (win && place === 1 && (run.type === 'derby' || run.type === 'tourney')) pg.c.evwin = (pg.c.evwin || 0) + 1;
+        progSave(u2);
+      } catch { }
+      EV_FLASH.set(u2, { type: run.type, place, prize: win ? win.prize : 0, met: run.type === 'community' ? commMet : undefined, board: board.slice(0, 3) });
+    }
+  }
   // ---- parties ----
   const PARTIES = new Map();
   const PINV = new Map();
@@ -980,6 +1050,8 @@ function createWorld(ctx) {
     prune(now);
     fillShards(now);
     evTick(now, worldEvent(now));
+    await evSettle(now);
+    evRunFor(worldEvent(now));
 
   /* ---- M9: materials + crafting + trading ---- */
   const SKILL_TITLES = ['novice', 'apprentice', 'adept', 'skilled', 'expert', 'master'];
@@ -1173,6 +1245,7 @@ function createWorld(ctx) {
           awardXp(me, s.gold ? 5 : 1);
           achCheck(me);
           questDone = questEvent(me, 'shard') || questDone;
+          if (EV_RUN) { evPart(me); evGoalBump('shard', me); }
           if (s.gold) questDone = questEvent(me, 'gold') || questDone;
           fillShards(now);
         }
@@ -1196,6 +1269,23 @@ function createWorld(ctx) {
         }
       }
       let gotM = null, gotT = null;
+      let gotEvC = null, gotEvE = null;
+      const evQ = worldEvent(now);
+      if (evQ && evQ.type === 'crystalhunt' && EV_RUN && EV_RUN.id === evQ.id) {
+        for (const bc of EV_RUN.bonus) {
+          if (!bc.taken && dist(p.x, p.y, bc.x, bc.y) < 70) {
+            bc.taken = true;
+            let bal = null;
+            try { bal = await ctx.awardCents(me, bc.pay); } catch { }
+            gotEvC = { amt: bc.pay, bal };
+            txLog(me, 'event crystal', bc.pay);
+            awardXp(me, 8);
+            evScore(me, 1);
+            achCheck(me);
+            break;
+          }
+        }
+      }
       const evC = worldEvent(now);
       if (evC && evC.type === 'meteor') {
         for (const [mid, m] of METEORS) {
@@ -1206,6 +1296,7 @@ function createWorld(ctx) {
             matAdd(me, 'dust', 1);
             pg.c.meteor = (pg.c.meteor || 0) + 1;
             gotM = { amt: 25, bal };
+            if (EV_RUN) { evPart(me); evGoalBump('meteor', me); }
             txLog(me, 'meteor shard', 25);
             awardXp(me, 6);
             progSave(me);
@@ -1223,6 +1314,7 @@ function createWorld(ctx) {
           matAdd(me, mk, 2);
           pg.c.treasure = (pg.c.treasure || 0) + 1;
           gotT = { amt: 75, bal, mat: mk };
+          if (EV_RUN) evPart(me);
           txLog(me, 'treasure chest', 75);
           awardXp(me, 15);
           TREASURE.gone = true;
@@ -1239,6 +1331,31 @@ function createWorld(ctx) {
         awardXp(me, 12);
         achCheck(me);
       }
+      const evNowP = worldEvent(now);
+      if (evNowP && evNowP.type === 'errand' && EV_RUN && EV_RUN.id === evNowP.id && !EV_RUN.done.has(me)) {
+        const zA = zoneAt(p.x, p.y);
+        if (zA && zA === EV_RUN.zone) {
+          EV_RUN.done.add(me); evPart(me);
+          let bal = null;
+          try { bal = await ctx.awardCents(me, 40); } catch { }
+          gotEvE = { amt: 40, bal };
+          txLog(me, 'event', 40, "six's errand");
+          awardXp(me, 10);
+        }
+      }
+      let evPayload = evNowP;
+      if (evNowP && EV_RUN && EV_RUN.id === evNowP.id) {
+        evPayload = { ...evNowP };
+        if (EV_RUN.type === 'derby' || EV_RUN.type === 'tourney' || EV_RUN.type === 'crystalhunt') evPayload.board = [...EV_RUN.scores.entries()].map(([u2, v]) => ({ u: u2, v })).sort((a, b) => EV_RUN.type === 'tourney' ? a.v - b.v : b.v - a.v).slice(0, 5);
+        if (EV_RUN.type === 'community' && EV_RUN.goal) evPayload.goal = { label: EV_RUN.goal.label, n: EV_RUN.goal.n, got: EV_RUN.prog || 0 };
+        if (EV_RUN.type === 'tourney') evPayload.course = EV_RUN.course;
+        if (EV_RUN.type === 'errand') { const zN = ZONES.find((z2) => z2.id === EV_RUN.zone); evPayload.zoneName = zN ? zN.name : ''; }
+      }
+      const evSoonI = !evNowP ? nextEventInfo(now) : null;
+      const evSoon = evSoonI && (evSoonI.startsAt - now <= 90000) ? { type: evSoonI.type, in: Math.ceil((evSoonI.startsAt - now) / 1000) } : null;
+      const evRes = EV_FLASH.get(me) || null; if (evRes) EV_FLASH.delete(me);
+      const crysOut = CRYSTALS.filter((c) => pg.crystals.indexOf(c.id) < 0).map((c) => ({ id: c.id, x: c.x, y: c.y, rare: c.rare }));
+      if (evNowP && evNowP.type === 'crystalhunt' && EV_RUN && EV_RUN.id === evNowP.id) for (const bc of EV_RUN.bonus) if (!bc.taken) crysOut.push({ id: bc.id, x: bc.x, y: bc.y, rare: 'event' });
       const sig = (SIG.get(me) || []).filter((s2) => now - s2.at < 30000);
       SIG.delete(me);
       const st = statsFor(me);
@@ -1261,7 +1378,7 @@ function createWorld(ctx) {
         guildMsgs: (() => { const q = GMSG.get(me) || []; GMSG.delete(me); return q; })(),
         myGuildTag: guildTagOf(me),
         petNames: wload('petname', me) || {},
-        crys: CRYSTALS.filter((c) => pg.crystals.indexOf(c.id) < 0).map((c) => ({ id: c.id, x: c.x, y: c.y, rare: c.rare })),
+        crys: crysOut,
         lvlUp: (() => { const v = LVLUP.get(me) || null; LVLUP.delete(me); return v; })(),
         achNew: (() => { const v = ACHNEW.get(me) || []; ACHNEW.delete(me); return v; })(),
         dqDone: (() => { const v = DQ_DONE.get(me) || []; DQ_DONE.delete(me); return v; })(),
@@ -1272,10 +1389,10 @@ function createWorld(ctx) {
         trade: tradeView(me, now),
         tradeFlash: (() => { const f = TRADE_FLASH.get(me); if (f && now - f.at < 30000) { TRADE_FLASH.delete(me); return f.msg; } return null; })(),
         matGot: (() => { const arr = MAT_GOT.get(me); if (arr && arr.length) { MAT_GOT.delete(me); return arr; } return null; })(),
-        event: worldEvent(now),
+        event: evPayload,
         meteors: (() => { const e2 = worldEvent(now); return e2 && e2.type === 'meteor' ? [...METEORS.values()].map((m) => ({ x: m.x, y: m.y, landAt: m.landAt })) : []; })(),
         treasure: (() => { const e2 = worldEvent(now); return e2 && e2.type === 'treasure' && TREASURE && !TREASURE.gone ? { zone: TREASURE.zone, near: dist(p.x, p.y, TREASURE.x, TREASURE.y) < 380 } : null; })(),
-        gotM, gotT,
+        gotM, gotT, gotEvC, gotEvE, evSoon, evRes,
         myBlocks: wload('blocks', me) || [],
         ann: ANN && now - ANN.at < 120000 ? ANN : null,
         isAdmin: !!ctx.isAdmin(me),
@@ -1447,7 +1564,7 @@ function createWorld(ctx) {
       if (b.act === 'event') {
         const t = String(b.type || '');
         if (t === 'off') FORCE_EV = null;
-        else if (['shardstorm', 'goldenhunt', 'meteor', 'treasure', 'doublexp'].includes(t)) FORCE_EV = { type: t, endsAt: now + 5 * 60 * 1000, id: 'f' + now };
+        else if (['shardstorm', 'goldenhunt', 'meteor', 'treasure', 'doublexp', 'derby', 'tourney', 'crystalhunt', 'community', 'lichsurge', 'errand'].includes(t)) FORCE_EV = { type: t, endsAt: now + 5 * 60 * 1000, id: 'f' + now };
         else { J({ ok: false, err: 'bad type' }, 400); return true; }
         J({ ok: true, event: worldEvent(now) });
         return true;
@@ -1478,7 +1595,7 @@ function createWorld(ctx) {
         let tot = 0; for (const v of bs.dmg.values()) tot += v;
         rewards = {};
         for (const [u2, d2] of bs.dmg) {
-          const share = Math.max(5, Math.round(600 * d2 / Math.max(1, tot)));
+          const share = Math.max(5, Math.round((SURGE ? 900 : 600) * d2 / Math.max(1, tot)));
           try { await ctx.awardCents(u2, share); } catch { }
           txLog(u2, 'boss', share, 'the drowned lich');
           if ((bs.hits.get(u2) || 0) >= 5) awardXp(u2, 30);
@@ -1486,6 +1603,7 @@ function createWorld(ctx) {
           rewards[u2] = share;
           guildWkBump(u2, 'boss', now3);
           if ((bs.hits.get(u2) || 0) >= 5) matAdd(u2, 'essence', 1);
+          if (SURGE && (bs.hits.get(u2) || 0) >= 5) matAdd(u2, 'essence', 1);
         }
         achCheck(me);
       }
@@ -1508,6 +1626,16 @@ function createWorld(ctx) {
     if (u.pathname === '/api/world/race-quit' && req.method === 'POST') {
       RACES.delete(me);
       J({ ok: true });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/events' && req.method === 'GET') {
+      const evNow = worldEvent(now);
+      const run = (evNow && EV_RUN && EV_RUN.id === evNow.id) ? EV_RUN : null;
+      const board = run ? [...run.scores.entries()].map(([u2, v]) => ({ u: u2, v })).sort((a, b) => run.type === 'tourney' ? a.v - b.v : b.v - a.v).slice(0, 8) : [];
+      const wins = wload('evwins', '_events') || {};
+      const champs = Object.entries(wins).map(([u2, n]) => ({ u: u2, n })).sort((a, b) => b.n - a.n).slice(0, 10);
+      J({ ok: true, now: evNow, soon: nextEventInfo(now), board, goal: run && run.goal ? { label: run.goal.label, n: run.goal.n, got: run.prog || 0 } : null, course: run ? run.course : null, zoneName: run && run.zone ? (ZONES.find((z2) => z2.id === run.zone) || {}).name || null : null, last: wload('evlast', '_events') || [], champs, hist: wload('evhist', me) || [] });
       return true;
     }
 
@@ -1940,6 +2068,7 @@ function createWorld(ctx) {
       awardXp(me, 4);
       const pg = progFor(me);
       pg.c.fish = (pg.c.fish || 0) + 1;
+      { const evF = worldEvent(Date.now()); if (evF && EV_RUN && EV_RUN.id === evF.id) { if (evF.type === 'derby') evScore(me, DERBY_PTS[sp.band] || 1); if (evF.type === 'community') evGoalBump('fish', me); } }
       if (Math.random() < 0.5) matAdd(me, 'scale', 1);
       achCheck(me);
       const log = wload('fishlog', me) || {};
@@ -2474,6 +2603,10 @@ function createWorld(ctx) {
       '<div id="wduel" hidden><span id="wduel-t"></span><button id="wduel-yes" type="button">accept</button><button id="wduel-no" type="button">nah</button></div>\n' +
       '<div id="wparty-inv" hidden><span id="wparty-inv-t"></span><button id="wparty-yes" type="button">join party</button><button id="wparty-no" type="button">nah</button></div>\n' +
       '<div id="wtrade-inv" hidden><span id="wtrade-inv-t"></span><button id="wtrade-yes" type="button">trade</button><button id="wtrade-no" type="button">nah</button></div>\n' +
+      '<div id="wevents" hidden><div class="wa-card">\n' +
+      '  <div class="wa-head"><span>\u2726 world events</span><button id="wevents-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
+      '  <div id="wevents-body"></div>\n' +
+      '</div></div>\n' +
       '<div id="wboards" hidden><div class="wa-card">\n' +
       '  <div class="wa-head"><span>\u2726 leaderboards</span><button id="wboards-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
       '  <div id="wboards-body"></div>\n' +
@@ -2506,7 +2639,7 @@ function createWorld(ctx) {
       '  <div class="wa-head"><span>\u2726 world admin</span><button id="wadmin-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
       '  <div id="wadmin-body"></div>\n' +
       '  <div class="wadmin-row"><input id="wadmin-ann" type="text" maxlength="160" placeholder="announce to the whole world\u2026"><button id="wadmin-send" type="button">send</button></div>\n' +
-      '  <div class="wadmin-row"><button class="wadmin-ev" data-ev="shardstorm" type="button">force shard storm</button><button class="wadmin-ev" data-ev="goldenhunt" type="button">force golden hunt</button><button class="wadmin-ev" data-ev="meteor" type="button">force meteor shower</button><button class="wadmin-ev" data-ev="treasure" type="button">force treasure hunt</button><button class="wadmin-ev" data-ev="doublexp" type="button">force double xp</button><button class="wadmin-ev" data-ev="off" type="button">events off</button></div>\n' +
+      '  <div class="wadmin-row"><button class="wadmin-ev" data-ev="shardstorm" type="button">force shard storm</button><button class="wadmin-ev" data-ev="goldenhunt" type="button">force golden hunt</button><button class="wadmin-ev" data-ev="meteor" type="button">force meteor shower</button><button class="wadmin-ev" data-ev="treasure" type="button">force treasure hunt</button><button class="wadmin-ev" data-ev="doublexp" type="button">force double xp</button><button class="wadmin-ev" data-ev="derby" type="button">force fishing derby</button><button class="wadmin-ev" data-ev="tourney" type="button">force race tourney</button><button class="wadmin-ev" data-ev="crystalhunt" type="button">force crystal hunt</button><button class="wadmin-ev" data-ev="community" type="button">force community challenge</button><button class="wadmin-ev" data-ev="lichsurge" type="button">force lich surge</button><button class="wadmin-ev" data-ev="errand" type="button">force sixs errand</button><button class="wadmin-ev" data-ev="off" type="button">events off</button></div>\n' +
       '</div></div>\n' +
       '<div id="wfish" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 fishing</span><button id="wfish-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wfish-body"></div></div></div>\n' +
       '<div id="wrace" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 races</span><button id="wrace-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wrace-body"></div></div></div>\n' +

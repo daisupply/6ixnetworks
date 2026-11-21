@@ -187,9 +187,9 @@ body{display:block;padding:0;margin:0;overflow:hidden;background:#07040f}
 .wa-head span:first-child,.wg-head #wg-title{flex:0 1 auto}
 #wa-count{color:rgba(243,239,255,.5);font-size:12.5px;font-weight:600}
 #wg-score{margin-left:auto;color:#ffd257;font-size:14px;font-weight:800}
-#wa-x,#wg-x,#wsh-x,#wchar-x,#wach-x,#wjournal-x,#wboards-x,#whub-x,#winv-x,#wmap2-x,#wsettings-x,#wadmin-x,#whouse-x,#wpets-x,#wfish-x,#wrace-x,#wguild-x,#wtrade-x,#wcraft-x,#wskills-x{margin-left:auto;width:34px;height:34px;flex:none;display:flex;align-items:center;justify-content:center;padding:0;border-radius:50%;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.06);color:rgba(243,239,255,.85);cursor:pointer;transition:background .15s,transform .1s}
-#wa-x:hover,#wg-x:hover,#wsh-x:hover,#wchar-x:hover,#wach-x:hover,#wjournal-x:hover,#wboards-x:hover,#whub-x:hover,#winv-x:hover,#wmap2-x:hover,#wsettings-x:hover,#wadmin-x:hover{background:rgba(255,255,255,.14);color:#fff}
-#wa-x:active,#wg-x:active,#wsh-x:active,#wchar-x:active,#wach-x:active,#wjournal-x:active,#wboards-x:active,#whub-x:active,#winv-x:active,#wmap2-x:active,#wsettings-x:active,#wadmin-x:active{transform:scale(.92)}
+#wa-x,#wg-x,#wsh-x,#wchar-x,#wach-x,#wjournal-x,#wboards-x,#wevents-x,#whub-x,#winv-x,#wmap2-x,#wsettings-x,#wadmin-x,#whouse-x,#wpets-x,#wfish-x,#wrace-x,#wguild-x,#wtrade-x,#wcraft-x,#wskills-x{margin-left:auto;width:34px;height:34px;flex:none;display:flex;align-items:center;justify-content:center;padding:0;border-radius:50%;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.06);color:rgba(243,239,255,.85);cursor:pointer;transition:background .15s,transform .1s}
+#wa-x:hover,#wg-x:hover,#wsh-x:hover,#wchar-x:hover,#wach-x:hover,#wjournal-x:hover,#wboards-x:hover,#wevents-x:hover,#whub-x:hover,#winv-x:hover,#wmap2-x:hover,#wsettings-x:hover,#wadmin-x:hover{background:rgba(255,255,255,.14);color:#fff}
+#wa-x:active,#wg-x:active,#wsh-x:active,#wchar-x:active,#wach-x:active,#wjournal-x:active,#wboards-x:active,#wevents-x:active,#whub-x:active,#winv-x:active,#wmap2-x:active,#wsettings-x:active,#wadmin-x:active{transform:scale(.92)}
 #wa-x svg,#wg-x svg,#wsh-x svg,#wchar-x svg,#wach-x svg,#wjournal-x svg,#wboards-x svg,#whub-x svg,#winv-x svg,#wmap2-x svg,#wsettings-x svg,#wadmin-x svg{flex:none;display:block}
 .wg-head #wg-x{margin-left:8px}
 #wa-q{width:100%;box-sizing:border-box;margin:10px 0 6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font:inherit;font-size:16px;padding:10px 13px;outline:none}
@@ -254,7 +254,7 @@ body.wov #wportal,body.wov #wact,body.wov #wemotebtn,body.wov #wdash{display:non
 
 /* shell law: the site chrome flattens every <button> to border-radius:8px
    !important — the world re-asserts its own shapes. */
-#wdash,#wemotebtn,.wbtns button,#wa-x,#wg-x,#wsh-x,#wchar-x,#wprof-x,#wach-x,#wjournal-x,#wboards-x,#whub-x,#winv-x,#wmap2-x,#wsettings-x,#wadmin-x,#whouse-x,#wpets-x,#wfish-x,#wrace-x,#wguild-x,#wtrade-x,#wcraft-x,#wskills-x{border-radius:50%!important}
+#wdash,#wemotebtn,.wbtns button,#wa-x,#wg-x,#wsh-x,#wchar-x,#wprof-x,#wach-x,#wjournal-x,#wboards-x,#wevents-x,#whub-x,#winv-x,#wmap2-x,#wsettings-x,#wadmin-x,#whouse-x,#wpets-x,#wfish-x,#wrace-x,#wguild-x,#wtrade-x,#wcraft-x,#wskills-x{border-radius:50%!important}
 #wportal,#wact,#wsend,#wemotes button,.wsh-card button,#wg-result button,#wsh-tabs button{border-radius:999px!important}
 .wa-item,.mg-quiz button,.mg-dpad button{border-radius:12px!important}
 #wdash svg,#wemotebtn svg{flex:none}
