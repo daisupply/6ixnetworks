@@ -10,6 +10,7 @@ var TAU = Math.PI * 2;
 
 var MAP_W = 6400, MAP_H = 8900;
 var FOUNTAIN = { x: 2400, y: 1500 };
+var DIM3 = { x: 2620, y: 1500 }; // the dimensional portal, beside the fountain
 var LAKE = { x1: 1480, y1: 2260, x2: 3320, y2: 2940 };
 var PIER = { x1: 2352, y1: 2240, x2: 2448, y2: 2580 };
 var PORTALS = [
@@ -154,6 +155,7 @@ var px = 2400, py = 1700, vx = 0, vy = 0, dir = 1.2, moving = false;
 var keys = {};
 var joy = { id: null, x: 0, y: 0 };
 var cam = { x: 2400, y: 1700 };
+try { var w3ret = JSON.parse(sessionStorage.getItem('six3d-return') || 'null'); if (w3ret && w3ret.x > 30 && w3ret.x < MAP_W - 30 && w3ret.y > 30 && w3ret.y < MAP_H - 30) { px = w3ret.x; py = w3ret.y; cam.x = px; cam.y = py; } sessionStorage.removeItem('six3d-return'); } catch (e) { }
 var players = {};
 var shards = {};
 var meteors = {}, TREASURE_V = null;
@@ -396,6 +398,18 @@ $('wbar').addEventListener('submit', function (e) {
   });
   inp.blur();
 });
+var dim3Busy = false;
+function enterDim3() {
+  if (dim3Busy) return; dim3Busy = true;
+  sndPortal(); burst(px, py, '#67e8f9', 30, 150);
+  try { sessionStorage.setItem('six3d-return', JSON.stringify({ x: Math.round(px), y: Math.round(py) })); } catch (e) { }
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:radial-gradient(circle at 50% 50%, rgba(124,58,237,.85), rgba(6,3,18,.99) 70%);opacity:0;transition:opacity .6s ease;display:flex;align-items:center;justify-content:center;color:#f3efff;font:800 19px Inter, sans-serif;letter-spacing:.08em;';
+  ov.textContent = '\u2726 ENTERING THE THIRD DIMENSION';
+  document.body.appendChild(ov);
+  requestAnimationFrame(function () { ov.style.opacity = '1'; });
+  setTimeout(function () { location.href = '/world3d?from=portal'; }, 700);
+}
 function enterPortal(pad) {
   sndPortal();
   burst(px, py, pad.c, 16, 120);
@@ -433,6 +447,7 @@ $('wact').addEventListener('click', function () {
     if (wactMode === 'fish') { if (myWearIds.rod) castLine(); else openFish(); return; }
     if (wactMode === 'house') { enterHouse(me); return; }
   if (wactMode === 'hexit') { exitHouse(); return; }
+  if (wactMode === 'dim3') { enterDim3(); return; }
   if (wactMode !== 'wish') return;
   jpost('/api/world/wish', {}).then(function (r) {
     if (!r) return;
@@ -737,6 +752,7 @@ function update(now) {
   else if (myZone === 'the vault' && myInv.indexOf('s141') < 0 && dist(px, py, 5650, 3970) < 120) { actMode = 'vault'; actLabel = 'claim the vault crown'; }
   else if (dist(px, py, TENT.x, TENT.y) < 105) { actMode = 'shop'; actLabel = 'six cents shop'; }
   else if (nearCab) { actMode = 'cab'; actLabel = 'play minigames'; }
+  else if (dist(px, py, DIM3.x, DIM3.y) < 105) { actMode = 'dim3'; actLabel = 'ENTER THE THIRD DIMENSION'; }
   else if (dist(px, py, FOUNTAIN.x, FOUNTAIN.y) < 135) { actMode = 'wish'; actLabel = 'make a wish · 1 six cent'; }
   if (actMode) {
     if (wactMode !== actMode || wactLabelShown !== actLabel) {
@@ -1346,6 +1362,36 @@ function render(now) {
     g.fillStyle = '#f4f2ff'; g.shadowColor = '#dcd6ff'; g.shadowBlur = 24;
     g.beginPath(); g.arc(fx, fy, 13 + Math.sin(now / 900) * 1.2, 0, TAU); g.fill(); g.shadowBlur = 0;
     if (Math.random() < 0.1) parts.push({ x: fx + (Math.random() * 30 - 15), y: fy - 12, vx: 0, vy: -26, at: now, life: 700, c: '#dcd6ff', r: 1.6 });
+  })();
+  /* dimensional portal — beside the fountain */
+  (function () {
+    if (!inV(DIM3.x, DIM3.y, 180)) return;
+    var dx = DIM3.x, dy = DIM3.y, pulse = 1 + Math.sin(now / 460) * 0.05;
+    g.globalCompositeOperation = 'lighter';
+    var dg = g.createRadialGradient(dx, dy - 26, 2, dx, dy - 26, 88);
+    dg.addColorStop(0, 'rgba(124,58,237,.42)'); dg.addColorStop(1, 'rgba(124,58,237,0)');
+    g.fillStyle = dg; g.beginPath(); g.ellipse(dx, dy - 26, 62, 88, 0, 0, TAU); g.fill();
+    g.globalCompositeOperation = 'source-over';
+    g.save(); g.translate(dx, dy); g.scale(1, 0.4);
+    g.strokeStyle = '#67e8f9'; g.globalAlpha = 0.75; g.lineWidth = 3;
+    g.shadowColor = '#67e8f9'; g.shadowBlur = 14;
+    g.beginPath(); g.arc(0, 0, 34 * pulse, 0, TAU); g.stroke(); g.restore();
+    g.save(); g.translate(dx, dy - 30); g.scale(0.46, 1);
+    g.strokeStyle = '#a78bfa'; g.globalAlpha = 0.95; g.lineWidth = 5;
+    g.shadowColor = '#7c3aed'; g.shadowBlur = 20;
+    g.beginPath(); g.arc(0, 0, 52 * pulse, now / 800, now / 800 + Math.PI * 1.55); g.stroke();
+    g.strokeStyle = '#67e8f9'; g.lineWidth = 3.4;
+    g.beginPath(); g.arc(0, 0, 42 * pulse, -now / 620, -now / 620 + Math.PI * 1.25); g.stroke();
+    g.globalAlpha = 0.2; g.fillStyle = '#7c3aed';
+    g.beginPath(); g.arc(0, 0, 50, 0, TAU); g.fill();
+    g.restore(); g.globalAlpha = 1; g.shadowBlur = 0;
+    if (Math.random() < 0.35) parts.push({ x: dx + (Math.random() * 44 - 22), y: dy - 8 - Math.random() * 48, vx: 0, vy: -34, at: now, life: 800, c: Math.random() < 0.5 ? '#67e8f9' : '#a78bfa', r: 2 });
+    g.font = '800 13.5px Inter, sans-serif'; g.textAlign = 'center';
+    g.shadowColor = 'rgba(0,0,0,.7)'; g.shadowBlur = 6;
+    g.fillStyle = '#a5f3fc'; g.fillText('THE THIRD DIMENSION', dx, dy - 100);
+    g.shadowBlur = 0;
+    g.fillStyle = 'rgba(243,239,255,.55)'; g.font = '600 10.5px Inter, sans-serif';
+    g.fillText('a door beside the well', dx, dy + 32);
   })();
   if (inV(TENT.x, TENT.y, 150)) drawTent(g, now);
   /* arcade cabinets */

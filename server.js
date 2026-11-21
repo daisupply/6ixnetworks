@@ -19059,6 +19059,25 @@ async function worldApi(req, res, u) {
   return worldMod().api(req, res, u);
 }
 
+let WORLD3D_MOD = null;
+function world3dMod() {
+  if (!WORLD3D_MOD) {
+    WORLD3D_MOD = require('./world3d/world3d.js').createWorld3D({
+      voterUser, readJsonBody,
+      getFx: (u) => { try { coinsLoad(); const f = COINS.fx[String(u).toLowerCase()]; return (f && FXSHOP[f]) ? f : ''; } catch (e) { return ''; } },
+      getCents: (u) => { try { centsLoad(); return CENTS.bal[String(u).toLowerCase()] || 0; } catch (e) { return 0; } },
+      getHue: (u) => { try { centsLoad(); const h = CENTS.hue[String(u).toLowerCase()]; return (typeof h === 'number') ? h : null; } catch (e) { return null; } },
+      storeReady: () => { try { centsLoad(); wdataLoad(); return !CENTS.loading && !WDATA.loading; } catch (e) { return false; } },
+      FONT_LINKS, GALAXY_CSS, SIDEBAR_HTML, STAR_CANVAS, NOTIF_JS,
+    });
+  }
+  return WORLD3D_MOD;
+}
+async function world3dApi(req, res, u) {
+  if (!u.pathname.startsWith('/api/world3d/')) return false;
+  return world3dMod().api(req, res, u);
+}
+
 async function byodApi(req, res, u) {
   if (!u.pathname.startsWith('/api/byod/')) return false;
   const J = (o, code) => { res.writeHead(code || 200, { 'content-type': 'application/json' }); return res.end(JSON.stringify(o)); };
@@ -24598,6 +24617,8 @@ const server = http.createServer(async (req, res) => {
   }
   if (u.pathname === '/party') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(partyPage()); }
   if (u.pathname === '/world') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(worldMod().page()); }
+  if (u.pathname === '/world3d') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(world3dMod().page()); }
+  if (u.pathname.startsWith('/world3d/')) { const a3 = world3dMod().asset(u.pathname); if (a3) { res.writeHead(200, { 'content-type': a3.type, 'cache-control': u.pathname.includes('/vendor/') ? 'public, max-age=604800' : 'no-cache' }); return res.end(a3.body); } }
   if (u.pathname.startsWith('/party/')) { const pcode = u.pathname.slice(7).toLowerCase(); if (/^[a-z0-9]{5}$/.test(pcode)) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(partyRoomPage(pcode)); } }
   if (u.pathname === '/vid') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }); return res.end(vidPage()); }
   if (u.pathname === '/fyp') { res.writeHead(302, { location: '/tiktok' }); return res.end(); }
@@ -24715,6 +24736,7 @@ const server = http.createServer(async (req, res) => {
   if (await partyApi(req, res, u)) return;
   if (await vidApi(req, res, u)) return;
   if (await worldApi(req, res, u)) return;
+  if (await world3dApi(req, res, u)) return;
   if (await tkApi(req, res, u)) return;
   if (await fypApi(req, res, u)) return;
   if (await spApi(req, res, u)) return;
