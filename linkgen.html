@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wildcard Link Generator — usareme.site &amp; classlink.site</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    .toast-enter {
+      animation: toastSlideIn 0.22s ease-out forwards;
+    }
+    @keyframes toastSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.97);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+    <!-- Header -->
+    <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-8 border-b border-slate-800/80">
+      <div>
+        <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium mb-3">
+          <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+          15-Character Random Subdomain Generator
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white">Wildcard Site Links</h1>
+        <p class="text-sm text-slate-400 mt-1">
+          Instant random 15-character wildcard URLs for <span class="font-mono text-slate-300">*.usareme.site</span> and <span class="font-mono text-slate-300">*.classlink.site</span>.
+        </p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2.5">
+        <button
+          id="copy-all-btn"
+          type="button"
+          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium border border-slate-700/80 transition cursor-pointer"
+        >
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          Copy All
+        </button>
+        <button
+          id="regenerate-all-btn"
+          type="button"
+          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold shadow-lg shadow-indigo-500/20 transition cursor-pointer"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Regenerate All
+        </button>
+      </div>
+    </header>
+
+    <!-- Controls Bar -->
+    <section class="mt-6 p-4 rounded-2xl bg-slate-900/70 border border-slate-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="flex flex-wrap items-center gap-4">
+        <div class="flex items-center gap-2">
+          <label for="links-per-site" class="text-xs font-medium uppercase tracking-wider text-slate-400">Links per site</label>
+          <select
+            id="links-per-site"
+            class="bg-slate-800 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="1">1</option>
+            <option value="3">3</option>
+            <option value="5" selected>5</option>
+            <option value="10">10</option>
+            <option value="15">15</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <label for="protocol-select" class="text-xs font-medium uppercase tracking-wider text-slate-400">Protocol</label>
+          <select
+            id="protocol-select"
+            class="bg-slate-800 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="https://" selected>https://</option>
+            <option value="http://">http://</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <label for="charset-select" class="text-xs font-medium uppercase tracking-wider text-slate-400">Characters</label>
+          <select
+            id="charset-select"
+            class="bg-slate-800 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="alnum" selected>a-z, 0-9 (15 chars)</option>
+            <option value="alpha">a-z only (15 chars)</option>
+            <option value="hex">hex 0-9, a-f (15 chars)</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <label for="open-mode-select" class="text-xs font-medium uppercase tracking-wider text-slate-400">Click action</label>
+          <select
+            id="open-mode-select"
+            class="bg-slate-800 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="new-tab" selected>New tab</option>
+            <option value="same-tab">Same tab redirect</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <input
+          id="custom-domain-input"
+          type="text"
+          placeholder="Add domain (e.g. example.com)"
+          class="bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-500 text-sm rounded-lg px-3 py-1.5 w-full sm:w-52 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+        <button
+          id="add-domain-btn"
+          type="button"
+          class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium border border-slate-700 transition whitespace-nowrap cursor-pointer"
+        >
+          + Add
+        </button>
+      </div>
+    </section>
+
+    <!-- Domain Cards Grid -->
+    <main id="domains-grid" class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6"></main>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <script>
+    const CHARSETS = {
+      alnum: 'abcdefghijklmnopqrstuvwxyz0123456789',
+      alpha: 'abcdefghijklmnopqrstuvwxyz',
+      hex: '0123456789abcdef',
+    };
+
+    const SUBDOMAIN_LENGTH = 15;
+    const DEFAULT_DOMAINS = ['usareme.site', 'classlink.site'];
+
+    const state = {
+      domains: [...DEFAULT_DOMAINS],
+      linksPerSite: 5,
+      protocol: 'https://',
+      charset: 'alnum',
+      openMode: 'new-tab',
+      generated: {},
+    };
+
+    function loadSavedState() {
+      try {
+        const raw = localStorage.getItem('wildcard_links_prefs');
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.domains) && parsed.domains.length > 0) {
+          state.domains = parsed.domains;
+        }
+        if ([1, 3, 5, 10, 15].includes(Number(parsed.linksPerSite))) {
+          state.linksPerSite = Number(parsed.linksPerSite);
+        }
+        if (parsed.protocol === 'https://' || parsed.protocol === 'http://') {
+          state.protocol = parsed.protocol;
+        }
+        if (CHARSETS[parsed.charset]) {
+          state.charset = parsed.charset;
+        }
+        if (parsed.openMode === 'new-tab' || parsed.openMode === 'same-tab') {
+          state.openMode = parsed.openMode;
+        }
+      } catch (e) {
+        // Ignore storage access errors in restricted environments
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(
+          'wildcard_links_prefs',
+          JSON.stringify({
+            domains: state.domains,
+            linksPerSite: state.linksPerSite,
+            protocol: state.protocol,
+            charset: state.charset,
+            openMode: state.openMode,
+          })
+        );
+      } catch (e) {
+        // Ignore storage access errors
+      }
+    }
+
+    function generateRandomSubdomain(length = SUBDOMAIN_LENGTH) {
+      const chars = CHARSETS[state.charset] || CHARSETS.alnum;
+      const charsLen = chars.length;
+      let result = '';
+
+      if (window.crypto && window.crypto.getRandomValues) {
+        const array = new Uint32Array(length);
+        window.crypto.getRandomValues(array);
+        for (let i = 0; i < length; i++) {
+          result += chars[array[i] % charsLen];
+        }
+      } else {
+        for (let i = 0; i < length; i++) {
+          result += chars[Math.floor(Math.random() * charsLen)];
+        }
+      }
+      return result;
+    }
+
+    function generateForDomain(domain) {
+      const list = [];
+      for (let i = 0; i < state.linksPerSite; i++) {
+        list.push(generateRandomSubdomain(SUBDOMAIN_LENGTH));
+      }
+      state.generated[domain] = list;
+    }
+
+    function generateAll() {
+      state.domains.forEach((domain) => generateForDomain(domain));
+    }
+
+    function showToast(message) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className =
+        'toast-enter pointer-events-auto flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 text-sm font-medium shadow-xl';
+      toast.innerHTML = `
+        <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        <span></span>
+      `;
+      toast.querySelector('span').textContent = message;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.2s ease';
+        setTimeout(() => toast.remove(), 220);
+      }, 2200);
+    }
+
+    function copyText(text, successMsg) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard
+          .writeText(text)
+          .then(() => showToast(successMsg))
+          .catch(() => fallbackCopy(text, successMsg));
+      } else {
+        fallbackCopy(text, successMsg);
+      }
+    }
+
+    function fallbackCopy(text, successMsg) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      textarea.setSelectionRange(0, textarea.value.length);
+      let ok = false;
+      try {
+        ok = document.execCommand('copy');
+      } catch (e) {
+        ok = false;
+      }
+      document.body.removeChild(textarea);
+      if (ok) {
+        showToast(successMsg);
+      } else {
+        showToast('Copy blocked by browser — select link text to copy');
+      }
+    }
+
+    function openRedirect(url) {
+      if (state.openMode === 'same-tab') {
+        try {
+          if (window.top && window.top !== window) {
+            window.top.location.href = url;
+            return;
+          }
+        } catch (e) {
+          // Cross-origin parent frame; fall back to current frame or new tab
+        }
+        window.location.assign(url);
+        return;
+      }
+
+      const win = window.open(url, '_blank', 'noopener,noreferrer');
+      if (win) {
+        win.opener = null;
+        return;
+      }
+
+      // Fallback if popup was blocked: try programmatic anchor click, then same-frame navigation
+      const tempLink = document.createElement('a');
+      tempLink.href = url;
+      tempLink.target = '_blank';
+      tempLink.rel = 'noopener noreferrer';
+      tempLink.style.display = 'none';
+      document.body.appendChild(tempLink);
+      tempLink.click();
+      document.body.removeChild(tempLink);
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function render() {
+      document.getElementById('links-per-site').value = String(state.linksPerSite);
+      document.getElementById('protocol-select').value = state.protocol;
+      document.getElementById('charset-select').value = state.charset;
+      document.getElementById('open-mode-select').value = state.openMode;
+
+      const grid = document.getElementById('domains-grid');
+      grid.innerHTML = '';
+
+      state.domains.forEach((domain) => {
+        if (!state.generated[domain] || state.generated[domain].length !== state.linksPerSite) {
+          generateForDomain(domain);
+        }
+        const subdomains = state.generated[domain];
+        const isDefault = DEFAULT_DOMAINS.includes(domain);
+        const linkTarget = state.openMode === 'same-tab' ? '_top' : '_blank';
+
+        const card = document.createElement('section');
+        card.className = 'rounded-2xl bg-slate-900/80 border border-slate-800 overflow-hidden flex flex-col shadow-lg';
+
+        const linksHtml = subdomains
+          .map((sub, idx) => {
+            const fullUrl = `${state.protocol}${sub}.${domain}`;
+            return `
+              <li class="group flex items-center justify-between gap-3 px-4 py-3 hover:bg-slate-800/60 transition">
+                <div class="min-w-0 flex-1">
+                  <a
+                    href="${escapeHtml(fullUrl)}"
+                    target="${linkTarget}"
+                    rel="noopener noreferrer"
+                    data-redirect-url="${escapeHtml(fullUrl)}"
+                    class="block font-mono text-sm text-indigo-300 hover:text-indigo-200 hover:underline truncate"
+                    title="${escapeHtml(fullUrl)}"
+                  >
+                    <span class="text-slate-500">${escapeHtml(state.protocol)}</span><span class="text-emerald-300 font-semibold">${escapeHtml(sub)}</span><span class="text-slate-300">.${escapeHtml(domain)}</span>
+                  </a>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    data-action="regen-one"
+                    data-domain="${escapeHtml(domain)}"
+                    data-index="${idx}"
+                    title="Regenerate this link"
+                    class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/80 transition cursor-pointer"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    data-action="copy-one"
+                    data-url="${escapeHtml(fullUrl)}"
+                    title="Copy URL"
+                    class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/80 transition cursor-pointer"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    data-action="open-one"
+                    data-url="${escapeHtml(fullUrl)}"
+                    title="Redirect / Open URL"
+                    class="px-2 py-1 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 hover:text-white text-xs font-medium border border-indigo-500/30 transition cursor-pointer inline-flex items-center gap-1"
+                  >
+                    <span>Go</span>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </button>
+                </div>
+              </li>
+            `;
+          })
+          .join('');
+
+        card.innerHTML = `
+          <div class="px-5 py-4 bg-slate-900 border-b border-slate-800/90 flex flex-wrap items-center justify-between gap-3">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <h2 class="font-mono text-base font-semibold text-white truncate">*.${escapeHtml(domain)}</h2>
+                <span class="px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 text-xs font-medium">${subdomains.length} links</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                data-action="launch-random"
+                data-domain="${escapeHtml(domain)}"
+                class="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 text-xs font-medium border border-emerald-500/30 transition cursor-pointer"
+              >
+                Open Random
+              </button>
+              <button
+                type="button"
+                data-action="copy-domain"
+                data-domain="${escapeHtml(domain)}"
+                class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700/80 transition cursor-pointer"
+              >
+                Copy
+              </button>
+              <button
+                type="button"
+                data-action="regen-domain"
+                data-domain="${escapeHtml(domain)}"
+                class="px-2.5 py-1.5 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 text-xs font-medium border border-indigo-500/30 transition cursor-pointer"
+              >
+                Refresh
+              </button>
+              ${
+                !isDefault
+                  ? `<button
+                      type="button"
+                      data-action="remove-domain"
+                      data-domain="${escapeHtml(domain)}"
+                      title="Remove domain"
+                      class="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition cursor-pointer"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>`
+                  : ''
+              }
+            </div>
+          </div>
+          <ul class="divide-y divide-slate-800/60">${linksHtml}</ul>
+        `;
+
+        grid.appendChild(card);
+      });
+    }
+
+    function normalizeDomainInput(raw) {
+      let val = raw.trim().toLowerCase();
+      val = val.replace(/^https?:\/\//, '');
+      val = val.replace(/^\*\./, '');
+      val = val.split('/')[0].split('?')[0].split('#')[0];
+      return val;
+    }
+
+    document.getElementById('regenerate-all-btn').addEventListener('click', () => {
+      generateAll();
+      render();
+      showToast('Generated fresh 15-character wildcard links');
+    });
+
+    document.getElementById('copy-all-btn').addEventListener('click', () => {
+      const allUrls = [];
+      state.domains.forEach((domain) => {
+        (state.generated[domain] || []).forEach((sub) => {
+          allUrls.push(`${state.protocol}${sub}.${domain}`);
+        });
+      });
+      copyText(allUrls.join('\n'), `Copied ${allUrls.length} wildcard links`);
+    });
+
+    document.getElementById('links-per-site').addEventListener('change', (e) => {
+      state.linksPerSite = Number(e.target.value);
+      generateAll();
+      saveState();
+      render();
+    });
+
+    document.getElementById('protocol-select').addEventListener('change', (e) => {
+      state.protocol = e.target.value;
+      saveState();
+      render();
+    });
+
+    document.getElementById('charset-select').addEventListener('change', (e) => {
+      state.charset = e.target.value;
+      generateAll();
+      saveState();
+      render();
+    });
+
+    document.getElementById('open-mode-select').addEventListener('change', (e) => {
+      state.openMode = e.target.value;
+      saveState();
+      render();
+      showToast(state.openMode === 'same-tab' ? 'Links will redirect in same tab' : 'Links will open in a new tab');
+    });
+
+    function handleAddDomain() {
+      const input = document.getElementById('custom-domain-input');
+      const cleaned = normalizeDomainInput(input.value);
+      if (!cleaned || !cleaned.includes('.')) {
+        showToast('Enter a valid domain like example.com');
+        return;
+      }
+      if (state.domains.includes(cleaned)) {
+        showToast(`${cleaned} is already in the list`);
+        input.value = '';
+        return;
+      }
+      state.domains.push(cleaned);
+      generateForDomain(cleaned);
+      saveState();
+      input.value = '';
+      render();
+      showToast(`Added *.${cleaned}`);
+    }
+
+    document.getElementById('add-domain-btn').addEventListener('click', handleAddDomain);
+    document.getElementById('custom-domain-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleAddDomain();
+    });
+
+    document.getElementById('domains-grid').addEventListener('click', (e) => {
+      const link = e.target.closest('a[data-redirect-url]');
+      if (link) {
+        if (state.openMode === 'same-tab') {
+          e.preventDefault();
+          openRedirect(link.dataset.redirectUrl);
+        }
+        return;
+      }
+
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const domain = btn.dataset.domain;
+
+      if (action === 'copy-one') {
+        copyText(btn.dataset.url, 'Copied URL to clipboard');
+      } else if (action === 'open-one') {
+        openRedirect(btn.dataset.url);
+      } else if (action === 'launch-random') {
+        const freshSub = generateRandomSubdomain(SUBDOMAIN_LENGTH);
+        const url = `${state.protocol}${freshSub}.${domain}`;
+        openRedirect(url);
+        showToast(`Redirecting to ${freshSub}.${domain}`);
+      } else if (action === 'regen-one') {
+        const idx = Number(btn.dataset.index);
+        if (state.generated[domain] && !Number.isNaN(idx)) {
+          state.generated[domain][idx] = generateRandomSubdomain(SUBDOMAIN_LENGTH);
+          render();
+          showToast('Regenerated link');
+        }
+      } else if (action === 'regen-domain') {
+        generateForDomain(domain);
+        render();
+        showToast(`Refreshed *.${domain} links`);
+      } else if (action === 'copy-domain') {
+        const urls = (state.generated[domain] || []).map((sub) => `${state.protocol}${sub}.${domain}`);
+        copyText(urls.join('\n'), `Copied ${urls.length} *.${domain} links`);
+      } else if (action === 'remove-domain') {
+        state.domains = state.domains.filter((d) => d !== domain);
+        delete state.generated[domain];
+        saveState();
+        render();
+        showToast(`Removed *.${domain}`);
+      }
+    });
+
+    loadSavedState();
+    generateAll();
+    render();
+  </script>
+</body>
+</html>
