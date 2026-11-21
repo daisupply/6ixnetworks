@@ -19047,6 +19047,7 @@ function worldMod() {
       wget: (k) => { try { wdataLoad(); return WDATA.data[k]; } catch (e) { return undefined; } },
       wset: (k, v) => { try { wdataLoad(); if (v === undefined) delete WDATA.data[k]; else WDATA.data[k] = v; wdataSave(); } catch (e) { } },
       storeReady: () => { try { centsLoad(); wdataLoad(); return !CENTS.loading && !WDATA.loading; } catch (e) { return false; } },
+      friendsOf: (u) => { try { const rec = ACCOUNTS.get(String(u || '').toLowerCase()); const l = rec ? frLists(rec) : null; return l ? l.friends.slice(0, 200) : []; } catch (e) { return []; } },
       isAdmin: (u) => { try { return ADMIN_USERS.has(String(u).toLowerCase()); } catch (e) { return false; } },
       FONT_LINKS, GALAXY_CSS, SIDEBAR_HTML, STAR_CANVAS, NOTIF_JS,
     });

@@ -734,6 +734,17 @@ function createWorld(ctx) {
     return out;
   }
   function equippedIds(u) { let w = {}; try { w = ctx.getWear(u) || {}; } catch { } return new Set(Object.values(w).filter(Boolean)); }
+  const POKE = new Map(); const POKE_CD = new Map();
+  function actOf(u, p, now) {
+    if (!p) return '';
+    if (p.inst) return 'in the crypt';
+    if (FISH.has(u)) return 'fishing';
+    if (RACES.has(u)) return 'racing';
+    if (bossLive(now) && dist(p.x, p.y, 2400, 2600) < 650) return 'at the lich';
+    for (const tk of MTOK.values()) if (tk.user === u && now - tk.at < 240000) return 'in a minigame';
+    if (p.house) return 'visiting a house';
+    return '';
+  }
   function roster(now) {
     const out = [sixState(now)].concat(NPC_DEFS.map((d) => npcState(d, now)));
     for (const [u, p] of P) {
@@ -745,6 +756,7 @@ function createWorld(ctx) {
         wear: p.wear || null,
         petName: (p.wear && p.wear.pet && p.wear.pet.id) ? ((wload('petname', u) || {})[p.wear.pet.id] || '') : '',
         gtag: guildTagOf(u),
+        act: actOf(u, p, now),
       });
     }
     return out;
@@ -1033,7 +1045,10 @@ function createWorld(ctx) {
   }
   function partyView(user) {
     const pt = partyOf(user);
-    return pt ? { leader: pt.leader, members: pt.members } : null;
+    if (!pt) return null;
+    const zones = {};
+    for (const m of pt.members) { const pp = P.get(m); zones[m] = pp ? zoneName(zoneAt(pp.x, pp.y)) : null; }
+    return { leader: pt.leader, members: pt.members, zones };
   }
   function partyRemove(user) {
     const pt = partyOf(user);
@@ -1450,6 +1465,7 @@ function createWorld(ctx) {
         treasure: (() => { const e2 = worldEvent(now); return e2 && e2.type === 'treasure' && TREASURE && !TREASURE.gone ? { zone: TREASURE.zone, near: dist(p.x, p.y, TREASURE.x, TREASURE.y) < 380 } : null; })(),
         gotM, gotT, gotEvC, gotEvE, evSoon, evRes,
         myBlocks: wload('blocks', me) || [],
+        poke: (() => { const pk = POKE.get(me); if (!pk) return null; POKE.delete(me); return now - pk.at < 30000 ? { from: pk.from } : null; })(),
         ann: ANN && now - ANN.at < 120000 ? ANN : null,
         isAdmin: !!ctx.isAdmin(me),
         weather: weatherOf(now),
@@ -1474,6 +1490,30 @@ function createWorld(ctx) {
       return true;
     }
 
+    if (u.pathname === '/api/world/poke' && req.method === 'POST') {
+      const target = String(b.user || '').toLowerCase();
+      if (!target || target === me) { J({ ok: false, err: 'who?' }, 400); return true; }
+      if (!P.has(target)) { J({ ok: false, err: 'they are not in the world rn' }, 400); return true; }
+      if (blocksOf(me).includes(target) || blocksOf(target).includes(me)) { J({ ok: false, err: 'blocked' }, 400); return true; }
+      const cdKey = me + '>' + target;
+      if (now - (POKE_CD.get(cdKey) || 0) < 15000) { J({ ok: false, err: 'give it a sec' }, 429); return true; }
+      POKE_CD.set(cdKey, now);
+      POKE.set(target, { from: me, at: now });
+      const mp = P.get(me); if (mp) { mp.emote = 'wave'; mp.emoteAt = now; }
+      J({ ok: true });
+      return true;
+    }
+    if (u.pathname === '/api/world/friends' && req.method === 'GET') {
+      let list = [];
+      try { list = ctx.friendsOf ? ctx.friendsOf(me) : []; } catch { list = []; }
+      const rows = list.filter((f) => f && f !== me).map((f) => {
+        const p = P.get(f);
+        return { u: f, inWorld: !!p, zone: p ? zoneName(zoneAt(p.x, p.y)) : null, act: p ? actOf(f, p, now) : '' };
+      });
+      rows.sort((a, b) => ((b.inWorld ? 1 : 0) - (a.inWorld ? 1 : 0)) || a.u.localeCompare(b.u));
+      J({ ok: true, friends: rows });
+      return true;
+    }
     if (u.pathname === '/api/world/party' && req.method === 'POST') {
       const act = String(b.act || '');
       const target = String(b.user || '').toLowerCase();
@@ -2690,7 +2730,7 @@ function createWorld(ctx) {
       try { cents = ctx.getCents(who); } catch { }
       try { hue = ctx.getHue(who); } catch { }
       try { const w = wearOf(who); if (w) for (const k of ['trail', 'hat', 'aura', 'pet']) if (w[k]) wearNames.push(w[k].name); } catch { }
-      J({ ok: true, user: who, cents, hue, wear: wearNames, online: P.has(who), prog: (() => { try { return progView(who); } catch { return null; } })() });
+      J({ ok: true, user: who, cents, hue, wear: wearNames, online: P.has(who), prog: (() => { try { return progView(who); } catch { return null; } })(), season: (() => { try { return seasonTierOf(seasonFor(who).xp || 0); } catch { return 0; } })(), collect: (() => { try { return buildJournal(who).overall; } catch { return null; } })(), act: P.has(who) ? actOf(who, P.get(who), now) : '' });
       return true;
     }
     if (u.pathname === '/api/world/quests' && req.method === 'GET') {
@@ -2909,7 +2949,7 @@ function createWorld(ctx) {
       '<div id="wprof" hidden><div class="wprof-card">\n' +
       '  <div id="wprof-banner"></div><button id="wprof-x" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>\n' +
       '  <div class="wprof-body"><div id="wprof-av"></div><div id="wprof-name"></div><div id="wprof-user"></div><div id="wprof-meta"></div><div id="wprof-badges"></div><div id="wprof-stats"></div><div id="wprof-wear"></div>\n' +
-      '  <div class="wprof-acts"><button id="wprof-add" type="button">add friend</button><button id="wprof-battle" type="button">battle</button><a id="wprof-link" href="#">full profile</a></div>\n' +
+      '  <div class="wprof-acts"><button id="wprof-add" type="button">add friend</button><button id="wprof-battle" type="button">battle</button><button id="wprof-poke" type="button">wave</button><a id="wprof-link" href="#">full profile</a></div>\n' +
       '  <div class="wprof-acts2"><button id="wprof-invite" type="button">party invite</button><button id="wprof-trade" type="button">trade</button><button id="wprof-mute" type="button">mute</button><button id="wprof-block" type="button">block</button><button id="wprof-report" type="button">report</button><button id="wprof-visit" type="button">visit house</button></div></div>\n' +
       '</div></div>\n' +
       '<div id="wduel" hidden><span id="wduel-t"></span><button id="wduel-yes" type="button">accept</button><button id="wduel-no" type="button">nah</button></div>\n' +
@@ -2930,6 +2970,10 @@ function createWorld(ctx) {
       '<div id="wseason" hidden><div class="wa-card">\n' +
       '  <div class="wa-head"><span>\u2726 season 1 \u00b7 first frost</span><button id="wseason-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
       '  <div id="wseason-body"></div>\n' +
+      '</div></div>\n' +
+      '<div id="wfriends" hidden><div class="wa-card">\n' +
+      '  <div class="wa-head"><span>\u2726 ur people</span><button id="wfriends-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
+      '  <div id="wfriends-body"></div>\n' +
       '</div></div>\n' +
       '<div id="wboards" hidden><div class="wa-card">\n' +
       '  <div class="wa-head"><span>\u2726 leaderboards</span><button id="wboards-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +

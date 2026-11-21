@@ -189,6 +189,7 @@ function toast(msg, ms) {
 function logLine(u, text) {
   var log = $('wlog'); if (!log) return;
   var d = document.createElement('div');
+  if (u !== me && text && (text.indexOf('@' + me) >= 0 || text.toLowerCase().indexOf(me) >= 0)) { d.style.background = 'rgba(255,210,87,.16)'; d.style.borderRadius = '6px'; d.style.padding = '1px 5px'; }
   var b = document.createElement('b'); b.textContent = u + ' ';
   var fxc = FXC[(players[u] && players[u].fx) || ''] || FXC[''];
   b.style.color = fxc.c;
@@ -548,6 +549,7 @@ function ping() {
       if (!p.bub) cur.bub = '';
       if (p.emote && p.emote !== cur.emote) { cur.emote = p.emote; cur.emoteAt = performance.now(); }
       if (!p.emote) cur.emote = '';
+      cur.act = p.act || '';
     });
     Object.keys(players).forEach(function (u) { if (!seen[u] && u !== me) delete players[u]; });
     var sSeen = {};
@@ -851,6 +853,12 @@ function drawNameTag(g, p, now, byOpt) {
   if (p.vc && !p.npc) {
     g.fillStyle = p.talk ? '#4ade80' : 'rgba(255,255,255,.55)';
     g.beginPath(); g.arc(p.x + tw / 2 + 13, by - 39.5, 3, 0, TAU); g.fill();
+  }
+  if (p.act && !p.npc) {
+    g.font = '600 9.5px Inter, sans-serif';
+    g.fillStyle = 'rgba(226,232,255,.78)';
+    g.fillText(p.act, p.x, by - 24);
+    g.font = '700 12px Inter, sans-serif';
   }
   g.textBaseline = 'alphabetic';
 }
@@ -2910,6 +2918,12 @@ function openProfile(u) {
   addB.disabled = true; addB.textContent = 'add friend';
   var batB = $('wprof-battle');
   batB.disabled = true; batB.textContent = 'battle';
+  var pkB = $('wprof-poke');
+  pkB.disabled = false; pkB.textContent = 'wave';
+  pkB.onclick = function () {
+    pkB.disabled = true;
+    jpost('/api/world/poke', { user: u }).then(function (rr) { toast(rr && rr.ok ? 'u waved at @' + u : ((rr && rr.err) || 'could not wave'), 2200); setTimeout(function () { pkB.disabled = false; }, 1500); });
+  };
   fetch('/api/user/' + encodeURIComponent(u)).then(function (r) { return r.json(); }).then(function (o) {
     if (!o || !o.ok || profUser !== u) return;
     var hue = (o.hue != null) ? o.hue : hueOf(u);
@@ -2960,6 +2974,9 @@ function openProfile(u) {
     if (o.cents != null) $('wprof-stats').innerHTML += '<span class="wprof-chip gold">¢' + o.cents + ' six cents</span>';
     if (o.prog) $('wprof-stats').innerHTML += '<span class="wprof-chip">Lv ' + o.prog.lvl + ' · ' + o.prog.title + '</span>';
     if (o.wear && o.wear.length) $('wprof-wear').textContent = 'wearing: ' + o.wear.join(' · ');
+    if (o.season) $('wprof-stats').innerHTML += '<span class="wprof-chip">season 1 \u00b7 tier ' + o.season + '</span>';
+    if (o.collect != null) $('wprof-stats').innerHTML += '<span class="wprof-chip">collection ' + o.collect + '%</span>';
+    if (o.act) $('wprof-stats').innerHTML += '<span class="wprof-chip">' + pesc(o.act) + '</span>';
     if (o.online) { batB.disabled = false; batB.textContent = 'battle — reaction duel'; }
     else batB.textContent = 'battle (not in the world)';
     profSocial(u);
@@ -3103,11 +3120,12 @@ function socialTick(r) {
     var sig = myParty.leader + '|' + myParty.members.join(',');
     if (chip.getAttribute('data-sig') !== sig) {
       chip.setAttribute('data-sig', sig);
-      chip.innerHTML = '<b>\u2726 party</b> ' + myParty.members.map(function (m) { return (m === myParty.leader ? '\u265b ' : '') + '@' + escH(m); }).join(' \u00b7 ') + ' <button id="wparty-leave" type="button">leave</button>';
+      chip.innerHTML = '<b>\u2726 party</b> ' + myParty.members.map(function (m) { return (m === myParty.leader ? '\u265b ' : '') + '@' + escH(m) + ((myParty.zones && myParty.zones[m]) ? ' (' + escH(String(myParty.zones[m]).replace(/^the /, '')) + ')' : ''); }).join(' \u00b7 ') + ' <button id="wparty-leave" type="button">leave</button>';
       $('wparty-leave').addEventListener('click', function () { jpost('/api/world/party', { act: 'leave' }).then(function () { toast('left the party'); }); });
     }
     chip.hidden = false;
   } else chip.hidden = true;
+  if (r.poke && r.poke.from) toast('@' + r.poke.from + ' waved at u', 2600);
   var bar = $('wparty-inv');
   if (r.partyInv && r.partyInv.from) {
     if (partyInvFrom !== r.partyInv.from) { partyInvFrom = r.partyInv.from; $('wparty-inv-t').textContent = '@' + partyInvFrom + ' invited u to their party'; }
@@ -3375,6 +3393,30 @@ function closeSeason() { $('wseason').hidden = true; document.body.classList.rem
 $('wseason-x').addEventListener('click', closeSeason);
 $('wseason').addEventListener('click', function (e) { if (e.target === $('wseason')) closeSeason(); });
 window.__season = { open: openSeason, close: closeSeason };
+function openFriends() { $('wfriends').hidden = false; document.body.classList.add('wov'); loadFriends(); }
+function closeFriends() { $('wfriends').hidden = true; document.body.classList.remove('wov'); }
+function loadFriends() {
+  var el = $('wfriends-body'); el.innerHTML = '<div class="wnote">loading ur people\u2026</div>';
+  fetch('/api/world/friends').then(function (r) { return r.json(); }).then(function (o) {
+    if (!o || !o.ok) { el.innerHTML = '<div class="wnote">could not load friends</div>'; return; }
+    renderFriends(o.friends || []);
+  }).catch(function () { el.innerHTML = '<div class="wnote">could not load friends</div>'; });
+}
+function renderFriends(rows) {
+  var el = $('wfriends-body');
+  if (!rows.length) { el.innerHTML = '<div class="wnote">no site friends yet \u2014 tap a player in the world and hit add friend on their profile</div>'; return; }
+  el.innerHTML = rows.map(function (f) {
+    var st = f.inWorld ? ('<span style="color:#4ade80">in the world</span>' + (f.zone ? ' \u00b7 ' + pesc(f.zone) : '') + (f.act ? ' \u00b7 ' + pesc(f.act) : '')) : '<span>not in the world rn</span>';
+    var acts = f.inWorld ? '<button type="button" class="col-claim" data-poke="' + pesc(f.u) + '">wave</button> <button type="button" class="col-claim" data-inv="' + pesc(f.u) + '">party invite</button>' : '';
+    return '<div class="fr-row"><span class="fr-name">@' + pesc(f.u) + '</span><span class="fr-st">' + st + '</span><span class="fr-acts">' + acts + '</span></div>';
+  }).join('');
+  el.querySelectorAll('[data-poke]').forEach(function (b) { b.addEventListener('click', function () { var u = b.getAttribute('data-poke'); b.disabled = true; jpost('/api/world/poke', { user: u }).then(function (rr) { toast(rr && rr.ok ? 'u waved at @' + u : ((rr && rr.err) || 'could not wave'), 2000); setTimeout(function () { b.disabled = false; }, 1500); }); }); });
+  el.querySelectorAll('[data-inv]').forEach(function (b) { b.addEventListener('click', function () { var u = b.getAttribute('data-inv'); b.disabled = true; jpost('/api/world/party', { act: 'invite', user: u }).then(function (rr) { toast(rr && rr.ok ? 'party invite sent to @' + u : ((rr && rr.err) || 'could not invite'), 2200); b.disabled = false; }); }); });
+}
+window.__friends = { open: openFriends };
+$('wfriends-x').addEventListener('click', closeFriends);
+$('wfriends').addEventListener('click', function (e) { if (e.target === $('wfriends')) closeFriends(); });
+
 /* settings, ambient audio, hub, inventory, big map, admin */
 var SET = { vol: 0.85, music: true, sfx: true };
 try { var svSet = JSON.parse(localStorage.getItem('sixSettings') || 'null'); if (svSet) SET = Object.assign(SET, svSet); } catch (e) {}
@@ -3422,6 +3464,7 @@ var HUB_DEFS = [
   ['events', '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>', function () { openEvents(); }],
   ['collections', '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h7"/><path d="M9 11h5"/>', function () { openCollect(); }],
   ['season 1', '<path d="M12 2v20"/><path d="M4 6l16 12"/><path d="M20 6L4 18"/><path d="M12 2l-2 3m2-3 2 3"/><path d="M12 22l-2-3m2 3 2-3"/>', function () { openSeason(); }],
+  ['friends', '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3 2.8-4.5 5.5-4.5s4.9 1.5 5.5 4.5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.6c2.3.2 4.1 1.6 4.7 4.4"/>', function () { openFriends(); }],
   ['character', '<circle cx="12" cy="8" r="4"/><path d="M4 21c.8-3.6 4-5.5 8-5.5s7.2 1.9 8 5.5"/>', function () { openChar(); }],
   ['emotes', '<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5c1 1.2 2.2 1.8 3.5 1.8s2.5-.6 3.5-1.8"/><path d="M9 9.5h.01M15 9.5h.01"/>', function () { var ep = $('wemotes'); if (ep) ep.hidden = !ep.hidden; }],
   ['settings', '<circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.14-1.4l2-1.55-2-3.46-2.36.95a7 7 0 0 0-2.42-1.4L13.7 2.6h-3.4l-.38 2.54a7 7 0 0 0-2.42 1.4l-2.36-.95-2 3.46 2 1.55a7 7 0 0 0 0 2.8l-2 1.55 2 3.46 2.36-.95a7 7 0 0 0 2.42 1.4l.38 2.54h3.4l.38-2.54a7 7 0 0 0 2.42-1.4l2.36.95 2-3.46-2-1.55c.1-.45.14-.92.14-1.4Z"/>', function () { openSettings(); }],
