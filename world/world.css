@@ -31,8 +31,8 @@ body{display:block;padding:0;margin:0;overflow:hidden;background:#07040f}
 .jq-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#8b7cff,#c4b5fd)}
 .jq-s{font:600 10.5px Inter,sans-serif;color:#b7aee0;margin-top:4px}
 .jq-say{font:600 11.5px Inter,sans-serif;color:#ffd9a0;margin-top:5px;font-style:italic}
-#whub,#winv,#wmap2,#wsettings,#wadmin{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(5,3,14,.55);padding:18px}
-#whub[hidden],#winv[hidden],#wmap2[hidden],#wsettings[hidden],#wadmin[hidden]{display:none!important}
+#whub,#winv,#wmap2,#wsettings,#wadmin,#whouse{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(5,3,14,.55);padding:18px}
+#whub[hidden],#winv[hidden],#wmap2[hidden],#wsettings[hidden],#wadmin[hidden],#whouse[hidden]{display:none!important}
 #whub-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .hub-btn{display:flex;align-items:center;gap:10px;font:inherit;font-size:13.5px;font-weight:800;color:#f3efff;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:13px 14px;cursor:pointer;text-align:left}
 .hub-btn svg{width:20px;height:20px;color:#a78bfa;flex:none}
@@ -156,7 +156,7 @@ body{display:block;padding:0;margin:0;overflow:hidden;background:#07040f}
 .wa-head span:first-child,.wg-head #wg-title{flex:0 1 auto}
 #wa-count{color:rgba(243,239,255,.5);font-size:12.5px;font-weight:600}
 #wg-score{margin-left:auto;color:#ffd257;font-size:14px;font-weight:800}
-#wa-x,#wg-x,#wsh-x,#wchar-x,#wach-x,#wjournal-x,#wboards-x,#whub-x,#winv-x,#wmap2-x,#wsettings-x,#wadmin-x{margin-left:auto;width:34px;height:34px;flex:none;display:flex;align-items:center;justify-content:center;padding:0;border-radius:50%;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.06);color:rgba(243,239,255,.85);cursor:pointer;transition:background .15s,transform .1s}
+#wa-x,#wg-x,#wsh-x,#wchar-x,#wach-x,#wjournal-x,#wboards-x,#whub-x,#winv-x,#wmap2-x,#wsettings-x,#wadmin-x,#whouse-x{margin-left:auto;width:34px;height:34px;flex:none;display:flex;align-items:center;justify-content:center;padding:0;border-radius:50%;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.06);color:rgba(243,239,255,.85);cursor:pointer;transition:background .15s,transform .1s}
 #wa-x:hover,#wg-x:hover,#wsh-x:hover,#wchar-x:hover,#wach-x:hover,#wjournal-x:hover,#wboards-x:hover,#whub-x:hover,#winv-x:hover,#wmap2-x:hover,#wsettings-x:hover,#wadmin-x:hover{background:rgba(255,255,255,.14);color:#fff}
 #wa-x:active,#wg-x:active,#wsh-x:active,#wchar-x:active,#wach-x:active,#wjournal-x:active,#wboards-x:active,#whub-x:active,#winv-x:active,#wmap2-x:active,#wsettings-x:active,#wadmin-x:active{transform:scale(.92)}
 #wa-x svg,#wg-x svg,#wsh-x svg,#wchar-x svg,#wach-x svg,#wjournal-x svg,#wboards-x svg,#whub-x svg,#winv-x svg,#wmap2-x svg,#wsettings-x svg,#wadmin-x svg{flex:none;display:block}
@@ -223,7 +223,7 @@ body.wov #wportal,body.wov #wact,body.wov #wemotebtn,body.wov #wdash{display:non
 
 /* shell law: the site chrome flattens every <button> to border-radius:8px
    !important — the world re-asserts its own shapes. */
-#wdash,#wemotebtn,.wbtns button,#wa-x,#wg-x,#wsh-x,#wchar-x,#wprof-x,#wach-x,#wjournal-x,#wboards-x,#whub-x,#winv-x,#wmap2-x,#wsettings-x,#wadmin-x{border-radius:50%!important}
+#wdash,#wemotebtn,.wbtns button,#wa-x,#wg-x,#wsh-x,#wchar-x,#wprof-x,#wach-x,#wjournal-x,#wboards-x,#whub-x,#winv-x,#wmap2-x,#wsettings-x,#wadmin-x,#whouse-x{border-radius:50%!important}
 #wportal,#wact,#wsend,#wemotes button,.wsh-card button,#wg-result button,#wsh-tabs button{border-radius:999px!important}
 .wa-item,.mg-quiz button,.mg-dpad button{border-radius:12px!important}
 #wdash svg,#wemotebtn svg{flex:none}
@@ -311,3 +311,17 @@ body.wov #wportal,body.wov #wact,body.wov #wemotebtn,body.wov #wdash{display:non
 .ach-desc{font-size:11px;color:rgba(235,230,255,.6)}
 .ach-rw{font-size:11px;font-weight:700;color:#ffd257;flex:none}
 .ach-row:not(.got) .ach-rw{color:rgba(255,255,255,.45)}
+
+/* housing panel */
+.hs-sec{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(243,239,255,.45);margin:12px 0 6px}
+.hs-row{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:10px;background:rgba(255,255,255,.045);margin-bottom:6px;font-size:12.5px}
+.hs-row .hs-nm{flex:1;min-width:0}
+.hs-row .hs-pr{color:#ffd257;font-weight:800;white-space:nowrap}
+.hs-btn{appearance:none;border:1px solid rgba(167,139,250,.45);background:rgba(139,124,255,.16);color:#efeaff;border-radius:999px;padding:5px 12px;font:700 11.5px Inter,sans-serif;cursor:pointer;white-space:nowrap}
+.hs-btn.on{background:#8b7cff;color:#fff;border-color:#8b7cff}
+.hs-btn:disabled{opacity:.45;cursor:default}
+.hs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:7px}
+.hs-item{border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.04);border-radius:12px;padding:8px 7px;font-size:11.5px;text-align:center;cursor:pointer;color:#f3efff}
+.hs-item .hs-pr{display:block;color:#ffd257;font-weight:800;margin-top:2px}
+.hs-item.sel{border-color:#ffd257;background:rgba(255,210,87,.12)}
+.hs-note{font-size:11.5px;color:rgba(243,239,255,.55);line-height:1.45}

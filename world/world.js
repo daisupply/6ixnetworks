@@ -31,7 +31,7 @@ const fs = require('fs');
 const path = require('path');
 
 const MAP_W = 6400;
-const MAP_H = 4200;
+const MAP_H = 6400; // 4200 of overworld + a housing-interior band below (4400+)
 const STALE_MS = 7000;
 const SHARD_TARGET = 40;
 const SHARD_PAY = 3;
@@ -72,6 +72,7 @@ const ZONES = [
   { id: 'vault', name: 'the vault', x: 5650, y: 3990, r: 380 },
   { id: 'vault', name: 'the vault', x: 5150, y: 3970, r: 240 },
   { id: 'vault', name: 'the vault', x: 6150, y: 3970, r: 240 },
+  { id: 'maple', name: 'maple row', x: 900, y: 3080, r: 330 },
   { id: 'caves', name: 'the crystal caves', x: 1150, y: 3650, r: 640 },
   { id: 'cavedeep', name: 'the deep caves', x: 2100, y: 3980, r: 230 },
   { id: 'sunken', name: 'the sunken flats', x: 3600, y: 3650, r: 620 },
@@ -201,6 +202,7 @@ const CRYSTALS = [
 
 // Intra-world doors: the server validates the player is standing at the
 // from-point, then sanctions the teleport (TP_OK) and moves them itself.
+const PORTAL_PADS = { games: [1780, 1215], movies: [3020, 1215], blox: [2400, 1120], chat: [1710, 1500], party: [3090, 1500], yt: [1780, 1800], tiktok: [3020, 1800], music: [2400, 1905] };
 const DOORS = {
   'arcade-in': { fx: 5600, fy: 1680, tx: 5650, ty: 3600 },
   'arcade-out': { fx: 5650, fy: 3600, tx: 5600, ty: 1680 },
@@ -251,7 +253,8 @@ function createWorld(ctx) {
   const CLIENT = fs.readFileSync(path.join(__dirname, 'client.js'), 'utf8');
 
   const P = new Map();      // user -> {x,y,dir,at,bub,bubAt,vc,talk,fx,emote,emoteTs,lx,ly}
-  const SIG = new Map();    // user -> [{from, data, at}]
+  const SIG = new Map();
+  const SIG_WIN = new Map(); // per-sender signal timestamps (rate guard)    // user -> [{from, data, at}]
   const SAY_AT = new Map(); // user -> last say ts
   const WISH_AT = new Map(); // user -> last wish ts
   const lastMini = new Map(); // user -> ts (miniscore rate limit)
@@ -367,7 +370,7 @@ function createWorld(ctx) {
   function spawnPos() {
     for (let i = 0; i < 24; i++) {
       const x = 70 + Math.random() * (MAP_W - 140);
-      const y = 70 + Math.random() * (MAP_H - 140);
+      const y = 70 + Math.random() * (4200 - 140); // shards never spawn in the housing band
       if (dist(x, y, 2400, 1500) < 110) continue; // not in the fountain
       return { x: Math.round(x), y: Math.round(y) };
     }
@@ -471,7 +474,12 @@ function createWorld(ctx) {
   }
 
   function prune(now) {
-    for (const [u, p] of P) if (now - p.at > STALE_MS) { P.delete(u); SIG.delete(u); }
+    for (const [u, p] of P) if (now - p.at > STALE_MS) {
+      P.delete(u); SIG.delete(u); PINV.delete(u); DUEL_CH.delete(u);
+      for (const [did, d] of DUELS) if (!d.settled && (d.a === u || d.b === u)) DUELS.delete(did);
+      const pt = partyOf(u);
+      if (pt && !pt.members.some((m) => m !== u && P.has(m))) for (const m of pt.members.slice()) partyRemove(m);
+    }
   }
   function wearOf(u) {
     const out = { trail: null, hat: null, aura: null, pet: null, face: null };
@@ -666,6 +674,46 @@ function createWorld(ctx) {
     return kinds[hashStr('wx:' + Math.floor(now / 3600000)) % kinds.length];
   }
 
+  // ---- housing: maple row plots outside, instanced interiors in the band
+  // below the overworld. A house instance is keyed by its OWNER: everyone in
+  // the same house shares one room; the roster filter keeps instances apart.
+  const HOUSE_STYLES = {
+    cottage: { name: 'moon cottage', price: 0 },
+    loft: { name: 'violet loft', price: 400 },
+    den: { name: 'neon den', price: 900 },
+    castle: { name: 'castle room', price: 2000 },
+  };
+  const FURN = {
+    rug: { name: 'moon rug', price: 40, layer: 0 }, couch: { name: 'cloud couch', price: 180 },
+    table: { name: 'oak table', price: 90 }, chair: { name: 'comfy chair', price: 60 },
+    lamp: { name: 'star lamp', price: 75 }, shelf: { name: 'bookshelf', price: 140 },
+    bed: { name: 'dream bed', price: 220 }, plant: { name: 'moon fern', price: 45 },
+    tv: { name: 'tube tv', price: 260 }, tank: { name: 'fish tank', price: 350 },
+    trophy: { name: 'trophy shelf', price: 300 }, window: { name: 'star window', price: 200 },
+    paint: { name: 'moon painting', price: 120 }, plush: { name: 'six plush', price: 150 },
+    candle: { name: 'candle set', price: 35 }, pumpkin: { name: 'harvest pumpkin', price: 85, seasonal: true },
+    fire: { name: 'fireplace', price: 480, rare: 'rare' }, minicab: { name: 'mini arcade cab', price: 650, rare: 'rare' },
+    throne: { name: 'mini throne', price: 1500, rare: 'legendary' }, ifountain: { name: 'indoor fountain', price: 1200, rare: 'legendary' },
+  };
+  const FURN_BY = {};
+  for (const fid of Object.keys(FURN)) FURN_BY[fid] = Object.assign({ id: fid }, FURN[fid]);
+  function houseOf(user) { const h = wload('house', user); return h && typeof h === 'object' ? h : { style: 'cottage', pub: 'public', items: [] }; }
+  function houseSave(user, h) { wsave('house', user, h); }
+  function furnInv(user) { const f = wload('furn', user); return Array.isArray(f) ? f : []; }
+  function houseOrigin(user) { const s = hashStr('house:' + user) % 18; return { x: 300 + (s % 6) * 1020, y: 4460 + Math.floor(s / 6) * 620 }; }
+  function canEnterHouse(me, owner) {
+    if (me === owner) return true;
+    const h = houseOf(owner);
+    if (h.pub === 'public') return true;
+    if (h.pub === 'party') { const pt = partyOf(me); return !!(pt && pt.members.includes(owner)); }
+    return false;
+  }
+  function houseView(me, owner) {
+    const h = houseOf(owner);
+    const can = canEnterHouse(me, owner);
+    return { ok: true, owner, style: h.style, pub: h.pub, mine: me === owner, canEnter: can, items: can ? (h.items || []) : [], origin: can ? houseOrigin(owner) : null, styles: HOUSE_STYLES, furn: FURN_BY, myFurn: me === owner ? furnInv(me) : [] };
+  }
+
   async function api(req, res, u) {
     if (!u.pathname.startsWith('/api/world/')) return false;
     const J = (o, code) => { res.writeHead(code || 200, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); return true; };
@@ -691,6 +739,7 @@ function createWorld(ctx) {
         TP_OK.delete(me);
         p.x = nx; p.y = ny;
       }
+      if (!p.house && p.y > 4380) p.y = 4380;
       if (b.dir != null) p.dir = clampN(b.dir, -Math.PI * 2, Math.PI * 2);
       p.vc = !!b.vc;
       p.talk = !!b.talk;
@@ -723,7 +772,7 @@ function createWorld(ctx) {
       // meeting people: standing close to another player counts them (the
       // loop always runs so daily/weekly meet quests progress too — the
       // event itself no-ops for quests that are not meet-kind)
-      for (const [ou, op] of P) { if (ou !== me && dist(p.x, p.y, op.x, op.y) < 95) questDone = questEvent(me, 'meet', ou) || questDone; }
+      for (const [ou, op] of P) { if (ou !== me && (op.house || null) === (p.house || null) && dist(p.x, p.y, op.x, op.y) < 95) questDone = questEvent(me, 'meet', ou) || questDone; }
       // vc time: near another voice-on player, seconds accumulate
       if (p.vc) {
         let nearVc = false;
@@ -792,15 +841,16 @@ function createWorld(ctx) {
       const st = statsFor(me);
       if (Math.random() < 0.08) achCheck(me);
       J({
-        ok: true, me, players: roster(now).filter((pl) => pl.npc || pl.u === me || (!(wload('blocks', me) || []).includes(pl.u) && !(wload('blocks', pl.u) || []).includes(me))), sig, n: P.size, bal: (() => { try { return ctx.getCents(me); } catch { return null; } })(),
+        ok: true, me, players: roster(now).filter((pl) => (pl.npc ? !p.house : (((P.get(pl.u) || {}).house || null) === (p.house || null))) && (pl.npc || pl.u === me || (!(wload('blocks', me) || []).includes(pl.u) && !(wload('blocks', pl.u) || []).includes(me)))), sig, n: P.size, bal: (() => { try { return ctx.getCents(me); } catch { return null; } })(),
         inv: (() => { try { return ctx.getInv(me); } catch { return []; } })(),
         wearIds: (() => { try { return ctx.getWear(me); } catch { return {}; } })(),
         shards: shards.map((s) => ({ id: s.id, x: s.x, y: s.y, gold: s.gold })),
         lb: leaderboard(), quest: questView(me),
         today: { shards: st.shards, golds: st.golds },
-        zone: p.zone ? zoneName(p.zone) : '', got, questDone, srvNow: now,
+        zone: p.house ? (p.house === me ? 'ur house' : '@' + p.house + "'s house") : (p.zone ? zoneName(p.zone) : ''), got, questDone, srvNow: now,
         duelIn: duelInFor(me, now), duel: duelFor(me, now), duelDone: duelDoneFor(me, now),
         prog: progView(me), disc, gotC,
+        house: p.house || null,
         crys: CRYSTALS.map((c) => ({ id: c.id, x: c.x, y: c.y, rare: c.rare, got: pg.crystals.indexOf(c.id) >= 0 })),
         lvlUp: (() => { const v = LVLUP.get(me) || null; LVLUP.delete(me); return v; })(),
         achNew: (() => { const v = ACHNEW.get(me) || []; ACHNEW.delete(me); return v; })(),
@@ -986,9 +1036,110 @@ function createWorld(ctx) {
       return true;
     }
 
+    if (u.pathname === '/api/world/house' && req.method === 'GET') {
+      const owner = String(u.searchParams.get('u') || me).toLowerCase();
+      J(houseView(me, owner));
+      return true;
+    }
+    if (u.pathname === '/api/world/houses' && req.method === 'GET') {
+      const out = [];
+      for (const [usr] of P) { if (usr !== me && canEnterHouse(me, usr)) out.push({ u: usr, style: houseOf(usr).style }); }
+      J({ ok: true, houses: out.slice(0, 30) });
+      return true;
+    }
+    if (u.pathname === '/api/world/house-enter' && req.method === 'POST') {
+      const owner = String(b.u || me).toLowerCase();
+      const p = P.get(me);
+      if (!p) { J({ ok: false, err: 'enter the world first' }, 400); return true; }
+      if (!canEnterHouse(me, owner)) { J({ ok: false, err: owner === me ? 'locked' : 'that house is ' + houseOf(owner).pub + ' rn' }, 403); return true; }
+      const o = houseOrigin(owner);
+      p.house = owner;
+      TP_OK.add(me);
+      p.x = o.x + 430; p.y = o.y + 460; p.at = now;
+      J({ ok: true, x: p.x, y: p.y, owner });
+      return true;
+    }
+    if (u.pathname === '/api/world/house-exit' && req.method === 'POST') {
+      const p = P.get(me);
+      if (!p) { J({ ok: false, err: 'enter the world first' }, 400); return true; }
+      p.house = null;
+      TP_OK.add(me);
+      p.x = 900; p.y = 3180; p.at = now;
+      J({ ok: true, x: p.x, y: p.y });
+      return true;
+    }
+    if (u.pathname === '/api/world/house-buy' && req.method === 'POST') {
+      if (BUYLOCK.has(me)) { J({ ok: false, err: 'one purchase at a time' }, 429); return true; }
+      const kind = String(b.kind || ''), id = String(b.id || '');
+      let price = -1, label = '';
+      if (kind === 'style' && HOUSE_STYLES[id]) { price = HOUSE_STYLES[id].price; label = HOUSE_STYLES[id].name; }
+      else if (kind === 'furn' && FURN[id]) { price = FURN[id].price; label = FURN[id].name; }
+      if (price < 0) { J({ ok: false, err: 'bad item' }, 400); return true; }
+      if (kind === 'style' && houseOf(me).style === id) { J({ ok: false, err: 'ur house already looks like that' }); return true; }
+      let bal0 = 0;
+      try { bal0 = ctx.getCents(me); } catch { }
+      if (bal0 < price) { J({ ok: false, err: 'not enough six cents (need ' + price + ')' }); return true; }
+      BUYLOCK.add(me);
+      setTimeout(() => BUYLOCK.delete(me), 1500);
+      let bal = bal0;
+      try { bal = await ctx.awardCents(me, -price); } catch { }
+      if (kind === 'style') { const h = houseOf(me); h.style = id; houseSave(me, h); }
+      else { const f = furnInv(me); f.push(id); wsave('furn', me, f); }
+      txLog(me, 'house', -price, label);
+      J({ ok: true, bal, view: houseView(me, me) });
+      return true;
+    }
+    if (u.pathname === '/api/world/house-place' && req.method === 'POST') {
+      const p = P.get(me);
+      if (!p || p.house !== me) { J({ ok: false, err: 'u can only decorate ur own house, from inside it' }, 403); return true; }
+      const fid = String(b.fid || '');
+      const def = FURN[fid];
+      const gx = Math.round(Number(b.gx)), gy = Math.round(Number(b.gy));
+      const rot = [0, 90, 180, 270].includes(Number(b.rot)) ? Number(b.rot) : 0;
+      if (!def || !(gx >= 0 && gx < 20 && gy >= 0 && gy < 12)) { J({ ok: false, err: 'bad placement' }, 400); return true; }
+      const h = houseOf(me);
+      h.items = h.items || [];
+      if (h.items.length >= 60) { J({ ok: false, err: 'house is full (60 pieces)' }); return true; }
+      const owned = furnInv(me).filter((f) => f === fid).length;
+      const placed = h.items.filter((it) => it.f === fid).length;
+      if (placed >= owned) { J({ ok: false, err: 'u don\'t have another one of those' }); return true; }
+      const clash = h.items.find((it) => it.gx === gx && it.gy === gy && (FURN[it.f] && FURN[it.f].layer !== 0) && def.layer !== 0);
+      if (clash) { J({ ok: false, err: 'something is already there' }); return true; }
+      h.items.push({ f: fid, gx, gy, r: rot });
+      houseSave(me, h);
+      J({ ok: true, items: h.items });
+      return true;
+    }
+    if (u.pathname === '/api/world/house-unplace' && req.method === 'POST') {
+      const p = P.get(me);
+      if (!p || p.house !== me) { J({ ok: false, err: 'u can only decorate ur own house, from inside it' }, 403); return true; }
+      const gx = Math.round(Number(b.gx)), gy = Math.round(Number(b.gy));
+      const h = houseOf(me);
+      h.items = h.items || [];
+      const i = h.items.findIndex((it) => it.gx === gx && it.gy === gy);
+      if (i < 0) { J({ ok: false, err: 'nothing there' }, 400); return true; }
+      h.items.splice(i, 1);
+      houseSave(me, h);
+      J({ ok: true, items: h.items });
+      return true;
+    }
+    if (u.pathname === '/api/world/house-privacy' && req.method === 'POST') {
+      const level = String(b.level || '');
+      if (!['public', 'party', 'private'].includes(level)) { J({ ok: false, err: 'bad level' }, 400); return true; }
+      const h = houseOf(me);
+      h.pub = level;
+      houseSave(me, h);
+      J({ ok: true, pub: level });
+      return true;
+    }
     if (u.pathname === '/api/world/portal' && req.method === 'POST') {
       const id = String(b.id || '').slice(0, 20);
-      const qd = id ? questEvent(me, 'portal', id) : null;
+      // the pad claim is verified against the player's server position —
+      // portal quests can no longer be farmed from anywhere on the map
+      const pad = PORTAL_PADS[id];
+      const pp2 = P.get(me);
+      if (!pad || !pp2 || dist(pp2.x, pp2.y, pad[0], pad[1]) > 150) { J({ ok: false, err: 'stand on the portal pad first' }, 400); return true; }
+      const qd = questEvent(me, 'portal', id);
       let bal = null;
       if (qd && qd.done) { try { bal = await ctx.awardCents(me, qd.pay); } catch { } txLog(me, 'quest', qd.pay, qd.t); const pgp = progFor(me); pgp.c.quest = (pgp.c.quest || 0) + 1; awardXp(me, 12); achCheck(me); }
       J({ ok: true, questDone: qd ? { done: true, pay: qd.pay, t: qd.t, bal } : null, quest: questView(me) });
@@ -1183,12 +1334,13 @@ function createWorld(ctx) {
     if (u.pathname === '/api/world/duel-report' && req.method === 'POST') {
       const d = DUELS.get(String(b.id || ''));
       if (!d || d.settled || (d.a !== me && d.b !== me)) { J({ ok: false, err: 'no such battle' }, 400); return true; }
-      let ms = Number(b.ms);
-      if (!isFinite(ms) || ms < 0) ms = 6000;
-      ms = Math.min(6000, Math.max(0, Math.round(ms)));
-      if (d.a === me) d.ra = ms; else d.rb = ms;
+      // server-timed reaction: the tap's arrival is the measurement. Any
+      // client-sent ms is ignored — self-reported times were forgeable.
+      const goAt = d.startAt + d.delay;
+      const ms = now < goAt ? 6000 : Math.min(6000, now - goAt);
+      if (d.a === me) { if (d.ra == null) d.ra = ms; } else if (d.rb == null) d.rb = ms;
       if (d.ra != null && d.rb != null) settleDuel(d);
-      J({ ok: true });
+      J({ ok: true, ms });
       return true;
     }
     if (u.pathname === '/api/world/wish' && req.method === 'POST') {
@@ -1213,6 +1365,9 @@ function createWorld(ctx) {
       const to = String(b.to || '');
       if (!to || to === me || !P.has(to) || b.data == null) { J({ ok: false }); return true; }
       if (blocksOf(me).includes(to) || blocksOf(to).includes(me)) { J({ ok: true }); return true; }
+      const sigWin = (SIG_WIN.get(me) || []).filter((t) => now - t < 2000);
+      if (sigWin.length >= 40) { J({ ok: true }); return true; }
+      sigWin.push(now); SIG_WIN.set(me, sigWin);
       let arr = SIG.get(to);
       if (!arr) { arr = []; SIG.set(to, arr); }
       arr.push({ from: me, data: b.data, at: now });
@@ -1314,7 +1469,7 @@ function createWorld(ctx) {
       '  <div id="wprof-banner"></div><button id="wprof-x" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>\n' +
       '  <div class="wprof-body"><div id="wprof-av"></div><div id="wprof-name"></div><div id="wprof-user"></div><div id="wprof-meta"></div><div id="wprof-badges"></div><div id="wprof-stats"></div><div id="wprof-wear"></div>\n' +
       '  <div class="wprof-acts"><button id="wprof-add" type="button">add friend</button><button id="wprof-battle" type="button">battle</button><a id="wprof-link" href="#">full profile</a></div>\n' +
-      '  <div class="wprof-acts2"><button id="wprof-invite" type="button">party invite</button><button id="wprof-mute" type="button">mute</button><button id="wprof-block" type="button">block</button><button id="wprof-report" type="button">report</button></div></div>\n' +
+      '  <div class="wprof-acts2"><button id="wprof-invite" type="button">party invite</button><button id="wprof-mute" type="button">mute</button><button id="wprof-block" type="button">block</button><button id="wprof-report" type="button">report</button><button id="wprof-visit" type="button">visit house</button></div></div>\n' +
       '</div></div>\n' +
       '<div id="wduel" hidden><span id="wduel-t"></span><button id="wduel-yes" type="button">accept</button><button id="wduel-no" type="button">nah</button></div>\n' +
       '<div id="wparty-inv" hidden><span id="wparty-inv-t"></span><button id="wparty-yes" type="button">join party</button><button id="wparty-no" type="button">nah</button></div>\n' +
@@ -1351,6 +1506,7 @@ function createWorld(ctx) {
       '  <div class="wadmin-row"><input id="wadmin-ann" type="text" maxlength="160" placeholder="announce to the whole world\u2026"><button id="wadmin-send" type="button">send</button></div>\n' +
       '  <div class="wadmin-row"><button class="wadmin-ev" data-ev="shardstorm" type="button">force shard storm</button><button class="wadmin-ev" data-ev="goldenhunt" type="button">force golden hunt</button><button class="wadmin-ev" data-ev="off" type="button">events off</button></div>\n' +
       '</div></div>\n' +
+      '<div id="whouse" class="wa-card" hidden><div class="wa-head"><span>\u2726 <span id="whouse-t">ur house</span></span><button id="whouse-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="whouse-body"></div></div>\n' +
       '<div id="wduelgo" hidden><div id="wduelgo-t"></div><div id="wduelgo-s"></div></div>\n' +
       '<div id="wlogin" hidden><div class="wl-card"><div class="wl-big">six\'s network is for the logged-in</div>' +
       '<p>make an account or log in, then walk in. a whole world in here: districts, a lake, a forest, moon shards, quests from six, voice chat.</p>' +

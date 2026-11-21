@@ -8,7 +8,7 @@ var lerp = function (a, b, k) { return a + (b - a) * k; };
 var dist = function (x1, y1, x2, y2) { var dx = x2 - x1, dy = y2 - y1; return Math.sqrt(dx * dx + dy * dy); };
 var TAU = Math.PI * 2;
 
-var MAP_W = 6400, MAP_H = 4200;
+var MAP_W = 6400, MAP_H = 6400;
 var FOUNTAIN = { x: 2400, y: 1500 };
 var LAKE = { x1: 1480, y1: 2260, x2: 3320, y2: 2940 };
 var PIER = { x1: 2352, y1: 2240, x2: 2448, y2: 2580 };
@@ -407,6 +407,8 @@ $('wact').addEventListener('click', function () {
     });
     return;
   }
+  if (wactMode === 'house') { enterHouse(me); return; }
+  if (wactMode === 'hexit') { exitHouse(); return; }
   if (wactMode !== 'wish') return;
   jpost('/api/world/wish', {}).then(function (r) {
     if (!r) return;
@@ -443,6 +445,7 @@ if (window.matchMedia && window.matchMedia('(pointer:coarse)').matches) joyEl.cl
 if ($('wdash')) $('wdash').addEventListener('click', function () { tryDash(); });
 cv.addEventListener('pointerdown', function (e) {
   ac();
+  if (decorOn && myHouse === me) { decorTap(e); return; }
   var cp = camPos();
   var wx = e.clientX + cp.x, wy = e.clientY + cp.y;
   var tapped = null;
@@ -655,7 +658,9 @@ function update(now) {
   var wact = $('wact'), actMode = '', actLabel = '';
   nearDoorId = '';
   for (var di = 0; di < DOORS.length; di++) { if (dist(px, py, DOORS[di].x, DOORS[di].y) < 58) { nearDoorId = DOORS[di].id; break; } }
-  if (nearDoorId) { actMode = 'door'; for (var dj = 0; dj < DOORS.length; dj++) if (DOORS[dj].id === nearDoorId) actLabel = DOORS[dj].label; }
+  if (myHouse && HOUSE_VIEW && HOUSE_VIEW.origin && dist(px, py, HOUSE_VIEW.origin.x + 430, HOUSE_VIEW.origin.y + 520) < 72) { actMode = 'hexit'; actLabel = 'leave the house'; }
+  else if (!myHouse && nearHousePlot()) { actMode = 'house'; actLabel = 'enter ur house'; }
+  else if (nearDoorId) { actMode = 'door'; for (var dj = 0; dj < DOORS.length; dj++) if (DOORS[dj].id === nearDoorId) actLabel = DOORS[dj].label; }
   else if (myZone === 'the vault' && myInv.indexOf('s141') < 0 && dist(px, py, 5650, 3970) < 120) { actMode = 'vault'; actLabel = 'claim the vault crown'; }
   else if (dist(px, py, TENT.x, TENT.y) < 105) { actMode = 'shop'; actLabel = 'six cents shop'; }
   else if (nearCab) { actMode = 'cab'; actLabel = 'play minigames'; }
@@ -1129,6 +1134,7 @@ function render(now) {
     g.fillStyle = 'rgba(243,239,255,.5)';
     g.fillRect(BOARD.x - 36, BOARD.y - 12, 72, 3); g.fillRect(BOARD.x - 36, BOARD.y - 2, 56, 3); g.fillRect(BOARD.x - 36, BOARD.y + 8, 64, 3);
   }
+  renderHouseDecor(g, now);
   DOORS.forEach(function (d) {
     if (!inV(d.x, d.y, 90)) return;
     var pu2 = 1 + Math.sin(now / 480 + d.x) * 0.06;
@@ -2837,6 +2843,8 @@ var lastEventId = -1, partyInvFrom = '';
 function socialTick(r) {
   var ab = $('wadminbtn'); if (ab) ab.hidden = !r.isAdmin;
   if (r.weather) WX = r.weather;
+  var nhouse = r.house || null;
+  if (nhouse !== myHouse) { myHouse = nhouse; HOUSE_VIEW = null; decorOn = false; placeFid = null; if (myHouse) loadHouse(myHouse); }
   if (r.ann && r.ann.at !== lastAnnAt) { lastAnnAt = r.ann.at; toast('\u2726 six announces: ' + r.ann.text, 6500); sndQuest(); }
   if (r.myBlocks) myBlocks = r.myBlocks;
   myParty = r.party || null;
@@ -2921,6 +2929,7 @@ var HUB_DEFS = [
   ['minigames', '<path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/><path d="M17.3 5H6.7a4.7 4.7 0 0 0-4.6 5.6l.7 3.6A3 3 0 0 0 5.7 17c.8 0 1.6-.4 2.2-1L9 14.5h6.1L16.2 16c.6.6 1.4 1 2.2 1a3 3 0 0 0 2.9-2.8l.7-3.6A4.7 4.7 0 0 0 17.3 5Z"/>', function () { openArcade(); }],
   ['six cents shop', '<circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M2 3h3l2.6 12.5a1.5 1.5 0 0 0 1.5 1.2h7.9a1.5 1.5 0 0 0 1.5-1.2L20.5 7H6"/>', function () { openShop(); }],
   ['ur stuff', '<path d="M6 8h12l1.2 12H4.8L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>', function () { openInv(); }],
+  ['ur house', '<path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>', function () { openHouse(); }],
   ['world map', '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/>', function () { openMap2(); }],
   ['quest journal', '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>', function () { openJournal(); }],
   ['achievements', '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>', function () { openAch(); }],
@@ -3107,6 +3116,195 @@ $('wadmin-send').addEventListener('click', function () {
 Array.prototype.forEach.call(document.querySelectorAll('.wadmin-ev'), function (b) {
   b.addEventListener('click', function () { jpost('/api/world/admin', { act: 'event', type: b.getAttribute('data-ev') }).then(function (r) { toast(r && r.ok ? 'event set: ' + b.getAttribute('data-ev') : 'event failed', (r && r.err) || ''); openAdmin(); }); });
 });
+
+/* ================= housing ================= */
+var HOUSE_PLOTS = [430, 590, 750, 910, 1070, 1230];
+var HOUSE_STYLE_C = {
+  cottage: { wall: '#4a3a63', trim: '#6d5a94', floor: '#2c2340', floor2: '#332a4a' },
+  loft: { wall: '#5b2a86', trim: '#8b4fc4', floor: '#241a3d', floor2: '#2b2049' },
+  den: { wall: '#123a4d', trim: '#1f6f8f', floor: '#0e2432', floor2: '#12303f' },
+  castle: { wall: '#3d3d55', trim: '#5d5d7a', floor: '#23232f', floor2: '#2a2a38' },
+};
+var myHouse = null, HOUSE_VIEW = null, decorOn = false, placeFid = null, placeRot = 0, ghostCell = null;
+function nearHousePlot() { for (var i = 0; i < HOUSE_PLOTS.length; i++) if (dist(px, py, HOUSE_PLOTS[i], 3140) < 58) return true; return false; }
+function loadHouse(owner) {
+  fetch('/api/world/house?u=' + encodeURIComponent(owner), { headers: { 'accept': 'application/json' } }).then(function (r) { return r.json(); }).then(function (v) {
+    if (v && v.ok && myHouse === owner) { HOUSE_VIEW = v; if (!$('whouse').hidden) renderHousePanel(); }
+  }).catch(function () { });
+}
+function enterHouse(owner) {
+  jpost('/api/world/house-enter', { u: owner }).then(function (r) {
+    if (!r || !r.ok) { toast((r && r.err) || 'that house said no'); return; }
+    px = r.x; py = r.y; vx = 0; vy = 0; moveTarget = null; cam.x = px; cam.y = py;
+    sndPortal(); burst(px, py, '#ffd257', 16, 110);
+  });
+}
+function exitHouse() {
+  jpost('/api/world/house-exit', {}).then(function (r) {
+    if (!r || !r.ok) { toast((r && r.err) || 'stuck'); return; }
+    px = r.x; py = r.y; vx = 0; vy = 0; moveTarget = null; cam.x = px; cam.y = py;
+    decorOn = false; placeFid = null;
+    sndPortal();
+  });
+}
+function drawFurnShape(g2, fid, s, now) {
+  var u = s / 40;
+  g2.save(); g2.scale(u, u);
+  switch (fid) {
+    case 'rug': g2.fillStyle = '#3d2f63'; rr(g2, -19, -19, 38, 38, 9); g2.fill(); g2.strokeStyle = '#ffd257'; g2.lineWidth = 1.6; g2.beginPath(); g2.arc(0, 0, 10, 0, TAU); g2.stroke(); break;
+    case 'couch': g2.fillStyle = '#5d4a9e'; rr(g2, -19, -12, 38, 24, 8); g2.fill(); g2.fillStyle = '#6f5bb5'; rr(g2, -19, -17, 38, 10, 7); g2.fill(); break;
+    case 'table': g2.fillStyle = '#7a5a36'; rr(g2, -16, -11, 32, 22, 4); g2.fill(); g2.fillStyle = '#96703f'; rr(g2, -13, -8, 26, 16, 3); g2.fill(); break;
+    case 'chair': g2.fillStyle = '#8a6a42'; rr(g2, -10, -6, 20, 15, 4); g2.fill(); rr(g2, -10, -15, 20, 8, 4); g2.fill(); break;
+    case 'lamp': { var lg = g2.createRadialGradient(0, 0, 2, 0, 0, 30); lg.addColorStop(0, 'rgba(255,220,130,.5)'); lg.addColorStop(1, 'rgba(255,220,130,0)'); g2.fillStyle = lg; g2.beginPath(); g2.arc(0, 0, 30, 0, TAU); g2.fill(); g2.fillStyle = '#ffd257'; star4(g2, 0, 0, 9, now / 900); g2.fill(); break; }
+    case 'shelf': g2.fillStyle = '#4e3a26'; rr(g2, -17, -18, 34, 36, 3); g2.fill(); g2.fillStyle = '#e8b4b8'; g2.fillRect(-13, -13, 5, 10); g2.fillStyle = '#a8d8ea'; g2.fillRect(-6, -13, 5, 10); g2.fillStyle = '#ffd257'; g2.fillRect(1, -13, 5, 10); g2.fillStyle = '#b8e6b0'; g2.fillRect(-10, 2, 5, 10); g2.fillStyle = '#f3efff'; g2.fillRect(-3, 2, 5, 10); break;
+    case 'bed': g2.fillStyle = '#31456e'; rr(g2, -14, -19, 28, 38, 5); g2.fill(); g2.fillStyle = '#f3efff'; rr(g2, -11, -17, 22, 9, 4); g2.fill(); g2.fillStyle = '#8b7cff'; rr(g2, -13, -6, 26, 22, 4); g2.fill(); break;
+    case 'plant': g2.fillStyle = '#8a5a36'; rr(g2, -8, 4, 16, 12, 3); g2.fill(); g2.strokeStyle = '#57c785'; g2.lineWidth = 3; for (var pa = -1; pa <= 1; pa++) { g2.beginPath(); g2.moveTo(0, 5); g2.quadraticCurveTo(pa * 9, -6, pa * 13, -13 + Math.abs(pa) * 4); g2.stroke(); } break;
+    case 'tv': g2.fillStyle = '#14101f'; rr(g2, -18, -13, 36, 26, 4); g2.fill(); g2.fillStyle = '#67e8f9'; g2.globalAlpha = .55 + Math.sin(now / 300) * .12; rr(g2, -14, -9, 28, 18, 2); g2.fill(); g2.globalAlpha = 1; break;
+    case 'tank': g2.fillStyle = 'rgba(103,232,249,.20)'; rr(g2, -18, -13, 36, 26, 4); g2.fill(); g2.strokeStyle = 'rgba(160,240,255,.6)'; g2.lineWidth = 1.6; g2.stroke(); g2.fillStyle = '#ffb86b'; g2.beginPath(); g2.ellipse(-5 + Math.sin(now / 700) * 4, 0, 5, 3, 0, 0, TAU); g2.fill(); g2.fillStyle = '#f472b6'; g2.beginPath(); g2.ellipse(7 - Math.sin(now / 800) * 4, 4, 4, 2.4, 0, 0, TAU); g2.fill(); break;
+    case 'trophy': g2.fillStyle = '#4e3a26'; rr(g2, -17, -14, 34, 28, 3); g2.fill(); g2.fillStyle = '#ffd257'; star4(g2, -7, -3, 7, 0); g2.fill(); star4(g2, 8, 4, 5.5, 0); g2.fill(); break;
+    case 'window': g2.fillStyle = '#1b1440'; rr(g2, -15, -18, 30, 36, 3); g2.fill(); g2.strokeStyle = '#8b7cff'; g2.lineWidth = 2; g2.stroke(); g2.fillStyle = '#fff'; g2.fillRect(-8, -10, 2, 2); g2.fillRect(5, -4, 2, 2); g2.fillRect(-2, 6, 2, 2); g2.fillStyle = '#f3efff'; g2.beginPath(); g2.arc(7, -9, 4.5, 0, TAU); g2.fill(); break;
+    case 'paint': g2.fillStyle = '#c9a86a'; rr(g2, -14, -17, 28, 34, 2); g2.fill(); g2.fillStyle = '#241a45'; rr(g2, -11, -14, 22, 28, 2); g2.fill(); g2.fillStyle = '#f5eeda'; g2.beginPath(); g2.arc(2, -4, 6, 0, TAU); g2.fill(); g2.fillStyle = '#241a45'; g2.beginPath(); g2.arc(5, -5, 5.4, 0, TAU); g2.fill(); break;
+    case 'plush': g2.fillStyle = '#8b7cff'; g2.beginPath(); g2.arc(0, 1, 11, 0, TAU); g2.fill(); g2.beginPath(); g2.arc(-8, -9, 4.5, 0, TAU); g2.arc(8, -9, 4.5, 0, TAU); g2.fill(); g2.fillStyle = '#fff'; g2.fillRect(-5, -1, 2.4, 2.4); g2.fillRect(3, -1, 2.4, 2.4); break;
+    case 'candle': g2.fillStyle = '#e8dcc3'; g2.fillRect(-9, 0, 4, 10); g2.fillRect(5, 0, 4, 10); g2.fillRect(-2, -3, 4, 13); g2.fillStyle = '#ffb86b'; g2.beginPath(); g2.ellipse(-7, -3, 2, 3.4, 0, 0, TAU); g2.ellipse(7, -3, 2, 3.4, 0, 0, TAU); g2.ellipse(0, -6, 2, 3.4, 0, 0, TAU); g2.fill(); break;
+    case 'pumpkin': g2.fillStyle = '#e07b39'; g2.beginPath(); g2.ellipse(0, 3, 13, 10, 0, 0, TAU); g2.fill(); g2.strokeStyle = '#b85c22'; g2.lineWidth = 1.6; g2.beginPath(); g2.ellipse(0, 3, 6, 10, 0, 0, TAU); g2.stroke(); g2.fillStyle = '#57c785'; g2.fillRect(-2, -10, 4, 5); break;
+    case 'fire': g2.fillStyle = '#3a2c22'; rr(g2, -18, -16, 36, 32, 4); g2.fill(); g2.fillStyle = '#17100b'; rr(g2, -11, -4, 22, 18, 3); g2.fill(); var fl = 1 + Math.sin(now / 120) * .18; g2.fillStyle = '#ff9a3c'; g2.beginPath(); g2.ellipse(0, 6, 6 * fl, 9 * fl, 0, 0, TAU); g2.fill(); g2.fillStyle = '#ffd257'; g2.beginPath(); g2.ellipse(0, 8, 3.4 * fl, 5.4 * fl, 0, 0, TAU); g2.fill(); break;
+    case 'minicab': g2.fillStyle = '#241a45'; rr(g2, -11, -18, 22, 36, 4); g2.fill(); g2.fillStyle = '#67e8f9'; rr(g2, -7, -14, 14, 11, 2); g2.fill(); g2.fillStyle = '#f472b6'; g2.beginPath(); g2.arc(0, 4, 3, 0, TAU); g2.fill(); g2.fillStyle = '#ffd257'; g2.fillRect(-6, 11, 12, 3); break;
+    case 'throne': g2.fillStyle = '#6d5a1f'; rr(g2, -13, -8, 26, 20, 4); g2.fill(); rr(g2, -13, -19, 26, 10, 4); g2.fill(); g2.fillStyle = '#ffd257'; star4(g2, 0, -13, 5.5, 0); g2.fill(); g2.fillStyle = '#8b2f4f'; rr(g2, -9, -5, 18, 12, 3); g2.fill(); break;
+    case 'ifountain': g2.strokeStyle = 'rgba(140,220,255,.75)'; g2.lineWidth = 2; g2.beginPath(); g2.arc(0, 4, 13, Math.PI * 1.08, Math.PI * 1.92); g2.stroke(); g2.fillStyle = '#4a6a8a'; g2.beginPath(); g2.ellipse(0, 9, 15, 6, 0, 0, TAU); g2.fill(); g2.fillStyle = 'rgba(140,220,255,.5)'; g2.beginPath(); g2.ellipse(0, 8, 11, 4, 0, 0, TAU); g2.fill(); g2.fillRect(-1.5, -8, 3, 12); break;
+    default: g2.fillStyle = '#554a7a'; rr(g2, -12, -12, 24, 24, 5); g2.fill();
+  }
+  g2.restore();
+}
+function renderHouseDecor(g, now) {
+  var cp9 = camPos();
+  var vx0 = cp9.x, vy0 = cp9.y, vx1 = cp9.x + VW, vy1 = cp9.y + VH;
+  function inV9(x, y, m) { return x > vx0 - (m || 0) && x < vx1 + (m || 0) && y > vy0 - (m || 0) && y < vy1 + (m || 0); }
+  // maple row: street + six plot houses
+  if (inV9(900, 3080, 900)) {
+    g.fillStyle = '#241d38'; g.fillRect(320, 3150, 1160, 62);
+    g.strokeStyle = 'rgba(255,210,87,.35)'; g.lineWidth = 2; g.setLineDash([16, 14]); g.beginPath(); g.moveTo(330, 3181); g.lineTo(1470, 3181); g.stroke(); g.setLineDash([]);
+    var plotCols = ['#5d4a9e', '#7a4a6e', '#4a6e8a', '#6e8a4a', '#8a6a3a', '#4a5a9e'];
+    for (var pi = 0; pi < HOUSE_PLOTS.length; pi++) {
+      var hx = HOUSE_PLOTS[pi];
+      if (!inV9(hx, 3050, 260)) continue;
+      g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(hx, 3146, 74, 12, 0, 0, TAU); g.fill();
+      g.fillStyle = plotCols[pi]; rr(g, hx - 58, 3010, 116, 128, 6); g.fill();
+      g.fillStyle = 'rgba(0,0,0,.22)'; rr(g, hx - 58, 3010, 116, 128, 6); g.fill();
+      g.fillStyle = '#2c2340'; g.beginPath(); g.moveTo(hx - 70, 3014); g.lineTo(hx, 2952); g.lineTo(hx + 70, 3014); g.closePath(); g.fill();
+      g.fillStyle = '#ffd257'; star4(g, hx, 2968, 7, now / 800); g.fill();
+      g.fillStyle = '#3a2a1a'; rr(g, hx - 13, 3086, 26, 52, 5); g.fill();
+      g.fillStyle = '#ffd257'; g.beginPath(); g.arc(hx + 7, 3112, 2.4, 0, TAU); g.fill();
+      g.fillStyle = 'rgba(255,214,120,.85)'; rr(g, hx - 44, 3040, 20, 18, 3); g.fill(); rr(g, hx + 24, 3040, 20, 18, 3); g.fill();
+    }
+  }
+  if (!myHouse || !HOUSE_VIEW || !HOUSE_VIEW.origin) return;
+  var o = HOUSE_VIEW.origin, sc = HOUSE_STYLE_C[HOUSE_VIEW.style] || HOUSE_STYLE_C.cottage;
+  if (!inV9(o.x + 430, o.y + 280, 1100)) return;
+  g.fillStyle = '#050310'; g.fillRect(o.x - 700, o.y - 620, 2260, 1800);
+  g.fillStyle = sc.floor; g.fillRect(o.x, o.y, 860, 560);
+  g.fillStyle = sc.floor2;
+  for (var fx2 = 0; fx2 < 860; fx2 += 80) g.fillRect(o.x + fx2, o.y, 40, 560);
+  g.strokeStyle = 'rgba(255,255,255,.045)'; g.lineWidth = 1;
+  for (var gx2 = 0; gx2 <= 20; gx2++) { g.beginPath(); g.moveTo(o.x + gx2 * 40 + .5, o.y); g.lineTo(o.x + gx2 * 40 + .5, o.y + 560); g.stroke(); }
+  for (var gy2 = 0; gy2 <= 14; gy2++) { g.beginPath(); g.moveTo(o.x, o.y + gy2 * 40 + .5); g.lineTo(o.x + 860, o.y + gy2 * 40 + .5); g.stroke(); }
+  (HOUSE_VIEW.items || []).forEach(function (it) {
+    var cx3 = o.x + it.gx * 40 + 20, cy3 = o.y + it.gy * 40 + 20;
+    g.save(); g.translate(cx3, cy3); g.rotate((it.r || 0) * Math.PI / 180); drawFurnShape(g, it.f, 40, now); g.restore();
+  });
+  // exit mat
+  g.fillStyle = 'rgba(139,124,255,.30)'; rr(g, o.x + 398, o.y + 512, 64, 40, 8); g.fill();
+  g.strokeStyle = '#8b7cff'; g.lineWidth = 1.6; g.stroke();
+  g.fillStyle = '#cfc6ff'; g.font = '700 10px Inter, sans-serif'; g.textAlign = 'center'; g.fillText('exit', o.x + 430, o.y + 536);
+  // walls on top
+  g.fillStyle = sc.wall; g.fillRect(o.x - 14, o.y - 26, 888, 26); g.fillRect(o.x - 14, o.y + 560, 888, 14); g.fillRect(o.x - 14, o.y, 14, 560); g.fillRect(o.x + 860, o.y, 14, 560);
+  g.fillStyle = sc.trim; g.fillRect(o.x - 14, o.y - 4, 888, 4);
+  if (decorOn && ghostCell && placeFid) {
+    var gcx = o.x + ghostCell.gx * 40, gcy = o.y + ghostCell.gy * 40;
+    g.globalAlpha = .55; g.save(); g.translate(gcx + 20, gcy + 20); g.rotate(placeRot * Math.PI / 180); drawFurnShape(g, placeFid, 40, now); g.restore(); g.globalAlpha = 1;
+    g.strokeStyle = '#ffd257'; g.lineWidth = 2; g.strokeRect(gcx + 1, gcy + 1, 38, 38);
+  }
+}
+function decorTap(e) {
+  if (!HOUSE_VIEW || !HOUSE_VIEW.origin) return;
+  var cp = camPos();
+  var wx = e.clientX + cp.x, wy = e.clientY + cp.y, o = HOUSE_VIEW.origin;
+  var gx = Math.floor((wx - o.x) / 40), gy = Math.floor((wy - o.y) / 40);
+  if (gx < 0 || gx >= 20 || gy < 0 || gy >= 12) return;
+  if (placeFid) {
+    var fid = placeFid;
+    jpost('/api/world/house-place', { fid: fid, gx: gx, gy: gy, rot: placeRot }).then(function (r) {
+      if (!r || !r.ok) { toast((r && r.err) || 'can\'t put that there'); return; }
+      HOUSE_VIEW.items = r.items; sndPop(); renderHousePanel();
+    });
+  } else {
+    jpost('/api/world/house-unplace', { gx: gx, gy: gy }).then(function (r) {
+      if (!r || !r.ok) return;
+      HOUSE_VIEW.items = r.items; sndPop(); renderHousePanel();
+    });
+  }
+}
+cv.addEventListener('pointermove', function (e) {
+  if (!decorOn || !HOUSE_VIEW || !HOUSE_VIEW.origin) { ghostCell = null; return; }
+  var cp = camPos();
+  var gx = Math.floor((e.clientX + cp.x - HOUSE_VIEW.origin.x) / 40), gy = Math.floor((e.clientY + cp.y - HOUSE_VIEW.origin.y) / 40);
+  ghostCell = (gx >= 0 && gx < 20 && gy >= 0 && gy < 12) ? { gx: gx, gy: gy } : null;
+});
+function openHouse() { $('whouse').hidden = false; renderHousePanel(); }
+function closeHouse() { $('whouse').hidden = true; }
+function hsEsc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function renderHousePanel() {
+  var body = $('whouse-body'); if (!body) return;
+  var v = HOUSE_VIEW;
+  $('whouse-t').textContent = myHouse ? (myHouse === me ? 'ur house' : '@' + myHouse + "'s house") : 'maple row housing';
+  var h = '';
+  if (!myHouse) {
+    h += '<div class="hs-row"><span class="hs-nm">every player has a house on maple row — step to any plot door and hit enter</span></div>';
+    h += '<button class="hs-btn" data-hs="enter-mine">enter ur house</button>';
+    h += '<div class="hs-sec">visit a neighbor (online + visitable)</div><div id="whouse-visits"><span class="hs-note">looking around the row…</span></div>';
+    body.innerHTML = h;
+    fetch('/api/world/houses', { headers: { 'accept': 'application/json' } }).then(function (r) { return r.json(); }).then(function (r2) {
+      var box = $('whouse-visits'); if (!box) return;
+      if (!r2 || !r2.houses || !r2.houses.length) { box.innerHTML = '<span class="hs-note">nobody else is in the world rn</span>'; return; }
+      box.innerHTML = r2.houses.map(function (hh) { return '<div class="hs-row"><span class="hs-nm">@' + hsEsc(hh.u) + ' · ' + hsEsc((HOUSE_STYLE_C[hh.style] && hh.style) || hh.style) + '</span><button class="hs-btn" data-hs="visit" data-u="' + hsEsc(hh.u) + '">visit</button></div>'; }).join('');
+    }).catch(function () { });
+    return;
+  }
+  if (!v) { body.innerHTML = '<span class="hs-note">loading ur house…</span>'; return; }
+  var mine = v.mine;
+  if (mine) {
+    h += '<div class="hs-sec">who can visit</div><div class="hs-row">' + ['public', 'party', 'private'].map(function (lv) { return '<button class="hs-btn' + (v.pub === lv ? ' on' : '') + '" data-hs="priv" data-lv="' + lv + '">' + lv + '</button>'; }).join('') + '</div>';
+    h += '<div class="hs-sec">house style</div>' + Object.keys(v.styles || {}).map(function (sid) { var st = v.styles[sid]; return '<div class="hs-row"><span class="hs-nm">' + hsEsc(st.name) + '</span>' + (v.style === sid ? '<span class="hs-pr">current</span>' : '<span class="hs-pr">¢' + st.price + '</span><button class="hs-btn" data-hs="buystyle" data-id="' + sid + '">buy</button>') + '</div>'; }).join('');
+    h += '<div class="hs-sec">decorate</div><div class="hs-row"><button class="hs-btn' + (decorOn ? ' on' : '') + '" data-hs="decor">' + (decorOn ? 'decorating: ON (tap floor to place / pick up)' : 'start decorating') + '</button>' + (placeFid ? '<button class="hs-btn" data-hs="rot">rotate: ' + placeRot + '°</button><button class="hs-btn" data-hs="cancelplace">done placing</button>' : '') + '</div>';
+    var placedCount = {};
+    (v.items || []).forEach(function (it) { placedCount[it.f] = (placedCount[it.f] || 0) + 1; });
+    var counts = {};
+    (v.myFurn || []).forEach(function (f) { counts[f] = (counts[f] || 0) + 1; });
+    var ownedIds = Object.keys(counts);
+    h += '<div class="hs-sec">ur furniture (tap one, then tap the floor)</div>';
+    h += ownedIds.length ? '<div class="hs-grid">' + ownedIds.map(function (fid) { var def = (v.furn || {})[fid] || {}; var left = counts[fid] - (placedCount[fid] || 0); return '<div class="hs-item' + (placeFid === fid ? ' sel' : '') + '" data-hs="pick" data-id="' + fid + '">' + hsEsc(def.name || fid) + '<span class="hs-pr">' + (left > 0 ? left + ' to place' : 'all placed') + '</span></div>'; }).join('') + '</div>' : '<span class="hs-note">nothing yet — the furniture shop is right below</span>';
+    h += '<div class="hs-sec">furniture shop</div><div class="hs-grid">' + Object.keys(v.furn || {}).map(function (fid) { var def = v.furn[fid]; return '<div class="hs-item" data-hs="buyfurn" data-id="' + fid + '">' + hsEsc(def.name) + (def.rare ? ' · ' + def.rare : '') + (def.seasonal ? ' · seasonal' : '') + '<span class="hs-pr">¢' + def.price + '</span></div>'; }).join('') + '</div>';
+  } else {
+    h += '<div class="hs-row"><span class="hs-nm">ur visiting @' + hsEsc(v.owner) + ' — look around, the door mat at the bottom leaves</span></div><button class="hs-btn" data-hs="leave">leave</button>';
+  }
+  body.innerHTML = h;
+}
+$('whouse-body').addEventListener('click', function (e) {
+  var t = e.target.closest('[data-hs]'); if (!t) return;
+  var act = t.getAttribute('data-hs');
+  if (act === 'enter-mine') { closeHouse(); enterHouse(me); }
+  else if (act === 'visit') { closeHouse(); enterHouse(t.getAttribute('data-u')); }
+  else if (act === 'leave') { closeHouse(); exitHouse(); }
+  else if (act === 'priv') { jpost('/api/world/house-privacy', { level: t.getAttribute('data-lv') }).then(function (r) { if (r && r.ok) { HOUSE_VIEW.pub = r.pub; renderHousePanel(); } else toast((r && r.err) || 'nope'); }); }
+  else if (act === 'buystyle') { jpost('/api/world/house-buy', { kind: 'style', id: t.getAttribute('data-id') }).then(function (r) { if (r && r.ok) { HOUSE_VIEW = r.view; toast('new house style ✦'); renderHousePanel(); } else toast((r && r.err) || 'can\'t buy that'); }); }
+  else if (act === 'buyfurn') { jpost('/api/world/house-buy', { kind: 'furn', id: t.getAttribute('data-id') }).then(function (r) { if (r && r.ok) { HOUSE_VIEW = r.view; toast('bought — it\'s in ur furniture'); renderHousePanel(); } else toast((r && r.err) || 'can\'t buy that'); }); }
+  else if (act === 'decor') { decorOn = !decorOn; if (!decorOn) placeFid = null; renderHousePanel(); }
+  else if (act === 'pick') { if (!decorOn) decorOn = true; placeFid = t.getAttribute('data-id'); renderHousePanel(); toast('tap the floor to place it · rotate from the panel'); }
+  else if (act === 'rot') { placeRot = (placeRot + 90) % 360; renderHousePanel(); }
+  else if (act === 'cancelplace') { placeFid = null; renderHousePanel(); }
+});
+$('whouse-x').addEventListener('click', closeHouse);
+window.__house = { open: openHouse, close: closeHouse };
+
 window.__admin = { open: openAdmin, close: closeAdmin };
 function profSocial(u) {
   $('wprof-block').textContent = myBlocks.indexOf(u) >= 0 ? 'unblock' : 'block';
@@ -3133,6 +3331,11 @@ $('wprof-block').addEventListener('click', function () {
     if (r && r.ok) { myBlocks = r.blocks || myBlocks; profSocial(u); toast(un ? 'unblocked @' + u : 'blocked @' + u + ' \u2014 gone from ur world'); if (!un) closeProfile(); }
     else toast('couldnt do that', (r && r.err) || '');
   });
+});
+$('wprof-visit').addEventListener('click', function () {
+  if (!profUser || profUser === me) return;
+  closeProfile();
+  enterHouse(profUser);
 });
 $('wprof-report').addEventListener('click', function () {
   var u = profUser; if (!u) return;
@@ -3239,14 +3442,13 @@ $('wduelgo').addEventListener('pointerdown', function (e) {
   if (!duelRun || duelRun.reported) return;
   duelRun.reported = true;
   if (!duelRun.green) {
-    jpost('/api/world/duel-report', { id: duelRun.id, ms: -1 });
+    jpost('/api/world/duel-report', { id: duelRun.id });
     $('wduelgo-s').textContent = 'too soon! that counts as a loss unless they mess up too…';
     setTimeout(endDuelFx, 1600);
     return;
   }
-  var ms = Math.round(performance.now() - duelRun.greenStamp);
-  jpost('/api/world/duel-report', { id: duelRun.id, ms: ms });
-  $('wduelgo-s').textContent = 'ur time: ' + ms + 'ms — waiting on @' + duelRun.foe + '…';
+  jpost('/api/world/duel-report', { id: duelRun.id });
+  $('wduelgo-s').textContent = 'locked in — the server clock has ur time. waiting on @' + duelRun.foe + '…';
 });
 $('wduel-yes').addEventListener('click', function () {
   if (!duelChFrom) return;
