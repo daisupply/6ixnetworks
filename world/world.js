@@ -329,6 +329,8 @@ function createWorld(ctx) {
   function titleOf(l) { for (const [n, t] of TITLES) if (l >= n) return t; return 'newcomer'; }
   function awardXp(user, amt) {
     if (!amt) return;
+    const evX = worldEvent(Date.now());
+    if (evX && evX.type === 'doublexp') amt *= 2;
     const pg = progFor(user);
     const before = levelOf(pg.xp || 0);
     pg.xp = (pg.xp || 0) + amt;
@@ -858,9 +860,31 @@ function createWorld(ctx) {
     const CYC = 20 * 60 * 1000, WIN = 5 * 60 * 1000;
     const cyc = Math.floor(now / CYC), ph = now - cyc * CYC;
     if (ph < CYC - WIN) return null;
-    return { type: cyc % 2 === 0 ? 'shardstorm' : 'goldenhunt', endsAt: (cyc + 1) * CYC, id: cyc };
+    const EV_ROT = ['shardstorm', 'goldenhunt', 'meteor', 'treasure', 'doublexp'];
+    return { type: EV_ROT[cyc % EV_ROT.length], endsAt: (cyc + 1) * CYC, id: cyc };
   }
   let lastHuntGold = 0;
+  const METEORS = new Map();
+  let lastMeteorAt = 0, meteorSeq = 1;
+  let TREASURE = null, treasureEvId = null;
+  function evTick(now, evNow) {
+    if (!evNow || evNow.type !== 'meteor') { if (METEORS.size) METEORS.clear(); }
+    else {
+      for (const [mid, m] of METEORS) if (now - m.landAt > 90000) METEORS.delete(mid);
+      if (METEORS.size < 3 && now - lastMeteorAt >= 16000) {
+        lastMeteorAt = now;
+        const p = spawnPos();
+        METEORS.set('m' + (meteorSeq++), { x: p.x, y: p.y, landAt: now + 2400 });
+      }
+    }
+    if (!evNow || evNow.type !== 'treasure') { TREASURE = null; treasureEvId = null; }
+    else if (treasureEvId !== evNow.id && !TREASURE) {
+      treasureEvId = evNow.id;
+      const zs = ZONES.filter((z) => z.y < 4400);
+      const z = zs[Math.floor(Math.random() * zs.length)];
+      TREASURE = { x: Math.round(z.x + (Math.random() * 280 - 140)), y: Math.round(z.y + (Math.random() * 280 - 140)), zone: z.name, gone: false };
+    }
+  }
   let FORCE_EV = null;
   let ANN = null;
   // ---- parties ----
@@ -943,8 +967,20 @@ function createWorld(ctx) {
     const now = Date.now();
     prune(now);
     fillShards(now);
+    evTick(now, worldEvent(now));
+    evTick(now, worldEvent(now));
 
   /* ---- M9: materials + crafting + trading ---- */
+  const SKILL_TITLES = ['novice', 'apprentice', 'adept', 'skilled', 'expert', 'master'];
+  const SKILL_PAY = [[2, 20], [4, 40], [6, 60], [8, 100], [10, 150]];
+  const SKILL_DEFS = [
+    { id: 'fisher', name: 'angler', c: '#6ee7b7', per: 2, count: (pg) => pg.c.fish || 0 },
+    { id: 'hunter', name: 'monster hunter', c: '#f0abfc', per: 1.5, count: (pg) => (pg.c.crypt || 0) * 3 + (pg.c.boss || 0) },
+    { id: 'racer', name: 'racer', c: '#fbbf24', per: 2, count: (pg) => pg.c.race || 0 },
+    { id: 'explorer', name: 'explorer', c: '#67e8f9', per: 0.28, count: (pg) => (pg.zones || []).length },
+    { id: 'gatherer', name: 'gatherer', c: '#fde68a', per: 20, count: (pg) => (pg.c.shard || 0) + (pg.c.crystal || 0) * 3 },
+    { id: 'maker', name: 'maker', c: '#a78bfa', per: 2, count: (pg) => (pg.c.craft || 0) + (pg.c.trade || 0) },
+  ];
   const MATS = {
     dust: { name: 'stardust', c: '#fde68a' },
     chip: { name: 'crystal chip', c: '#67e8f9' },
@@ -997,6 +1033,8 @@ function createWorld(ctx) {
     try { if (netA) await ctx.awardCents(B, -netA); } catch { }
     txLog(A, 'trade', netA, 'with @' + B);
     txLog(B, 'trade', -netA, 'with @' + A);
+    const pgTA = progFor(A); pgTA.c.trade = (pgTA.c.trade || 0) + 1; progSave(A);
+    const pgTB = progFor(B); pgTB.c.trade = (pgTB.c.trade || 0) + 1; progSave(B);
     endTrade(tr, null);
     TRADE_FLASH.set(A, { msg: 'trade done with @' + B, at: Date.now() });
     TRADE_FLASH.set(B, { msg: 'trade done with @' + A, at: Date.now() });
@@ -1125,6 +1163,41 @@ function createWorld(ctx) {
           break;
         }
       }
+      let gotM = null, gotT = null;
+      const evC = worldEvent(now);
+      if (evC && evC.type === 'meteor') {
+        for (const [mid, m] of METEORS) {
+          if (now >= m.landAt && dist(p.x, p.y, m.x, m.y) < 62) {
+            METEORS.delete(mid);
+            let bal = null;
+            try { bal = await ctx.awardCents(me, 25); } catch { }
+            matAdd(me, 'dust', 1);
+            pg.c.meteor = (pg.c.meteor || 0) + 1;
+            gotM = { amt: 25, bal };
+            txLog(me, 'meteor shard', 25);
+            awardXp(me, 6);
+            progSave(me);
+            achCheck(me);
+            break;
+          }
+        }
+      }
+      if (evC && evC.type === 'treasure' && TREASURE && !TREASURE.gone) {
+        if (dist(p.x, p.y, TREASURE.x, TREASURE.y) < 70) {
+          const matKeys = Object.keys(MATS);
+          const mk = matKeys[Math.floor(Math.random() * matKeys.length)];
+          let bal = null;
+          try { bal = await ctx.awardCents(me, 75); } catch { }
+          matAdd(me, mk, 2);
+          pg.c.treasure = (pg.c.treasure || 0) + 1;
+          gotT = { amt: 75, bal, mat: mk };
+          txLog(me, 'treasure chest', 75);
+          awardXp(me, 15);
+          TREASURE.gone = true;
+          progSave(me);
+          achCheck(me);
+        }
+      }
       if (questDone && questDone.done) {
         let bal = null;
         try { bal = await ctx.awardCents(me, questDone.pay); } catch { }
@@ -1168,6 +1241,9 @@ function createWorld(ctx) {
         tradeFlash: (() => { const f = TRADE_FLASH.get(me); if (f && now - f.at < 30000) { TRADE_FLASH.delete(me); return f.msg; } return null; })(),
         matGot: (() => { const arr = MAT_GOT.get(me); if (arr && arr.length) { MAT_GOT.delete(me); return arr; } return null; })(),
         event: worldEvent(now),
+        meteors: (() => { const e2 = worldEvent(now); return e2 && e2.type === 'meteor' ? [...METEORS.values()].map((m) => ({ x: m.x, y: m.y, landAt: m.landAt })) : []; })(),
+        treasure: (() => { const e2 = worldEvent(now); return e2 && e2.type === 'treasure' && TREASURE && !TREASURE.gone ? { zone: TREASURE.zone, near: dist(p.x, p.y, TREASURE.x, TREASURE.y) < 380 } : null; })(),
+        gotM, gotT,
         myBlocks: wload('blocks', me) || [],
         ann: ANN && now - ANN.at < 120000 ? ANN : null,
         isAdmin: !!ctx.isAdmin(me),
@@ -1338,7 +1414,7 @@ function createWorld(ctx) {
       if (b.act === 'event') {
         const t = String(b.type || '');
         if (t === 'off') FORCE_EV = null;
-        else if (t === 'shardstorm' || t === 'goldenhunt') FORCE_EV = { type: t, endsAt: now + 5 * 60 * 1000, id: 'f' + now };
+        else if (['shardstorm', 'goldenhunt', 'meteor', 'treasure', 'doublexp'].includes(t)) FORCE_EV = { type: t, endsAt: now + 5 * 60 * 1000, id: 'f' + now };
         else { J({ ok: false, err: 'bad type' }, 400); return true; }
         J({ ok: true, event: worldEvent(now) });
         return true;
@@ -1607,6 +1683,21 @@ function createWorld(ctx) {
       return true;
     }
 
+    if (u.pathname === '/api/world/skills' && req.method === 'GET') {
+      const pg = progFor(me);
+      const paid = wload('skillpay', me) || {};
+      let paidNow = 0;
+      const list = SKILL_DEFS.map((sd) => {
+        const count = sd.count(pg);
+        const lvl = Math.min(10, Math.floor(Math.sqrt(count / sd.per)));
+        for (const [ml, pay] of SKILL_PAY) if (lvl >= ml && (paid[sd.id] || 0) < ml) { paid[sd.id] = ml; paidNow += pay; }
+        return { id: sd.id, name: sd.name, c: sd.c, count, lvl, nextAt: lvl >= 10 ? null : Math.ceil(sd.per * (lvl + 1) * (lvl + 1)), title: SKILL_TITLES[Math.min(5, Math.floor(lvl / 2))] };
+      });
+      if (paidNow > 0) { try { await ctx.awardCents(me, paidNow); } catch { } wsave('skillpay', me, paid); txLog(me, 'skill milestones', paidNow); }
+      J({ ok: true, skills: list, paidNow });
+      return true;
+    }
+
     if (u.pathname === '/api/world/craft' && req.method === 'GET') {
       const mats = matsOf(me);
       let inv = []; try { inv = ctx.getInv(me) || []; } catch { }
@@ -1629,6 +1720,7 @@ function createWorld(ctx) {
       inv.push(r.out);
       try { ctx.setInv(me, inv); } catch { }
       txLog(me, 'craft', 0, SHOP.BY_ID[r.out].name);
+      const pgCr = progFor(me); pgCr.c.craft = (pgCr.c.craft || 0) + 1; progSave(me);
       awardXp(me, 10);
       J({ ok: true, made: SHOP.BY_ID[r.out].name });
       return true;
@@ -2301,13 +2393,15 @@ function createWorld(ctx) {
       '  <div class="wa-head"><span>\u2726 world admin</span><button id="wadmin-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
       '  <div id="wadmin-body"></div>\n' +
       '  <div class="wadmin-row"><input id="wadmin-ann" type="text" maxlength="160" placeholder="announce to the whole world\u2026"><button id="wadmin-send" type="button">send</button></div>\n' +
-      '  <div class="wadmin-row"><button class="wadmin-ev" data-ev="shardstorm" type="button">force shard storm</button><button class="wadmin-ev" data-ev="goldenhunt" type="button">force golden hunt</button><button class="wadmin-ev" data-ev="off" type="button">events off</button></div>\n' +
+      '  <div class="wadmin-row"><button class="wadmin-ev" data-ev="shardstorm" type="button">force shard storm</button><button class="wadmin-ev" data-ev="goldenhunt" type="button">force golden hunt</button><button class="wadmin-ev" data-ev="meteor" type="button">force meteor shower</button><button class="wadmin-ev" data-ev="treasure" type="button">force treasure hunt</button><button class="wadmin-ev" data-ev="doublexp" type="button">force double xp</button><button class="wadmin-ev" data-ev="off" type="button">events off</button></div>\n' +
       '</div></div>\n' +
       '<div id="wfish" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 fishing</span><button id="wfish-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wfish-body"></div></div></div>\n' +
       '<div id="wrace" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 races</span><button id="wrace-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wrace-body"></div></div></div>\n' +
       '<div id="wguild" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 guild</span><button id="wguild-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wguild-body"></div></div></div>\n' +
       '<div id="wtrade" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 trade</span><button id="wtrade-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wtrade-body"></div></div></div>\n' +
       '<div id="wcraft" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 crafting</span><button id="wcraft-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wcraft-body"></div></div></div>\n' +
+      '<div id="wskills" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 skills</span><button id="wskills-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wskills-body"></div></div></div>\n' +
+      '<div id="wphoto" hidden><button id="wphoto-x" type="button">done</button><div id="wphoto-bar"><div id="wphoto-frames"><button type="button" data-frame="none">no frame</button><button type="button" data-frame="star" class="on">star</button><button type="button" data-frame="polaroid">polaroid</button><button type="button" data-frame="film">film</button></div><button id="wphoto-shut" type="button">SNAP</button><div id="wphoto-gal"></div></div></div>\n' +
       '<div id="wpets" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 pet journal</span><button id="wpets-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wpets-body"></div></div></div>\n' +
       '<div id="whouse" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 <span id="whouse-t">ur house</span></span><button id="whouse-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="whouse-body"></div></div></div>\n' +
       '<div id="wduelgo" hidden><div id="wduelgo-t"></div><div id="wduelgo-s"></div></div>\n' +

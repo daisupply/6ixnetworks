@@ -156,6 +156,7 @@ var joy = { id: null, x: 0, y: 0 };
 var cam = { x: 2400, y: 1700 };
 var players = {};
 var shards = {};
+var meteors = {}, TREASURE_V = null;
 var crys = {};
 var parts = [];
 var floats = [];
@@ -565,6 +566,11 @@ function ping() {
       floatText(px, py - 40, '+\u00a2' + r.gotC.amt, '#f0abfc');
       toast('\u2726 ' + r.gotC.rare + ' crystal found — +\u00a2' + r.gotC.amt, 3000);
     }
+    meteors = {};
+    (r.meteors || []).forEach(function (m) { meteors[m.x + ':' + m.y] = m; });
+    TREASURE_V = r.treasure || null;
+    if (r.gotM) { sndPick(true); burst(px, py - 8, '#fef3c7', 20, 120); floatText(px, py - 40, '+\u00a225 meteor', '#fef3c7'); }
+    if (r.gotT) { sndQuest(); burst(px, py - 8, '#ffd257', 30, 150); floatText(px, py - 40, '+\u00a275 treasure', '#ffd257'); toast('\u2726 u found the hidden treasure \u2014 +\u00a275 + materials', 4200); }
     if (pendingClaim && !sSeen[pendingClaim]) pendingClaim = '';
     (r.sig || []).forEach(function (s) { handleSignal(s.from, s.data); });
     vcTick(r.players || []);
@@ -1388,6 +1394,46 @@ function render(now) {
     g.fillStyle = 'rgba(0,0,0,.35)';
     g.beginPath(); g.ellipse(s.x, s.y + 12, 8, 3, 0, 0, TAU); g.fill();
   });
+  /* meteors (event) */
+  Object.keys(meteors).forEach(function (id) {
+    var m = meteors[id];
+    if (!inV(m.x, m.y, 60)) return;
+    var tNow = Date.now();
+    if (tNow < m.landAt) {
+      var k = 1 - (m.landAt - tNow) / 2400;
+      var fx = m.x - 190 * (1 - k), fy = m.y - 300 * (1 - k);
+      g.strokeStyle = 'rgba(254,243,199,.55)'; g.lineWidth = 3;
+      g.beginPath(); g.moveTo(fx - 26, fy - 42); g.lineTo(fx, fy); g.stroke();
+      g.fillStyle = '#fef3c7'; g.shadowColor = '#fcd34d'; g.shadowBlur = 16;
+      g.beginPath(); g.arc(fx, fy, 4.5, 0, TAU); g.fill(); g.shadowBlur = 0;
+      g.strokeStyle = 'rgba(252,211,77,.8)'; g.lineWidth = 2;
+      g.beginPath(); g.ellipse(m.x, m.y, 8 + k * 22, (8 + k * 22) * 0.36, 0, 0, TAU); g.stroke();
+    } else {
+      var bob3 = Math.sin(now / 380 + m.x) * 3;
+      g.globalCompositeOperation = 'lighter';
+      var mg = g.createRadialGradient(m.x, m.y + bob3, 1, m.x, m.y + bob3, 30);
+      mg.addColorStop(0, 'rgba(252,211,77,.4)'); mg.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = mg; g.beginPath(); g.arc(m.x, m.y + bob3, 30, 0, TAU); g.fill();
+      g.globalCompositeOperation = 'source-over';
+      g.save(); g.translate(m.x, m.y + bob3);
+      g.fillStyle = '#fef3c7'; g.shadowColor = '#fcd34d'; g.shadowBlur = 18;
+      starPath(g, 11, 0.45, now / 700); g.fill();
+      g.fillStyle = '#f59e0b';
+      starPath(g, 5.5, 0.45, -now / 700); g.fill();
+      g.restore();
+      g.fillStyle = 'rgba(0,0,0,.35)';
+      g.beginPath(); g.ellipse(m.x, m.y + 12, 9, 3.2, 0, 0, TAU); g.fill();
+    }
+  });
+  /* treasure warmth: gold motes orbit u when the chest is close */
+  if (TREASURE_V && TREASURE_V.near) {
+    for (var twk = 0; twk < 5; twk++) {
+      var wa2 = now / 500 + twk * 1.256;
+      g.fillStyle = 'rgba(255,210,87,.85)';
+      star4(g, px + Math.cos(wa2) * 26, py - 6 + Math.sin(wa2) * 14, 2.6, wa2);
+      g.fill();
+    }
+  }
   /* crystals (server collectibles) */
   Object.keys(crys).forEach(function (id) {
     var c = crys[id];
@@ -3066,8 +3112,10 @@ function socialTick(r) {
     var left = Math.max(0, Math.round((r.event.endsAt - (r.srvNow || Date.now())) / 1000));
     var mmss = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
     ev.hidden = false;
-    ev.textContent = r.event.type === 'shardstorm' ? ('\u2726 SHARD STORM \u2014 shard \u00a2 doubled \u00b7 ' + mmss + ' left') : ('\u2726 GOLDEN HUNT \u2014 extra gold shards are out \u00b7 ' + mmss + ' left');
-    if (lastEventId !== r.event.id) { lastEventId = r.event.id; toast(r.event.type === 'shardstorm' ? '\u2726 SHARD STORM \u2014 every shard pays double' : '\u2726 GOLDEN HUNT \u2014 extra gold shards just dropped', 4200); sndQuest(); }
+    var EV_TXT = { shardstorm: 'SHARD STORM \u2014 shard \u00a2 doubled', goldenhunt: 'GOLDEN HUNT \u2014 extra gold shards are out', meteor: 'METEOR SHOWER \u2014 catch the fallen stars', treasure: 'TREASURE HUNT \u2014 a chest hides in ' + (r.treasure ? r.treasure.zone : 'the world'), doublexp: 'DOUBLE XP \u2014 all xp doubled' };
+    var EV_TOAST = { shardstorm: 'every shard pays double', goldenhunt: 'extra gold shards just dropped', meteor: 'meteors are falling \u2014 stand where they land', treasure: 'a chest is hidden \u2014 the banner names the zone, gold motes mean ur close', doublexp: 'every xp gain is doubled' };
+    ev.textContent = '\u2726 ' + (EV_TXT[r.event.type] || r.event.type) + ' \u00b7 ' + mmss + ' left';
+    if (lastEventId !== r.event.id) { lastEventId = r.event.id; toast('\u2726 ' + (EV_TXT[r.event.type] || r.event.type) + ' \u2014 ' + (EV_TOAST[r.event.type] || ''), 4200); sndQuest(); }
   } else ev.hidden = true;
 }
 $('wparty-yes').addEventListener('click', function () { jpost('/api/world/party', { act: 'accept' }).then(function (r) { if (r && r.ok) toast('joined the party \u2726'); else toast('invite fizzled', (r && r.err) || ''); }); $('wparty-inv').hidden = true; });
@@ -3140,6 +3188,8 @@ var HUB_DEFS = [
   ['guild', '<path d="M5 21V4"/><path d="M5 5h12.5L15 8.5 17.5 12H5"/>', function () { openGuild(); }],
   ['trade', '<path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 12 4 4-4 4"/><path d="M21 16H7"/>', function () { openTrade(); }],
   ['crafting', '<path d="M15 12l-8.5 8.5a2.12 2.12 0 1 1-3-3L12 9"/><path d="M17.6 3.4a4.5 4.5 0 0 0-6 6L15 12.8a4.5 4.5 0 0 0 6-6l-2.7 2.7-2.1-.7-.7-2.1 2.1-2.3Z"/>', function () { openCraft(); }],
+  ['skills', '<path d="M12 3l1.9 4.6 4.6 1.4-4.6 1.4L12 15l-1.9-4.6L5.5 9l4.6-1.4z"/><path d="M18.6 15.4l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>', function () { openSkills(); }],
+  ['photo', '<path d="M4 8h2.2l2-2.5h7.6l2 2.5H20a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13.5" r="3.4"/>', function () { openPhoto(); }],
   ['quest journal', '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>', function () { openJournal(); }],
   ['achievements', '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>', function () { openAch(); }],
   ['leaderboards', '<path d="M3 3v18h18"/><path d="M8 17v-6"/><path d="M13 17V7"/><path d="M18 17v-9"/>', function () { openBoards(); }],
@@ -3724,6 +3774,72 @@ $('wtrade-x').addEventListener('click', closeTrade);
 $('wcraft-x').addEventListener('click', closeCraft);
 window.__trade = { open: openTrade, close: closeTrade };
 window.__craft = { open: openCraft, close: closeCraft };
+/* ---- M10: skills + photo mode ---- */
+function openSkills() { $('wskills').hidden = false; document.body.classList.add('wov'); renderSkills(); }
+function closeSkills() { $('wskills').hidden = true; document.body.classList.remove('wov'); }
+function renderSkills() {
+  var body = $('wskills-body'); if (!body) return;
+  body.innerHTML = '<div class="tr-status">loading\u2026</div>';
+  fetch('/api/world/skills', { headers: { accept: 'application/json' } }).then(function (x) { return x.json(); }).then(function (r) {
+    if (!r || !r.ok) { body.innerHTML = '<div class="tr-status">couldnt load skills</div>'; return; }
+    if (r.paidNow > 0) toast('\u2726 skill milestones paid +\u00a2' + r.paidNow, 3600);
+    body.innerHTML = r.skills.map(function (s) {
+      var pct = s.lvl >= 10 ? 100 : Math.max(2, Math.round(100 * s.count / s.nextAt));
+      return '<div class="sk-row"><span class="sk-dot" style="background:' + s.c + '22"><i style="background:' + s.c + '"></i></span><div class="sk-info"><div class="sk-name">' + escH(s.name) + ' <span class="sk-lvl">lv ' + s.lvl + '</span> <span class="sk-title">' + s.title + '</span></div><div class="sk-bar"><i style="width:' + pct + '%;background:' + s.c + '"></i></div><div class="sk-sub">' + (s.lvl >= 10 ? 'maxed \u2014 legend status' : s.count + ' / ' + s.nextAt + ' to lv ' + (s.lvl + 1)) + '</div></div></div>';
+    }).join('') + '<div class="tr-status">skills level from just playing \u2014 fishing, crypt + lich kills, races, exploring, gathering, crafting + trading. lv 2/4/6/8/10 pay out six cents automatically.</div>';
+  });
+}
+$('wskills-x').addEventListener('click', closeSkills);
+window.__skills = { open: openSkills, close: closeSkills };
+var PHOTO_FRAME = 'star';
+function photoList() { try { return JSON.parse(localStorage.getItem('wphotos') || '[]'); } catch (e) { return []; } }
+function openPhoto() { document.body.classList.add('wphoto'); $('wphoto').hidden = false; renderPhotoGal(); }
+function closePhoto() { document.body.classList.remove('wphoto'); $('wphoto').hidden = true; }
+function renderPhotoGal() {
+  var gal = $('wphoto-gal'); if (!gal) return;
+  var list = photoList();
+  gal.innerHTML = list.map(function (p, i) { return '<img data-ph="' + i + '" src="' + p.img + '" alt="snap">'; }).join('') || '<span class="wphoto-none">no snaps yet \u2014 hit SNAP</span>';
+  gal.querySelectorAll('[data-ph]').forEach(function (im) { im.addEventListener('click', function () { var p = photoList()[+im.getAttribute('data-ph')]; if (p) { var a = document.createElement('a'); a.href = p.img; a.download = 'six-network-snap.jpg'; a.click(); } }); });
+}
+function snapPhoto() {
+  var src = $('wcv'); if (!src || !src.width) return;
+  var out = document.createElement('canvas'); out.width = src.width; out.height = src.height;
+  var g = out.getContext('2d');
+  g.drawImage(src, 0, 0);
+  var W = out.width, H = out.height;
+  var cap = "six's network \u2726 @" + me + ' \u00b7 ' + new Date().toLocaleDateString();
+  if (PHOTO_FRAME === 'star') {
+    g.strokeStyle = 'rgba(255,210,87,.9)'; g.lineWidth = Math.max(3, W * 0.006);
+    g.strokeRect(g.lineWidth, g.lineWidth, W - g.lineWidth * 2, H - g.lineWidth * 2);
+    g.fillStyle = '#ffd257';
+    [[26, 26], [W - 26, 26], [26, H - 26], [W - 26, H - 26]].forEach(function (cc) { star4(g, cc[0], cc[1], 13, 0.6); g.fill(); });
+    g.fillStyle = 'rgba(5,3,14,.72)'; g.fillRect(0, H - 44, W, 44);
+    g.fillStyle = '#f3efff'; g.font = '600 17px Inter, sans-serif'; g.textAlign = 'center';
+    g.fillText(cap, W / 2, H - 17);
+  } else if (PHOTO_FRAME === 'polaroid') {
+    g.fillStyle = '#fdfdf8';
+    g.fillRect(0, 0, W, 18); g.fillRect(0, H - 74, W, 74); g.fillRect(0, 0, 18, H); g.fillRect(W - 18, 0, 18, H);
+    g.fillStyle = '#241a38'; g.font = '600 19px Inter, sans-serif'; g.textAlign = 'center';
+    g.fillText(cap, W / 2, H - 30);
+  } else if (PHOTO_FRAME === 'film') {
+    g.fillStyle = '#0a0a0f'; g.fillRect(0, 0, W, 34); g.fillRect(0, H - 34, W, 34);
+    g.fillStyle = 'rgba(255,255,255,.75)';
+    for (var fx2 = 14; fx2 < W - 10; fx2 += 30) { g.fillRect(fx2, 11, 15, 12); g.fillRect(fx2, H - 23, 15, 12); }
+  }
+  out.toBlob(function (b) {
+    if (b) { var u = URL.createObjectURL(b); var a = document.createElement('a'); a.href = u; a.download = 'six-network.png'; a.click(); setTimeout(function () { URL.revokeObjectURL(u); }, 4000); }
+    var th = document.createElement('canvas'); var sc = 480 / W; th.width = 480; th.height = Math.max(1, Math.round(H * sc));
+    th.getContext('2d').drawImage(out, 0, 0, th.width, th.height);
+    var list = photoList(); list.unshift({ at: Date.now(), img: th.toDataURL('image/jpeg', 0.72) });
+    try { localStorage.setItem('wphotos', JSON.stringify(list.slice(0, 10))); } catch (e) {}
+    renderPhotoGal();
+    toast('\u2726 snap saved \u2014 full shot downloaded + a copy in the gallery', 3200);
+  });
+}
+$('wphoto-shut').addEventListener('click', snapPhoto);
+$('wphoto-x').addEventListener('click', closePhoto);
+$('wphoto-frames').addEventListener('click', function (e) { var b = e.target.closest('[data-frame]'); if (!b) return; PHOTO_FRAME = b.getAttribute('data-frame'); Array.prototype.forEach.call($('wphoto-frames').children, function (x) { x.classList.toggle('on', x === b); }); });
+window.__photo = { open: openPhoto, close: closePhoto, snap: snapPhoto };
 $('wguild').addEventListener('click', function (e) { if (e.target === $('wguild')) closeGuild(); });
 window.__guild = { open: openGuild, close: closeGuild };
 /* settings */
