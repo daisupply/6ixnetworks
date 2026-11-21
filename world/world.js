@@ -641,6 +641,7 @@ function createWorld(ctx) {
     guildWkBump(me, 'race', now);
     seasonQuestAdd(me, 'races', 1);
     { const evT = worldEvent(now); if (evT && evT.type === 'tourney' && EV_RUN && EV_RUN.id === evT.id && EV_RUN.course === rc.course) { const prev = EV_RUN.scores.get(me); if (prev == null || ms < prev) EV_RUN.scores.set(me, ms); evPart(me); } }
+    { const mmR = matchOf(me); if (mmR && mmR.game === 'race' && mmR.phase === 'live' && mmR.course === rc.course) { const prev = mmR.times.get(me); if (prev == null || ms < prev) mmR.times.set(me, ms); for (const u2 of mmR.members) matchFx(u2, { t: 'racefin', u: me }); } }
     return { course: rc.course, name: C.name, ms, pb: isPb, rec: isRec, pay };
   }
   function raceTick(me, now) {
@@ -742,8 +743,103 @@ function createWorld(ctx) {
     if (RACES.has(u)) return 'racing';
     if (bossLive(now) && dist(p.x, p.y, 2400, 2600) < 650) return 'at the lich';
     for (const tk of MTOK.values()) if (tk.user === u && now - tk.at < 240000) return 'in a minigame';
+    const mmA = matchOf(u); if (mmA && (mmA.phase === 'live' || mmA.phase === 'hide' || mmA.phase === 'count')) return 'playing ' + MATCH_GAMES[mmA.game].name;
     if (p.house) return 'visiting a house';
     return '';
+  }
+  /* ---- E7: arcade matches (real multiplayer, server-authoritative) ---- */
+  const MATCHES = new Map(); const MATCH_OF = new Map(); const MATCH_FX = new Map(); let matchSeq = 1;
+  const MATCH_GAMES = {
+    hs: { name: 'hide & seek', min: 2, max: 6, dur: 120000 },
+    rush: { name: 'treasure rush', min: 2, max: 6, dur: 90000 },
+    derby: { name: 'fishing derby', min: 2, max: 8, dur: 180000 },
+    race: { name: 'team race', min: 2, max: 6, dur: 240000 },
+  };
+  const HS_ARENA = { x: 650, y: 2100, r: 400 };
+  const RUSH_ARENA = { x: 2400, y: 1600, r: 650 };
+  function matchOf(user) { const id = MATCH_OF.get(user); return id ? MATCHES.get(id) || null : null; }
+  function matchFx(user, fx) { if (!MATCH_FX.has(user)) MATCH_FX.set(user, []); const q = MATCH_FX.get(user); q.push(fx); if (q.length > 6) q.shift(); }
+  function payMatch(m, r) { try { const pr = ctx.awardCents(r.u, r.amt); if (pr && pr.catch) pr.catch(() => {}); } catch { } txLog(r.u, 'match', r.amt, MATCH_GAMES[m.game].name + ' — ' + (r.note || '')); }
+  function matchSettle(m, now) {
+    if (m.settled) return; m.settled = true; m.phase = 'done'; m.at = now;
+    const mem = m.members.slice();
+    let results = [];
+    if (m.game === 'hs') {
+      const survivors = mem.filter((u) => u !== m.seeker && !m.caught.has(u));
+      if (!survivors.length) results = mem.map((u) => ({ u, amt: u === m.seeker ? 60 : 5, note: u === m.seeker ? 'caught everyone' : 'caught' }));
+      else results = mem.map((u) => ({ u, amt: u === m.seeker ? 15 : (m.caught.has(u) ? 10 : 50), note: u === m.seeker ? 'time ran out' : (m.caught.has(u) ? 'caught' : 'hid the whole round') }));
+    } else if (m.game === 'rush' || m.game === 'derby') {
+      const ranked = mem.slice().sort((a, b) => (m.scores.get(b) || 0) - (m.scores.get(a) || 0));
+      const prizes = m.game === 'rush' ? [40, 20] : [50, 30, 15];
+      results = ranked.map((u, i) => ({ u, amt: (m.scores.get(u) || 0) > 0 && prizes[i] ? prizes[i] : 0, note: '#' + (i + 1) + ' with ' + (m.scores.get(u) || 0) })).filter((r) => r.amt > 0);
+    } else if (m.game === 'race') {
+      const fin = mem.filter((u) => m.times.has(u)).sort((a, b) => m.times.get(a) - m.times.get(b));
+      const pts = new Map(); fin.forEach((u, i) => pts.set(u, fin.length - i));
+      const teamPts = { A: 0, B: 0 };
+      for (const u of mem) teamPts[m.teams.get(u) || 'A'] += pts.get(u) || 0;
+      const win = teamPts.A === teamPts.B ? null : (teamPts.A > teamPts.B ? 'A' : 'B');
+      m.teamPts = teamPts;
+      results = mem.map((u) => ({ u, amt: !fin.length ? 0 : (win === null ? 25 : (m.teams.get(u) === win ? 40 : 10)), note: 'team ' + (m.teams.get(u) || 'A') + ' · ' + teamPts.A + '-' + teamPts.B })).filter((r) => r.amt > 0);
+    }
+    m.results = results;
+    for (const r of results) payMatch(m, r);
+    for (const u of mem) { awardXp(u, 15); matchFx(u, { t: 'done', game: m.game }); }
+  }
+  function hsTick(m, now) {
+    const sp = P.get(m.seeker);
+    if (m.phase === 'hide' && sp) { sp.x = HS_ARENA.x; sp.y = HS_ARENA.y; }
+    for (const u of m.members) {
+      if (u === m.seeker || m.caught.has(u)) continue;
+      const p = P.get(u); if (!p) continue;
+      if (dist(p.x, p.y, HS_ARENA.x, HS_ARENA.y) <= HS_ARENA.r + 30) m.entered.add(u);
+      else if (m.entered.has(u)) { m.caught.add(u); matchFx(u, { t: 'caught', why: 'u left the forest' }); matchFx(m.seeker, { t: 'got', u }); continue; }
+      if (m.phase === 'live' && sp && dist(p.x, p.y, sp.x, sp.y) < 45) { m.caught.add(u); matchFx(u, { t: 'caught', why: '@' + m.seeker + ' tagged u' }); matchFx(m.seeker, { t: 'got', u }); }
+    }
+    const left = m.members.filter((u) => u !== m.seeker && !m.caught.has(u));
+    if (!left.length && m.phase === 'live') matchSettle(m, now);
+  }
+  function spawnTreasures(m) {
+    m.treasures = [];
+    for (let i = 0; i < 12; i++) { const a = Math.random() * Math.PI * 2, rr2 = 120 + Math.random() * (RUSH_ARENA.r - 140); m.treasures.push({ x: Math.round(RUSH_ARENA.x + Math.cos(a) * rr2), y: Math.round(RUSH_ARENA.y + Math.sin(a) * rr2), by: null }); }
+  }
+  function matchTick(now) {
+    for (const m of Array.from(MATCHES.values())) {
+      for (const u of m.members.slice()) {
+        if (!P.has(u) && m.phase === 'lobby') { MATCH_OF.delete(u); m.members = m.members.filter((x) => x !== u); m.scores.delete(u); if (m.host === u) m.host = m.members[0] || null; }
+      }
+      if (!m.members.length) { MATCHES.delete(m.id); continue; }
+      if (m.phase === 'count' && now - m.at >= 3000) { m.phase = m.game === 'hs' ? 'hide' : 'live'; m.at = now; if (m.game === 'rush') spawnTreasures(m); for (const u of m.members) matchFx(u, { t: 'phase', phase: m.phase }); }
+      else if (m.phase === 'hide' && now - m.at >= 20000) { m.phase = 'live'; m.at = now; if (m.game === 'hs') for (const u of m.members) { if (u !== m.seeker && !m.entered.has(u) && !m.caught.has(u)) { m.caught.add(u); matchFx(u, { t: 'caught', why: 'u never made it to the forest' }); } } for (const u of m.members) matchFx(u, { t: 'phase', phase: 'live' }); }
+      if ((m.phase === 'live' || m.phase === 'hide') && m.game === 'hs') hsTick(m, now);
+      if (m.phase === 'live' && now - m.at >= m.dur) matchSettle(m, now);
+      if (m.game === 'race' && m.phase === 'live' && m.members.every((u) => m.times.has(u) || !P.has(u))) matchSettle(m, now);
+      if (m.phase === 'done' && now - m.at >= 20000) { for (const u of m.members.slice()) MATCH_OF.delete(u); MATCHES.delete(m.id); }
+      if (m.phase === 'lobby' && now - m.at > 600000) { for (const u of m.members.slice()) MATCH_OF.delete(u); MATCHES.delete(m.id); }
+    }
+  }
+  function matchLeave(user) {
+    const m = matchOf(user); if (!m) return;
+    MATCH_OF.delete(user);
+    const wasSeeker = m.seeker === user;
+    m.members = m.members.filter((x) => x !== user);
+    m.scores.delete(user); if (m.caught) m.caught.delete(user); if (m.times) m.times.delete(user);
+    if (!m.members.length) { MATCHES.delete(m.id); return; }
+    if (m.host === user) m.host = m.members[0];
+    if ((m.phase === 'live' || m.phase === 'hide') && m.game === 'hs' && wasSeeker && !m.settled) {
+      m.results = m.members.map((u) => ({ u, amt: 40, note: 'the seeker gave up' }));
+      for (const r of m.results) payMatch(m, r);
+      for (const u of m.members) matchFx(u, { t: 'done', game: m.game });
+      m.settled = true; m.phase = 'done'; m.at = Date.now();
+    }
+  }
+  function matchViewFor(user) {
+    const m = matchOf(user); if (!m) return null;
+    const now = Date.now();
+    const phaseLen = m.phase === 'count' ? 3 : m.phase === 'hide' ? 20 : m.phase === 'live' ? Math.round(m.dur / 1000) : 20;
+    return { id: m.id, game: m.game, name: MATCH_GAMES[m.game].name, phase: m.phase, host: m.host, left: Math.max(0, phaseLen - Math.floor((now - m.at) / 1000)), seeker: m.seeker || null, course: m.course || null,
+      members: m.members.map((u) => ({ u, role: m.game === 'hs' ? (u === m.seeker ? 'seeker' : (m.caught.has(u) ? 'caught' : 'hider')) : null, team: m.teams ? (m.teams.get(u) || null) : null, score: m.scores.get(u) || 0, time: m.times ? (m.times.get(u) || null) : null, online: P.has(u) })),
+      treasures: m.game === 'rush' && m.treasures ? m.treasures.filter((t) => !t.by).map((t) => ({ x: t.x, y: t.y })) : null,
+      results: m.phase === 'done' ? (m.results || []) : null };
   }
   function roster(now) {
     const out = [sixState(now)].concat(NPC_DEFS.map((d) => npcState(d, now)));
@@ -1126,6 +1222,7 @@ function createWorld(ctx) {
     fillShards(now);
     evTick(now, worldEvent(now));
     await evSettle(now);
+    matchTick(now);
     evRunFor(worldEvent(now));
 
   /* ---- M9: materials + crafting + trading ---- */
@@ -1253,6 +1350,7 @@ function createWorld(ctx) {
           }
         }
       }
+      { const mmFrz = matchOf(me); if (mmFrz && mmFrz.game === 'hs' && mmFrz.phase === 'hide' && mmFrz.seeker === me) { p.x = HS_ARENA.x; p.y = HS_ARENA.y; } }
       if (!p.house && !p.inst && p.y > 4380) p.y = 4380;
       if (b.dir != null) p.dir = clampN(b.dir, -Math.PI * 2, Math.PI * 2);
       p.vc = !!b.vc;
@@ -1346,6 +1444,8 @@ function createWorld(ctx) {
           break;
         }
       }
+      let gotMatch = null;
+      { const mm = matchOf(me); if (mm && mm.game === 'rush' && mm.phase === 'live' && mm.treasures) { for (const t of mm.treasures) { if (!t.by && dist(p.x, p.y, t.x, t.y) < 70) { t.by = me; mm.scores.set(me, (mm.scores.get(me) || 0) + 1); try { const pr = ctx.awardCents(me, 5); if (pr && pr.catch) pr.catch(() => {}); } catch { } txLog(me, 'match', 5, 'treasure rush pickup'); gotMatch = { score: mm.scores.get(me) }; for (const u2 of mm.members) if (u2 !== me) matchFx(u2, { t: 'treasure', u: me }); break; } } } }
       let gotM = null, gotT = null;
       let gotEvC = null, gotEvE = null;
       const evQ = worldEvent(now);
@@ -1447,7 +1547,7 @@ function createWorld(ctx) {
         today: { shards: st.shards, golds: st.golds },
         zone: p.house ? (p.house === me ? 'ur house' : '@' + p.house + "'s house") : (p.zone ? zoneName(p.zone) : ''), got, questDone, srvNow: now,
         duelIn: duelInFor(me, now), duel: duelFor(me, now), duelDone: duelDoneFor(me, now),
-        prog: progView(me), disc, gotC,
+        prog: progView(me), disc, gotC, match: matchViewFor(me), matchFx: MATCH_FX.has(me) ? MATCH_FX.get(me).splice(0) : null, gotMatch,
         house: p.house || null,
         boss: bossView(me, now),
         inst: instView(me, now),
@@ -1497,6 +1597,68 @@ function createWorld(ctx) {
       return true;
     }
 
+    if (u.pathname === '/api/world/matches' && req.method === 'GET') {
+      const lobbies = [];
+      for (const m of MATCHES.values()) if (m.phase === 'lobby') lobbies.push({ id: m.id, game: m.game, name: MATCH_GAMES[m.game].name, host: m.host, n: m.members.length, max: MATCH_GAMES[m.game].max });
+      J({ ok: true, lobbies, mine: matchViewFor(me) });
+      return true;
+    }
+    if (u.pathname === '/api/world/match' && req.method === 'GET') {
+      J({ ok: true, match: matchViewFor(me) });
+      return true;
+    }
+    if (u.pathname === '/api/world/match' && req.method === 'POST') {
+      const act = String(b.act || '');
+      if (act === 'create') {
+        const game = String(b.game || '');
+        if (!MATCH_GAMES[game]) { J({ ok: false, err: 'no such game' }, 400); return true; }
+        if (matchOf(me)) { J({ ok: false, err: 'ur already in a match — leave it first' }, 400); return true; }
+        const m = { id: 'm' + (matchSeq++), game, host: me, members: [me], phase: 'lobby', at: now, scores: new Map(), caught: new Set(), entered: new Set(), times: new Map(), teams: new Map(), settled: false, dur: MATCH_GAMES[game].dur, seeker: null, course: game === 'race' ? 'skyline' : null, treasures: null, results: null, lastTag: 0 };
+        MATCHES.set(m.id, m); MATCH_OF.set(me, m.id);
+        J({ ok: true, match: matchViewFor(me) });
+        return true;
+      }
+      if (act === 'join') {
+        const m = MATCHES.get(String(b.id || ''));
+        if (!m || m.phase !== 'lobby') { J({ ok: false, err: 'that lobby is gone' }, 400); return true; }
+        if (matchOf(me)) { J({ ok: false, err: 'ur already in a match — leave it first' }, 400); return true; }
+        if (m.members.length >= MATCH_GAMES[m.game].max) { J({ ok: false, err: 'lobby is full' }, 400); return true; }
+        if (blocksOf(me).includes(m.host) || blocksOf(m.host).includes(me)) { J({ ok: false, err: 'blocked' }, 400); return true; }
+        m.members.push(me); MATCH_OF.set(me, m.id);
+        for (const u2 of m.members) if (u2 !== me) matchFx(u2, { t: 'joined', u: me });
+        J({ ok: true, match: matchViewFor(me) });
+        return true;
+      }
+      if (act === 'leave') { matchLeave(me); J({ ok: true }); return true; }
+      if (act === 'start') {
+        const m = matchOf(me);
+        if (!m || m.host !== me) { J({ ok: false, err: 'only the host starts' }, 400); return true; }
+        if (m.phase !== 'lobby') { J({ ok: false, err: 'already started' }, 400); return true; }
+        if (m.members.length < MATCH_GAMES[m.game].min) { J({ ok: false, err: 'need at least ' + MATCH_GAMES[m.game].min + ' players' }, 400); return true; }
+        if (m.game === 'hs') m.seeker = m.members[Math.floor(Math.random() * m.members.length)];
+        if (m.game === 'race') m.members.forEach((u2, i) => m.teams.set(u2, i % 2 ? 'B' : 'A'));
+        m.phase = 'count'; m.at = now;
+        for (const u2 of m.members) matchFx(u2, { t: 'phase', phase: 'count' });
+        J({ ok: true, match: matchViewFor(me) });
+        return true;
+      }
+      if (act === 'tag') {
+        const m = matchOf(me);
+        if (!m || m.game !== 'hs' || m.phase !== 'live' || m.seeker !== me) { J({ ok: false, err: 'not ur tag' }, 400); return true; }
+        if (now - (m.lastTag || 0) < 600) { J({ ok: false, err: 'too fast' }, 429); return true; }
+        m.lastTag = now;
+        const sp = P.get(me); if (!sp) { J({ ok: false, err: 'not in the world' }, 400); return true; }
+        let best = null, bd = 1e9;
+        for (const u2 of m.members) { if (u2 === me || m.caught.has(u2)) continue; const p2 = P.get(u2); if (!p2) continue; const d = dist(sp.x, sp.y, p2.x, p2.y); if (d < bd) { bd = d; best = u2; } }
+        if (!best || bd > 95) { J({ ok: false, err: 'nobody in reach' }, 400); return true; }
+        m.caught.add(best);
+        matchFx(best, { t: 'caught', why: '@' + me + ' tagged u' });
+        J({ ok: true, tagged: best });
+        return true;
+      }
+      J({ ok: false, err: 'unknown act' }, 400);
+      return true;
+    }
     if (u.pathname === '/api/world/poke' && req.method === 'POST') {
       const target = String(b.user || '').toLowerCase();
       if (!target || target === me) { J({ ok: false, err: 'who?' }, 400); return true; }
@@ -2423,6 +2585,7 @@ function createWorld(ctx) {
       pg.c.fish = (pg.c.fish || 0) + 1;
       seasonQuestAdd(me, 'fish', 1);
       { const evF = worldEvent(Date.now()); if (evF && EV_RUN && EV_RUN.id === evF.id) { if (evF.type === 'derby') evScore(me, DERBY_PTS[sp.band] || 1); if (evF.type === 'community') evGoalBump('fish', me); } }
+      { const mmD = matchOf(me); if (mmD && mmD.game === 'derby' && mmD.phase === 'live') mmD.scores.set(me, (mmD.scores.get(me) || 0) + (DERBY_PTS[sp.band] || 1)); }
       if (Math.random() < 0.5) matAdd(me, 'scale', 1);
       achCheck(me);
       const log = wload('fishlog', me) || {};
@@ -3047,6 +3210,12 @@ function createWorld(ctx) {
       '  <div class="wa-head"><span>\u2726 ur people</span><button id="wfriends-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
       '  <div id="wfriends-body"></div>\n' +
       '</div></div>\n' +
+      '<div id="wmatch" hidden><div class="wa-card">\n' +
+      '    <button id="wmatch-x" aria-label="close">&times;</button>\n' +
+      '    <h3 class="wa-h">arcade matches</h3>\n' +
+      '    <div id="wmatch-body"></div>\n' +
+      '  </div></div>\n' +
+      '<div id="wmatch-chip" hidden></div>\n' +
       '<div id="wboards" hidden><div class="wa-card">\n' +
       '  <div class="wa-head"><span>\u2726 leaderboards</span><button id="wboards-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
       '  <div id="wboards-body"></div>\n' +

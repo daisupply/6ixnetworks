@@ -1380,6 +1380,21 @@ function render(now) {
     g.fillText(pad.sub, pad.x, pad.y + 36);
   });
   /* shards */
+  if (MATCH_V && MATCH_V.phase === 'live' && MATCH_V.treasures) {
+    MATCH_V.treasures.forEach(function (t) {
+      if (!inV(t.x, t.y, 60)) return;
+      var bob2 = Math.sin(now / 380 + t.x) * 4;
+      g.save(); g.translate(t.x, t.y + bob2);
+      g.shadowColor = '#ffd257'; g.shadowBlur = 18;
+      g.fillStyle = '#ffd257'; star4(g, 0, 0, 12 + Math.sin(now / 220) * 1.5, now / 600); g.fill();
+      g.fillStyle = '#fff3c4'; star4(g, 0, 0, 6, -now / 600); g.fill();
+      g.restore();
+    });
+  }
+  if (MATCH_V && MATCH_V.game === 'hs' && (MATCH_V.phase === 'hide' || MATCH_V.phase === 'live')) {
+    g.strokeStyle = 'rgba(255,210,87,.35)'; g.lineWidth = 3;
+    g.beginPath(); g.arc(650, 2100, 400, 0, TAU); g.stroke();
+  }
   Object.keys(shards).forEach(function (id) {
     var s = shards[id];
     if (!inV(s.x, s.y, 50)) return;
@@ -3126,6 +3141,11 @@ function socialTick(r) {
     chip.hidden = false;
   } else chip.hidden = true;
   if (r.poke && r.poke.from) toast('@' + r.poke.from + ' waved at u', 2600);
+  if (r.matchFx) r.matchFx.forEach(function (fx) { matchFxToast(fx); });
+  if (r.gotMatch) toast('treasure grabbed — ' + r.gotMatch.score + ' so far', 1600);
+  MATCH_V = r.match || null;
+  updateMatchChip();
+  if (MATCH_V && !$('wmatch').hidden) renderMatch();
   var bar = $('wparty-inv');
   if (r.partyInv && r.partyInv.from) {
     if (partyInvFrom !== r.partyInv.from) { partyInvFrom = r.partyInv.from; $('wparty-inv-t').textContent = '@' + partyInvFrom + ' invited u to their party'; }
@@ -3414,6 +3434,88 @@ function renderFriends(rows) {
   el.querySelectorAll('[data-inv]').forEach(function (b) { b.addEventListener('click', function () { var u = b.getAttribute('data-inv'); b.disabled = true; jpost('/api/world/party', { act: 'invite', user: u }).then(function (rr) { toast(rr && rr.ok ? 'party invite sent to @' + u : ((rr && rr.err) || 'could not invite'), 2200); b.disabled = false; }); }); });
 }
 window.__friends = { open: openFriends };
+
+/* ---- E7: arcade matches ---- */
+var MATCH_V = null;
+var MATCH_LOBBIES = [];
+var MATCH_GAME_LIST = [['hs', 'hide & seek', 'one seeker hunts the forest — hiders survive'], ['rush', 'treasure rush', 'grab the most gold stars on the plaza'], ['derby', 'fishing derby', 'heaviest bag at the lake wins'], ['race', 'team race', 'skyline course, teams by finish points']];
+function fmtMs(ms) { if (!ms) return '—'; var s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2) + '.' + Math.floor((ms % 1000) / 100); }
+function matchFxToast(fx) {
+  if (!fx) return;
+  if (fx.t === 'phase') toast(fx.phase === 'count' ? 'match starting…' : fx.phase === 'hide' ? 'hiders — go hide in the forest (20s)' : fx.phase === 'live' ? 'the match is live' : 'match update', 2600);
+  else if (fx.t === 'caught') toast(fx.why || 'u got caught', 3000);
+  else if (fx.t === 'got') toast('u tagged @' + fx.u, 2200);
+  else if (fx.t === 'treasure') toast('@' + fx.u + ' grabbed a treasure', 1800);
+  else if (fx.t === 'racefin') toast('@' + fx.u + ' finished the course', 2200);
+  else if (fx.t === 'joined') toast('@' + fx.u + ' joined ur lobby', 2000);
+  else if (fx.t === 'done') toast('match over — results in the arcade panel', 3400);
+}
+function openMatch() { $('wmatch').hidden = false; loadMatch(); }
+function closeMatch() { $('wmatch').hidden = true; }
+function loadMatch() {
+  fetch('/api/world/matches').then(function (x) { return x.json(); }).then(function (r) {
+    if (r && r.ok) { MATCH_LOBBIES = r.lobbies || []; if (r.mine) MATCH_V = r.mine; }
+    renderMatch();
+  });
+}
+function renderMatch() {
+  var body = $('wmatch-body'); if (!body) return;
+  var v = MATCH_V;
+  if (!v) {
+    var h = '<div class="hs-note">real multiplayer — server runs the match, winners get paid. start a lobby or join one:</div>';
+    h += MATCH_GAME_LIST.map(function (g) { return '<div class="mt-row"><span class="hs-nm"><b>' + g[1] + '</b><br><span class="hs-pr">' + g[2] + '</span></span><button class="hs-btn" data-mt="create" data-g="' + g[0] + '">create</button></div>'; }).join('');
+    h += '<div class="hs-sec">open lobbies</div>';
+    h += MATCH_LOBBIES.length ? MATCH_LOBBIES.map(function (l) { return '<div class="mt-row"><span class="hs-nm"><b>' + hsEsc(l.name) + '</b> · host @' + hsEsc(l.host) + ' · ' + l.n + '/' + l.max + '</span><button class="hs-btn" data-mt="join" data-id="' + l.id + '">join</button></div>'; }).join('') : '<span class="hs-note">no lobbies open — create one</span>';
+    body.innerHTML = h;
+    return;
+  }
+  var h = '<div class="hs-row"><span class="hs-nm"><b>' + hsEsc(v.name) + '</b> · ' + v.phase + (v.phase !== 'lobby' && v.phase !== 'done' ? ' · ' + v.left + 's' : '') + '</span><button class="hs-btn" data-mt="leave">leave</button></div>';
+  if (v.game === 'hs' && v.seeker) h += '<div class="hs-note">' + (v.seeker === me ? 'u are the SEEKER — tag every hider in the forest' : '@' + hsEsc(v.seeker) + ' is seeking — stay hidden in the pine forest') + '</div>';
+  if (v.phase === 'lobby') h += '<div class="hs-note">host starts when everyone is in. share the lobby — anyone in the world can join from this panel.</div>';
+  if (v.phase === 'hide') h += '<div class="hs-note">hiding phase — get deep into the forest, the seeker waits at the middle</div>';
+  if (v.phase === 'live' && v.game === 'rush') h += '<div class="hs-note">gold stars are live on the plaza — run over one to grab it (+5c each)</div>';
+  if (v.phase === 'live' && v.game === 'derby') h += '<div class="hs-note">fish at the pier or the lake — every catch scores by rarity</div>';
+  if (v.phase === 'live' && v.game === 'race') h += '<div class="hs-note">head to the skyline start (rooftops, top right) and start the race — ur finish feeds ur team</div>';
+  if (v.phase === 'live' && v.game === 'hs' && v.seeker === me) h += '<button class="hs-btn" data-mt="tag" style="align-self:flex-start">tag nearest (in reach)</button>';
+  h += v.members.map(function (m) {
+    var tag = m.role ? ' · ' + m.role : (m.team ? ' · team ' + m.team : '');
+    var stat = v.game === 'race' ? (m.time ? fmtMs(m.time) : (v.phase === 'live' ? 'running…' : '')) : ('score ' + (m.score || 0));
+    return '<div class="mt-row"><span class="hs-nm">@' + hsEsc(m.u) + (m.u === v.host ? ' (host)' : '') + tag + (m.online ? '' : ' · offline') + '</span><span class="hs-pr">' + stat + '</span></div>';
+  }).join('');
+  if (v.phase === 'lobby' && v.host === me) h += '<button class="hs-btn" data-mt="start" style="align-self:flex-start">start match</button>';
+  if (v.phase === 'done' && v.results) {
+    h += '<div class="hs-sec">results</div>' + (v.results.length ? v.results.map(function (r) { return '<div class="mt-row"><span class="hs-nm">@' + hsEsc(r.u) + ' · ' + hsEsc(r.note || '') + '</span><span class="hs-pr">+¢' + r.amt + '</span></div>'; }).join('') : '<span class="hs-note">no payouts this time</span>');
+  }
+  body.innerHTML = h;
+}
+function updateMatchChip() {
+  var chipEl = $('wmatch-chip'); if (chipEl && !chipEl.className) chipEl.className = 'mt-chip';
+  var chip = $('wmatch-chip'); if (!chip) return;
+  var v = MATCH_V;
+  if (!v || (v.phase !== 'count' && v.phase !== 'hide' && v.phase !== 'live')) { chip.hidden = true; return; }
+  var extra = '';
+  if (v.game === 'hs') { var left = v.members.filter(function (m) { return m.role === 'hider'; }).length; extra = ' · ' + left + ' hiding'; }
+  if (v.game === 'rush') extra = ' · ' + (v.treasures ? v.treasures.length : 0) + ' stars left';
+  chip.textContent = v.name + ' · ' + v.phase + ' · ' + v.left + 's' + extra;
+  chip.hidden = false;
+}
+document.addEventListener('click', function (e) {
+  var t = e.target.closest ? e.target.closest('[data-mt]') : null;
+  if (t) {
+    var act = t.getAttribute('data-mt');
+    if (act === 'create') jpost('/api/world/match', { act: 'create', game: t.getAttribute('data-g') }).then(function (r) { if (r && r.ok) { MATCH_V = r.match; renderMatch(); } else toast((r && r.err) || 'nope'); });
+    else if (act === 'join') jpost('/api/world/match', { act: 'join', id: t.getAttribute('data-id') }).then(function (r) { if (r && r.ok) { MATCH_V = r.match; renderMatch(); } else toast((r && r.err) || 'that lobby is gone'); });
+    else if (act === 'leave') jpost('/api/world/match', { act: 'leave' }).then(function () { MATCH_V = null; loadMatch(); });
+    else if (act === 'start') jpost('/api/world/match', { act: 'start' }).then(function (r) { if (r && r.ok) { MATCH_V = r.match; renderMatch(); } else toast((r && r.err) || 'cannot start yet'); });
+    else if (act === 'tag') jpost('/api/world/match', { act: 'tag' }).then(function (r) { if (r && r.ok) toast('tagged @' + r.tagged); else toast((r && r.err) || 'missed'); });
+    return;
+  }
+  if (e.target && e.target.id === 'wmatch-x') closeMatch();
+  if (e.target && e.target.id === 'wmatch') closeMatch();
+  if (e.target && e.target.id === 'wmatch-chip') openMatch();
+});
+window.__match = { open: openMatch, close: closeMatch };
+
 $('wfriends-x').addEventListener('click', closeFriends);
 $('wfriends').addEventListener('click', function (e) { if (e.target === $('wfriends')) closeFriends(); });
 
@@ -3465,6 +3567,7 @@ var HUB_DEFS = [
   ['collections', '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h7"/><path d="M9 11h5"/>', function () { openCollect(); }],
   ['season 1', '<path d="M12 2v20"/><path d="M4 6l16 12"/><path d="M20 6L4 18"/><path d="M12 2l-2 3m2-3 2 3"/><path d="M12 22l-2-3m2 3 2-3"/>', function () { openSeason(); }],
   ['friends', '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3 2.8-4.5 5.5-4.5s4.9 1.5 5.5 4.5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.6c2.3.2 4.1 1.6 4.7 4.4"/>', function () { openFriends(); }],
+  ['arcade matches', '<path d="M6 9h12l1.5 9a2 2 0 0 1-2 2.3h-11A2 2 0 0 1 4.5 18L6 9zM6 9a6 6 0 0 1 12 0M9.5 13.5h.01M14.5 13.5h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>', function () { openMatch(); }],
   ['character', '<circle cx="12" cy="8" r="4"/><path d="M4 21c.8-3.6 4-5.5 8-5.5s7.2 1.9 8 5.5"/>', function () { openChar(); }],
   ['emotes', '<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5c1 1.2 2.2 1.8 3.5 1.8s2.5-.6 3.5-1.8"/><path d="M9 9.5h.01M15 9.5h.01"/>', function () { var ep = $('wemotes'); if (ep) ep.hidden = !ep.hidden; }],
   ['settings', '<circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.14-1.4l2-1.55-2-3.46-2.36.95a7 7 0 0 0-2.42-1.4L13.7 2.6h-3.4l-.38 2.54a7 7 0 0 0-2.42 1.4l-2.36-.95-2 3.46 2 1.55a7 7 0 0 0 0 2.8l-2 1.55 2 3.46 2.36-.95a7 7 0 0 0 2.42 1.4l.38 2.54h3.4l.38-2.54a7 7 0 0 0 2.42-1.4l2.36.95 2-3.46-2-1.55c.1-.45.14-.92.14-1.4Z"/>', function () { openSettings(); }],
