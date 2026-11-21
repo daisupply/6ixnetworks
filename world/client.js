@@ -603,7 +603,9 @@ function update(now) {
   if (m > 1) { ix /= m; iy /= m; }
   var dashing = now < dashUntil;
   var inWater = inLake(px, py) && !onPier(px, py);
-  var speed = dashing ? 660 : (keys['shift'] ? 372 : 258) * (inWater ? 0.72 : 1);
+  var mntIt2 = myWearIds.mount ? WBY[myWearIds.mount] : null;
+  var flyM = !!(mntIt2 && (mntIt2.kind === 'cloud' || mntIt2.kind === 'dragonm'));
+  var speed = dashing ? 660 : (mntIt2 ? (MOUNT_SPD[mntIt2.kind] || 350) : (keys['shift'] ? 372 : 258)) * ((inWater && !flyM) ? 0.72 : 1);
   if (dashing) { ix = Math.cos(dashDir); iy = Math.sin(dashDir); }
   var accel = dashing ? 4200 : 1500;
   vx += clamp(ix * speed - vx, -accel * dt, accel * dt);
@@ -656,6 +658,8 @@ function update(now) {
       delete pets[u];
     }
   });
+  var myMntK = myWearIds.mount ? (WBY[myWearIds.mount] || {}).kind : '';
+  if (myMntK === 'rocket' && moving && Math.random() < 0.7) parts.push({ x: px - Math.cos(dir) * 18, y: py + 10 - Math.sin(dir) * 4, vx: -Math.cos(dir) * 30, vy: 14, at: performance.now(), life: 380, c: Math.random() < 0.5 ? '#fb923c' : '#facc15', r: 3.2 });
   if (inWater && moving && Math.random() < 0.3) {
     parts.push({ x: px + (Math.random() * 22 - 11), y: py + 12, vx: 0, vy: 0, at: now, life: 620, c: '#7dd3fc', r: 3.4, ring: true });
   }
@@ -803,6 +807,7 @@ function drawPlayer(g, p, now, isMe) {
   var walking = dist(p.x, p.y, p.tx, p.ty) > 4 || (isMe && moving);
   if (walking && !emote) bounce = Math.abs(Math.sin(now / 95)) * 2.4;
   var by = y - bounce;
+  if (p.wear && p.wear.mount && (p.wear.mount.kind === 'cloud' || p.wear.mount.kind === 'dragonm')) by -= 5 + Math.sin(now / 320 + x) * 1.6;
   p._by = by;
   var sh = g.createRadialGradient(x, y + 13, 2, x, y + 13, 19);
   sh.addColorStop(0, 'rgba(0,0,0,.5)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
@@ -812,6 +817,7 @@ function drawPlayer(g, p, now, isMe) {
     g.strokeStyle = 'rgba(255,210,87,.9)'; g.lineWidth = 2;
     g.beginPath(); g.ellipse(x, y + 13, 22, 9.5, 0, 0, TAU); g.stroke();
   }
+  if (p.wear && p.wear.mount) drawMount(g, p, now, walking);
   if (p.wear && p.wear.aura) {
     var au = p.wear.aura, ai2, oa;
     g.strokeStyle = au.c; g.globalAlpha = 0.75; g.lineWidth = 2.2;
@@ -2664,7 +2670,7 @@ function openShop() {
 }
 function closeShop() { window.__shopOpen = false; $('wshop').hidden = true; document.body.classList.remove('wov'); }
 function renderShopTabs() {
-  var tabs = [['all', 'all'], ['trail', 'trails'], ['hat', 'hats'], ['aura', 'auras'], ['pet', 'pets'], ['face', 'faces'], ['mine', 'my stuff']];
+  var tabs = [['all', 'all'], ['trail', 'trails'], ['hat', 'hats'], ['aura', 'auras'], ['pet', 'pets'], ['face', 'faces'], ['mount', 'mounts'], ['mine', 'my stuff']];
   var wrap = $('wsh-tabs');
   wrap.innerHTML = '';
   tabs.forEach(function (t) {
@@ -3015,6 +3021,7 @@ var HUB_DEFS = [
   ['six cents shop', '<circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M2 3h3l2.6 12.5a1.5 1.5 0 0 0 1.5 1.2h7.9a1.5 1.5 0 0 0 1.5-1.2L20.5 7H6"/>', function () { openShop(); }],
   ['ur stuff', '<path d="M6 8h12l1.2 12H4.8L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>', function () { openInv(); }],
   ['ur house', '<path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>', function () { openHouse(); }],
+  ['mount up', '<circle cx="5.5" cy="17.5" r="2.4"/><circle cx="18.5" cy="17.5" r="2.4"/><path d="M5.5 17.5 10 8h5l3.5 9.5M10 8 8.2 4.5H5.8"/>', function () { openShop(); shopTab = 'mount'; renderShopTabs(); renderShopGrid(); }],
   ['pets', '<circle cx="7.5" cy="8" r="1.8"/><circle cx="12" cy="5.8" r="1.8"/><circle cx="16.5" cy="8" r="1.8"/><path d="M12 11c2.9 0 5.4 2.2 5.4 4.7 0 1.9-1.5 3.1-3.3 3.1-1 0-1.5-.4-2.1-.4s-1.1.4-2.1.4c-1.8 0-3.3-1.2-3.3-3.1C6.6 13.2 9.1 11 12 11Z"/>', function () { openPets(); }],
   ['world map', '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/>', function () { openMap2(); }],
   ['quest journal', '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>', function () { openJournal(); }],
@@ -3443,6 +3450,81 @@ $('wpets-body').addEventListener('click', function (e) {
 });
 $('wpets-x').addEventListener('click', closePets);
 window.__pets = { open: openPets, close: closePets };
+
+
+/* ================= mounts ================= */
+var WBY = {};
+(window.WSHOP || []).forEach(function (it) { WBY[it.id] = it; });
+var MOUNT_SPD = { board: 350, scooter: 365, bike: 400, hover: 415, cloud: 440, rocket: 465, dragonm: 490 };
+function drawMount(g, p, now, walking) {
+  var m = p.wear.mount, c = m.c;
+  g.save();
+  g.translate(p.x, p.y + 12);
+  g.rotate(p.dir || 0);
+  g.fillStyle = c; g.strokeStyle = c;
+  switch (m.kind) {
+    case 'board':
+      rr(g, -17, -3, 34, 6, 3); g.fill();
+      g.fillStyle = '#241a38';
+      g.beginPath(); g.arc(-10, 4.4, 3.4, 0, TAU); g.arc(10, 4.4, 3.4, 0, TAU); g.fill();
+      break;
+    case 'scooter':
+      rr(g, -15, -2, 27, 5, 2); g.fill();
+      g.lineWidth = 2.6; g.beginPath(); g.moveTo(10, -1); g.lineTo(15, -15); g.stroke();
+      g.beginPath(); g.moveTo(10.4, -15); g.lineTo(19, -15); g.stroke();
+      g.fillStyle = '#241a38';
+      g.beginPath(); g.arc(-11, 4.6, 3.2, 0, TAU); g.arc(12, 4.6, 3.2, 0, TAU); g.fill();
+      break;
+    case 'bike':
+      g.lineWidth = 2.4;
+      g.beginPath(); g.moveTo(-13, 2); g.lineTo(-1, -8); g.lineTo(13, 2); g.moveTo(-1, -8); g.lineTo(1, 3); g.moveTo(-13, 2); g.lineTo(1, 3); g.stroke();
+      g.fillStyle = '#241a38';
+      g.beginPath(); g.arc(-13, 3, 6.6, 0, TAU); g.fill();
+      g.beginPath(); g.arc(13, 3, 6.6, 0, TAU); g.fill();
+      g.fillStyle = c;
+      g.beginPath(); g.arc(-13, 3, 2.4, 0, TAU); g.arc(13, 3, 2.4, 0, TAU); g.fill();
+      break;
+    case 'hover':
+      g.shadowColor = c; g.shadowBlur = 14;
+      rr(g, -17, -3, 34, 6, 3); g.fill(); g.shadowBlur = 0;
+      g.fillStyle = 'rgba(255,255,255,.35)';
+      g.beginPath(); g.ellipse(0, 5.4, 13, 2.2, 0, 0, TAU); g.fill();
+      break;
+    case 'cloud':
+      g.globalAlpha = 0.96; g.fillStyle = '#eef6ff';
+      g.beginPath(); g.ellipse(-9, 2, 9, 5.4, 0, 0, TAU); g.fill();
+      g.beginPath(); g.ellipse(2, -1, 11, 7, 0, 0, TAU); g.fill();
+      g.beginPath(); g.ellipse(12, 2.6, 8, 4.6, 0, 0, TAU); g.fill();
+      g.beginPath(); g.ellipse(1, 4.4, 13, 4.4, 0, 0, TAU); g.fill();
+      g.globalAlpha = 1;
+      break;
+    case 'rocket':
+      rr(g, -17, -3, 34, 6, 3); g.fill();
+      if (walking) {
+        var fl4 = 5 + Math.random() * 6;
+        g.fillStyle = '#facc15';
+        g.beginPath(); g.moveTo(-17, -2); g.lineTo(-17 - fl4 * 1.7, 0.6); g.lineTo(-17, 3.4); g.closePath(); g.fill();
+        g.fillStyle = '#fb923c';
+        g.beginPath(); g.moveTo(-17, -0.8); g.lineTo(-17 - fl4, 0.6); g.lineTo(-17, 2.2); g.closePath(); g.fill();
+      }
+      break;
+    case 'dragonm': {
+      var fl5 = Math.sin(now / 160) * 4;
+      g.beginPath(); g.ellipse(-3, -9 - Math.abs(fl5), 13, 5, -0.5, 0, TAU); g.fill();
+      g.beginPath(); g.ellipse(4, 8 + Math.abs(fl5) * 0.4, 11, 4.4, 0.5, 0, TAU); g.globalAlpha = 0.85; g.fill(); g.globalAlpha = 1;
+      g.beginPath(); g.ellipse(0, 0, 19, 7.4, 0, 0, TAU); g.fill();
+      g.beginPath(); g.moveTo(-18, 0); g.lineTo(-27, -4); g.lineTo(-25, 3); g.closePath(); g.fill();
+      g.beginPath(); g.arc(19, -3, 6, 0, TAU); g.fill();
+      g.beginPath(); g.moveTo(15, -8); g.lineTo(17, -13); g.lineTo(20, -8.6); g.closePath(); g.fill();
+      g.fillStyle = '#17102e';
+      g.beginPath(); g.arc(20.6, -4, 1.3, 0, TAU); g.fill();
+      break;
+    }
+    default:
+      rr(g, -15, -3, 30, 6, 3); g.fill();
+  }
+  g.restore();
+}
 
 window.__admin = { open: openAdmin, close: closeAdmin };
 function profSocial(u) {

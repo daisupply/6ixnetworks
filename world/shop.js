@@ -1325,6 +1325,69 @@ const ITEMS = [
   "price": 1500,
   "color": "#ffd257",
   "kind": "skull"
+ },
+ {
+  "id": "s148",
+  "cat": "mount",
+  "name": "skateboard",
+  "rarity": "common",
+  "price": 300,
+  "color": "#f87171",
+  "kind": "board"
+ },
+ {
+  "id": "s149",
+  "cat": "mount",
+  "name": "kick scooter",
+  "rarity": "common",
+  "price": 380,
+  "color": "#94a3b8",
+  "kind": "scooter"
+ },
+ {
+  "id": "s150",
+  "cat": "mount",
+  "name": "moon bike",
+  "rarity": "rare",
+  "price": 650,
+  "color": "#7dd3fc",
+  "kind": "bike"
+ },
+ {
+  "id": "s151",
+  "cat": "mount",
+  "name": "hoverboard",
+  "rarity": "rare",
+  "price": 750,
+  "color": "#c4b5fd",
+  "kind": "hover"
+ },
+ {
+  "id": "s152",
+  "cat": "mount",
+  "name": "cloud nine",
+  "rarity": "epic",
+  "price": 1100,
+  "color": "#e0f2fe",
+  "kind": "cloud"
+ },
+ {
+  "id": "s153",
+  "cat": "mount",
+  "name": "rocket board",
+  "rarity": "epic",
+  "price": 1250,
+  "color": "#fb923c",
+  "kind": "rocket"
+ },
+ {
+  "id": "s154",
+  "cat": "mount",
+  "name": "moon dragon",
+  "rarity": "legendary",
+  "price": 2200,
+  "color": "#a78bfa",
+  "kind": "dragonm"
  }
 ];
 const BY_ID = {};

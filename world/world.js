@@ -202,6 +202,7 @@ const CRYSTALS = [
 
 // Intra-world doors: the server validates the player is standing at the
 // from-point, then sanctions the teleport (TP_OK) and moves them itself.
+const MOUNT_SPEED = { board: 350, scooter: 365, bike: 400, hover: 415, cloud: 440, rocket: 465, dragonm: 490 };
 const PORTAL_PADS = { games: [1780, 1215], movies: [3020, 1215], blox: [2400, 1120], chat: [1710, 1500], party: [3090, 1500], yt: [1780, 1800], tiktok: [3020, 1800], music: [2400, 1905] };
 const DOORS = {
   'arcade-in': { fx: 5600, fy: 1680, tx: 5650, ty: 3600 },
@@ -482,10 +483,10 @@ function createWorld(ctx) {
     }
   }
   function wearOf(u) {
-    const out = { trail: null, hat: null, aura: null, pet: null, face: null };
+    const out = { trail: null, hat: null, aura: null, pet: null, face: null, mount: null };
     let w = {};
     try { w = ctx.getWear(u) || {}; } catch { }
-    for (const cat of ['trail', 'hat', 'aura', 'pet', 'face']) {
+    for (const cat of ['trail', 'hat', 'aura', 'pet', 'face', 'mount']) {
       const it = w[cat] && SHOP.BY_ID[w[cat]];
       if (it) out[cat] = { kind: it.kind, c: it.color, id: it.id, rarity: it.rarity || 'common' };
     }
@@ -736,9 +737,27 @@ function createWorld(ctx) {
         let ny = b.y != null ? clampN(b.y, 24, MAP_H - 24) : p.y;
         const dtS = Math.min(2, Math.max(0.15, (now - prevAt) / 1000));
         const dd = dist(ox, oy, nx, ny), maxStep = 660 * dtS + 90;
-        if (dd > maxStep && !TP_OK.has(me)) { nx = ox + (nx - ox) * maxStep / dd; ny = oy + (ny - oy) * maxStep / dd; }
+        const wasTp = TP_OK.has(me);
+        if (dd > maxStep && !wasTp) { nx = ox + (nx - ox) * maxStep / dd; ny = oy + (ny - oy) * maxStep / dd; }
         TP_OK.delete(me);
         p.x = nx; p.y = ny;
+        // sustained-speed enforcement over a 6s window: mount caps (372 on foot) hold; dash bursts average out.
+        // the budget carries a 0.6s-of-cap allowance because a step's distance is credited at ping arrival,
+        // so window edges jitter by about a step — legit riders at cap speed must never trip it.
+        // one clamped step = login desync grace (re-anchor); clamped steps in a row count as movement
+        if (wasTp) { p.win = { t: now, d: 0, x: p.x, y: p.y }; p.clampStreak = 0; }
+        else if (dd > maxStep && !p.clampStreak) { p.win = { t: now, d: 0, x: p.x, y: p.y }; p.clampStreak = 1; }
+        else {
+          p.clampStreak = dd > maxStep ? 2 : 0;
+          const cap = (p.wear && p.wear.mount) ? (MOUNT_SPEED[p.wear.mount.kind] || 350) : 372;
+          const stepD = dist(ox, oy, p.x, p.y);
+          if (!p.win || now - p.win.t > 6000) { p.win = { t: now, d: 0, x: p.x, y: p.y }; }
+          else {
+            p.win.d += stepD;
+            const wEl = (now - p.win.t) / 1000;
+            if (wEl > 2 && p.win.d > cap * wEl * 1.05 + cap * 0.6) { p.x = p.win.x; p.y = p.win.y; p.win = { t: now, d: 0, x: p.x, y: p.y }; }
+          }
+        }
       }
       if (!p.house && p.y > 4380) p.y = 4380;
       if (b.dir != null) p.dir = clampN(b.dir, -Math.PI * 2, Math.PI * 2);
@@ -999,7 +1018,7 @@ function createWorld(ctx) {
         let inv = [];
         try { inv = ctx.getInv(me) || []; } catch { }
         const wear = {};
-        for (const cat of ['trail', 'hat', 'aura', 'pet', 'face']) { if (saved[cat] && inv.includes(saved[cat])) wear[cat] = saved[cat]; }
+        for (const cat of ['trail', 'hat', 'aura', 'pet', 'face', 'mount']) { if (saved[cat] && inv.includes(saved[cat])) wear[cat] = saved[cat]; }
         try { ctx.setWear(me, wear); } catch { }
         const p = P.get(me);
         if (p) p.wear = wearOf(me);
@@ -1250,7 +1269,7 @@ function createWorld(ctx) {
     }
     if (u.pathname === '/api/world/shopequip' && req.method === 'POST') {
       const cat = String(b.cat || '');
-      if (!['trail', 'hat', 'aura', 'pet', 'face'].includes(cat)) { J({ ok: false, err: 'bad category' }, 400); return true; }
+      if (!['trail', 'hat', 'aura', 'pet', 'face', 'mount'].includes(cat)) { J({ ok: false, err: 'bad category' }, 400); return true; }
       let wear = {};
       try { wear = ctx.getWear(me); } catch { }
       if (b.id == null || b.id === '') { delete wear[cat]; }
