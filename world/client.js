@@ -3280,6 +3280,49 @@ function closeMarket() { $('wmarket').hidden = true; document.body.classList.rem
 $('wmarket-x').addEventListener('click', closeMarket);
 $('wmarket').addEventListener('click', function (e) { if (e.target === $('wmarket')) closeMarket(); });
 window.__market = { open: openMarket, close: closeMarket };
+function openCollect() {
+  $('wcollect').hidden = false;
+  document.body.classList.add('wov');
+  $('wcollect-body').innerHTML = '<div class="jq-row">opening ur journal\u2026</div>';
+  loadCollect();
+}
+function loadCollect() {
+  fetch('/api/world/journal', { headers: { accept: 'application/json' } }).then(function (x) { return x.json(); }).then(function (r) {
+    if (!r || !r.ok) { $('wcollect-body').innerHTML = '<div class="jq-row">couldnt load the journal</div>'; return; }
+    renderCollect(r);
+  }).catch(function () { $('wcollect-body').innerHTML = '<div class="jq-row">couldnt load the journal</div>'; });
+}
+function renderCollect(r) {
+  var h = '<div class="jq-sec">ur whole collection \u00b7 ' + r.overall + '%</div><div class="col-bar"><i style="width:' + r.overall + '%"></i></div>';
+  var ready = r.milestones.filter(function (m) { return m.state === 'ready'; });
+  if (ready.length) h += ready.map(function (m) { return '<div class="col-ms"><span>\u2726 ' + escH(m.label) + ' complete \u00b7 +\u00a2' + m.amt + '</span><button class="col-claim" data-ms="' + m.id + '" type="button">claim</button></div>'; }).join('');
+  if (r.recent && r.recent.length) h += '<div class="jq-sec">recently discovered</div><div class="col-grid">' + r.recent.map(function (e) { return '<span class="col-chip">' + escH(e.name) + '</span>'; }).join('') + '</div>';
+  h += r.cats.map(function (ct) {
+    var s = '<div class="jq-sec">' + escH(ct.name) + ' \u00b7 ' + ct.got + '/' + ct.total + ' \u00b7 ' + ct.pct + '%</div><div class="col-bar"><i style="width:' + ct.pct + '%"></i></div><div class="col-grid">';
+    s += ct.entries.map(function (e) {
+      if (e.got) return '<span class="col-chip">' + (e.color ? '<span class="col-dot" style="background:' + e.color + '"></span>' : '') + escH(e.name) + (e.max ? ' \u00b7 ' + e.n + '/' + e.max : (e.n ? ' \u00b7 \u00d7' + e.n : '')) + '</span>';
+      if (e.max) return '<span class="col-chip miss">' + escH(e.name) + ' \u00b7 ' + (e.n || 0) + '/' + e.max + '</span>';
+      return '<span class="col-chip miss">??? \u00b7 ' + escH(e.sub || '') + '</span>';
+    }).join('');
+    return s + '</div>';
+  }).join('');
+  var locked = r.milestones.filter(function (m) { return m.state !== 'claimed'; }).length;
+  h += '<div class="jq-row" style="font-size:12px;opacity:.7">milestones pay out at 25/50/75/100% per category \u00b7 ' + locked + ' still out there \u00b7 stuff u sell or trade away still counts \u2014 the journal remembers</div>';
+  $('wcollect-body').innerHTML = h;
+  Array.prototype.forEach.call(document.querySelectorAll('.col-claim'), function (btn) {
+    btn.addEventListener('click', function () {
+      jpost('/api/world/journal', { id: btn.getAttribute('data-ms') }).then(function (rr) {
+        if (rr && rr.ok) { toast('\u2726 milestone claimed \u00b7 +\u00a2' + rr.amt, 3600); sndQuest(); }
+        else toast('claim failed', (rr && rr.err) || '');
+        loadCollect();
+      });
+    });
+  });
+}
+function closeCollect() { $('wcollect').hidden = true; document.body.classList.remove('wov'); }
+$('wcollect-x').addEventListener('click', closeCollect);
+$('wcollect').addEventListener('click', function (e) { if (e.target === $('wcollect')) closeCollect(); });
+window.__collect = { open: openCollect, close: closeCollect };
 /* settings, ambient audio, hub, inventory, big map, admin */
 var SET = { vol: 0.85, music: true, sfx: true };
 try { var svSet = JSON.parse(localStorage.getItem('sixSettings') || 'null'); if (svSet) SET = Object.assign(SET, svSet); } catch (e) {}
@@ -3325,6 +3368,7 @@ var HUB_DEFS = [
   ['achievements', '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>', function () { openAch(); }],
   ['leaderboards', '<path d="M3 3v18h18"/><path d="M8 17v-6"/><path d="M13 17V7"/><path d="M18 17v-9"/>', function () { openBoards(); }],
   ['events', '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>', function () { openEvents(); }],
+  ['collections', '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h7"/><path d="M9 11h5"/>', function () { openCollect(); }],
   ['character', '<circle cx="12" cy="8" r="4"/><path d="M4 21c.8-3.6 4-5.5 8-5.5s7.2 1.9 8 5.5"/>', function () { openChar(); }],
   ['emotes', '<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5c1 1.2 2.2 1.8 3.5 1.8s2.5-.6 3.5-1.8"/><path d="M9 9.5h.01M15 9.5h.01"/>', function () { var ep = $('wemotes'); if (ep) ep.hidden = !ep.hidden; }],
   ['settings', '<circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.14-1.4l2-1.55-2-3.46-2.36.95a7 7 0 0 0-2.42-1.4L13.7 2.6h-3.4l-.38 2.54a7 7 0 0 0-2.42 1.4l-2.36-.95-2 3.46 2 1.55a7 7 0 0 0 0 2.8l-2 1.55 2 3.46 2.36-.95a7 7 0 0 0 2.42 1.4l.38 2.54h3.4l.38-2.54a7 7 0 0 0 2.42-1.4l2.36.95 2-3.46-2-1.55c.1-.45.14-.92.14-1.4Z"/>', function () { openSettings(); }],

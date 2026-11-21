@@ -375,6 +375,8 @@ function createWorld(ctx) {
     { id: 'event-regular', name: 'event regular', desc: 'take part in 20 world events', cat: 'events', reward: 80, test: (pg) => (pg.c.evpart || 0) >= 20 },
     { id: 'champion', name: 'champion', desc: 'win a derby or tournament', cat: 'events', reward: 100, test: (pg) => (pg.c.evwin || 0) >= 1 },
     { id: 'event-legend', name: 'event legend', desc: 'win 5 derbies or tournaments', cat: 'events', reward: 250, test: (pg) => (pg.c.evwin || 0) >= 5 },
+    { id: 'collector', name: 'collector', desc: 'complete any collection category', cat: 'collection', reward: 100, test: (pg) => (pg.c.colsets || 0) >= 1 },
+    { id: 'grand-collector', name: 'grand collector', desc: 'complete 3 collection categories', cat: 'collection', reward: 300, test: (pg) => (pg.c.colsets || 0) >= 3 },
     { id: 'quest-starter', name: 'quest starter', desc: 'complete ur first quest', cat: 'quests', reward: 5, test: (pg) => (pg.c.quest || 0) >= 1 },
     { id: 'quest-pro', name: 'quest pro', desc: 'complete 10 quests', cat: 'quests', reward: 30, test: (pg) => (pg.c.quest || 0) >= 10 },
     { id: 'quest-legend', name: 'quest legend', desc: 'complete 50 quests', cat: 'quests', reward: 100, test: (pg) => (pg.c.quest || 0) >= 50 },
@@ -634,7 +636,7 @@ function createWorld(ctx) {
     awardXp(me, 20);
     const pg = progFor(me); pg.c.race = (pg.c.race || 0) + 1; progSave(me);
     guildWkBump(me, 'race', now);
-    { const evT = worldEvent(now); if (evT && evT.type === 'tourney' && EV_RUN && EV_RUN.id === evT.id && EV_RUN.course === rc.course) { const prev = EV_RUN.scores.get(me); if (prev == null || ms < prev) EV_RUN.scores.set(me, ms); EV_RUN.parts.add(me); } }
+    { const evT = worldEvent(now); if (evT && evT.type === 'tourney' && EV_RUN && EV_RUN.id === evT.id && EV_RUN.course === rc.course) { const prev = EV_RUN.scores.get(me); if (prev == null || ms < prev) EV_RUN.scores.set(me, ms); evPart(me); } }
     return { course: rc.course, name: C.name, ms, pb: isPb, rec: isRec, pay };
   }
   function raceTick(me, now) {
@@ -930,9 +932,20 @@ function createWorld(ctx) {
     }
     return EV_RUN;
   }
-  function evPart(user) { if (EV_RUN) EV_RUN.parts.add(user); }
-  function evScore(user, pts) { if (!EV_RUN) return; EV_RUN.parts.add(user); EV_RUN.scores.set(user, (EV_RUN.scores.get(user) || 0) + pts); }
-  function evGoalBump(kind, user) { if (EV_RUN && EV_RUN.type === 'community' && EV_RUN.goal && EV_RUN.goal.kind === kind) { EV_RUN.parts.add(user); EV_RUN.prog = (EV_RUN.prog || 0) + 1; } }
+  function noteSeen(user, cat, id) {
+    try {
+      const key = cat === 'item' ? 'colseen' : cat === 'minigame' ? 'mgseen' : cat === 'event' ? 'evseen' : null;
+      if (key) { const arr = wload(key, user) || []; if (!arr.includes(id)) { arr.push(id); wsave(key, user, arr.slice(0, 600)); } }
+      if (key || cat === 'fish' || cat === 'crystal' || cat === 'zone') {
+        const rec = wload('colrecent', user) || [];
+        if (!rec.length || rec[0].cat !== cat || rec[0].id !== id) { rec.unshift({ cat, id, at: Date.now() }); wsave('colrecent', user, rec.slice(0, 8)); }
+      }
+    } catch { }
+  }
+  function journalNoteItems(user, ids) { (ids || []).forEach((id) => noteSeen(user, 'item', id)); }
+  function evPart(user) { if (EV_RUN) { EV_RUN.parts.add(user); noteSeen(user, 'event', EV_RUN.type); } }
+  function evScore(user, pts) { if (!EV_RUN) return; evPart(user); EV_RUN.scores.set(user, (EV_RUN.scores.get(user) || 0) + pts); }
+  function evGoalBump(kind, user) { if (EV_RUN && EV_RUN.type === 'community' && EV_RUN.goal && EV_RUN.goal.kind === kind) { evPart(user); EV_RUN.prog = (EV_RUN.prog || 0) + 1; } }
   async function evSettle(now) {
     if (!EV_RUN || EV_RUN.settled) return;
     const evNow = worldEvent(now);
@@ -1141,6 +1154,7 @@ function createWorld(ctx) {
     txLog(B, 'trade', -netA, 'with @' + A);
     const pgTA = progFor(A); pgTA.c.trade = (pgTA.c.trade || 0) + 1; progSave(A);
     const pgTB = progFor(B); pgTB.c.trade = (pgTB.c.trade || 0) + 1; progSave(B);
+    journalNoteItems(A, tr.ob.items); journalNoteItems(B, tr.oa.items);
     TRADE_FLASH.set(A, { msg: 'trade done with @' + B, at: Date.now() });
     TRADE_FLASH.set(B, { msg: 'trade done with @' + A, at: Date.now() });
     return { ok: true };
@@ -1205,7 +1219,7 @@ function createWorld(ctx) {
       let disc = null;
       if (zn && zn !== p.zone) {
         questDone = questEvent(me, 'zone', zn) || questDone;
-        if (pg.zones.indexOf(zn) < 0) { pg.zones.push(zn); disc = { zone: zoneName(zn) }; awardXp(me, 6); progSave(me); }
+        if (pg.zones.indexOf(zn) < 0) { pg.zones.push(zn); disc = { zone: zoneName(zn) }; awardXp(me, 6); progSave(me); noteSeen(me, 'zone', zn); }
       }
       p.zone = zn;
       // meeting people: standing close to another player counts them (the
@@ -1256,6 +1270,7 @@ function createWorld(ctx) {
         if (pg.crystals.indexOf(c.id) >= 0) continue;
         if (dist(p.x, p.y, c.x, c.y) < 58) {
           pg.crystals.push(c.id);
+          noteSeen(me, 'crystal', c.id);
           pg.c.crystal = (pg.c.crystal || 0) + 1;
           let bal = null;
           try { bal = await ctx.awardCents(me, c.pay); } catch { }
@@ -1630,6 +1645,68 @@ function createWorld(ctx) {
       return true;
     }
 
+    // ---- collection journal (E3): seen-trackers, category completion, milestone rewards ----
+    const COL_MS = [[25, 25], [50, 60], [75, 120], [100, 250]];
+    const COL_ALL_MS = [[50, 200], [100, 500]];
+    const EV_NAMES_J = { shardstorm: 'shard storm', goldenhunt: 'golden hunt', meteor: 'meteor shower', treasure: 'treasure hunt', doublexp: 'double xp', derby: 'fishing derby', tourney: 'race tournament', crystalhunt: 'crystal hunt', community: 'community challenge', lichsurge: 'lich surge', errand: "six's errand" };
+    function buildJournal(me) {
+      const pg = progFor(me);
+      let inv = []; try { inv = ctx.getInv(me) || []; } catch { }
+      const seen = new Set(wload('colseen', me) || []);
+      let grew = false;
+      for (const id of inv) if (!seen.has(id)) { seen.add(id); grew = true; }
+      for (const id of equippedIds(me)) if (!seen.has(id)) { seen.add(id); grew = true; }
+      if (grew) wsave('colseen', me, [...seen].slice(0, 600));
+      const fishlog = wload('fishlog', me) || {};
+      const mgseen = new Set(wload('mgseen', me) || []);
+      const evseen = new Set(wload('evseen', me) || []);
+      const itemEntries = (cat) => SHOP.ITEMS.filter((it) => !cat || it.cat === cat).map((it) => ({ id: it.id, name: it.name, sub: it.rarity + ' \u00b7 ' + it.cat, color: it.color, got: seen.has(it.id) }));
+      const cats = [];
+      cats.push({ id: 'fish', name: 'fish of the lake', entries: FISH_SPECIES.map((s) => ({ id: s.id, name: s.name, sub: s.band + ' fish', color: s.c, got: !!fishlog[s.id], n: fishlog[s.id] ? fishlog[s.id].n : 0 })) });
+      cats.push({ id: 'items', name: 'every item', entries: itemEntries(null) });
+      cats.push({ id: 'pets', name: 'pets', entries: itemEntries('pet') });
+      cats.push({ id: 'mounts', name: 'mounts', entries: itemEntries('mount') });
+      cats.push({ id: 'crystals', name: 'world crystals', entries: CRYSTALS.map((c) => ({ id: c.id, name: c.rare + ' crystal', sub: 'somewhere in the world', color: c.rare === 'legendary' ? '#ffd257' : c.rare === 'epic' ? '#c084fc' : c.rare === 'rare' ? '#38bdf8' : '#9ca3af', got: pg.crystals.includes(c.id) })) });
+      cats.push({ id: 'zones', name: 'places discovered', entries: ZONES.map((z) => ({ id: z.id, name: z.name, sub: 'a place in the world', got: pg.zones.includes(z.id) })) });
+      cats.push({ id: 'minigames', name: 'minigames played', entries: GAMES_MOD.GAMES.map((g) => ({ id: g.id, name: g.name, sub: g.engine + ' game', got: mgseen.has(g.id) })) });
+      cats.push({ id: 'events', name: 'events joined', entries: EV_ROT.map((t) => ({ id: t, name: EV_NAMES_J[t] || t, sub: 'a world event', got: evseen.has(t) })) });
+      cats.push({ id: 'bosses', name: 'boss hunts', entries: [{ id: 'lich', name: 'the drowned lich', sub: 'lake boss', n: Math.min(10, pg.c.boss || 0), max: 10, got: (pg.c.boss || 0) >= 10 }, { id: 'crypt', name: 'crypt clears', sub: 'the sunken crypt', n: Math.min(10, pg.c.crypt || 0), max: 10, got: (pg.c.crypt || 0) >= 10 }] });
+      for (const c of cats) { c.got = c.entries.reduce((a, e) => a + (e.max ? (e.n || 0) : (e.got ? 1 : 0)), 0); c.total = c.entries.reduce((a, e) => a + (e.max || 1), 0); c.pct = c.total ? Math.floor(100 * c.got / c.total) : 0; }
+      const overall = cats.length ? Math.round(cats.reduce((a, c) => a + c.pct, 0) / cats.length) : 0;
+      const claimed = new Set(wload('colclaim', me) || []);
+      const milestones = [];
+      for (const c of cats) for (const ms of COL_MS) milestones.push({ id: c.id + ':' + ms[0], label: c.name + ' ' + ms[0] + '%', pct: ms[0], amt: ms[1], state: claimed.has(c.id + ':' + ms[0]) ? 'claimed' : (c.pct >= ms[0] ? 'ready' : 'locked') });
+      for (const ms of COL_ALL_MS) milestones.push({ id: 'all:' + ms[0], label: 'whole journal ' + ms[0] + '%', pct: ms[0], amt: ms[1], state: claimed.has('all:' + ms[0]) ? 'claimed' : (overall >= ms[0] ? 'ready' : 'locked') });
+      const colsets = cats.filter((c) => c.pct >= 100).length;
+      if ((pg.c.colsets || 0) !== colsets) { pg.c.colsets = colsets; progSave(me); }
+      const recent = (wload('colrecent', me) || []).map((r) => ({ cat: r.cat, id: r.id, at: r.at, name: r.cat === 'item' && SHOP.BY_ID[r.id] ? SHOP.BY_ID[r.id].name : r.cat === 'fish' ? ((FISH_SPECIES.find((s) => s.id === r.id) || {}).name || r.id) : r.cat === 'minigame' ? ((GAMES_MOD.BY_ID[r.id] || {}).name || r.id) : r.cat === 'zone' ? zoneName(r.id) : r.cat === 'event' ? (EV_NAMES_J[r.id] || r.id) : r.id }));
+      return { cats, overall, milestones, recent };
+    }
+
+    if (u.pathname === '/api/world/journal' && req.method === 'GET') {
+      const j = buildJournal(me);
+      achCheck(me);
+      J({ ok: true, cats: j.cats, overall: j.overall, milestones: j.milestones, recent: j.recent });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/journal' && req.method === 'POST') {
+      const id = String(b.id || '');
+      const j = buildJournal(me);
+      const ms = j.milestones.find((m) => m.id === id);
+      if (!ms) { J({ ok: false, err: 'no such milestone' }, 400); return true; }
+      if (ms.state === 'claimed') { J({ ok: false, err: 'already claimed' }, 400); return true; }
+      if (ms.state !== 'ready') { J({ ok: false, err: 'not there yet — keep collecting' }, 400); return true; }
+      const claimed = wload('colclaim', me) || [];
+      claimed.push(id); wsave('colclaim', me, claimed);
+      let bal = null; try { bal = await ctx.awardCents(me, ms.amt); } catch { }
+      if (typeof bal !== 'number') { wsave('colclaim', me, claimed.filter((x) => x !== id)); J({ ok: false, err: 'payout glitched — try again' }, 500); return true; }
+      txLog(me, 'collection', ms.amt, ms.label);
+      achCheck(me);
+      J({ ok: true, amt: ms.amt, bal });
+      return true;
+    }
+
     // ---- player marketplace (E2): escrow listings, 5% fee, 48h expiry ----
     function mktLoad() { const r = wload('mkt', '_mkt') || {}; if (!r.list) r.list = {}; if (!r.seq) r.seq = 1; return r; }
     function mktSave(reg) { wsave('mkt', '_mkt', reg); }
@@ -1748,6 +1825,7 @@ function createWorld(ctx) {
           mktHist(me, { t: 'bought', item: l.item, price: l.price, who: l.seller, at: now });
           mktHist(l.seller, { t: 'sold', item: l.item, price: l.price, got: proceeds, fee, who: me, at: now });
           const pg = progFor(me); pg.c.buy = (pg.c.buy || 0) + 1; progSave(me);
+          journalNoteItems(me, [l.item]);
           J({ ok: true, item: l.item, price: l.price });
           return true;
         } finally { MKT_INFLIGHT.delete(lid); }
@@ -2040,6 +2118,7 @@ function createWorld(ctx) {
         txLog(me, 'craft', 0, SHOP.BY_ID[r.out].name);
         const pgCr = progFor(me); pgCr.c.craft = (pgCr.c.craft || 0) + 1; progSave(me);
         awardXp(me, 10);
+        journalNoteItems(me, [r.out]);
         J({ ok: true, made: SHOP.BY_ID[r.out].name });
         return true;
       } finally { CRAFT_INFLIGHT.delete(me); }
@@ -2202,6 +2281,7 @@ function createWorld(ctx) {
       le.n += 1; le.max = Math.max(le.max, kg);
       log[sp.id] = le;
       wsave('fishlog', me, log);
+      if (le.n === 1) noteSeen(me, 'fish', sp.id);
       const day = ctx.scoreDay();
       const fd = wload('fishday', me) || {};
       const fdN = (fd.day === day ? (fd.n || 0) : 0) + 1;
@@ -2373,6 +2453,7 @@ function createWorld(ctx) {
       if (!g) { J({ ok: false, err: 'no such minigame' }, 400); return true; }
       const token = 'mt' + now.toString(36) + Math.floor(Math.random() * 1e9).toString(36);
       MTOK.set(token, { user: me, game: g.id, at: now });
+      noteSeen(me, 'minigame', g.id);
       if (MTOK.size > 400) { for (const [k, v] of MTOK) { if (now - v.at > 180000) MTOK.delete(k); } }
       J({ ok: true, token });
       return true;
@@ -2467,6 +2548,7 @@ function createWorld(ctx) {
           return true;
         }
         txLog(me, 'shop', -it.price, it.name);
+        journalNoteItems(me, [it.id]);
         const pgb = progFor(me); pgb.c.buy = (pgb.c.buy || 0) + 1; progSave(me); achCheck(me);
         J({ ok: true, bal: balNow, inv });
         return true;
@@ -2533,6 +2615,7 @@ function createWorld(ctx) {
       inv.push('s141');
       try { ctx.setInv(me, inv); } catch { }
       txLog(me, 'vault', 0, 'claimed the vault crown');
+      journalNoteItems(me, ['s141']);
       awardXp(me, 25);
       achCheck(me);
       J({ ok: true, inv });
@@ -2736,6 +2819,10 @@ function createWorld(ctx) {
       '<div id="wmarket" hidden><div class="wa-card">\n' +
       '  <div class="wa-head"><span>\u2726 player marketplace</span><button id="wmarket-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
       '  <div id="wmarket-body"></div>\n' +
+      '</div></div>\n' +
+      '<div id="wcollect" hidden><div class="wa-card">\n' +
+      '  <div class="wa-head"><span>\u2726 collection journal</span><button id="wcollect-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
+      '  <div id="wcollect-body"></div>\n' +
       '</div></div>\n' +
       '<div id="wboards" hidden><div class="wa-card">\n' +
       '  <div class="wa-head"><span>\u2726 leaderboards</span><button id="wboards-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
