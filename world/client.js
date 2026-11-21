@@ -3191,6 +3191,95 @@ function closeEvents() { $('wevents').hidden = true; document.body.classList.rem
 $('wevents-x').addEventListener('click', closeEvents);
 $('wevents').addEventListener('click', function (e) { if (e.target === $('wevents')) closeEvents(); });
 window.__events = { open: openEvents, close: closeEvents };
+var mktQ = '', mktCat = '', mktSort = 'new', mktArm = '', mktArmT = null;
+function mktItemName(id) { var it = (window.WSHOP || []).filter(function (x) { return x.id === id; })[0]; return it ? it.name : id; }
+function openMarket() {
+  $('wmarket').hidden = false;
+  document.body.classList.add('wov');
+  $('wmarket-body').innerHTML = '<div class="jq-row">opening the market\u2026</div>';
+  loadMarket();
+}
+function loadMarket() {
+  var qs = '?q=' + encodeURIComponent(mktQ) + '&cat=' + encodeURIComponent(mktCat) + '&sort=' + encodeURIComponent(mktSort);
+  fetch('/api/world/market' + qs, { headers: { accept: 'application/json' } }).then(function (x) { return x.json(); }).then(function (r) {
+    if (!r || !r.ok) { $('wmarket-body').innerHTML = '<div class="jq-row">couldnt load the market</div>'; return; }
+    renderMarket(r);
+  }).catch(function () { $('wmarket-body').innerHTML = '<div class="jq-row">couldnt load the market</div>'; });
+}
+function renderMarket(r) {
+  var cats = [];
+  (window.WSHOP || []).forEach(function (it) { if (cats.indexOf(it.cat) < 0) cats.push(it.cat); });
+  var h = '<div class="mkt-controls"><input id="mkt-q" type="text" placeholder="search items or sellers\u2026" value="' + escH(mktQ) + '"><select id="mkt-cat"><option value="">all kinds</option>' + cats.map(function (ct) { return '<option value="' + escH(ct) + '"' + (mktCat === ct ? ' selected' : '') + '>' + escH(ct) + '</option>'; }).join('') + '</select><select id="mkt-sort"><option value="new"' + (mktSort === 'new' ? ' selected' : '') + '>newest</option><option value="lo"' + (mktSort === 'lo' ? ' selected' : '') + '>price low</option><option value="hi"' + (mktSort === 'hi' ? ' selected' : '') + '>price high</option></select></div>';
+  h += '<div class="jq-sec">for sale \u00b7 ' + r.total + ' listings \u00b7 sellers pay a 5% fee</div>';
+  if (!r.listings.length) h += '<div class="jq-row">nothing for sale right now \u2014 be the first to list something</div>';
+  h += r.listings.map(function (l) {
+    var hrs = Math.max(0, Math.round((l.exp - Date.now()) / 3600000));
+    return '<div class="mkt-row"><span class="mkt-dot" style="background:' + l.color + ';color:' + l.color + '"></span><span class="mkt-nm">' + escH(l.name) + '<br><span style="color:' + (RAR_C[l.rarity] || '#fff') + ';font-size:12px">' + escH(l.rarity) + '</span> <span style="opacity:.65;font-size:12px">@' + escH(l.seller) + ' \u00b7 ' + hrs + 'h left</span></span>' + (l.mine ? '<span style="opacity:.7;font-size:12px">ur listing</span>' : '<button class="mkt-buy" data-lid="' + l.lid + '" type="button">\u00a2' + l.price + '</button>') + '</div>';
+  }).join('');
+  h += '<div class="jq-sec">ur listings (' + r.mine.length + '/' + r.maxList + ')</div>';
+  if (!r.mine.length) h += '<div class="jq-row">nothing listed \u2014 list something below</div>';
+  h += r.mine.map(function (l) { return '<div class="mkt-row"><span class="mkt-nm">' + escH(l.name) + ' \u00b7 \u00a2' + l.price + '</span><button class="mkt-cancel" data-lid="' + l.lid + '" type="button">cancel</button></div>'; }).join('');
+  var equipped = {}; Object.keys(myWearIds || {}).forEach(function (k) { if (myWearIds[k]) equipped[myWearIds[k]] = 1; });
+  var sellable = (window.WSHOP || []).filter(function (it) { return myInv.indexOf(it.id) >= 0 && !it.vaultOnly && !equipped[it.id]; });
+  h += '<div class="jq-sec">list an item</div>';
+  if (!sellable.length) h += '<div class="jq-row">nothing sellable in ur bag \u2014 equipped and bound items cant be listed</div>';
+  else h += '<div class="mkt-controls"><select id="mkt-sell-item">' + sellable.map(function (it) { return '<option value="' + it.id + '">' + escH(it.name) + ' (' + escH(it.rarity) + ')</option>'; }).join('') + '</select><input id="mkt-sell-price" type="number" min="10" max="50000" placeholder="price \u00a2" style="max-width:110px"><button class="mkt-list-btn" id="mkt-sell-go" type="button">list it</button></div><div class="jq-row" style="font-size:12px;opacity:.7">listings last 48h \u00b7 the item leaves ur bag while its listed \u00b7 u get 95% when it sells</div>';
+  if (r.hist && r.hist.length) {
+    h += '<div class="jq-sec">ur market history</div>' + r.hist.slice(0, 8).map(function (e) {
+      var nm = mktItemName(e.item);
+      if (e.t === 'bought') return '<div class="jq-row">bought ' + escH(nm) + ' from @' + escH(e.who || '') + ' \u00b7 \u00a2' + e.price + '</div>';
+      if (e.t === 'sold') return '<div class="jq-row">sold ' + escH(nm) + ' to @' + escH(e.who || '') + ' \u00b7 +\u00a2' + e.got + ' after fee</div>';
+      if (e.t === 'listed') return '<div class="jq-row">listed ' + escH(nm) + ' \u00b7 \u00a2' + e.price + '</div>';
+      if (e.t === 'cancelled') return '<div class="jq-row">cancelled ' + escH(nm) + ' \u00b7 item returned</div>';
+      if (e.t === 'expired') return '<div class="jq-row">' + escH(nm) + ' expired unsold \u00b7 item returned</div>';
+      return '';
+    }).join('');
+  }
+  $('wmarket-body').innerHTML = h;
+  var qEl = $('mkt-q');
+  qEl.addEventListener('change', function () { mktQ = qEl.value; loadMarket(); });
+  $('mkt-cat').addEventListener('change', function () { mktCat = this.value; loadMarket(); });
+  $('mkt-sort').addEventListener('change', function () { mktSort = this.value; loadMarket(); });
+  Array.prototype.forEach.call(document.querySelectorAll('.mkt-buy'), function (btn) {
+    btn.addEventListener('click', function () {
+      var lid = btn.getAttribute('data-lid');
+      if (mktArm !== lid) {
+        mktArm = lid; btn.classList.add('arm'); btn.textContent = 'confirm buy?';
+        clearTimeout(mktArmT); mktArmT = setTimeout(function () { mktArm = ''; loadMarket(); }, 3000);
+        return;
+      }
+      clearTimeout(mktArmT); mktArm = '';
+      jpost('/api/world/market', { act: 'buy', lid: lid }).then(function (rr) {
+        if (rr && rr.ok) { toast('\u2726 bought ' + mktItemName(rr.item) + ' for \u00a2' + rr.price, 3600); sndQuest(); }
+        else toast('buy failed', (rr && rr.err) || '');
+        loadMarket();
+      });
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.mkt-cancel'), function (btn) {
+    btn.addEventListener('click', function () {
+      jpost('/api/world/market', { act: 'cancel', lid: btn.getAttribute('data-lid') }).then(function (rr) {
+        if (rr && rr.ok) toast('listing cancelled \u2014 item is back in ur bag', 3000); else toast('cancel failed', (rr && rr.err) || '');
+        loadMarket();
+      });
+    });
+  });
+  var go = $('mkt-sell-go');
+  if (go) go.addEventListener('click', function () {
+    var item = $('mkt-sell-item').value;
+    var price = parseInt($('mkt-sell-price').value, 10);
+    if (!(price >= 10)) { toast('price must be at least \u00a210', ''); return; }
+    jpost('/api/world/market', { act: 'list', item: item, price: price }).then(function (rr) {
+      if (rr && rr.ok) { toast('\u2726 listed \u2014 the item sits in escrow till it sells', 3600); sndQuest(); }
+      else toast('listing failed', (rr && rr.err) || '');
+      loadMarket();
+    });
+  });
+}
+function closeMarket() { $('wmarket').hidden = true; document.body.classList.remove('wov'); }
+$('wmarket-x').addEventListener('click', closeMarket);
+$('wmarket').addEventListener('click', function (e) { if (e.target === $('wmarket')) closeMarket(); });
+window.__market = { open: openMarket, close: closeMarket };
 /* settings, ambient audio, hub, inventory, big map, admin */
 var SET = { vol: 0.85, music: true, sfx: true };
 try { var svSet = JSON.parse(localStorage.getItem('sixSettings') || 'null'); if (svSet) SET = Object.assign(SET, svSet); } catch (e) {}
@@ -3217,6 +3306,7 @@ setInterval(function () {
 var HUB_DEFS = [
   ['minigames', '<path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/><path d="M17.3 5H6.7a4.7 4.7 0 0 0-4.6 5.6l.7 3.6A3 3 0 0 0 5.7 17c.8 0 1.6-.4 2.2-1L9 14.5h6.1L16.2 16c.6.6 1.4 1 2.2 1a3 3 0 0 0 2.9-2.8l.7-3.6A4.7 4.7 0 0 0 17.3 5Z"/>', function () { openArcade(); }],
   ['six cents shop', '<circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M2 3h3l2.6 12.5a1.5 1.5 0 0 0 1.5 1.2h7.9a1.5 1.5 0 0 0 1.5-1.2L20.5 7H6"/>', function () { openShop(); }],
+  ['marketplace', '<path d="M3 9 4.5 3h15L21 9"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/>', function () { openMarket(); }],
   ['ur stuff', '<path d="M6 8h12l1.2 12H4.8L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>', function () { openInv(); }],
   ['ur house', '<path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>', function () { openHouse(); }],
   ['mount up', '<circle cx="5.5" cy="17.5" r="2.4"/><circle cx="18.5" cy="17.5" r="2.4"/><path d="M5.5 17.5 10 8h5l3.5 9.5M10 8 8.2 4.5H5.8"/>', function () { openShop(); shopTab = 'mount'; renderShopTabs(); renderShopGrid(); }],

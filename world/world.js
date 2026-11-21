@@ -727,6 +727,7 @@ function createWorld(ctx) {
     }
     return out;
   }
+  function equippedIds(u) { let w = {}; try { w = ctx.getWear(u) || {}; } catch { } return new Set(Object.values(w).filter(Boolean)); }
   function roster(now) {
     const out = [sixState(now)].concat(NPC_DEFS.map((d) => npcState(d, now)));
     for (const [u, p] of P) {
@@ -1105,7 +1106,7 @@ function createWorld(ctx) {
     let invA = [], invB = [];
     try { invA = ctx.getInv(A) || []; } catch { }
     try { invB = ctx.getInv(B) || []; } catch { }
-    const wearA = new Set(Object.values(wearOf(A) || {})), wearB = new Set(Object.values(wearOf(B) || {}));
+    const wearA = equippedIds(A), wearB = equippedIds(B);
     const valid = tr.oa.items.every((id) => invA.includes(id) && !wearA.has(id)) && tr.ob.items.every((id) => invB.includes(id) && !wearB.has(id));
     let balA = 0, balB = 0;
     try { balA = ctx.getCents(A) || 0; } catch { }
@@ -1629,6 +1630,131 @@ function createWorld(ctx) {
       return true;
     }
 
+    // ---- player marketplace (E2): escrow listings, 5% fee, 48h expiry ----
+    function mktLoad() { const r = wload('mkt', '_mkt') || {}; if (!r.list) r.list = {}; if (!r.seq) r.seq = 1; return r; }
+    function mktSave(reg) { wsave('mkt', '_mkt', reg); }
+    function mktHist(user, entry) { try { const h = wload('mkthist', user) || []; h.unshift(entry); wsave('mkthist', user, h.slice(0, 40)); } catch { } }
+    function mktReturnItem(l) {
+      let inv = []; try { inv = ctx.getInv(l.seller) || []; } catch { }
+      if (inv.includes(l.item)) return true;
+      inv.push(l.item);
+      try { ctx.setInv(l.seller, inv); } catch { }
+      let chk = []; try { chk = ctx.getInv(l.seller) || []; } catch { }
+      return chk.includes(l.item);
+    }
+    function mktSweep(reg, now) {
+      let changed = false, n = 0;
+      for (const lid of Object.keys(reg.list)) {
+        if (n >= 20) break;
+        const l = reg.list[lid];
+        if (l.exp <= now) { if (mktReturnItem(l)) { delete reg.list[lid]; mktHist(l.seller, { t: 'expired', item: l.item, price: l.price, at: now }); changed = true; n++; } }
+      }
+      if (changed) mktSave(reg);
+      return changed;
+    }
+    const MKT_INFLIGHT = new Set();
+    const MKT_FEE = 0.05, MKT_MAX = 5, MKT_TTL = 48 * 3600 * 1000;
+
+    if (u.pathname === '/api/world/market' && req.method === 'GET') {
+      if (!ctx.storeReady || !ctx.storeReady()) { J({ ok: false, err: 'the market is still waking up — try again in a sec' }, 503); return true; }
+      const reg = mktLoad();
+      mktSweep(reg, now);
+      const q = String(u.searchParams.get('q') || '').toLowerCase().slice(0, 40);
+      const cat = String(u.searchParams.get('cat') || '');
+      const sort = String(u.searchParams.get('sort') || 'new');
+      let rows = Object.values(reg.list).map((l) => { const it = SHOP.BY_ID[l.item] || {}; return { lid: l.lid, item: l.item, name: it.name || l.item, cat: it.cat || '', rarity: it.rarity || 'common', color: it.color || '#a78bfa', price: l.price, seller: l.seller, at: l.at, exp: l.exp, mine: l.seller === me }; });
+      if (q) rows = rows.filter((r) => r.name.toLowerCase().includes(q) || r.seller.toLowerCase().includes(q));
+      if (cat) rows = rows.filter((r) => r.cat === cat);
+      if (sort === 'lo') rows.sort((a, b) => a.price - b.price); else if (sort === 'hi') rows.sort((a, b) => b.price - a.price); else rows.sort((a, b) => b.at - a.at);
+      J({ ok: true, listings: rows.slice(0, 100), total: rows.length, mine: rows.filter((r) => r.mine), hist: wload('mkthist', me) || [], feePct: 5, maxList: MKT_MAX });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/market' && req.method === 'POST') {
+      if (!ctx.storeReady || !ctx.storeReady()) { J({ ok: false, err: 'the market is still waking up — try again in a sec' }, 503); return true; }
+      const act = String(b.act || '');
+      const reg = mktLoad();
+      mktSweep(reg, now);
+      if (act === 'list') {
+        const item = String(b.item || '');
+        const it = SHOP.BY_ID[item];
+        if (!it) { J({ ok: false, err: 'no such item' }, 400); return true; }
+        if (it.vaultOnly) { J({ ok: false, err: 'that item is bound to the world — it cant be sold' }, 400); return true; }
+        const price = Math.floor(Number(b.price) || 0);
+        if (!(price >= 10 && price <= 50000)) { J({ ok: false, err: 'price must be 10 to 50,000 six cents' }, 400); return true; }
+        const myActive = Object.values(reg.list).filter((l) => l.seller === me).length;
+        if (myActive >= MKT_MAX) { J({ ok: false, err: 'u already have ' + MKT_MAX + ' listings up' }, 400); return true; }
+        let inv = []; try { inv = ctx.getInv(me) || []; } catch { }
+        if (!inv.includes(item)) { J({ ok: false, err: 'u dont own that' }, 400); return true; }
+        const equipped = equippedIds(me);
+        if (equipped.has(item)) { J({ ok: false, err: 'unequip it first' }, 400); return true; }
+        const snap = inv.slice();
+        inv.splice(inv.indexOf(item), 1);
+        let escrowed = false;
+        try { ctx.setInv(me, inv); let chk = []; try { chk = ctx.getInv(me) || []; } catch { } escrowed = !chk.includes(item); } catch { }
+        if (!escrowed) { try { ctx.setInv(me, snap); } catch { } J({ ok: false, err: 'listing glitched — ur item never left ur bag' }, 500); return true; }
+        const lid = 'm' + (reg.seq++);
+        reg.list[lid] = { lid, seller: me, item, price, at: now, exp: now + MKT_TTL };
+        mktSave(reg);
+        mktHist(me, { t: 'listed', item, price, at: now });
+        J({ ok: true, lid });
+        return true;
+      }
+      if (act === 'cancel') {
+        const lid = String(b.lid || '');
+        const l = reg.list[lid];
+        if (!l) { J({ ok: false, err: 'that listing is gone' }, 400); return true; }
+        if (l.seller !== me) { J({ ok: false, err: 'not ur listing' }, 403); return true; }
+        if (MKT_INFLIGHT.has(lid)) { J({ ok: false, err: 'that listing is mid-sale — try again in a sec' }, 409); return true; }
+        delete reg.list[lid]; mktSave(reg);
+        if (!mktReturnItem(l)) { reg.list[lid] = l; mktSave(reg); J({ ok: false, err: 'cancel glitched — listing restored' }, 500); return true; }
+        mktHist(me, { t: 'cancelled', item: l.item, price: l.price, at: now });
+        J({ ok: true });
+        return true;
+      }
+      if (act === 'buy') {
+        const lid = String(b.lid || '');
+        const l = reg.list[lid];
+        if (!l) { J({ ok: false, err: 'that listing just sold or expired' }, 400); return true; }
+        if (l.seller === me) { J({ ok: false, err: 'thats ur own listing' }, 400); return true; }
+        if (MKT_INFLIGHT.has(lid)) { J({ ok: false, err: 'someone is buying that right now' }, 409); return true; }
+        let bal0 = 0; try { bal0 = ctx.getCents(me) || 0; } catch { }
+        if (bal0 < l.price) { J({ ok: false, err: 'not enough six cents' }, 400); return true; }
+        MKT_INFLIGHT.add(lid);
+        try {
+          delete reg.list[lid]; mktSave(reg);
+          const it = SHOP.BY_ID[l.item] || {};
+          const fee = Math.max(1, Math.ceil(l.price * MKT_FEE));
+          const proceeds = l.price - fee;
+          let charged = false;
+          try { const rr = await ctx.awardCents(me, -l.price); let bal1 = null; try { bal1 = ctx.getCents(me); } catch { } charged = typeof rr === 'number' && bal1 === bal0 - l.price; } catch { }
+          if (!charged) { reg.list[lid] = l; mktSave(reg); J({ ok: false, err: 'payment glitched — u were not charged' }, 500); return true; }
+          let granted = false;
+          let inv = []; try { inv = ctx.getInv(me) || []; } catch { }
+          const invSnap = inv.slice();
+          inv.push(l.item);
+          try { ctx.setInv(me, inv); let chk = []; try { chk = ctx.getInv(me) || []; } catch { } granted = chk.includes(l.item); } catch { }
+          if (!granted) { try { await ctx.awardCents(me, l.price); } catch { } reg.list[lid] = l; mktSave(reg); J({ ok: false, err: 'grant glitched — u were refunded' }, 500); return true; }
+          let paid = false;
+          try { const rr2 = await ctx.awardCents(l.seller, proceeds); paid = typeof rr2 === 'number'; } catch { }
+          if (!paid) {
+            try { ctx.setInv(me, invSnap); } catch { }
+            try { await ctx.awardCents(me, l.price); } catch { }
+            reg.list[lid] = l; mktSave(reg);
+            J({ ok: false, err: 'sale glitched — everything was put back' }, 500); return true;
+          }
+          txLog(me, 'market', -l.price, 'bought ' + (it.name || l.item) + ' from @' + l.seller);
+          txLog(l.seller, 'market', proceeds, 'sold ' + (it.name || l.item) + ' (fee ' + fee + ')');
+          mktHist(me, { t: 'bought', item: l.item, price: l.price, who: l.seller, at: now });
+          mktHist(l.seller, { t: 'sold', item: l.item, price: l.price, got: proceeds, fee, who: me, at: now });
+          const pg = progFor(me); pg.c.buy = (pg.c.buy || 0) + 1; progSave(me);
+          J({ ok: true, item: l.item, price: l.price });
+          return true;
+        } finally { MKT_INFLIGHT.delete(lid); }
+      }
+      J({ ok: false, err: 'bad act' }, 400); return true;
+    }
+
     if (u.pathname === '/api/world/events' && req.method === 'GET') {
       const evNow = worldEvent(now);
       const run = (evNow && EV_RUN && EV_RUN.id === evNow.id) ? EV_RUN : null;
@@ -1950,7 +2076,7 @@ function createWorld(ctx) {
       if (act === 'set') {
         const items = Array.isArray(b.items) ? [...new Set(b.items.map((x) => String(x)))].slice(0, 8) : [];
         let inv = []; try { inv = ctx.getInv(me) || []; } catch { }
-        const equipped = new Set(Object.values(wearOf(me) || {}));
+        const equipped = equippedIds(me);
         for (const id of items) {
           if (!SHOP.BY_ID[id] || !inv.includes(id)) { J({ ok: false, err: 'u dont own one of those' }, 400); return true; }
           if (equipped.has(id)) { J({ ok: false, err: 'unequip it first' }, 400); return true; }
@@ -2606,6 +2732,10 @@ function createWorld(ctx) {
       '<div id="wevents" hidden><div class="wa-card">\n' +
       '  <div class="wa-head"><span>\u2726 world events</span><button id="wevents-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
       '  <div id="wevents-body"></div>\n' +
+      '</div></div>\n' +
+      '<div id="wmarket" hidden><div class="wa-card">\n' +
+      '  <div class="wa-head"><span>\u2726 player marketplace</span><button id="wmarket-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
+      '  <div id="wmarket-body"></div>\n' +
       '</div></div>\n' +
       '<div id="wboards" hidden><div class="wa-card">\n' +
       '  <div class="wa-head"><span>\u2726 leaderboards</span><button id="wboards-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
