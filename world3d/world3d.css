@@ -1,45 +1,80 @@
-/* the third dimension — full-screen 3d page. the canvas is its own
-   layer; every ui element floats above it and never blocks it except
-   on its own box. */
+/* the third dimension — page styles.
+   The loading screen ALSO has critical styles inlined in the page head
+   (world3d.js page()) so it is styled on first paint; this sheet carries
+   the full design. The canvas is its own layer; UI floats above it and
+   only intercepts input on its own boxes. */
 html, body { height: 100%; }
-body { margin: 0; overflow: hidden; background: #0b0620; }
-#w3wrap { position: fixed; inset: 0; }
+body { margin: 0; overflow: hidden; background: #070313; overscroll-behavior: none; }
+#w3wrap { position: fixed; inset: 0; visibility: hidden; }
+#w3wrap.ready { visibility: visible; }
 #w3cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 /* same chrome-hide rule the 2d world uses — the shell stays out */
 #tabbar, #siderail, #topbar, #tabSheet { display: none !important; }
 
+/* ---------- HUD ---------- */
 #w3hud { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: flex-start; padding: 14px 16px; pointer-events: none; z-index: 20; }
-.w3left { display: flex; flex-direction: column; gap: 3px; }
-.w3brand { font: 800 17px Inter, system-ui, sans-serif; color: #f3efff; text-shadow: 0 2px 14px rgba(0,0,0,.8); letter-spacing: .02em; }
+.w3left { display: flex; flex-direction: column; gap: 7px; }
+.w3brand { font: 800 17px Inter, system-ui, sans-serif; color: #f3efff; text-shadow: 0 2px 14px rgba(0,0,0,.85); letter-spacing: .02em; }
 .w3star { color: #a78bfa; }
-#w3bal { font: 700 13px Inter, system-ui, sans-serif; color: #ffd257; text-shadow: 0 1px 8px rgba(0,0,0,.8); }
-#w3who { font: 600 11.5px Inter, system-ui, sans-serif; color: rgba(243,239,255,.65); text-shadow: 0 1px 8px rgba(0,0,0,.8); }
-.w3btns { display: flex; gap: 8px; pointer-events: auto; }
-#w3gfx { font: 700 12px Inter, system-ui, sans-serif; color: #f3efff; background: rgba(23,16,52,.72); border: 1px solid rgba(167,139,250,.4); border-radius: 999px; padding: 8px 13px; cursor: pointer; backdrop-filter: blur(8px); }
-.w3leave { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: rgba(23,16,52,.72); border: 1px solid rgba(167,139,250,.4); color: #f3efff; text-decoration: none; font-size: 15px; backdrop-filter: blur(8px); }
+.w3chips { display: flex; gap: 7px; flex-wrap: wrap; }
+.w3chip { font: 700 12px Inter, system-ui, sans-serif; color: rgba(243,239,255,.9); background: rgba(18,10,42,.62); border: 1px solid rgba(167,139,250,.32); border-radius: 999px; padding: 5px 11px; backdrop-filter: blur(8px); text-shadow: 0 1px 6px rgba(0,0,0,.6); }
+.w3chip.gold { color: #ffd257; border-color: rgba(255,210,87,.4); }
+.w3chip.warn { color: #fda4af; border-color: rgba(253,164,175,.55); animation: w3pulse2 1.2s ease-in-out infinite; }
+.w3btns { display: flex; gap: 8px; align-items: center; pointer-events: auto; }
+.w3btns .w3chip { pointer-events: none; }
+#w3setbtn { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: rgba(18,10,42,.72); border: 1px solid rgba(167,139,250,.4); color: #f3efff; cursor: pointer; backdrop-filter: blur(8px); }
+#w3setbtn:active { transform: scale(.94); }
+.w3leave { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: rgba(18,10,42,.72); border: 1px solid rgba(167,139,250,.4); color: #f3efff; text-decoration: none; font-size: 15px; backdrop-filter: blur(8px); }
 
-#w3toast { position: absolute; left: 50%; bottom: 118px; transform: translateX(-50%); max-width: min(92vw, 520px); z-index: 30; background: rgba(20,12,46,.92); border: 1px solid rgba(167,139,250,.45); color: #f3efff; font: 600 13.5px Inter, system-ui, sans-serif; padding: 10px 16px; border-radius: 999px; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,.5); }
+/* ---------- settings panel ---------- */
+#w3set { position: absolute; top: 64px; right: 14px; width: min(84vw, 290px); z-index: 40; background: rgba(16,9,38,.94); border: 1px solid rgba(167,139,250,.42); border-radius: 18px; padding: 16px 18px 14px; color: #f3efff; font: 600 13px Inter, system-ui, sans-serif; box-shadow: 0 18px 50px rgba(0,0,0,.6); backdrop-filter: blur(12px); animation: w3setin .18s ease; }
+@keyframes w3setin { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.w3set-t { display: flex; justify-content: space-between; align-items: center; font: 800 14px Inter, system-ui, sans-serif; letter-spacing: .05em; margin-bottom: 12px; }
+#w3setclose { background: none; border: 0; color: rgba(243,239,255,.75); font-size: 14px; cursor: pointer; padding: 4px 6px; }
+#w3set label { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 11px 0; color: rgba(243,239,255,.88); }
+#w3set input[type="range"] { width: 128px; accent-color: #a78bfa; }
+#w3set select { background: rgba(35,22,80,.9); color: #f3efff; border: 1px solid rgba(167,139,250,.45); border-radius: 9px; padding: 5px 8px; font: 600 12.5px Inter, system-ui, sans-serif; }
+#w3set input[type="checkbox"] { width: 18px; height: 18px; accent-color: #a78bfa; }
+.w3how { margin-top: 13px; padding-top: 11px; border-top: 1px solid rgba(167,139,250,.22); font-size: 11.5px; line-height: 1.55; color: rgba(243,239,255,.55); }
+
+/* ---------- toast + action ---------- */
+#w3toast { position: absolute; left: 50%; bottom: 118px; transform: translateX(-50%); max-width: min(92vw, 520px); z-index: 30; background: rgba(18,10,42,.93); border: 1px solid rgba(167,139,250,.45); color: #f3efff; font: 600 13.5px Inter, system-ui, sans-serif; padding: 10px 16px; border-radius: 999px; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,.5); pointer-events: none; }
 #w3act { position: absolute; left: 50%; bottom: 64px; transform: translateX(-50%); z-index: 30; font: 800 14px Inter, system-ui, sans-serif; letter-spacing: .06em; color: #0b0620; background: linear-gradient(135deg, #67e8f9, #a78bfa); border: 0; border-radius: 999px; padding: 14px 22px; cursor: pointer; box-shadow: 0 0 26px rgba(103,232,249,.55), 0 10px 30px rgba(0,0,0,.5); animation: w3pulse 1.6s ease-in-out infinite; }
 @keyframes w3pulse { 0%,100% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.045); } }
 
-#w3joy { display: none; }
-#w3jump { display: none; }
-@media (pointer: coarse) {
-  #w3joy { display: block; position: absolute; left: 22px; bottom: 96px; width: 118px; height: 118px; border-radius: 50%; background: rgba(23,16,52,.4); border: 1.5px solid rgba(167,139,250,.4); z-index: 25; touch-action: none; }
-  #w3knob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%; background: rgba(167,139,250,.5); border: 1.5px solid rgba(243,239,255,.5); }
-  #w3jump { display: block; position: absolute; right: 24px; bottom: 108px; z-index: 25; font: 800 13px Inter, system-ui, sans-serif; color: #f3efff; background: rgba(23,16,52,.55); border: 1.5px solid rgba(167,139,250,.5); border-radius: 999px; padding: 15px 20px; touch-action: none; }
-  #w3act { bottom: 236px; }
-  #w3toast { bottom: 292px; }
-}
+/* ---------- touch controls ---------- */
+.touchui { display: none; }
+body.touch .touchui { display: block; }
+@media (pointer: coarse) { .touchui { display: block; } }
+#w3joyzone { position: absolute; left: 0; bottom: 0; width: 46%; height: 58%; z-index: 24; touch-action: none; }
+#w3joy { position: absolute; left: 26px; bottom: 100px; width: 124px; height: 124px; border-radius: 50%; background: rgba(18,10,42,.38); border: 1.5px solid rgba(167,139,250,.42); touch-action: none; transition: opacity .2s; }
+#w3knob { position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: 50%; background: rgba(167,139,250,.5); border: 1.5px solid rgba(243,239,255,.55); box-shadow: 0 4px 16px rgba(0,0,0,.4); }
+.w3rbtns { position: absolute; right: 20px; bottom: 96px; z-index: 25; display: none; flex-direction: column; gap: 12px; align-items: flex-end; }
+body.touch .w3rbtns { display: flex; }
+@media (pointer: coarse) { .w3rbtns { display: flex; } }
+#w3jump, #w3sprint { font: 800 13px Inter, system-ui, sans-serif; color: #f3efff; background: rgba(18,10,42,.55); border: 1.5px solid rgba(167,139,250,.5); border-radius: 999px; padding: 16px 22px; touch-action: none; backdrop-filter: blur(6px); }
+#w3sprint { padding: 12px 18px; font-size: 12px; }
+#w3sprint.on { background: rgba(124,58,237,.65); border-color: #a78bfa; }
+body.touch #w3act, body.touch #w3toast { bottom: auto; }
+body.touch #w3act { bottom: 252px; }
+body.touch #w3toast { bottom: 316px; }
+@media (pointer: coarse) { #w3act { bottom: 252px; } #w3toast { bottom: 316px; } }
 
-#w3load { position: absolute; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at 50% 40%, rgba(59,20,112,.55), rgba(6,3,18,.96) 75%); transition: opacity .45s ease; }
+/* ---------- loading (full design; critical subset is inlined in head) ---------- */
+#w3load { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at 50% 38%, rgba(59,20,112,.5), rgba(5,2,16,.97) 78%); transition: opacity .5s ease; font-family: Inter, system-ui, sans-serif; }
 #w3load.hide { opacity: 0; pointer-events: none; }
-#w3load.show { opacity: 1 !important; pointer-events: auto; }
-.w3load-card { width: min(88vw, 380px); text-align: center; padding: 26px 22px; border-radius: 20px; background: rgba(20,12,46,.82); border: 1px solid rgba(167,139,250,.35); box-shadow: 0 0 60px rgba(124,58,237,.35); backdrop-filter: blur(10px); }
-.w3load-t { font: 800 17px Inter, system-ui, sans-serif; color: #f3efff; margin-bottom: 16px; }
-.w3bar { height: 8px; border-radius: 99px; background: rgba(243,239,255,.12); overflow: hidden; margin-bottom: 12px; }
-.w3bar i { display: block; height: 100%; width: 12%; border-radius: 99px; background: linear-gradient(90deg, #67e8f9, #a78bfa); transition: width .3s ease; }
-#w3loadmsg { font: 600 12.5px Inter, system-ui, sans-serif; color: rgba(243,239,255,.7); }
+#w3load.show { opacity: 1; pointer-events: auto; }
+.w3load-card { width: min(88vw, 400px); text-align: center; padding: 30px 24px; border-radius: 22px; background: rgba(18,10,42,.85); border: 1px solid rgba(167,139,250,.35); box-shadow: 0 0 70px rgba(124,58,237,.35); backdrop-filter: blur(10px); }
+.w3ring { width: 96px; height: 96px; margin: 0 auto 18px; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0 38%, #67e8f9 55%, #a78bfa 72%, transparent 88%); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 11px), #000 calc(100% - 10px)); mask: radial-gradient(farthest-side, transparent calc(100% - 11px), #000 calc(100% - 10px)); animation: w3spin 1.5s linear infinite; position: relative; }
+.w3ring i { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-style: normal; color: #ffd257; font-size: 30px; animation: w3pulse2 1.8s ease-in-out infinite; text-shadow: 0 0 18px rgba(255,210,87,.8); }
+@keyframes w3spin { to { transform: rotate(360deg); } }
+@keyframes w3pulse2 { 0%,100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+.w3load-t { font: 800 18px Inter, system-ui, sans-serif; color: #f3efff; margin-bottom: 4px; letter-spacing: .02em; }
+.w3load-sub { font: 600 11px Inter, system-ui, sans-serif; color: rgba(167,139,250,.85); letter-spacing: .28em; text-transform: uppercase; margin-bottom: 18px; }
+.w3bar { height: 8px; border-radius: 99px; background: rgba(243,239,255,.12); overflow: hidden; margin-bottom: 10px; }
+.w3bar i { display: block; height: 100%; width: 4%; border-radius: 99px; background: linear-gradient(90deg, #67e8f9, #a78bfa); transition: width .35s ease; }
+#w3loadmsg { font: 600 12.5px Inter, system-ui, sans-serif; color: rgba(243,239,255,.72); min-height: 16px; }
+#w3loadpct { font: 700 11px Inter, system-ui, sans-serif; color: rgba(103,232,249,.9); margin-top: 5px; }
 #w3loaderr { margin-top: 14px; font: 600 13px Inter, system-ui, sans-serif; color: #fda4af; line-height: 1.45; }
 .w3load-btns { margin-top: 16px; display: flex; gap: 10px; justify-content: center; }
 #w3retry { font: 800 13px Inter, system-ui, sans-serif; color: #0b0620; background: linear-gradient(135deg, #67e8f9, #a78bfa); border: 0; border-radius: 999px; padding: 10px 18px; cursor: pointer; }
