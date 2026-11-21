@@ -1380,6 +1380,31 @@ function render(now) {
     g.fillText(pad.sub, pad.x, pad.y + 36);
   });
   /* shards */
+  if (MATCH_V && MATCH_V.game === 'spleef' && MATCH_V.tiles && MATCH_V.arena) {
+    var ar = MATCH_V.arena, tn = ar.size / ar.tile, ax0 = ar.x - ar.size / 2, ay0 = ar.y - ar.size / 2;
+    for (var ty2 = 0; ty2 < tn; ty2++) for (var tx2 = 0; tx2 < tn; tx2++) {
+      var hp = MATCH_V.tiles[ty2 * tn + tx2];
+      var txp = ax0 + tx2 * ar.tile, typ = ay0 + ty2 * ar.tile;
+      if (!inV(txp + 20, typ + 20, 80)) continue;
+      if (hp <= 0) { g.fillStyle = 'rgba(2,0,10,.88)'; g.fillRect(txp + 1, typ + 1, ar.tile - 2, ar.tile - 2); continue; }
+      g.fillStyle = hp === 2 ? 'rgba(124,93,250,.5)' : 'rgba(90,60,180,.34)';
+      g.fillRect(txp + 1, typ + 1, ar.tile - 2, ar.tile - 2);
+      if (hp === 1) { g.strokeStyle = 'rgba(10,4,30,.8)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(txp + 6, typ + 8); g.lineTo(txp + 20, typ + 20); g.lineTo(txp + 15, typ + 33); g.moveTo(txp + 33, typ + 6); g.lineTo(txp + 21, typ + 19); g.stroke(); }
+    }
+    g.strokeStyle = 'rgba(255,210,87,.4)'; g.lineWidth = 2; g.strokeRect(ax0, ay0, ar.size, ar.size);
+  }
+  if (MATCH_V && MATCH_V.game === 'parkour' && MATCH_V.phase === 'live' && MATCH_V.cpNext) {
+    var cpN = MATCH_V.cpNext;
+    if (inV(cpN.x, cpN.y, 90)) {
+      var pulse = 26 + Math.sin(now / 240) * 6;
+      g.strokeStyle = 'rgba(255,210,87,.75)'; g.lineWidth = 3;
+      g.beginPath(); g.arc(cpN.x, cpN.y, pulse, 0, TAU); g.stroke();
+      g.save(); g.translate(cpN.x, cpN.y - 44 + Math.sin(now / 300) * 5);
+      g.shadowColor = '#ffd257'; g.shadowBlur = 16;
+      g.fillStyle = '#ffd257'; star4(g, 0, 0, 13, now / 500); g.fill();
+      g.restore();
+    }
+  }
   if (MATCH_V && MATCH_V.phase === 'live' && MATCH_V.treasures) {
     MATCH_V.treasures.forEach(function (t) {
       if (!inV(t.x, t.y, 60)) return;
@@ -3438,7 +3463,7 @@ window.__friends = { open: openFriends };
 /* ---- E7: arcade matches ---- */
 var MATCH_V = null;
 var MATCH_LOBBIES = [];
-var MATCH_GAME_LIST = [['hs', 'hide & seek', 'one seeker hunts the forest — hiders survive'], ['rush', 'treasure rush', 'grab the most gold stars on the plaza'], ['derby', 'fishing derby', 'heaviest bag at the lake wins'], ['race', 'team race', 'skyline course, teams by finish points']];
+var MATCH_GAME_LIST = [['hs', 'hide & seek', 'one seeker hunts the forest — hiders survive'], ['rush', 'treasure rush', 'grab the most gold stars on the plaza'], ['derby', 'fishing derby', 'heaviest bag at the lake wins'], ['race', 'team race', 'skyline course, teams by finish points'], ['spleef', 'spleef', 'the floor breaks under u — last star standing'], ['trivia', 'trivia battle', 'first correct answer scores 3, others 1'], ['parkour', 'parkour trials', 'checkpoint time trial across the whole map']];
 function fmtMs(ms) { if (!ms) return '—'; var s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2) + '.' + Math.floor((ms % 1000) / 100); }
 function matchFxToast(fx) {
   if (!fx) return;
@@ -3449,6 +3474,11 @@ function matchFxToast(fx) {
   else if (fx.t === 'racefin') toast('@' + fx.u + ' finished the course', 2200);
   else if (fx.t === 'joined') toast('@' + fx.u + ' joined ur lobby', 2000);
   else if (fx.t === 'done') toast('match over — results in the arcade panel', 3400);
+  else if (fx.t === 'out') { toast(fx.why || 'ur out', 3000); if (fx.x != null) { px = fx.x; py = fx.y; } }
+  else if (fx.t === 'fell') toast('@' + fx.u + ' fell', 1800);
+  else if (fx.t === 'question') toast('question ' + fx.n + ' — answer in the arcade panel', 2200);
+  else if (fx.t === 'reveal') toast('answer revealed', 1400);
+  else if (fx.t === 'cp') toast('checkpoint ' + fx.n + '/' + fx.total, 1600);
 }
 function openMatch() { $('wmatch').hidden = false; loadMatch(); }
 function closeMatch() { $('wmatch').hidden = true; }
@@ -3476,10 +3506,21 @@ function renderMatch() {
   if (v.phase === 'live' && v.game === 'rush') h += '<div class="hs-note">gold stars are live on the plaza — run over one to grab it (+5c each)</div>';
   if (v.phase === 'live' && v.game === 'derby') h += '<div class="hs-note">fish at the pier or the lake — every catch scores by rarity</div>';
   if (v.phase === 'live' && v.game === 'race') h += '<div class="hs-note">head to the skyline start (rooftops, top right) and start the race — ur finish feeds ur team</div>';
+  if (v.phase === 'lobby' && v.game === 'spleef') h += '<div class="hs-note">get onto the platform north of spawn before it starts — the floor breaks where u stand</div>';
+  if (v.phase === 'live' && v.game === 'spleef') h += '<div class="hs-note">keep moving — tiles crack under ur feet. last star standing wins</div>';
+  if (v.phase === 'live' && v.game === 'parkour') h += '<div class="hs-note">follow the gold beacon — ' + (v.cpNext ? ('next: ' + hsEsc(v.cpNext.name)) : 'u finished the course') + '</div>';
+  if (v.phase === 'live' && v.game === 'trivia' && v.tq) {
+    var tq = v.tq;
+    h += '<div class="hs-sec">question ' + tq.n + ' of ' + tq.total + ' · ' + tq.answered + ' answered' + (tq.reveal ? '' : ' · ' + tq.left + 's') + '</div>';
+    h += '<div class="hs-note" style="font-size:14px;color:#f3efff">' + hsEsc(tq.text) + '</div>';
+    if (tq.reveal) h += '<div class="hs-note">answer: <b>' + hsEsc(tq.opts[tq.correct]) + '</b>' + (tq.mine ? (tq.mine.correct ? ' — u got +' + tq.mine.pts : ' — u missed it') : '') + '</div>';
+    else h += tq.opts.map(function (o, ix) { return '<button class="hs-btn" data-mt="answer" data-ix="' + ix + '"' + (tq.mine ? ' disabled' : '') + ' style="text-align:left">' + hsEsc(o) + '</button>'; }).join('');
+    if (tq.mine && !tq.reveal) h += '<div class="hs-note">locked in — waiting on the others</div>';
+  }
   if (v.phase === 'live' && v.game === 'hs' && v.seeker === me) h += '<button class="hs-btn" data-mt="tag" style="align-self:flex-start">tag nearest (in reach)</button>';
   h += v.members.map(function (m) {
     var tag = m.role ? ' · ' + m.role : (m.team ? ' · team ' + m.team : '');
-    var stat = v.game === 'race' ? (m.time ? fmtMs(m.time) : (v.phase === 'live' ? 'running…' : '')) : ('score ' + (m.score || 0));
+    var stat = v.game === 'race' ? (m.time ? fmtMs(m.time) : (v.phase === 'live' ? 'running…' : '')) : (v.game === 'parkour' ? (m.time ? fmtMs(m.time) : ((m.prog || 0) + '/' + (v.cps ? v.cps.length : 8) + ' cp')) : ('score ' + (m.score || 0)));
     return '<div class="mt-row"><span class="hs-nm">@' + hsEsc(m.u) + (m.u === v.host ? ' (host)' : '') + tag + (m.online ? '' : ' · offline') + '</span><span class="hs-pr">' + stat + '</span></div>';
   }).join('');
   if (v.phase === 'lobby' && v.host === me) h += '<button class="hs-btn" data-mt="start" style="align-self:flex-start">start match</button>';
@@ -3496,6 +3537,9 @@ function updateMatchChip() {
   var extra = '';
   if (v.game === 'hs') { var left = v.members.filter(function (m) { return m.role === 'hider'; }).length; extra = ' · ' + left + ' hiding'; }
   if (v.game === 'rush') extra = ' · ' + (v.treasures ? v.treasures.length : 0) + ' stars left';
+  if (v.game === 'spleef') extra = ' · ' + v.members.filter(function (m) { return m.role === 'alive'; }).length + ' standing';
+  if (v.game === 'trivia' && v.tq) extra = ' · question ' + v.tq.n + '/' + v.tq.total;
+  if (v.game === 'parkour') { var myRow = v.members.find(function (m) { return m.u === me; }); extra = ' · cp ' + (myRow ? (myRow.prog || 0) : 0) + '/' + (v.cps ? v.cps.length : 8); }
   chip.textContent = v.name + ' · ' + v.phase + ' · ' + v.left + 's' + extra;
   chip.hidden = false;
 }
@@ -3508,6 +3552,7 @@ document.addEventListener('click', function (e) {
     else if (act === 'leave') jpost('/api/world/match', { act: 'leave' }).then(function () { MATCH_V = null; loadMatch(); });
     else if (act === 'start') jpost('/api/world/match', { act: 'start' }).then(function (r) { if (r && r.ok) { MATCH_V = r.match; renderMatch(); } else toast((r && r.err) || 'cannot start yet'); });
     else if (act === 'tag') jpost('/api/world/match', { act: 'tag' }).then(function (r) { if (r && r.ok) toast('tagged @' + r.tagged); else toast((r && r.err) || 'missed'); });
+    else if (act === 'answer') jpost('/api/world/match', { act: 'answer', ix: Number(t.getAttribute('data-ix')) }).then(function (r) { if (r && r.ok) toast(r.correct ? ('correct +' + r.pts) : 'wrong one', 1800); else toast((r && r.err) || 'too late'); if (MATCH_V) renderMatch(); });
     return;
   }
   if (e.target && e.target.id === 'wmatch-x') closeMatch();

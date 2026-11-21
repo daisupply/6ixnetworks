@@ -754,6 +754,9 @@ function createWorld(ctx) {
     rush: { name: 'treasure rush', min: 2, max: 6, dur: 90000 },
     derby: { name: 'fishing derby', min: 2, max: 8, dur: 180000 },
     race: { name: 'team race', min: 2, max: 6, dur: 240000 },
+    spleef: { name: 'spleef', min: 2, max: 6, dur: 150000 },
+    trivia: { name: 'trivia battle', min: 2, max: 8, dur: 120000 },
+    parkour: { name: 'parkour trials', min: 2, max: 6, dur: 180000 },
   };
   const HS_ARENA = { x: 650, y: 2100, r: 400 };
   const RUSH_ARENA = { x: 2400, y: 1600, r: 650 };
@@ -768,7 +771,7 @@ function createWorld(ctx) {
       const survivors = mem.filter((u) => u !== m.seeker && !m.caught.has(u));
       if (!survivors.length) results = mem.map((u) => ({ u, amt: u === m.seeker ? 60 : 5, note: u === m.seeker ? 'caught everyone' : 'caught' }));
       else results = mem.map((u) => ({ u, amt: u === m.seeker ? 15 : (m.caught.has(u) ? 10 : 50), note: u === m.seeker ? 'time ran out' : (m.caught.has(u) ? 'caught' : 'hid the whole round') }));
-    } else if (m.game === 'rush' || m.game === 'derby') {
+    } else if (m.game === 'rush' || m.game === 'derby' || m.game === 'trivia') {
       const ranked = mem.slice().sort((a, b) => (m.scores.get(b) || 0) - (m.scores.get(a) || 0));
       const prizes = m.game === 'rush' ? [40, 20] : [50, 30, 15];
       results = ranked.map((u, i) => ({ u, amt: (m.scores.get(u) || 0) > 0 && prizes[i] ? prizes[i] : 0, note: '#' + (i + 1) + ' with ' + (m.scores.get(u) || 0) })).filter((r) => r.amt > 0);
@@ -780,6 +783,21 @@ function createWorld(ctx) {
       const win = teamPts.A === teamPts.B ? null : (teamPts.A > teamPts.B ? 'A' : 'B');
       m.teamPts = teamPts;
       results = mem.map((u) => ({ u, amt: !fin.length ? 0 : (win === null ? 25 : (m.teams.get(u) === win ? 40 : 10)), note: 'team ' + (m.teams.get(u) || 'A') + ' · ' + teamPts.A + '-' + teamPts.B })).filter((r) => r.amt > 0);
+    } else if (m.game === 'spleef') {
+      const alive = mem.filter((u) => !m.caught.has(u));
+      const lastOut = m.elimOrder && m.elimOrder.length ? m.elimOrder[m.elimOrder.length - 1] : null;
+      results = mem.map((u) => {
+        if (alive.includes(u)) return { u, amt: alive.length === 1 ? 60 : 35, note: alive.length === 1 ? 'last star standing' : 'still standing' };
+        if (u === lastOut && alive.length) return { u, amt: 25, note: 'second place' };
+        if (u === lastOut && !alive.length) return { u, amt: 60, note: 'last star standing' };
+        return { u, amt: 5, note: 'fell' };
+      });
+    } else if (m.game === 'parkour') {
+      const fin = mem.filter((u) => m.times.has(u)).sort((a, b) => m.times.get(a) - m.times.get(b));
+      const dnf = mem.filter((u) => !m.times.has(u)).sort((a, b) => (m.prog.get(b) || 0) - (m.prog.get(a) || 0));
+      const ranked = fin.concat(dnf);
+      const prizes = [50, 30, 15];
+      results = ranked.map((u, i) => ({ u, amt: prizes[i] && (m.times.has(u) || (m.prog.get(u) || 0) > 0) ? prizes[i] : 0, note: m.times.has(u) ? 'finished in ' + Math.round(m.times.get(u) / 100) / 10 + 's' : (m.prog.get(u) || 0) + '/' + PARKOUR_CPS.length + ' checkpoints' })).filter((r) => r.amt > 0);
     }
     m.results = results;
     for (const r of results) payMatch(m, r);
@@ -808,9 +826,12 @@ function createWorld(ctx) {
         if (!P.has(u) && m.phase === 'lobby') { MATCH_OF.delete(u); m.members = m.members.filter((x) => x !== u); m.scores.delete(u); if (m.host === u) m.host = m.members[0] || null; }
       }
       if (!m.members.length) { MATCHES.delete(m.id); continue; }
-      if (m.phase === 'count' && now - m.at >= 3000) { m.phase = m.game === 'hs' ? 'hide' : 'live'; m.at = now; if (m.game === 'rush') spawnTreasures(m); for (const u of m.members) matchFx(u, { t: 'phase', phase: m.phase }); }
+      if (m.phase === 'count' && now - m.at >= 3000) { m.phase = m.game === 'hs' ? 'hide' : 'live'; m.at = now; m.liveAt = now; if (m.game === 'rush') spawnTreasures(m); for (const u of m.members) matchFx(u, { t: 'phase', phase: m.phase }); }
       else if (m.phase === 'hide' && now - m.at >= 20000) { m.phase = 'live'; m.at = now; if (m.game === 'hs') for (const u of m.members) { if (u !== m.seeker && !m.entered.has(u) && !m.caught.has(u)) { m.caught.add(u); matchFx(u, { t: 'caught', why: 'u never made it to the forest' }); } } for (const u of m.members) matchFx(u, { t: 'phase', phase: 'live' }); }
       if ((m.phase === 'live' || m.phase === 'hide') && m.game === 'hs') hsTick(m, now);
+      if (m.phase === 'live' && m.game === 'spleef') spleefTick(m, now);
+      if (m.phase === 'live' && m.game === 'trivia') triviaTick(m, now);
+      if (m.phase === 'live' && m.game === 'parkour') parkourTick(m, now);
       if (m.phase === 'live' && now - m.at >= m.dur) matchSettle(m, now);
       if (m.game === 'race' && m.phase === 'live' && m.members.every((u) => m.times.has(u) || !P.has(u))) matchSettle(m, now);
       if (m.phase === 'done' && now - m.at >= 20000) { for (const u of m.members.slice()) MATCH_OF.delete(u); MATCHES.delete(m.id); }
@@ -832,13 +853,115 @@ function createWorld(ctx) {
       m.settled = true; m.phase = 'done'; m.at = Date.now();
     }
   }
+  /* ---- E8: arcade wave 2 — spleef, trivia battle, parkour trials ---- */
+  const SPLEEF_ARENA = { x: 2400, y: 700, size: 520, tile: 40 };
+  const PARKOUR_CPS = [
+    { x: 2400, y: 1560, name: 'the fountain' }, { x: 2400, y: 1905, name: 'the stage' },
+    { x: 1780, y: 1215, name: 'the arcade' }, { x: 3020, y: 1215, name: 'the theater' },
+    { x: 2400, y: 2500, name: 'the pier' }, { x: 650, y: 2100, name: 'the pine forest' },
+    { x: 900, y: 3080, name: 'maple row' }, { x: 5050, y: 3550, name: 'the crypt gate' },
+  ];
+  const TRIVIA_BANK = [
+    { q: 'what is the world currency in six\'s network called?', a: ['six cents', 'moon coins', 'star bucks', 'goblin gold'], c: 0 },
+    { q: 'which boss waits at the moonlit lake?', a: ['the drowned lich', 'the goblin king', 'a very large frog', 'the tax collector'], c: 0 },
+    { q: 'how many rarity crystals are hidden in the world?', a: ['8', '12', '16', '24'], c: 2 },
+    { q: 'what do u feed a shadow fox to befriend it?', a: ['moonberries', 'raw fish', 'stardust', 'nothing — it chooses u'], c: 0 },
+    { q: 'which season is season 1 of the world?', a: ['first frost', 'long thaw', 'ember fall', 'the big sleep'], c: 0 },
+    { q: 'what is the vault crown\'s item id arcana?', a: ['it cannot be bought or sold', 'it costs 10,000 cents', 'it is a common drop', 'it glows green'], c: 0 },
+    { q: 'how many minigames live in the world arcade?', a: ['40', '84', '134', '200'], c: 2 },
+    { q: 'which mount is the fastest?', a: ['scooter', 'hover board', 'cloud', 'dragon'], c: 3 },
+    { q: 'what happens when u poke someone in the world?', a: ['they get a wave', 'they lose 5 cents', 'u get muted', 'nothing at all'], c: 0 },
+    { q: 'which material drops from the crypt warden?', a: ['dust', 'cloth', 'essence', 'chips'], c: 2 },
+    { q: 'how big is the whole world map?', a: ['3200 by 2100', '6400 by 4200', '8000 by 8000', '1024 by 1024'], c: 1 },
+    { q: 'what does the wishing fountain do?', a: ['grants wishes for cents', 'teleports u home', 'heals ur pets', 'it is just decor'], c: 0 },
+    { q: 'which fish is worth the most in a derby?', a: ['common', 'uncommon', 'rare', 'legendary'], c: 3 },
+    { q: 'how many players can join a party?', a: ['3', '4', '5', '8'], c: 2 },
+    { q: 'what is the biggest house size called?', a: ['cozy', 'spacious', 'grand', 'palatial'], c: 2 },
+    { q: 'which event rains shards across the map?', a: ['goldenhunt', 'shardstorm', 'meteor', 'lichsurge'], c: 1 },
+    { q: 'what must a hider do in hide & seek?', a: ['reach the forest, then stay hidden', 'stand at spawn', 'fish at the pier', 'collect 3 shards'], c: 0 },
+    { q: 'how long does a marketplace listing last?', a: ['24 hours', '48 hours', 'a week', 'forever'], c: 1 },
+    { q: 'which npc gives the storyline quests?', a: ['six', 'the lich', 'a goblin', 'the mayor'], c: 0 },
+    { q: 'what color is the glass star logo?', a: ['green', 'purple', 'orange', 'white'], c: 1 },
+  ];
+  function spleefTileAt(m, x, y) {
+    const gx = Math.floor((x - (SPLEEF_ARENA.x - SPLEEF_ARENA.size / 2)) / SPLEEF_ARENA.tile);
+    const gy = Math.floor((y - (SPLEEF_ARENA.y - SPLEEF_ARENA.size / 2)) / SPLEEF_ARENA.tile);
+    const n = SPLEEF_ARENA.size / SPLEEF_ARENA.tile;
+    if (gx < 0 || gy < 0 || gx >= n || gy >= n) return -1;
+    return gy * n + gx;
+  }
+  function spleefOut(m, u, why) {
+    if (m.caught.has(u)) return;
+    m.caught.add(u); m.elimOrder.push(u);
+    const p = P.get(u);
+    if (p) { p.x = SPLEEF_ARENA.x; p.y = SPLEEF_ARENA.y - SPLEEF_ARENA.size / 2 - 90; TP_OK.add(u); }
+    matchFx(u, { t: 'out', why, x: SPLEEF_ARENA.x, y: SPLEEF_ARENA.y - SPLEEF_ARENA.size / 2 - 90 });
+    for (const u2 of m.members) if (u2 !== u) matchFx(u2, { t: 'fell', u });
+  }
+  function spleefTick(m, now) {
+    const dt = Math.min(1000, now - (m.lastTick || now)); m.lastTick = now;
+    for (const u of m.members) {
+      if (m.caught.has(u)) continue;
+      const p = P.get(u);
+      if (!p) { spleefOut(m, u, 'u vanished'); continue; }
+      const ti = spleefTileAt(m, p.x, p.y);
+      if (ti < 0) { spleefOut(m, u, 'u stepped off the platform'); continue; }
+      const t = m.tiles[ti];
+      if (t.hp <= 0) { spleefOut(m, u, 'the floor gave way'); continue; }
+      t.stand = (t.stand || 0) + dt;
+      if (t.stand >= 600) { t.hp -= 1; t.stand = 0; }
+    }
+    const alive = m.members.filter((u) => !m.caught.has(u));
+    if (alive.length <= 1 && m.members.length >= 2) matchSettle(m, now);
+  }
+  function triviaNext(m, now) {
+    m.qn = (m.qn || 0) + 1;
+    if (m.qn > 6) { matchSettle(m, now); return; }
+    const qi = m.qOrder[m.qn - 1];
+    m.q = { qi, at: now, revealUntil: 0 };
+    m.qAnswered = new Map(); m.qFirst = false;
+    for (const u of m.members) matchFx(u, { t: 'question', n: m.qn });
+  }
+  function triviaTick(m, now) {
+    if (!m.q) { triviaNext(m, now); return; }
+    if (m.q.revealUntil) { if (now >= m.q.revealUntil) { m.q = null; triviaNext(m, now); } return; }
+    const allIn = m.members.every((u) => m.qAnswered.has(u) || !P.has(u));
+    if (allIn || now - m.q.at >= 12000) {
+      m.q.revealUntil = now + 2500;
+      for (const u of m.members) matchFx(u, { t: 'reveal', c: TRIVIA_BANK[m.q.qi].c });
+    }
+  }
+  function parkourTick(m, now) {
+    for (const u of m.members) {
+      if (m.times.has(u)) continue;
+      const p = P.get(u); if (!p) continue;
+      const idx = m.prog.get(u) || 0;
+      const cp = PARKOUR_CPS[idx]; if (!cp) continue;
+      if (dist(p.x, p.y, cp.x, cp.y) < 75) {
+        m.prog.set(u, idx + 1);
+        matchFx(u, { t: 'cp', n: idx + 1, total: PARKOUR_CPS.length });
+        if (idx + 1 >= PARKOUR_CPS.length) {
+          m.times.set(u, now - m.liveAt);
+          if (!m.finAt) m.finAt = now;
+          for (const u2 of m.members) matchFx(u2, { t: 'racefin', u });
+        }
+      }
+    }
+    if (m.members.every((u) => m.times.has(u) || !P.has(u))) matchSettle(m, now);
+    else if (m.finAt && now - m.finAt >= 20000) matchSettle(m, now);
+  }
   function matchViewFor(user) {
     const m = matchOf(user); if (!m) return null;
     const now = Date.now();
     const phaseLen = m.phase === 'count' ? 3 : m.phase === 'hide' ? 20 : m.phase === 'live' ? Math.round(m.dur / 1000) : 20;
     return { id: m.id, game: m.game, name: MATCH_GAMES[m.game].name, phase: m.phase, host: m.host, left: Math.max(0, phaseLen - Math.floor((now - m.at) / 1000)), seeker: m.seeker || null, course: m.course || null,
-      members: m.members.map((u) => ({ u, role: m.game === 'hs' ? (u === m.seeker ? 'seeker' : (m.caught.has(u) ? 'caught' : 'hider')) : null, team: m.teams ? (m.teams.get(u) || null) : null, score: m.scores.get(u) || 0, time: m.times ? (m.times.get(u) || null) : null, online: P.has(u) })),
+      members: m.members.map((u) => ({ u, role: m.game === 'hs' ? (u === m.seeker ? 'seeker' : (m.caught.has(u) ? 'caught' : 'hider')) : (m.game === 'spleef' ? (m.caught.has(u) ? 'out' : 'alive') : null), team: m.teams ? (m.teams.get(u) || null) : null, score: m.scores.get(u) || 0, prog: m.prog ? (m.prog.get(u) || 0) : null, time: m.times ? (m.times.get(u) || null) : null, online: P.has(u) })),
       treasures: m.game === 'rush' && m.treasures ? m.treasures.filter((t) => !t.by).map((t) => ({ x: t.x, y: t.y })) : null,
+      tiles: m.game === 'spleef' && m.tiles ? m.tiles.map((t) => t.hp) : null,
+      arena: m.game === 'spleef' ? SPLEEF_ARENA : null,
+      tq: m.game === 'trivia' && m.q ? { n: m.qn, total: 6, text: TRIVIA_BANK[m.q.qi].q, opts: TRIVIA_BANK[m.q.qi].a, left: Math.max(0, 12 - Math.floor((now - m.q.at) / 1000)), answered: m.qAnswered ? m.qAnswered.size : 0, mine: m.qAnswered ? (m.qAnswered.get(user) || null) : null, reveal: !!m.q.revealUntil, correct: m.q.revealUntil ? TRIVIA_BANK[m.q.qi].c : null } : null,
+      cps: m.game === 'parkour' ? PARKOUR_CPS : null,
+      cpNext: m.game === 'parkour' && m.prog ? (PARKOUR_CPS[m.prog.get(user) || 0] || null) : null,
       results: m.phase === 'done' ? (m.results || []) : null };
   }
   function roster(now) {
@@ -1613,7 +1736,7 @@ function createWorld(ctx) {
         const game = String(b.game || '');
         if (!MATCH_GAMES[game]) { J({ ok: false, err: 'no such game' }, 400); return true; }
         if (matchOf(me)) { J({ ok: false, err: 'ur already in a match — leave it first' }, 400); return true; }
-        const m = { id: 'm' + (matchSeq++), game, host: me, members: [me], phase: 'lobby', at: now, scores: new Map(), caught: new Set(), entered: new Set(), times: new Map(), teams: new Map(), settled: false, dur: MATCH_GAMES[game].dur, seeker: null, course: game === 'race' ? 'skyline' : null, treasures: null, results: null, lastTag: 0 };
+        const m = { id: 'm' + (matchSeq++), game, host: me, members: [me], phase: 'lobby', at: now, scores: new Map(), caught: new Set(), entered: new Set(), times: new Map(), teams: new Map(), settled: false, dur: MATCH_GAMES[game].dur, seeker: null, course: game === 'race' ? 'skyline' : null, treasures: null, results: null, lastTag: 0, tiles: null, elimOrder: [], q: null, qn: 0, qOrder: null, qAnswered: null, qFirst: false, prog: null, liveAt: 0, finAt: 0, lastTick: 0 };
         MATCHES.set(m.id, m); MATCH_OF.set(me, m.id);
         J({ ok: true, match: matchViewFor(me) });
         return true;
@@ -1637,9 +1760,26 @@ function createWorld(ctx) {
         if (m.members.length < MATCH_GAMES[m.game].min) { J({ ok: false, err: 'need at least ' + MATCH_GAMES[m.game].min + ' players' }, 400); return true; }
         if (m.game === 'hs') m.seeker = m.members[Math.floor(Math.random() * m.members.length)];
         if (m.game === 'race') m.members.forEach((u2, i) => m.teams.set(u2, i % 2 ? 'B' : 'A'));
+        if (m.game === 'spleef') { const nT = (SPLEEF_ARENA.size / SPLEEF_ARENA.tile) * (SPLEEF_ARENA.size / SPLEEF_ARENA.tile); m.tiles = []; for (let ti2 = 0; ti2 < nT; ti2++) m.tiles.push({ hp: 2, stand: 0 }); }
+        if (m.game === 'trivia') { m.qOrder = TRIVIA_BANK.map((_, ix) => ix); for (let ix2 = m.qOrder.length - 1; ix2 > 0; ix2--) { const jx = Math.floor(Math.random() * (ix2 + 1)); const tmp = m.qOrder[ix2]; m.qOrder[ix2] = m.qOrder[jx]; m.qOrder[jx] = tmp; } m.qn = 0; m.q = null; }
+        if (m.game === 'parkour') { m.prog = new Map(); for (const u2 of m.members) m.prog.set(u2, 0); }
         m.phase = 'count'; m.at = now;
         for (const u2 of m.members) matchFx(u2, { t: 'phase', phase: 'count' });
         J({ ok: true, match: matchViewFor(me) });
+        return true;
+      }
+      if (act === 'answer') {
+        const m = matchOf(me);
+        if (!m || m.game !== 'trivia' || m.phase !== 'live' || !m.q || m.q.revealUntil) { J({ ok: false, err: 'no live question' }, 400); return true; }
+        if (m.qAnswered.has(me)) { J({ ok: false, err: 'already answered' }, 400); return true; }
+        const ix = Number(b.ix);
+        const bank = TRIVIA_BANK[m.q.qi];
+        if (!(ix >= 0 && ix < bank.a.length)) { J({ ok: false, err: 'bad option' }, 400); return true; }
+        const correct = ix === bank.c;
+        let pts = 0;
+        if (correct) { pts = m.qFirst ? 1 : 3; m.qFirst = true; m.scores.set(me, (m.scores.get(me) || 0) + pts); }
+        m.qAnswered.set(me, { ix, correct, pts });
+        J({ ok: true, correct, pts });
         return true;
       }
       if (act === 'tag') {
