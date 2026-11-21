@@ -233,7 +233,7 @@ body{display:block;padding:0;margin:0;overflow:hidden;background:#07040f}
 #wsh-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:9px;margin-top:8px}
 .wsh-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:11px;display:flex;flex-direction:column;gap:6px}
 .wsh-prev{height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center}
-.wsh-prev i{width:26px;height:26px;border-radius:50%;display:block;box-shadow:0 0 16px currentColor}
+.wsh-prev i{width:27px;height:27px;display:block;clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);filter:drop-shadow(0 0 6px currentColor)}
 .wsh-name{font-size:13.5px;font-weight:700;color:#f3efff;line-height:1.25}
 .wsh-rar{font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase}
 .wsh-card button{margin-top:auto;font:inherit;font-size:13px;font-weight:800;padding:9px 10px;border-radius:999px;border:none;cursor:pointer;background:#ffd257;color:#241a02}

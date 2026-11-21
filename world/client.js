@@ -653,7 +653,7 @@ function update(now) {
     if (p.wear && p.wear.trail) {
       var pmoving = u === me ? moving : dist(p.x, p.y, p.tx, p.ty) > 3;
       if (pmoving && Math.random() < 0.55) {
-        parts.push({ x: p.x + (Math.random() * 10 - 5), y: p.y + 8 + Math.random() * 4, vx: 0, vy: 6, at: now, life: 620, c: p.wear.trail.c, r: 2.6, ts: p.wear.trail.kind });
+        parts.push({ x: p.x + (Math.random() * 10 - 5), y: p.y + 13 + Math.random() * 4, vx: 0, vy: 6, at: now, life: 620, c: p.wear.trail.c, r: 2.6, ts: p.wear.trail.kind });
       }
     }
     if (p.wear && p.wear.pet) {
@@ -777,6 +777,21 @@ function star4(g, x, y, r, rot) {
   }
   g.closePath();
 }
+function starPath(g, r, waist, rot) {
+  var pts = [];
+  for (var i = 0; i < 8; i++) {
+    var rad = (i % 2 === 0) ? r : r * waist;
+    var a = rot - Math.PI / 2 + i * Math.PI / 4;
+    pts.push([Math.cos(a) * rad, Math.sin(a) * rad]);
+  }
+  g.beginPath();
+  g.moveTo((pts[7][0] + pts[0][0]) / 2, (pts[7][1] + pts[0][1]) / 2);
+  for (var j = 0; j < 8; j++) {
+    var p = pts[j], q = pts[(j + 1) % 8];
+    g.quadraticCurveTo(p[0], p[1], (p[0] + q[0]) / 2, (p[1] + q[1]) / 2);
+  }
+  g.closePath();
+}
 function wrapLines(g, text, maxW) {
   var words = String(text).split(' '), lines = [], cur = '';
   for (var i = 0; i < words.length; i++) {
@@ -815,16 +830,16 @@ function drawNameTag(g, p, now, byOpt) {
   var tw = g.measureText(label).width;
   g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 5; g.shadowOffsetY = 1;
   g.fillStyle = 'rgba(5,3,14,.55)';
-  rr(g, p.x - tw / 2 - 7, by - 42, tw + 14, 17, 8); g.fill();
+  rr(g, p.x - tw / 2 - 7, by - 48, tw + 14, 17, 8); g.fill();
   g.shadowOffsetY = 0;
   if (fxc.g) { g.shadowColor = fxc.c; g.shadowBlur = 9; } else g.shadowBlur = 0;
   g.fillStyle = p.npc ? '#ffd257' : (myPartySet[p.u] ? '#ffd257' : fxc.c);
   g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.fillText(label, p.x, by - 33.5);
+  g.fillText(label, p.x, by - 39.5);
   g.shadowBlur = 0;
   if (p.vc && !p.npc) {
     g.fillStyle = p.talk ? '#4ade80' : 'rgba(255,255,255,.55)';
-    g.beginPath(); g.arc(p.x + tw / 2 + 13, by - 33.5, 3, 0, TAU); g.fill();
+    g.beginPath(); g.arc(p.x + tw / 2 + 13, by - 39.5, 3, 0, TAU); g.fill();
   }
   g.textBaseline = 'alphabetic';
 }
@@ -841,25 +856,25 @@ function drawPlayer(g, p, now, isMe) {
   var by = y - bounce;
   if (p.wear && p.wear.mount && (p.wear.mount.kind === 'cloud' || p.wear.mount.kind === 'dragonm')) by -= 5 + Math.sin(now / 320 + x) * 1.6;
   p._by = by;
-  var sh = g.createRadialGradient(x, y + 13, 2, x, y + 13, 19);
+  var sh = g.createRadialGradient(x, y + 16, 2, x, y + 16, 18);
   sh.addColorStop(0, 'rgba(0,0,0,.5)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
   g.fillStyle = sh;
-  g.beginPath(); g.ellipse(x, y + 13, 19, 8, 0, 0, TAU); g.fill();
+  g.beginPath(); g.ellipse(x, y + 16, 18, 7.5, 0, 0, TAU); g.fill();
   if (!isMe && !p.npc && myPartySet[p.u]) {
     g.strokeStyle = 'rgba(255,210,87,.9)'; g.lineWidth = 2;
-    g.beginPath(); g.ellipse(x, y + 13, 22, 9.5, 0, 0, TAU); g.stroke();
+    g.beginPath(); g.ellipse(x, y + 16, 23, 9.5, 0, 0, TAU); g.stroke();
   }
   if (p.wear && p.wear.mount) drawMount(g, p, now, walking);
   if (p.wear && p.wear.aura) {
     var au = p.wear.aura, ai2, oa;
     g.strokeStyle = au.c; g.globalAlpha = 0.75; g.lineWidth = 2.2;
     if (au.kind === 'pulse') {
-      g.beginPath(); g.arc(x, y + 4, 21 + Math.sin(now / 300 + x) * 3, 0, TAU); g.stroke();
+      g.beginPath(); g.arc(x, y + 4, 23.5 + Math.sin(now / 300 + x) * 2.5, 0, TAU); g.stroke();
     } else if (au.kind === 'spin') {
-      for (ai2 = 0; ai2 < 3; ai2++) { g.beginPath(); g.arc(x, y + 4, 23, now / 900 + ai2 * 2.1, now / 900 + ai2 * 2.1 + 1.1); g.stroke(); }
+      for (ai2 = 0; ai2 < 3; ai2++) { g.beginPath(); g.arc(x, y + 4, 25, now / 900 + ai2 * 2.1, now / 900 + ai2 * 2.1 + 1.1); g.stroke(); }
     } else if (au.kind === 'orbit') {
       g.fillStyle = au.c;
-      for (ai2 = 0; ai2 < 3; ai2++) { oa = now / 800 + ai2 * 2.1; g.beginPath(); g.arc(x + Math.cos(oa) * 24, y + 4 + Math.sin(oa) * 7, 2.6, 0, TAU); g.fill(); }
+      for (ai2 = 0; ai2 < 3; ai2++) { oa = now / 800 + ai2 * 2.1; g.beginPath(); g.arc(x + Math.cos(oa) * 25.5, y + 4 + Math.sin(oa) * 8, 2.6, 0, TAU); g.fill(); }
     } else {
       g.beginPath(); g.ellipse(x, y + 4, 23, 10, 0, 0, TAU); g.stroke();
     }
@@ -879,29 +894,42 @@ function drawPlayer(g, p, now, isMe) {
   else if (rot) g.rotate(rot);
   if (p.talk) {
     g.strokeStyle = 'rgba(74,222,128,.9)'; g.lineWidth = 2.5;
-    g.beginPath(); g.arc(0, 0, 21 + Math.sin(now / 150) * 2.5, 0, TAU); g.stroke();
+    g.beginPath(); g.arc(0, 0, 24 + Math.sin(now / 150) * 2, 0, TAU); g.stroke();
   } else if (p.vc) {
     g.strokeStyle = 'rgba(183,168,255,.4)'; g.lineWidth = 1.5;
-    g.beginPath(); g.arc(0, 0, 20, 0, TAU); g.stroke();
+    g.beginPath(); g.arc(0, 0, 23, 0, TAU); g.stroke();
   }
   if (p.npc) {
     g.shadowColor = '#ffd257'; g.shadowBlur = 18;
     g.fillStyle = '#8b7cff';
-    star4(g, 0, 0, 19, now / 2600); g.fill();
+    starPath(g, 19, 0.36, now / 2600); g.fill();
     g.shadowBlur = 0;
     g.fillStyle = '#ffd257';
-    star4(g, 0, 0, 8, -now / 2600); g.fill();
+    starPath(g, 8, 0.36, -now / 2600); g.fill();
   } else {
     var hue = (p.hue != null ? p.hue : hueOf(p.u));
-    var grad = g.createRadialGradient(-5, -6, 3, 0, 0, 17);
-    grad.addColorStop(0, 'hsl(' + hue + ',78%,70%)');
-    grad.addColorStop(0.55, 'hsl(' + hue + ',66%,54%)');
-    grad.addColorStop(1, 'hsl(' + hue + ',60%,40%)');
+    var ph = 0; for (var ci = 0; ci < p.u.length; ci++) ph += p.u.charCodeAt(ci);
+    ph = ph * 1.37;
+    var breathe = 1 + Math.sin(now / 620 + ph) * 0.02;
+    var sway = Math.sin(now / 940 + ph) * 0.05 + (walking ? Math.sin(now / 95) * 0.045 : 0);
+    g.save();
+    g.rotate(sway); g.scale(breathe, breathe);
+    var grad = g.createRadialGradient(-5, -7, 3, 0, 0, 21);
+    grad.addColorStop(0, 'hsl(' + hue + ',82%,72%)');
+    grad.addColorStop(0.55, 'hsl(' + hue + ',68%,55%)');
+    grad.addColorStop(1, 'hsl(' + hue + ',62%,40%)');
+    g.shadowColor = 'hsla(' + hue + ',85%,64%,.75)'; g.shadowBlur = 15;
     g.fillStyle = grad;
-    g.beginPath(); g.arc(0, 0, 15.5, 0, TAU); g.fill();
-    g.strokeStyle = 'hsla(' + hue + ',70%,26%,.85)'; g.lineWidth = 1.6; g.stroke();
-    g.strokeStyle = 'rgba(255,255,255,.5)'; g.lineWidth = 1.6;
-    g.beginPath(); g.arc(0, 0, 13.6, Math.PI * 1.08, Math.PI * 1.52); g.stroke();
+    starPath(g, 19, 0.5, 0); g.fill();
+    g.shadowBlur = 0;
+    g.strokeStyle = 'hsla(' + hue + ',72%,27%,.9)'; g.lineWidth = 1.6;
+    starPath(g, 19, 0.5, 0); g.stroke();
+    g.fillStyle = 'rgba(255,255,255,.10)';
+    starPath(g, 10.5, 0.5, 0); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.38)';
+    g.beginPath(); g.ellipse(-5.5, -8.5, 4.4, 2.6, -0.6, 0, TAU); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.8)';
+    for (var tw2 = 0; tw2 < 2; tw2++) { var ta = now / 1500 + ph + tw2 * Math.PI; star4(g, Math.cos(ta) * 16.5, -3 + Math.sin(ta) * 12, 2.1, ta); g.fill(); }
     if (p.wear && p.wear.hat) drawHat(g, p.wear.hat, now);
     var ex = Math.cos(p.dir || 0) * 3.4, ey = Math.sin(p.dir || 0) * 2.6;
     g.fillStyle = '#14101f';
@@ -970,14 +998,15 @@ function drawPlayer(g, p, now, isMe) {
         g.beginPath(); g.ellipse(8.6 + ex, 2.4 + ey, 3.1, 1.9, 0, 0, TAU); g.fill();
         g.globalAlpha = 1;
       } else if (fk === 'blank') {
-        g.beginPath(); g.arc(0, 0, 10.6, 0, TAU);
-        g.fillStyle = 'hsl(' + hue + ',70%,60%)'; g.fill();
+        starPath(g, 11, 0.5, 0);
+        g.fillStyle = 'hsl(' + hue + ',70%,62%)'; g.fill();
       }
     }
     if (emote === 'wave') {
       g.fillStyle = 'hsl(' + hue + ',70%,60%)';
-      g.beginPath(); g.arc(17, -12 + Math.sin(now / 110) * 3.4, 4.6, 0, TAU); g.fill();
+      g.beginPath(); g.arc(19.5, -9 + Math.sin(now / 110) * 3.4, 4.6, 0, TAU); g.fill();
     }
+    g.restore();
   }
   g.restore();
   drawNameTag(g, p, now, by);
@@ -991,13 +1020,13 @@ function drawPlayer(g, p, now, isMe) {
     lines.forEach(function (L) { bw = Math.max(bw, g.measureText(L).width); });
     bw += 18;
     var bh = lines.length * 16 + 11;
-    var bx = clamp(x - bw / 2, 6, MAP_W - bw - 6), byy = by - 52 - bh;
+    var bx = clamp(x - bw / 2, 6, MAP_W - bw - 6), byy = by - 60 - bh;
     var age = now - p.bubAt;
     var fade = age > 4800 ? 1 - (age - 4800) / 800 : 1;
     var pop = age < 190 ? (0.55 + 0.45 * (1 - Math.pow(1 - age / 190, 3))) : 1;
     g.save();
     g.globalAlpha = Math.max(0, fade);
-    g.translate(x, by - 50); g.scale(pop, pop); g.translate(-x, -(by - 50));
+    g.translate(x, by - 58); g.scale(pop, pop); g.translate(-x, -(by - 58));
     g.shadowColor = 'rgba(2,0,10,.45)'; g.shadowBlur = 10; g.shadowOffsetY = 3;
     g.fillStyle = 'rgba(252,252,255,.97)';
     rr(g, bx, byy, bw, bh, 10); g.fill();
@@ -2524,53 +2553,59 @@ function drawHat(g, hat, now) {
   g.fillStyle = c; g.strokeStyle = c;
   switch (hat.kind) {
     case 'cap':
-      g.beginPath(); g.arc(0, -3, 13, Math.PI, TAU); g.fill();
-      g.fillRect(0, -6.4, 19, 3.6);
+      g.save(); g.rotate(-0.07);
+      g.beginPath(); g.arc(0, -11, 8.6, Math.PI, TAU); g.fill();
+      g.fillRect(-8.6, -12.6, 17.2, 3.2);
+      g.beginPath(); g.ellipse(6.5, -10.6, 6.8, 2.1, 0.1, 0, TAU); g.fill();
+      g.restore();
       break;
     case 'crown':
       g.beginPath();
-      g.moveTo(-11, -10); g.lineTo(-11, -22); g.lineTo(-5.5, -15); g.lineTo(0, -24); g.lineTo(5.5, -15); g.lineTo(11, -22); g.lineTo(11, -10); g.closePath(); g.fill();
+      g.moveTo(-9, -11.5); g.lineTo(-9, -21); g.lineTo(-4.5, -15.5); g.lineTo(0, -23.5); g.lineTo(4.5, -15.5); g.lineTo(9, -21); g.lineTo(9, -11.5); g.closePath(); g.fill();
       break;
     case 'halo':
       g.lineWidth = 2.6;
-      g.beginPath(); g.ellipse(0, -21 + Math.sin(now / 500) * 1.2, 9, 3.1, 0, 0, TAU); g.stroke();
+      g.beginPath(); g.ellipse(0, -24.5 + Math.sin(now / 500) * 1.2, 8.6, 3, 0, 0, TAU); g.stroke();
       break;
     case 'horns':
-      g.beginPath(); g.moveTo(-13, -8); g.lineTo(-7, -10); g.lineTo(-12, -20); g.closePath(); g.fill();
-      g.beginPath(); g.moveTo(13, -8); g.lineTo(7, -10); g.lineTo(12, -20); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(-11.5, -11); g.lineTo(-5.5, -13.5); g.lineTo(-10.5, -20.5); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(11.5, -11); g.lineTo(5.5, -13.5); g.lineTo(10.5, -20.5); g.closePath(); g.fill();
       break;
     case 'beanie':
-      g.beginPath(); g.arc(0, -2, 13.6, Math.PI, TAU); g.fill();
-      g.fillRect(-13.6, -4.6, 27.2, 4);
-      g.beginPath(); g.arc(0, -16, 3.4, 0, TAU); g.fill();
+      g.beginPath(); g.arc(0, -11.5, 9.2, Math.PI, TAU); g.fill();
+      g.fillRect(-9.2, -13.8, 18.4, 4);
+      g.beginPath(); g.arc(0, -21.5, 3.3, 0, TAU); g.fill();
       break;
     case 'wizard':
-      g.beginPath(); g.moveTo(-3, -30); g.lineTo(-12, -8); g.lineTo(12, -8); g.closePath(); g.fill();
-      g.beginPath(); g.ellipse(0, -8, 16, 3.6, 0, 0, TAU); g.fill();
+      g.beginPath(); g.moveTo(3, -31); g.lineTo(-9.5, -11.5); g.lineTo(9, -11.5); g.closePath(); g.fill();
+      g.beginPath(); g.ellipse(0, -11.5, 12, 3.2, 0, 0, TAU); g.fill();
+      g.fillStyle = '#fff7cc'; star4(g, 0.5, -19, 3, now / 900); g.fill(); g.fillStyle = c;
       break;
     case 'antenna':
-      g.lineWidth = 2; g.beginPath(); g.moveTo(0, -13); g.lineTo(0, -23); g.stroke();
-      g.fillStyle = c; star4(g, 0, -26, 5.4, now / 600); g.fill();
+      g.lineWidth = 2.2; g.beginPath(); g.moveTo(0, -16); g.lineTo(0, -25); g.stroke();
+      g.fillStyle = c; star4(g, 0, -28, 5.2, now / 600); g.fill();
       break;
     case 'flower':
       for (var fi3 = 0; fi3 < 5; fi3++) {
         var fa2 = fi3 / 5 * TAU;
-        g.beginPath(); g.arc(9 + Math.cos(fa2) * 3.6, -13 + Math.sin(fa2) * 3.6, 2.9, 0, TAU); g.fill();
+        g.beginPath(); g.arc(6.5 + Math.cos(fa2) * 3.6, -17.5 + Math.sin(fa2) * 3.6, 2.9, 0, TAU); g.fill();
       }
       g.fillStyle = '#fff7cc';
-      g.beginPath(); g.arc(9, -13, 2.2, 0, TAU); g.fill();
+      g.beginPath(); g.arc(6.5, -17.5, 2.2, 0, TAU); g.fill();
       break;
     case 'mohawk':
       g.beginPath();
-      g.moveTo(-2.6, -13); g.lineTo(0, -25); g.lineTo(2.6, -13); g.closePath(); g.fill();
-      g.beginPath(); g.moveTo(-2.4, -10); g.lineTo(0.6, -21); g.lineTo(3.2, -10.6); g.closePath(); g.fill();
+      g.moveTo(-2.4, -12); g.lineTo(0, -27); g.lineTo(2.4, -12); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(-2.2, -9.5); g.lineTo(0.8, -22); g.lineTo(3.4, -10); g.closePath(); g.fill();
       break;
     case 'tophat':
-      g.fillRect(-8, -25, 16, 13);
-      g.fillRect(-13.5, -13.4, 27, 3.6);
+      g.save(); g.rotate(-0.1);
+      g.fillRect(-6.5, -26.5, 13, 12.5);
+      g.fillRect(-10, -15.8, 20, 3.4);
+      g.restore();
       break;
     default:
-      g.beginPath(); g.arc(0, -13, 5, 0, TAU); g.fill();
+      g.beginPath(); g.arc(0, -16.5, 4.6, 0, TAU); g.fill();
   }
 }
 function drawPet(g, pet, now) {
@@ -3989,7 +4024,7 @@ var MOUNT_SPD = { board: 350, scooter: 365, bike: 400, hover: 415, cloud: 440, r
 function drawMount(g, p, now, walking) {
   var m = p.wear.mount, c = m.c;
   g.save();
-  g.translate(p.x, p.y + 12);
+  g.translate(p.x, p.y + 14);
   g.rotate(p.dir || 0);
   g.fillStyle = c; g.strokeStyle = c;
   switch (m.kind) {
@@ -4370,16 +4405,29 @@ function drawCharPv(h) {
   var cv2 = $('wchar-pv'); if (!cv2) return;
   var g = cv2.getContext('2d');
   g.clearRect(0, 0, 96, 96);
-  var sh = g.createRadialGradient(48, 76, 2, 48, 76, 26);
+  var sh = g.createRadialGradient(48, 78, 2, 48, 78, 24);
   sh.addColorStop(0, 'rgba(0,0,0,.5)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
-  g.fillStyle = sh; g.beginPath(); g.ellipse(48, 76, 26, 10, 0, 0, TAU); g.fill();
-  g.beginPath(); g.arc(48, 46, 30, 0, TAU);
-  g.fillStyle = 'hsl(' + h + ',70%,60%)'; g.fill();
-  g.lineWidth = 3; g.strokeStyle = 'hsl(' + h + ',70%,42%)'; g.stroke();
+  g.fillStyle = sh; g.beginPath(); g.ellipse(48, 78, 24, 9, 0, 0, TAU); g.fill();
+  g.save(); g.translate(48, 44);
+  var grad = g.createRadialGradient(-8, -10, 4, 0, 0, 32);
+  grad.addColorStop(0, 'hsl(' + h + ',82%,72%)');
+  grad.addColorStop(0.55, 'hsl(' + h + ',68%,55%)');
+  grad.addColorStop(1, 'hsl(' + h + ',62%,40%)');
+  g.shadowColor = 'hsla(' + h + ',85%,64%,.7)'; g.shadowBlur = 12;
+  g.fillStyle = grad;
+  starPath(g, 29, 0.5, 0); g.fill();
+  g.shadowBlur = 0;
+  g.lineWidth = 2; g.strokeStyle = 'hsla(' + h + ',72%,30%,.85)';
+  starPath(g, 29, 0.5, 0); g.stroke();
+  g.fillStyle = 'rgba(255,255,255,.10)';
+  starPath(g, 16, 0.5, 0); g.fill();
+  g.fillStyle = 'rgba(255,255,255,.38)';
+  g.beginPath(); g.ellipse(-8, -12, 6.5, 4, -0.6, 0, TAU); g.fill();
   g.fillStyle = '#14101f';
-  g.beginPath(); g.arc(37, 42, 3.4, 0, TAU); g.arc(59, 42, 3.4, 0, TAU); g.fill();
-  g.strokeStyle = '#14101f'; g.lineWidth = 2.4;
-  g.beginPath(); g.arc(48, 50, 10, 0.25 * Math.PI, 0.75 * Math.PI); g.stroke();
+  g.beginPath(); g.arc(-7, -2, 2.6, 0, TAU); g.arc(7, -2, 2.6, 0, TAU); g.fill();
+  g.strokeStyle = '#14101f'; g.lineWidth = 2.2;
+  g.beginPath(); g.arc(0, 3.5, 6.5, 0.25 * Math.PI, 0.75 * Math.PI); g.stroke();
+  g.restore();
 }
 function openChar() {
   $('wchar').hidden = false;
