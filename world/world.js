@@ -60,7 +60,7 @@ const ZONES = [
   { id: 'garden', name: 'the lamp garden', x: 700, y: 900, r: 230 },
   { id: 'overlook', name: 'the east overlook', x: 3400, y: 750, r: 210 },
   { id: 'spawn', name: 'spawn plaza', x: 2400, y: 1700, r: 140 },
-  { id: 'lake', name: 'the moonlit lake', x: 2400, y: 2620, r: 400 },
+  { id: 'lake', name: 'the moonlit lake', x: 2400, y: 2600, r: 400 },
   { id: 'pier', name: 'the pier', x: 2400, y: 2400, r: 170 },
   { id: 'forest', name: 'the pine forest', x: 650, y: 2100, r: 400 },
   { id: 'market', name: 'neon market', x: 3950, y: 1600, r: 330 },
@@ -230,7 +230,7 @@ const MOUNT_SPEED = { board: 350, scooter: 365, bike: 400, hover: 415, cloud: 44
     return inLake || onPier;
   }
   function fishWeek(now) { return Math.floor((now / 86400000 + 3) / 7); }
-  const BOSS_POS = { x: 2400, y: 2620 };
+  const BOSS_POS = { x: 2400, y: 2600 };
   const BOSS_CYCLE = 1500000, BOSS_LIVE_FROM = 1200000;
   let BOSS = null;
   const STUN = new Map(), BOSS_HIT_CD = new Map(), DUN_HIT_CD = new Map();

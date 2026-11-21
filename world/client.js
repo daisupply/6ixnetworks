@@ -1100,10 +1100,10 @@ function render(now) {
     });
   }
   if (VX1 > 4880 && VX0 < 6400 && VY1 > 500 && VY0 < 1780) {
-    g.fillStyle = '#171233'; g.fillRect(4880, 500, 1500, 1280);
-    g.strokeStyle = 'rgba(244,114,182,.28)'; g.lineWidth = 2; g.strokeRect(4890, 510, 1480, 1260);
-    g.fillStyle = '#1d1440'; g.fillRect(5450, 520, 400, 180);
-    g.strokeStyle = 'rgba(125,211,252,.45)'; g.lineWidth = 2; g.strokeRect(5450, 520, 400, 180);
+    g.fillStyle = '#171233'; g.fillRect(4850, 510, 1500, 1280);
+    g.strokeStyle = 'rgba(244,114,182,.28)'; g.lineWidth = 2; g.strokeRect(4860, 520, 1480, 1260);
+    g.fillStyle = '#1d1440'; g.fillRect(5450, 510, 400, 180);
+    g.strokeStyle = 'rgba(125,211,252,.45)'; g.lineWidth = 2; g.strokeRect(5450, 510, 400, 180);
     g.fillStyle = 'rgba(243,239,255,.6)'; g.font = '700 11px Inter, sans-serif'; g.textAlign = 'center';
     g.fillText('the rooftops', 5650, 545);
     BUILDINGS.forEach(function (b) {
@@ -1166,8 +1166,8 @@ function render(now) {
     g.shadowBlur = 0;
   }
   if (VX1 > 5020 && VX0 < 6280 && VY1 > 3740 && VY0 < 4200) {
-    g.fillStyle = '#171126'; g.fillRect(5020, 3740, 1260, 440);
-    g.strokeStyle = 'rgba(255,210,87,.6)'; g.lineWidth = 2.5; g.strokeRect(5020, 3740, 1260, 440);
+    g.fillStyle = '#171126'; g.fillRect(5020, 3760, 1260, 420);
+    g.strokeStyle = 'rgba(255,210,87,.6)'; g.lineWidth = 2.5; g.strokeRect(5020, 3760, 1260, 420);
     [[5080, 3800], [6220, 3800], [5080, 4120], [6220, 4120]].forEach(function (pl) {
       g.fillStyle = '#241a38'; g.beginPath(); g.arc(pl[0], pl[1], 15, 0, TAU); g.fill();
       g.fillStyle = '#ffd257'; g.shadowColor = '#ffd257'; g.shadowBlur = 12; g.beginPath(); g.arc(pl[0], pl[1], 5, 0, TAU); g.fill(); g.shadowBlur = 0;
@@ -1247,9 +1247,9 @@ function render(now) {
   LAMPS.forEach(function (L) {
     if (!inV(L.x, L.y, 130)) return;
     var fl = 0.85 + 0.15 * Math.sin(now / 340 + L.ph);
-    var rg = g.createRadialGradient(L.x, L.y, 4, L.x, L.y, 118);
+    var rg = g.createRadialGradient(L.x, L.y - 29, 4, L.x, L.y - 29, 118);
     rg.addColorStop(0, 'rgba(255,214,150,' + (0.12 * fl) + ')'); rg.addColorStop(1, 'rgba(255,214,150,0)');
-    g.fillStyle = rg; g.beginPath(); g.arc(L.x, L.y, 118, 0, TAU); g.fill();
+    g.fillStyle = rg; g.beginPath(); g.arc(L.x, L.y - 29, 118, 0, TAU); g.fill();
   });
   g.globalCompositeOperation = 'source-over';
   g.strokeStyle = 'rgba(255,255,255,.09)'; g.lineWidth = 1;
@@ -1291,13 +1291,13 @@ function render(now) {
       g.beginPath(); g.arc(fx, fy, 14 + wr * 13 + Math.sin(now / 700 + wr) * 2.5, 0, TAU); g.stroke();
     }
     g.globalCompositeOperation = 'lighter';
-    var mg = g.createRadialGradient(fx, fy - 12, 2, fx, fy - 12, 62);
+    var mg = g.createRadialGradient(fx, fy, 2, fx, fy, 62);
     mg.addColorStop(0, 'rgba(240,240,255,.5)'); mg.addColorStop(1, 'rgba(240,240,255,0)');
-    g.fillStyle = mg; g.beginPath(); g.arc(fx, fy - 12, 62, 0, TAU); g.fill();
+    g.fillStyle = mg; g.beginPath(); g.arc(fx, fy, 62, 0, TAU); g.fill();
     g.globalCompositeOperation = 'source-over';
     g.fillStyle = '#f4f2ff'; g.shadowColor = '#dcd6ff'; g.shadowBlur = 24;
-    g.beginPath(); g.arc(fx, fy - 12, 13 + Math.sin(now / 900) * 1.2, 0, TAU); g.fill(); g.shadowBlur = 0;
-    if (Math.random() < 0.1) parts.push({ x: fx + (Math.random() * 30 - 15), y: fy - 22, vx: 0, vy: -26, at: now, life: 700, c: '#dcd6ff', r: 1.6 });
+    g.beginPath(); g.arc(fx, fy, 13 + Math.sin(now / 900) * 1.2, 0, TAU); g.fill(); g.shadowBlur = 0;
+    if (Math.random() < 0.1) parts.push({ x: fx + (Math.random() * 30 - 15), y: fy - 12, vx: 0, vy: -26, at: now, life: 700, c: '#dcd6ff', r: 1.6 });
   })();
   if (inV(TENT.x, TENT.y, 150)) drawTent(g, now);
   /* arcade cabinets */
@@ -3180,7 +3180,7 @@ var ZONE_SPOTS = [
   ['theater', 'the theater', 3020, 1215], ['lounge', 'the chat lounge', 1710, 1500], ['party', 'the party house', 3090, 1500],
   ['tube', 'tube corner', 1780, 1800], ['tiktok', 'the tiktok wall', 3020, 1800], ['blox', 'blox tower', 2400, 1120],
   ['garden', 'the lamp garden', 700, 900], ['overlook', 'the east overlook', 3400, 750], ['spawn', 'spawn plaza', 2400, 1700],
-  ['lake', 'the moonlit lake', 2400, 2620], ['pier', 'the pier', 2400, 2400], ['forest', 'the pine forest', 650, 2100],
+  ['lake', 'the moonlit lake', 2400, 2600], ['pier', 'the pier', 2400, 2400], ['forest', 'the pine forest', 650, 2100],
   ['market', 'neon market', 3950, 1600], ['heights', 'blox heights', 3950, 480], ['neon', 'the neon district', 5600, 1150],
   ['rooftops', 'the rooftops', 5650, 600], ['alley', 'the back alley', 6150, 1620], ['sky', 'the sky islands', 5650, 280],
   ['eastwild', 'the eastern wilds', 5600, 2500], ['underarcade', 'the underground arcade', 5650, 3600], ['vault', 'the vault', 5650, 3990],
@@ -3193,7 +3193,7 @@ var MAPZ = [
   ['tube', 'tube corner', 1780, 1800, 135, '#fb7185'], ['tiktok', 'the tiktok wall', 3020, 1800, 135, '#67e8f9'],
   ['blox', 'blox tower', 2400, 1120, 125, '#f0abfc'], ['garden', 'the lamp garden', 700, 900, 230, '#a3e635'],
   ['overlook', 'the east overlook', 3400, 750, 210, '#fbbf24'], ['spawn', 'spawn plaza', 2400, 1700, 140, '#e8e6ff'],
-  ['lake', 'the moonlit lake', 2400, 2620, 400, '#3b82f6'], ['pier', 'the pier', 2400, 2400, 170, '#93c5fd'],
+  ['lake', 'the moonlit lake', 2400, 2600, 400, '#3b82f6'], ['pier', 'the pier', 2400, 2400, 170, '#93c5fd'],
   ['forest', 'the pine forest', 650, 2100, 400, '#22c55e'], ['market', 'neon market', 3950, 1600, 330, '#f472b6'],
   ['heights', 'blox heights', 3950, 480, 260, '#fb923c'], ['neon', 'the neon district', 5600, 1150, 580, '#e879f9'],
   ['rooftops', 'the rooftops', 5650, 600, 175, '#a78bfa'], ['alley', 'the back alley', 6150, 1620, 130, '#94a3b8'],
