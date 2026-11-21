@@ -11762,7 +11762,63 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style>
   
     var cb=document.getElementById('claimBtn'); if(cb&&d.claim){ cb.style.display='block'; if(d.claim.can){ cb.disabled=false; cb.style.opacity='1'; cb.textContent='claim daily · +'+d.claim.amt+' coins · day '+d.claim.streak+' streak'; } else { cb.disabled=true; cb.style.opacity='.55'; cb.textContent='daily claimed · '+d.claim.streak+' day streak'; } }};
   fetch('/api/me/social').then(function(r){return r.json()}).then(function(d){ if(d&&d.ok)window.__shopSumUpdate(d); }).catch(function(){});
+
+  var cb3 = document.getElementById('claimBtn');
+  if (cb3) cb3.addEventListener('click', function () {
+    if (cb3.disabled) return;
+    cb3.disabled = true; cb3.textContent = 'claiming...';
+    fetch('/api/coins/claim', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d && d.ok) {
+        cb3.textContent = 'claimed · +' + d.amt + ' coins · ' + d.streak + ' day streak'; cb3.style.opacity = '.55';
+        fetch('/api/me/social').then(function (r) { return r.json(); }).then(function (d2) { if (d2 && d2.ok) window.__shopSumUpdate(d2); }).catch(function () {});
+      } else { cb3.disabled = false; cb3.style.opacity = '1'; cb3.textContent = (d && d.err) || 'claim failed - tap to retry'; }
+    }).catch(function () { cb3.disabled = false; cb3.style.opacity = '1'; cb3.textContent = 'claim failed - tap to retry'; });
+  });
+  var socHost = cb3 ? cb3.parentNode : null;
+  if (socHost) {
+    var mgB = document.createElement('button');
+    mgB.type = 'button'; mgB.id = 'mgOpen';
+    mgB.style.cssText = 'margin-top:9px;width:100%;padding:11px 16px;border-radius:13px;border:1px solid rgba(139,124,255,.6);background:linear-gradient(135deg,rgba(139,124,255,.28),rgba(255,94,168,.13));color:#e6e1ff;font-weight:900;font-size:14px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:9px';
+    mgB.innerHTML = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59C2.62 9.42 2 14.46 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.62-6.584-.685-7.258A4 4 0 0 0 17.32 5z"/></svg>minigames · earn coins';
+    socHost.appendChild(mgB);
+    var rqA = document.createElement('a');
+    rqA.href = '/requests';
+    rqA.style.cssText = 'display:block;margin-top:9px;width:100%;padding:11px 16px;border-radius:13px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.04);color:#d8d2f0;font-weight:800;font-size:13.5px;text-align:center;text-decoration:none;font-family:inherit;box-sizing:border-box';
+    rqA.textContent = 'request a game';
+    socHost.appendChild(rqA);
+    var mgPop = document.createElement('div');
+    mgPop.id = 'mgPop';
+    mgPop.style.cssText = 'display:none;position:fixed;inset:0;z-index:99999;background:rgba(4,2,10,.86);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);align-items:center;justify-content:center;padding:16px';
+    mgPop.innerHTML = '<div style="width:min(560px,95vw);max-height:92vh;overflow-y:auto;background:linear-gradient(165deg,#1e1538,#0f0a20);border:1px solid rgba(139,124,255,.4);border-radius:26px;padding:20px;box-shadow:0 34px 90px rgba(0,0,0,.65),0 0 60px rgba(139,124,255,.18);position:relative;scrollbar-width:thin">'
+      + '<button id="mgX" type="button" aria-label="close" style="position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:11px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#bdb4e4;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>'
+      + '<div style="font-weight:900;font-size:19px;letter-spacing:.04em;color:#fff">MINIGAMES</div>'
+      + '<div style="font-size:12.5px;color:#bdb4e4;margin-top:3px">every score u post pays <b style="color:#ffd257">+3 coins</b> · up to 10 paid plays a day. best score on todays daily game takes the crown.</div>'
+      + '<div id="mgDaily" style="margin-top:12px"></div>'
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px;margin-top:12px">'
+      + [['Stack', '/games/stack/', '#8b7cff'], ['Neon Breakout', '/games/breakout/', '#ff5ea8'], ['Flap Wing', '/games/flappy/', '#38b6ff'], ['Minesweeper', '/games/minesweeper/', '#3ddc84'], ['2048', '/games/2048/', '#ffd257'], ['Hextris', '/games/hextris/', '#c86bff']].map(function (g) {
+        return '<a href="' + g[1] + '" style="display:block;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.11);border-radius:15px;padding:13px 14px;color:#fff;text-decoration:none"><div style="width:34px;height:34px;border-radius:10px;background:' + g[2] + '33;border:1px solid ' + g[2] + '88;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;color:' + g[2] + '">' + g[0].charAt(0) + '</div><div style="font-weight:800;font-size:14.5px;margin-top:9px">' + g[0] + '</div><div style="font-size:11.5px;color:#8a81ad;margin-top:2px">post a score · +3 coins</div></a>';
+      }).join('')
+      + '</div></div>';
+    document.body.appendChild(mgPop);
+    var mgLinks = { stack: '/games/stack/', breakout: '/games/breakout/', flappy: '/games/flappy/', mines: '/games/minesweeper/', g2048: '/games/2048/', hextris: '/games/hextris/' };
+    function mgLock(on) { document.documentElement.style.overflow = on ? 'hidden' : ''; document.body.style.overflow = on ? 'hidden' : ''; }
+    function mgOpenFn() {
+      mgPop.style.display = 'flex'; mgLock(true);
+      fetch('/api/daily').then(function (r) { return r.json(); }).then(function (d) {
+        var el = document.getElementById('mgDaily');
+        if (!el || !d || !d.ok || !mgLinks[d.game]) return;
+        var top = (d.top && d.top[0]) ? ' · top rn: ' + String(d.top[0].u).replace(/[<>&"]/g, '') + ' (' + d.top[0].s + ')' : ' · no scores yet today';
+        el.innerHTML = '<a href="' + mgLinks[d.game] + '" style="display:block;background:linear-gradient(135deg,rgba(139,124,255,.25),rgba(255,94,168,.18));border:1px solid rgba(255,210,87,.5);border-radius:14px;padding:13px 15px;color:#eceaf6;text-decoration:none"><div style="font-weight:800;font-size:15px">todays daily: ' + String(d.title || '').replace(/[<>&"]/g, '') + '</div><div style="color:#c9c2e8;font-size:12.5px;margin-top:2px">top score today takes the crown' + top + '</div></a>';
+      }).catch(function () {});
+    }
+    function mgCloseFn() { mgPop.style.display = 'none'; mgLock(false); }
+    mgB.addEventListener('click', mgOpenFn);
+    mgPop.addEventListener('click', function (e) { if (e.target === mgPop) mgCloseFn(); });
+    var mgX = document.getElementById('mgX');
+    if (mgX) mgX.addEventListener('click', mgCloseFn);
+  }
 })();
+
 </script>
 <script>
 (function(){
@@ -17645,13 +17701,23 @@ async function scoresApi(req, res, u) {
       }
     }
     scoresSave();
+    let coinBonus = 0, coinBal = null;
+    try {
+      await coinsLoad();
+      const ck = me.toLowerCase(), todayK = scoreDay(), pp = COINS.pp[ck];
+      if (!pp || pp.day !== todayK || pp.n < 10) {
+        COINS.pp[ck] = { day: todayK, n: (pp && pp.day === todayK ? pp.n : 0) + 1 };
+        coinBonus = 3;
+        coinBal = await coinsAward(ck, 3);
+      }
+    } catch (e) {}
     bumpStat(me.toLowerCase(), 'plays', { game: gk, score: s });
     const board = scoreBoard(SCORES.g[gk], def.low);
     const ri = board.findIndex((x) => x.u === me);
     const rank = ri >= 0 ? ri + 1 : null;
     if (better && rank === 1) feedPush('top', me, 'took #1 on ' + def.t + ' — ' + s);
     if (dNewTop) feedPush('daily', me, 'leads the daily challenge on ' + def.t + ' — ' + s);
-    jres(res, 200, { ok: true, best: SCORES.g[gk][me].s, rank, dailyTop: dNewTop });
+    jres(res, 200, { ok: true, best: SCORES.g[gk][me].s, rank, dailyTop: dNewTop, coinBonus, coinBal });
     return true;
   }
   return false;
@@ -17712,10 +17778,10 @@ async function bumpStat(user, key, ev) {
   } catch (e) {}
 }
 async function badgeCheck(user) { try { if (!user) return; await badgesLoad(); evalBadges(String(user).toLowerCase(), null); } catch (e) {} }
-const COINS = { bal: {}, fx: {}, own: {}, claim: {}, adv: {}, bub: {}, frame: {}, ownBub: {}, ownFrame: {}, ready: false };
+const COINS = { bal: {}, fx: {}, own: {}, claim: {}, adv: {}, bub: {}, frame: {}, ownBub: {}, ownFrame: {}, pp: {}, ready: false };
 let coinsDirty = false;
-async function coinsLoad() { if (COINS.ready) return; COINS.ready = true; try { const got = await storeCmd([['GET', 'cfg:coins']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o) { if (o.bal) COINS.bal = o.bal; if (o.fx) COINS.fx = o.fx; if (o.own) COINS.own = o.own; if (o.claim) COINS.claim = o.claim; if (o.adv) COINS.adv = o.adv; if (o.bub) COINS.bub = o.bub; if (o.frame) COINS.frame = o.frame; if (o.ownBub) COINS.ownBub = o.ownBub; if (o.ownFrame) COINS.ownFrame = o.ownFrame; } } } catch (e) {} }
-function coinsSave() { if (coinsDirty) return; coinsDirty = true; setTimeout(() => { coinsDirty = false; try { storeSet('cfg:coins', JSON.stringify({ bal: COINS.bal, fx: COINS.fx, own: COINS.own, claim: COINS.claim, adv: COINS.adv, bub: COINS.bub, frame: COINS.frame, ownBub: COINS.ownBub, ownFrame: COINS.ownFrame })); } catch (e) {} }, 800); }
+async function coinsLoad() { if (COINS.ready) return; COINS.ready = true; try { const got = await storeCmd([['GET', 'cfg:coins']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o) { if (o.bal) COINS.bal = o.bal; if (o.fx) COINS.fx = o.fx; if (o.own) COINS.own = o.own; if (o.claim) COINS.claim = o.claim; if (o.adv) COINS.adv = o.adv; if (o.bub) COINS.bub = o.bub; if (o.frame) COINS.frame = o.frame; if (o.ownBub) COINS.ownBub = o.ownBub; if (o.ownFrame) COINS.ownFrame = o.ownFrame; if (o.pp) COINS.pp = o.pp; } } } catch (e) {} }
+function coinsSave() { if (coinsDirty) return; coinsDirty = true; setTimeout(() => { coinsDirty = false; try { storeSet('cfg:coins', JSON.stringify({ bal: COINS.bal, fx: COINS.fx, own: COINS.own, claim: COINS.claim, adv: COINS.adv, bub: COINS.bub, frame: COINS.frame, ownBub: COINS.ownBub, ownFrame: COINS.ownFrame, pp: COINS.pp })); } catch (e) {} }, 800); }
 async function coinsAward(user, n) {
   try {
     if (!user) return 0;
