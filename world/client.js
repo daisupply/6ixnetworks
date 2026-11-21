@@ -2997,6 +2997,17 @@ function socialTick(r) {
   var ginv2 = r.guildInv || [];
   if (ginv2.length && JSON.stringify(ginv2) !== JSON.stringify(MY_GINV)) { var lv = ginv2[ginv2.length - 1]; toast('\u2726 guild invite — ' + lv.name + ' [' + lv.tag + '] from @' + lv.from + ' · open the guild panel to answer', 5600); sndPop(); }
   MY_GINV = ginv2;
+  var tbar = $('wtrade-inv');
+  if (r.tradeInv && r.tradeInv.from) {
+    if (tradeInvFrom !== r.tradeInv.from) { tradeInvFrom = r.tradeInv.from; $('wtrade-inv-t').textContent = '@' + tradeInvFrom + ' wants to trade'; }
+    tbar.hidden = false;
+  } else { tbar.hidden = true; tradeInvFrom = ''; }
+  if (r.tradeFlash) { toast('\u2726 ' + r.tradeFlash, 4200); sndPop(); }
+  (r.matGot || []).forEach(function (mg) { var md = MAT_DEFS[mg.id]; if (md) floatText(px, py - 42, '+' + mg.n + ' ' + md.name, md.c); });
+  TRADE_V = r.trade || null;
+  if (TRADE_V && tradeWasNull) openTrade();
+  tradeWasNull = !TRADE_V;
+  if (!$('wtrade').hidden && TRADE_V) { var ae = document.activeElement; if (!ae || (ae.tagName !== 'INPUT' && ae.tagName !== 'SELECT')) renderTrade(); }
   myParty = r.party || null;
   myPartySet = {};
   if (myParty) myParty.members.forEach(function (m) { myPartySet[m] = 1; });
@@ -3025,6 +3036,8 @@ function socialTick(r) {
   } else ev.hidden = true;
 }
 $('wparty-yes').addEventListener('click', function () { jpost('/api/world/party', { act: 'accept' }).then(function (r) { if (r && r.ok) toast('joined the party \u2726'); else toast('invite fizzled', (r && r.err) || ''); }); $('wparty-inv').hidden = true; });
+$('wtrade-yes').addEventListener('click', function () { jpost('/api/world/trade', { act: 'answer', yes: true }).then(function (r) { if (r && r.ok) { toast('trade started \u2726'); openTrade(); } else toast('invite fizzled', (r && r.err) || ''); }); $('wtrade-inv').hidden = true; });
+$('wtrade-no').addEventListener('click', function () { jpost('/api/world/trade', { act: 'answer', yes: false }); $('wtrade-inv').hidden = true; });
 $('wparty-no').addEventListener('click', function () { jpost('/api/world/party', { act: 'decline' }); $('wparty-inv').hidden = true; });
 function bdSection(title, rows, fmt) {
   if (!rows || !rows.length) return '';
@@ -3090,6 +3103,8 @@ var HUB_DEFS = [
   ['world map', '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/>', function () { openMap2(); }],
   ['races', '<path d="M4 21V4"/><path d="M4 5h13l-2.5 3.5L17 12H4"/>', function () { openRace(); }],
   ['guild', '<path d="M5 21V4"/><path d="M5 5h12.5L15 8.5 17.5 12H5"/>', function () { openGuild(); }],
+  ['trade', '<path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 12 4 4-4 4"/><path d="M21 16H7"/>', function () { openTrade(); }],
+  ['crafting', '<path d="M15 12l-8.5 8.5a2.12 2.12 0 1 1-3-3L12 9"/><path d="M17.6 3.4a4.5 4.5 0 0 0-6 6L15 12.8a4.5 4.5 0 0 0 6-6l-2.7 2.7-2.1-.7-.7-2.1 2.1-2.3Z"/>', function () { openCraft(); }],
   ['quest journal', '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>', function () { openJournal(); }],
   ['achievements', '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>', function () { openAch(); }],
   ['leaderboards', '<path d="M3 3v18h18"/><path d="M8 17v-6"/><path d="M13 17V7"/><path d="M18 17v-9"/>', function () { openBoards(); }],
@@ -3619,6 +3634,61 @@ function renderGuild() {
   }).catch(function () { body.innerHTML = '<div class="jq-row">couldnt load the guild hall</div>'; });
 }
 $('wguild-x').addEventListener('click', closeGuild);
+/* ---- M9: trading + crafting ---- */
+var MAT_DEFS = { dust: { name: 'stardust', c: '#fde68a' }, chip: { name: 'crystal chip', c: '#67e8f9' }, cloth: { name: 'gloom cloth', c: '#a78bfa' }, scale: { name: 'fish scale', c: '#6ee7b7' }, essence: { name: 'lich essence', c: '#f0abfc' } };
+var TRADE_V = null, tradeInvFrom = '', tradeWasNull = true;
+function openTrade() { $('wtrade').hidden = false; document.body.classList.add('wov'); renderTrade(); }
+function closeTrade() { $('wtrade').hidden = true; document.body.classList.remove('wov'); }
+function tradeSet(items, cents) { jpost('/api/world/trade', { act: 'set', items: items, cents: cents }).then(function (r) { if (r && !r.ok) toast('nope', r.err || ''); }); }
+function renderTrade() {
+  var body = $('wtrade-body'); if (!body) return;
+  var t = TRADE_V;
+  if (!t) { body.innerHTML = '<div class="tr-status">no trade going. tap someone\u2019s name in the world and hit <b>trade</b> on their profile \u2014 items and six cents swap atomically once both sides lock in and confirm. nothing is held or moved before that.</div>'; return; }
+  var chip = function (it, mine) { return '<span class="tr-chip"><i style="width:8px;height:8px;border-radius:50%;background:' + it.c + ';display:inline-block"></i>' + escH(it.name) + (mine ? '<button type="button" data-rm="' + it.id + '">\u00d7</button>' : '') + '</span>'; };
+  var myIds = t.mine.items.map(function (i) { return i.id; });
+  var picker = myInv.filter(function (id) { return myIds.indexOf(id) < 0 && WBY[id]; }).map(function (id) { var it = WBY[id]; return '<option value="' + id + '">' + escH(it.name) + ' (' + it.cat + ')</option>'; }).join('');
+  body.innerHTML = '<div class="tr-status" style="margin:0 0 10px">trading with <b>@' + escH(t.with) + '</b> \u2014 nothing moves until both sides lock in <b>and</b> confirm. changing an offer unlocks both sides.</div>'
+    + '<div class="tr-cols"><div class="tr-side"><h4>ur offer' + (t.myLock ? ' \u00b7 locked' : '') + (t.myConf ? ' \u00b7 confirmed' : '') + '</h4><div class="tr-chips">' + (t.mine.items.map(function (i) { return chip(i, true); }).join('') || '<span class="tr-status">nothing yet</span>') + '</div><div class="tr-cents">\u00a2 ' + t.mine.cents + '</div>'
+    + '<div class="tr-row"><select id="tr-pick"><option value="">add an item\u2026</option>' + picker + '</select></div>'
+    + '<div class="tr-row"><input id="tr-cents" type="number" min="0" step="1" placeholder="six cents" value="' + (t.mine.cents || '') + '"><button class="tr-btn" id="tr-set-c" type="button">set \u00a2</button></div></div>'
+    + '<div class="tr-side"><h4>@' + escH(t.with) + (t.theirLock ? ' \u00b7 locked' : '') + (t.theirConf ? ' \u00b7 confirmed' : '') + '</h4><div class="tr-chips">' + (t.theirs.items.map(function (i) { return chip(i, false); }).join('') || '<span class="tr-status">nothing yet</span>') + '</div><div class="tr-cents">\u00a2 ' + t.theirs.cents + '</div></div></div>'
+    + '<div class="tr-row"><button class="tr-btn' + (t.myLock ? ' on' : '') + '" id="tr-lock" type="button">' + (t.myLock ? 'locked in \u2014 tap to unlock' : 'lock in') + '</button>'
+    + '<button class="tr-btn go" id="tr-conf" type="button"' + ((t.myLock && t.theirLock && !t.myConf) ? '' : ' disabled') + '>' + (t.myConf ? 'confirmed \u2014 waiting on them' : 'confirm trade') + '</button>'
+    + '<button class="tr-btn" id="tr-cancel" type="button">cancel trade</button></div>'
+    + '<div class="tr-status">' + (t.myConf && !t.theirConf ? 'u confirmed \u2014 waiting on @' + escH(t.with) + ' to confirm.' : (t.theirConf && !t.myConf ? '@' + escH(t.with) + ' confirmed \u2014 ur turn once u lock in.' : 'offers update live. the swap re-checks ownership + balances at confirm time, so nobody can yank stuff mid-trade.')) + '</div>';
+  body.querySelectorAll('[data-rm]').forEach(function (b) { b.addEventListener('click', function () { var ids = TRADE_V.mine.items.map(function (i) { return i.id; }).filter(function (id) { return id !== b.getAttribute('data-rm'); }); tradeSet(ids, TRADE_V.mine.cents); }); });
+  var pick = $('tr-pick');
+  if (pick) pick.addEventListener('change', function () { if (!pick.value) return; var ids = TRADE_V.mine.items.map(function (i) { return i.id; }); ids.push(pick.value); tradeSet(ids, TRADE_V.mine.cents); });
+  var sc = $('tr-set-c');
+  if (sc) sc.addEventListener('click', function () { var v = Math.max(0, Math.floor(Number(($('tr-cents') || {}).value) || 0)); tradeSet(TRADE_V.mine.items.map(function (i) { return i.id; }), v); });
+  var lk = $('tr-lock');
+  if (lk) lk.addEventListener('click', function () { jpost('/api/world/trade', { act: 'lock', locked: !TRADE_V.myLock }).then(function (r) { if (r && !r.ok) toast('nope', r.err || ''); }); });
+  var cf = $('tr-conf');
+  if (cf) cf.addEventListener('click', function () { jpost('/api/world/trade', { act: 'confirm' }).then(function (r) { if (r && !r.ok) toast('nope', r.err || ''); }); });
+  var cx = $('tr-cancel');
+  if (cx) cx.addEventListener('click', function () { jpost('/api/world/trade', { act: 'cancel' }).then(function () { closeTrade(); }); });
+}
+function openCraft() { $('wcraft').hidden = false; document.body.classList.add('wov'); renderCraft(); }
+function closeCraft() { $('wcraft').hidden = true; document.body.classList.remove('wov'); }
+function renderCraft() {
+  var body = $('wcraft-body'); if (!body) return;
+  body.innerHTML = '<div class="tr-status">loading\u2026</div>';
+  fetch('/api/world/craft', { headers: { accept: 'application/json' } }).then(function (x) { return x.json(); }).then(function (r) {
+    if (!r || !r.ok) { body.innerHTML = '<div class="tr-status">couldnt load crafting</div>'; return; }
+    var mats = Object.keys(MAT_DEFS).map(function (k) { var d = MAT_DEFS[k]; return '<span class="cr-mat"><i style="background:' + d.c + '"></i>' + d.name + ' \u00d7 ' + (r.mats[k] || 0) + '</span>'; }).join('');
+    var cards = r.recipes.map(function (rc) {
+      var can = rc.needs.every(function (n) { return n.have >= n.n; }) && !rc.owned;
+      return '<div class="cr-card"><span class="cr-dot" style="background:' + rc.c + '22"><i style="width:10px;height:10px;border-radius:50%;background:' + rc.c + ';display:block"></i></span><div class="cr-info"><div class="cr-name">' + escH(rc.name) + ' <span style="color:rgba(243,239,255,.45);font-size:11px">' + rc.cat + ' \u00b7 ' + rc.rarity + '</span></div><div class="cr-needs">' + rc.needs.map(function (n) { return '<span style="color:' + (n.have >= n.n ? '#6ee7b7' : '#fca5a5') + '">' + n.name + ' ' + n.have + '/' + n.n + '</span>'; }).join(' \u00b7 ') + '</div></div>'
+        + (rc.owned ? '<span class="tr-status">owned</span>' : '<button class="tr-btn go" data-craft="' + rc.id + '" type="button"' + (can && r.nearStation ? '' : ' disabled') + '>craft</button>') + '</div>';
+    }).join('');
+    body.innerHTML = '<div class="cr-mats">' + mats + '</div>' + (r.nearStation ? '' : '<div class="tr-status" style="margin-bottom:10px">crafting happens at the workbench by the six cents shop tent \u2014 head there to make stuff.</div>') + cards + '<div class="tr-status">materials: stardust drops off moon shards \u00b7 crystal chips off the 16 crystals \u00b7 gloom cloth off crypt shades \u00b7 fish scales off catches \u00b7 lich essence off lich kills (5+ hits).</div>';
+    body.querySelectorAll('[data-craft]').forEach(function (b) { b.addEventListener('click', function () { jpost('/api/world/craft', { id: b.getAttribute('data-craft') }).then(function (rr) { if (rr && rr.ok) { toast('\u2726 crafted ' + rr.made, 4200); sndQuest(); renderCraft(); } else toast('nope', (rr && rr.err) || ''); }); }); });
+  });
+}
+$('wtrade-x').addEventListener('click', closeTrade);
+$('wcraft-x').addEventListener('click', closeCraft);
+window.__trade = { open: openTrade, close: closeTrade };
+window.__craft = { open: openCraft, close: closeCraft };
 $('wguild').addEventListener('click', function (e) { if (e.target === $('wguild')) closeGuild(); });
 window.__guild = { open: openGuild, close: closeGuild };
 /* settings */
@@ -4248,6 +4318,14 @@ function profSocial(u) {
   $('wprof-block').textContent = myBlocks.indexOf(u) >= 0 ? 'unblock' : 'block';
   $('wprof-mute').textContent = mutedSet[u] ? 'unmute' : 'mute';
 }
+$('wprof-trade').addEventListener('click', function () {
+  if (!profUser || profUser === me) return;
+  var u = profUser;
+  jpost('/api/world/trade', { act: 'invite', to: u }).then(function (r) {
+    if (r && r.ok) { toast('trade invite sent to @' + u); closeProfile(); }
+    else toast('couldnt invite', (r && r.err) || '');
+  });
+});
 $('wprof-invite').addEventListener('click', function () {
   var u = profUser; if (!u) return;
   jpost('/api/world/party', { act: 'invite', user: u }).then(function (r) {

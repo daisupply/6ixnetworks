@@ -1434,6 +1434,46 @@ const ITEMS = [
   "color": "#8b7fd4",
   "kind": "skull",
   "vaultOnly": true
+ },
+ {
+  "id": "s160",
+  "cat": "trail",
+  "name": "stardust trail",
+  "rarity": "epic",
+  "price": 0,
+  "color": "#a5f3fc",
+  "kind": "spark",
+  "craftOnly": true
+ },
+ {
+  "id": "s161",
+  "cat": "hat",
+  "name": "gloom wizard hat",
+  "rarity": "epic",
+  "price": 0,
+  "color": "#7c3aed",
+  "kind": "wizard",
+  "craftOnly": true
+ },
+ {
+  "id": "s162",
+  "cat": "hat",
+  "name": "crystal crown",
+  "rarity": "legendary",
+  "price": 0,
+  "color": "#a5f3fc",
+  "kind": "crown",
+  "craftOnly": true
+ },
+ {
+  "id": "s163",
+  "cat": "pet",
+  "name": "shard sprite",
+  "rarity": "epic",
+  "price": 0,
+  "color": "#fde68a",
+  "kind": "wisp",
+  "craftOnly": true
  }
 ];
 const BY_ID = {};

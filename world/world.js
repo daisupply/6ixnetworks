@@ -521,6 +521,8 @@ function createWorld(ctx) {
   function prune(now) {
     for (const [u, p] of P) if (now - p.at > STALE_MS) {
       P.delete(u); SIG.delete(u); PINV.delete(u); DUEL_CH.delete(u); FISH.delete(u); STUN.delete(u); BOSS_HIT_CD.delete(u); DUN_HIT_CD.delete(u); RACES.delete(u); RACE_FLASH.delete(u); RACE_FIN.delete(u);
+      TINV.delete(u); MAT_GOT.delete(u);
+      { const tid0 = TRADE_OF.get(u); if (tid0) { const t0 = TRADES.get(tid0); if (t0) { const other = t0.a === u ? t0.b : t0.a; TRADE_FLASH.set(other, { msg: 'trade ended \u2014 @' + u + ' left', at: Date.now() }); TRADES.delete(tid0); TRADE_OF.delete(other); } TRADE_OF.delete(u); } }
       if (p.inst) { const dg = DUNGEONS.get(p.inst); if (dg) { dg.members.delete(u); if (!dg.members.size) DUNGEONS.delete(p.inst); } }
       for (const [did, d] of DUELS) if (!d.settled && (d.a === u || d.b === u)) DUELS.delete(did);
       const pt = partyOf(u);
@@ -864,6 +866,7 @@ function createWorld(ctx) {
   // ---- parties ----
   const PARTIES = new Map();
   const PINV = new Map();
+  const TINV = new Map(), TRADES = new Map(), TRADE_OF = new Map(), TRADE_FLASH = new Map(), MAT_GOT = new Map();
   let partySeq = 1;
   function partyOf(user) {
     for (const [id, pt] of PARTIES) if (pt.members.includes(user)) return { id, leader: pt.leader, members: pt.members.slice() };
@@ -940,6 +943,65 @@ function createWorld(ctx) {
     const now = Date.now();
     prune(now);
     fillShards(now);
+
+  /* ---- M9: materials + crafting + trading ---- */
+  const MATS = {
+    dust: { name: 'stardust', c: '#fde68a' },
+    chip: { name: 'crystal chip', c: '#67e8f9' },
+    cloth: { name: 'gloom cloth', c: '#a78bfa' },
+    scale: { name: 'fish scale', c: '#6ee7b7' },
+    essence: { name: 'lich essence', c: '#f0abfc' },
+  };
+  const RECIPES = [
+    { out: 's160', needs: { dust: 6, chip: 2 } },
+    { out: 's161', needs: { cloth: 5, dust: 2 } },
+    { out: 's162', needs: { chip: 6, essence: 1 } },
+    { out: 's163', needs: { dust: 8, scale: 3 } },
+  ];
+  function matsOf(user) { return wload('mats', user) || {}; }
+  function matAdd(user, id, n) {
+    const m = matsOf(user); m[id] = (m[id] || 0) + n; wsave('mats', user, m);
+    const arr = MAT_GOT.get(user) || []; arr.push({ id, n }); MAT_GOT.set(user, arr);
+    return m[id];
+  }
+  function endTrade(tr, why) {
+    if (why) { TRADE_FLASH.set(tr.a, { msg: why, at: Date.now() }); TRADE_FLASH.set(tr.b, { msg: why, at: Date.now() }); }
+    TRADES.delete(tr.id); TRADE_OF.delete(tr.a); TRADE_OF.delete(tr.b);
+  }
+  function tradeView(me, now) {
+    const tid = TRADE_OF.get(me); if (!tid) return null;
+    const tr = TRADES.get(tid); if (!tr) { TRADE_OF.delete(me); return null; }
+    if (now - tr.at > 150000) { endTrade(tr, 'trade timed out'); return null; }
+    const iAmA = tr.a === me;
+    const nm = (id) => { const it = SHOP.BY_ID[id]; return it ? { id, name: it.name, c: it.color, cat: it.cat } : { id, name: id, c: '#ffffff', cat: '' }; };
+    const mo = iAmA ? tr.oa : tr.ob, to = iAmA ? tr.ob : tr.oa;
+    return { with: iAmA ? tr.b : tr.a, mine: { items: mo.items.map(nm), cents: mo.cents }, theirs: { items: to.items.map(nm), cents: to.cents }, myLock: iAmA ? tr.la : tr.lb, theirLock: iAmA ? tr.lb : tr.la, myConf: iAmA ? tr.ca : tr.cb, theirConf: iAmA ? tr.cb : tr.ca };
+  }
+  async function execTrade(tr) {
+    const A = tr.a, B = tr.b;
+    let invA = [], invB = [];
+    try { invA = ctx.getInv(A) || []; } catch { }
+    try { invB = ctx.getInv(B) || []; } catch { }
+    const wearA = new Set(Object.values(wearOf(A) || {})), wearB = new Set(Object.values(wearOf(B) || {}));
+    const valid = tr.oa.items.every((id) => invA.includes(id) && !wearA.has(id)) && tr.ob.items.every((id) => invB.includes(id) && !wearB.has(id));
+    let balA = 0, balB = 0;
+    try { balA = ctx.getCents(A) || 0; } catch { }
+    try { balB = ctx.getCents(B) || 0; } catch { }
+    if (!valid || balA < tr.oa.cents || balB < tr.ob.cents) { endTrade(tr, 'trade fell through \u2014 stuff changed'); return { ok: false, err: 'trade fell through \u2014 stuff changed' }; }
+    const nA = invA.filter((id) => !tr.oa.items.includes(id)).concat(tr.ob.items);
+    const nB = invB.filter((id) => !tr.ob.items.includes(id)).concat(tr.oa.items);
+    try { ctx.setInv(A, nA); } catch { }
+    try { ctx.setInv(B, nB); } catch { }
+    const netA = tr.ob.cents - tr.oa.cents;
+    try { if (netA) await ctx.awardCents(A, netA); } catch { }
+    try { if (netA) await ctx.awardCents(B, -netA); } catch { }
+    txLog(A, 'trade', netA, 'with @' + B);
+    txLog(B, 'trade', -netA, 'with @' + A);
+    endTrade(tr, null);
+    TRADE_FLASH.set(A, { msg: 'trade done with @' + B, at: Date.now() });
+    TRADE_FLASH.set(B, { msg: 'trade done with @' + A, at: Date.now() });
+    return { ok: true };
+  }
 
     if (u.pathname === '/api/world/ping' && req.method === 'POST') {
       let p = P.get(me);
@@ -1033,6 +1095,7 @@ function createWorld(ctx) {
           let bal = null;
           try { bal = await ctx.awardCents(me, amt); } catch { }
           got = { amt, gold: !!s.gold, bal };
+          if (Math.random() < 0.25) matAdd(me, 'dust', 1);
           txLog(me, s.gold ? 'gold shard' : 'shard', amt);
           statsSave(me);
           pg.c.shard = (pg.c.shard || 0) + 1;
@@ -1053,6 +1116,7 @@ function createWorld(ctx) {
           let bal = null;
           try { bal = await ctx.awardCents(me, c.pay); } catch { }
           gotC = { amt: c.pay, rare: c.rare, bal };
+          matAdd(me, 'chip', 1);
           txLog(me, 'crystal', c.pay, c.rare + ' crystal');
           try { dailyEvent(me, 'crystal'); } catch { }
           awardXp(me, 8);
@@ -1099,6 +1163,10 @@ function createWorld(ctx) {
         dchal: { id: dchalGameId(), done: wload('dchal', me) === ctx.scoreDay() },
         party: partyView(me),
         partyInv: (() => { const iv = PINV.get(me); return iv && now - iv.at < 90000 ? { from: iv.from } : null; })(),
+        tradeInv: (() => { const iv = TINV.get(me); return iv && now - iv.at < 90000 ? { from: iv.from } : null; })(),
+        trade: tradeView(me, now),
+        tradeFlash: (() => { const f = TRADE_FLASH.get(me); if (f && now - f.at < 30000) { TRADE_FLASH.delete(me); return f.msg; } return null; })(),
+        matGot: (() => { const arr = MAT_GOT.get(me); if (arr && arr.length) { MAT_GOT.delete(me); return arr; } return null; })(),
         event: worldEvent(now),
         myBlocks: wload('blocks', me) || [],
         ann: ANN && now - ANN.at < 120000 ? ANN : null,
@@ -1308,6 +1376,7 @@ function createWorld(ctx) {
           const pg2 = progFor(u2); pg2.c.boss = (pg2.c.boss || 0) + 1; progSave(u2);
           rewards[u2] = share;
           guildWkBump(u2, 'boss', now3);
+          if ((bs.hits.get(u2) || 0) >= 5) matAdd(u2, 'essence', 1);
         }
         achCheck(me);
       }
@@ -1538,6 +1607,85 @@ function createWorld(ctx) {
       return true;
     }
 
+    if (u.pathname === '/api/world/craft' && req.method === 'GET') {
+      const mats = matsOf(me);
+      let inv = []; try { inv = ctx.getInv(me) || []; } catch { }
+      const bp = P.get(me);
+      const nearStation = !!bp && !bp.house && !bp.inst && dist(bp.x, bp.y, 3950, 1600) < 240;
+      J({ ok: true, mats, nearStation, recipes: RECIPES.map((r) => { const it = SHOP.BY_ID[r.out]; return { id: r.out, name: it.name, cat: it.cat, rarity: it.rarity, c: it.color, owned: inv.includes(r.out), needs: Object.entries(r.needs).map(([m, n]) => ({ mat: m, name: MATS[m].name, c: MATS[m].c, n, have: mats[m] || 0 })) }; }) });
+      return true;
+    }
+    if (u.pathname === '/api/world/craft' && req.method === 'POST') {
+      const r = RECIPES.find((x) => x.out === String(b.id || ''));
+      if (!r) { J({ ok: false, err: 'no such recipe' }, 400); return true; }
+      const bp = P.get(me);
+      if (!bp || bp.house || bp.inst || dist(bp.x, bp.y, 3950, 1600) >= 240) { J({ ok: false, err: 'crafting happens at the shop tent workbench' }, 400); return true; }
+      let inv = []; try { inv = ctx.getInv(me) || []; } catch { }
+      if (inv.includes(r.out)) { J({ ok: false, err: 'u already have that one' }, 400); return true; }
+      const mats = matsOf(me);
+      for (const [m, n] of Object.entries(r.needs)) if ((mats[m] || 0) < n) { J({ ok: false, err: 'not enough ' + MATS[m].name }, 400); return true; }
+      for (const [m, n] of Object.entries(r.needs)) mats[m] -= n;
+      wsave('mats', me, mats);
+      inv.push(r.out);
+      try { ctx.setInv(me, inv); } catch { }
+      txLog(me, 'craft', 0, SHOP.BY_ID[r.out].name);
+      awardXp(me, 10);
+      J({ ok: true, made: SHOP.BY_ID[r.out].name });
+      return true;
+    }
+    if (u.pathname === '/api/world/trade' && req.method === 'POST') {
+      const act = String(b.act || '');
+      const nowT = Date.now();
+      if (act === 'invite') {
+        const to = String(b.to || '').toLowerCase();
+        if (!to || to === me) { J({ ok: false, err: 'pick someone else' }, 400); return true; }
+        if (!P.has(to)) { J({ ok: false, err: '@' + to + ' is not online' }, 400); return true; }
+        if ((wload('blocks', me) || []).includes(to) || (wload('blocks', to) || []).includes(me)) { J({ ok: false, err: 'blocked' }, 400); return true; }
+        if (TRADE_OF.has(me) || TRADE_OF.has(to)) { J({ ok: false, err: 'one of u is already trading' }, 400); return true; }
+        TINV.set(to, { from: me, at: nowT });
+        J({ ok: true }); return true;
+      }
+      if (act === 'answer') {
+        const iv = TINV.get(me); TINV.delete(me);
+        if (!iv || nowT - iv.at > 90000) { J({ ok: false, err: 'that invite fizzled' }, 400); return true; }
+        if (!b.yes) { J({ ok: true }); return true; }
+        if (TRADE_OF.has(me) || TRADE_OF.has(iv.from) || !P.has(iv.from)) { J({ ok: false, err: 'trade fizzled' }, 400); return true; }
+        const id = 't' + Math.abs(hashStr(me + ':' + iv.from + ':' + nowT)).toString(36);
+        TRADES.set(id, { id, a: iv.from, b: me, oa: { items: [], cents: 0 }, ob: { items: [], cents: 0 }, la: false, lb: false, ca: false, cb: false, at: nowT });
+        TRADE_OF.set(me, id); TRADE_OF.set(iv.from, id);
+        J({ ok: true }); return true;
+      }
+      const tid = TRADE_OF.get(me);
+      const tr = tid ? TRADES.get(tid) : null;
+      if (act === 'cancel') { if (tr) endTrade(tr, 'trade cancelled'); J({ ok: true }); return true; }
+      if (!tr) { J({ ok: false, err: 'no trade going' }, 400); return true; }
+      const mineK = tr.a === me ? 'oa' : 'ob';
+      const myLockK = tr.a === me ? 'la' : 'lb', myConfK = tr.a === me ? 'ca' : 'cb';
+      if (act === 'set') {
+        const items = Array.isArray(b.items) ? [...new Set(b.items.map((x) => String(x)))].slice(0, 8) : [];
+        let inv = []; try { inv = ctx.getInv(me) || []; } catch { }
+        const equipped = new Set(Object.values(wearOf(me) || {}));
+        for (const id of items) {
+          if (!SHOP.BY_ID[id] || !inv.includes(id)) { J({ ok: false, err: 'u dont own one of those' }, 400); return true; }
+          if (equipped.has(id)) { J({ ok: false, err: 'unequip it first' }, 400); return true; }
+        }
+        const cents = Math.max(0, Math.floor(Number(b.cents) || 0));
+        let bal = 0; try { bal = ctx.getCents(me) || 0; } catch { }
+        if (cents > bal) { J({ ok: false, err: 'not enough six cents' }, 400); return true; }
+        tr[mineK] = { items, cents };
+        tr.la = tr.lb = tr.ca = tr.cb = false; tr.at = nowT;
+        J({ ok: true }); return true;
+      }
+      if (act === 'lock') { tr[myLockK] = !!b.locked; if (!b.locked) { tr.ca = tr.cb = false; } tr.at = nowT; J({ ok: true }); return true; }
+      if (act === 'confirm') {
+        if (!(tr.la && tr.lb)) { J({ ok: false, err: 'both sides lock in first' }, 400); return true; }
+        tr[myConfK] = true; tr.at = nowT;
+        if (tr.ca && tr.cb) { const done = await execTrade(tr); J(done); return true; }
+        J({ ok: true }); return true;
+      }
+      J({ ok: false, err: 'bad act' }, 400); return true;
+    }
+
     if (u.pathname === '/api/world/dungeon-enter' && req.method === 'POST') {
       const now3 = Date.now();
       const bp = P.get(me);
@@ -1589,6 +1737,7 @@ function createWorld(ctx) {
         pay = sh.boss ? 30 : 4;
         try { await ctx.awardCents(me, pay); } catch { }
         txLog(me, 'crypt', pay, sh.boss ? 'the crypt warden' : 'crypt shade');
+        if (sh.boss || Math.random() < 0.4) matAdd(me, 'cloth', 1);
         await progressWaves(dg, now3);
       }
       J({ ok: true, dmg, killed, pay, wave: dg.wave, state: dg.state });
@@ -1633,6 +1782,7 @@ function createWorld(ctx) {
       awardXp(me, 4);
       const pg = progFor(me);
       pg.c.fish = (pg.c.fish || 0) + 1;
+      if (Math.random() < 0.5) matAdd(me, 'scale', 1);
       achCheck(me);
       const log = wload('fishlog', me) || {};
       const le = log[sp.id] || { n: 0, max: 0 };
@@ -1855,6 +2005,7 @@ function createWorld(ctx) {
       const it = SHOP.BY_ID[String(b.id || '')];
       if (!it) { J({ ok: false, err: 'no such item' }, 400); return true; }
       if (it.vaultOnly) { J({ ok: false, err: 'that one is not for sale — it waits somewhere hidden' }); return true; }
+      if (it.craftOnly) { J({ ok: false, err: 'that one is crafted, not bought — open the crafting panel' }); return true; }
       let inv = [];
       try { inv = ctx.getInv(me); } catch { }
       if (inv.includes(it.id)) { J({ ok: false, err: 'u already own that' }); return true; }
@@ -2113,10 +2264,11 @@ function createWorld(ctx) {
       '  <div id="wprof-banner"></div><button id="wprof-x" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>\n' +
       '  <div class="wprof-body"><div id="wprof-av"></div><div id="wprof-name"></div><div id="wprof-user"></div><div id="wprof-meta"></div><div id="wprof-badges"></div><div id="wprof-stats"></div><div id="wprof-wear"></div>\n' +
       '  <div class="wprof-acts"><button id="wprof-add" type="button">add friend</button><button id="wprof-battle" type="button">battle</button><a id="wprof-link" href="#">full profile</a></div>\n' +
-      '  <div class="wprof-acts2"><button id="wprof-invite" type="button">party invite</button><button id="wprof-mute" type="button">mute</button><button id="wprof-block" type="button">block</button><button id="wprof-report" type="button">report</button><button id="wprof-visit" type="button">visit house</button></div></div>\n' +
+      '  <div class="wprof-acts2"><button id="wprof-invite" type="button">party invite</button><button id="wprof-trade" type="button">trade</button><button id="wprof-mute" type="button">mute</button><button id="wprof-block" type="button">block</button><button id="wprof-report" type="button">report</button><button id="wprof-visit" type="button">visit house</button></div></div>\n' +
       '</div></div>\n' +
       '<div id="wduel" hidden><span id="wduel-t"></span><button id="wduel-yes" type="button">accept</button><button id="wduel-no" type="button">nah</button></div>\n' +
       '<div id="wparty-inv" hidden><span id="wparty-inv-t"></span><button id="wparty-yes" type="button">join party</button><button id="wparty-no" type="button">nah</button></div>\n' +
+      '<div id="wtrade-inv" hidden><span id="wtrade-inv-t"></span><button id="wtrade-yes" type="button">trade</button><button id="wtrade-no" type="button">nah</button></div>\n' +
       '<div id="wboards" hidden><div class="wa-card">\n' +
       '  <div class="wa-head"><span>\u2726 leaderboards</span><button id="wboards-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
       '  <div id="wboards-body"></div>\n' +
@@ -2154,6 +2306,8 @@ function createWorld(ctx) {
       '<div id="wfish" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 fishing</span><button id="wfish-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wfish-body"></div></div></div>\n' +
       '<div id="wrace" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 races</span><button id="wrace-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wrace-body"></div></div></div>\n' +
       '<div id="wguild" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 guild</span><button id="wguild-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wguild-body"></div></div></div>\n' +
+      '<div id="wtrade" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 trade</span><button id="wtrade-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wtrade-body"></div></div></div>\n' +
+      '<div id="wcraft" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 crafting</span><button id="wcraft-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wcraft-body"></div></div></div>\n' +
       '<div id="wpets" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 pet journal</span><button id="wpets-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="wpets-body"></div></div></div>\n' +
       '<div id="whouse" hidden><div class="wa-card"><div class="wa-head"><span>\u2726 <span id="whouse-t">ur house</span></span><button id="whouse-x" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="whouse-body"></div></div></div>\n' +
       '<div id="wduelgo" hidden><div id="wduelgo-t"></div><div id="wduelgo-s"></div></div>\n' +
