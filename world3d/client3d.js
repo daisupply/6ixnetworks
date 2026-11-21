@@ -27,13 +27,11 @@
  * player data, WebGL context-loss overlay. Three.js r160 vendored.
  */
 import * as THREE from 'three';
+import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT } from './math3d.js';
 
 const $ = (id) => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
 const TAU = Math.PI * 2;
-function angWrap(a) { while (a > Math.PI) a -= TAU; while (a < -Math.PI) a += TAU; return a; }
-function angLerp(a, b, k) { return a + angWrap(b - a) * k; }
-function dampK(rate, dt) { return 1 - Math.exp(-rate * dt); }
 // deterministic rng so the plaza layout is designed, not scattered
 function mulberry32(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
@@ -511,36 +509,93 @@ function buildWorld() {
 }
 
 /* ---------- networking: ping-poll presence, like the 2d world ---------- */
-async function ping() {
+/* ping(): one round-trip to the world server with an EXPLICIT result.
+ * { ok: true, data } only for a validated response (HTTP 2xx + parseable
+ * JSON + ok:true). failures are classified, never swallowed:
+ * network | http | badjson | server | takeover | auth.
+ * (v540's ping caught everything internally, so the boot sequence
+ * transitioned to READY even when the handshake had failed.)
+ * side effects: auth failure is fatal (error screen); a takeover reply
+ * enters SESSION_CONFLICT. sendPos=false sends a position-less ping,
+ * which is how a frozen tab reclaims the session (the server transfers
+ * sid ownership only when the ping carries no movement). */
+let sessionConflict = false, handshakeOk = false;
+async function ping(sendPos) {
+  if (sendPos === undefined) sendPos = true;
+  let res;
   try {
-    const r = await jpost('/api/world3d/ping', { x: Math.round(px * 10) / 10, z: Math.round(pz * 10) / 10, ry, sid: mySid });
-    if (!r || !r.ok) {
-      if (r && r.err === 'session taken over') { toast('this dimension is open in another tab — movement paused here'); return; }
-      if (r && r.err === 'login first') { window.__w3fatal = true; loadError('ur not logged in. log in on the site first, then come back through the portal.'); stopLoop(); return; }
-      return;
+    res = await fetch('/api/world3d/ping', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(sendPos ? { x: Math.round(px * 10) / 10, z: Math.round(pz * 10) / 10, ry, sid: mySid } : { sid: mySid }) });
+  } catch (e) { return { ok: false, kind: 'network', err: 'network error' }; }
+  let r = null;
+  try { r = await res.json(); } catch (e) { return { ok: false, kind: 'badjson', err: 'non-JSON reply (HTTP ' + res.status + ')' }; }
+  if (!res.ok) {
+    if (res.status === 401 || (r && r.err === 'login first')) {
+      window.__w3fatal = true;
+      loadError('ur not logged in. log in on the site first, then come back through the portal.');
+      stopLoop();
+      return { ok: false, kind: 'auth', err: 'login first' };
     }
-    lastPingOk = performance.now();
-    me = r.me || me;
-    if (typeof r.bal === 'number') R.bal.textContent = '¢ ' + r.bal + ' six cents';
-    R.who.textContent = '@' + me;
-    R.count.textContent = (r.roster.length + 1) + ' here';
-    const seen = new Set();
-    for (const p of r.roster) {
-      seen.add(p.u);
-      let rm = remotes.get(p.u);
-      if (!rm) {
-        const group = makeAvatar(p.hue, p.u);
-        group.position.set(p.x, 0, p.z);
-        scene.add(group);
-        rm = { group, tx: p.x, tz: p.z, try_: p.ry || 0, st: { phase: Math.random() * 6, speed: 0, grounded: true, landT: 0 }, lx: p.x, lz: p.z };
-        remotes.set(p.u, rm);
-      }
-      rm.tx = p.x; rm.tz = p.z; rm.try_ = p.ry || 0;
+    return { ok: false, kind: 'http', err: 'HTTP ' + res.status + (r && r.err ? ' - ' + r.err : '') };
+  }
+  if (!r || r.ok !== true) {
+    if (r && r.err === 'session taken over') { enterSessionConflict(); return { ok: false, kind: 'takeover', err: r.err }; }
+    return { ok: false, kind: 'server', err: (r && r.err) || 'server refused' };
+  }
+  lastPingOk = performance.now();
+  if (bootState === 'RECONNECTING') bootState = 'READY';
+  me = r.me || me;
+  if (typeof r.bal === 'number') R.bal.textContent = '¢ ' + r.bal + ' six cents';
+  R.who.textContent = '@' + me;
+  R.count.textContent = (r.roster.length + 1) + ' here';
+  const seen = new Set();
+  for (const p of r.roster) {
+    seen.add(p.u);
+    let rm = remotes.get(p.u);
+    if (!rm) {
+      const group = makeAvatar(p.hue, p.u);
+      group.position.set(p.x, 0, p.z);
+      scene.add(group);
+      rm = { group, tx: p.x, tz: p.z, try_: p.ry || 0, st: { phase: Math.random() * 6, speed: 0, grounded: true, landT: 0 }, lx: p.x, lz: p.z };
+      remotes.set(p.u, rm);
     }
-    for (const [u, rm] of remotes) {
-      if (!seen.has(u)) { scene.remove(rm.group); disposeAvatar(rm.group); remotes.delete(u); }
-    }
-  } catch (e) { /* network blip: next ping retries; stale presence prunes server-side */ }
+    rm.tx = p.x; rm.tz = p.z; rm.try_ = p.ry || 0;
+  }
+  for (const [u, rm] of remotes) {
+    if (!seen.has(u)) { scene.remove(rm.group); disposeAvatar(rm.group); remotes.delete(u); }
+  }
+  return { ok: true, data: r };
+}
+
+/* SESSION_CONFLICT: the server says another tab owns this account's
+ * session. this tab freezes for real: inputs cleared, velocity zeroed,
+ * the loop's input gate and ping scheduler both check sessionConflict,
+ * so no movement is applied and NO position is submitted from here.
+ * the world keeps rendering behind a persistent card. reclaim sends a
+ * position-less ping (server transfers sid ownership when not moving);
+ * the account keeps exactly ONE server entry throughout — no dupes. */
+function enterSessionConflict() {
+  if (sessionConflict) return;
+  sessionConflict = true;
+  bootState = 'SESSION_CONFLICT';
+  clearInput();
+  vx = 0; vz = 0;
+  if (document.pointerLockElement) { try { document.exitPointerLock(); } catch (e) { } }
+  loadDone = true;
+  if (R.load) { R.load.classList.add('hide'); R.load.classList.remove('show'); }
+  if (R.conflict) R.conflict.hidden = false;
+}
+function exitSessionConflict() {
+  sessionConflict = false;
+  if (R.conflict) R.conflict.hidden = true;
+  handshakeOk = true;
+  if (!booted) { booted = true; window.__w3booted = true; }
+  bootState = 'READY';
+  lastPingOk = performance.now();
+}
+async function reclaimSession() {
+  const hs = await ping(false);
+  if (hs.ok) { exitSessionConflict(); toast('this tab is live again'); }
+  else if (hs.kind !== 'takeover') toast('still blocked: ' + hs.err);
 }
 
 /* ---------- input: keyboard, pointer-lock mouse, drag, touch ---------- */
@@ -636,32 +691,6 @@ function bindInput() {
 }
 
 /* ---------- camera collision: shorten the boom, never clip ---------- */
-function segSphereT(ax, ay, az, bx, by, bz, s) {
-  const dx = bx - ax, dy = by - ay, dz = bz - az;
-  const fx = ax - s.x, fy = ay - s.y, fz = az - s.z;
-  const A = dx * dx + dy * dy + dz * dz; if (A < 1e-6) return -1;
-  const B = 2 * (fx * dx + fy * dy + fz * dz);
-  const C = fx * fx + fy * fy + fz * fz - s.r * s.r;
-  let disc = B * B - 4 * A * C; if (disc < 0) return -1;
-  disc = Math.sqrt(disc);
-  const t = (-B - disc) / (2 * A);
-  return (t >= 0 && t <= 1) ? t : -1;
-}
-function segBoxT(ax, ay, az, bx, by, bz, b) {
-  const dx = bx - ax, dy = by - ay, dz = bz - az;
-  let t0 = 0, t1 = 1;
-  const axes = [[ax, dx, b.minX, b.maxX], [ay, dy, 0, b.h], [az, dz, b.minZ, b.maxZ]];
-  for (const [o, d, mn, mx] of axes) {
-    if (Math.abs(d) < 1e-6) { if (o < mn || o > mx) return -1; }
-    else {
-      let ta = (mn - o) / d, tb = (mx - o) / d;
-      if (ta > tb) { const tmp = ta; ta = tb; tb = tmp; }
-      t0 = Math.max(t0, ta); t1 = Math.min(t1, tb);
-      if (t0 > t1) return -1;
-    }
-  }
-  return t0;
-}
 function updateCamera(dt) {
   const kA = dampK(18, dt);
   camYaw = angLerp(camYaw, camYawT, kA);
@@ -700,26 +729,23 @@ function loop() {
   // input direction (keyboard + joystick), camera-relative.
   // input is dead until READY and while a transition screen is active.
   let ix = 0, iz = 0;
-  if (!transitioning) {
+  if (!transitioning && !sessionConflict && (bootState === 'READY' || bootState === 'RECONNECTING')) {
   if (keys.KeyW || keys.ArrowUp) iz -= 1;
   if (keys.KeyS || keys.ArrowDown) iz += 1;
   if (keys.KeyA || keys.ArrowLeft) ix -= 1;
   if (keys.KeyD || keys.ArrowRight) ix += 1;
   ix += joyVec.x; iz += joyVec.y;
   }
-  const mag = Math.hypot(ix, iz);
+  const ni = normInput(ix, iz);
   const sprinting = !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch) || (joyId !== null && Math.hypot(joyVec.x, joyVec.y) > 0.94);
   let dvx = 0, dvz = 0;
-  if (mag > 0.08) {
-    const cl = Math.min(1, mag);
-    const nx = ix / (mag || 1), nz = iz / (mag || 1);
-    const sin = Math.sin(camYaw), cos = Math.cos(camYaw);
-    // camera basis: forward = (sin yaw, cos yaw), right = (-cos yaw, sin yaw).
-    // (the v1/v2-first-cut rotation was inverted — W walked TOWARD the
-    // camera and A/D were swapped. caught by the portal steering test.)
-    const wx = -nx * cos - nz * sin, wz = nx * sin - nz * cos;
-    const sp = (sprinting ? SPRINT : WALK) * cl;
-    dvx = wx * sp; dvz = wz * sp;
+  if (ni.raw > 0.08) {
+    // camera-relative direction from math3d.js — the SAME function the
+    // repo tests verify (v539 had this rotation inverted: W walked
+    // toward the camera and A/D were swapped).
+    const w = moveVec(camYaw, ni.x, ni.y);
+    const sp = (sprinting ? SPRINT : WALK) * ni.mag;
+    dvx = w.x * sp; dvz = w.z * sp;
   }
   // velocity approach: fast accel, faster stop (no glide, no stuck keys)
   const rate = (dvx || dvz) ? ACCEL : DECEL;
@@ -801,26 +827,28 @@ function loop() {
   if (String(nearPortal) !== R.act.dataset.on) { R.act.dataset.on = String(nearPortal); R.act.hidden = !nearPortal; }
   if (toastAt && now > toastAt) { R.toast.hidden = true; toastAt = 0; }
 
-  const connLost = booted && lastPingOk && (now - lastPingOk > 3200);
+  const connLost = booted && !sessionConflict && lastPingOk && (now - lastPingOk > 3200);
+  if (connLost && bootState === 'READY') bootState = 'RECONNECTING';
   if (R.conn && connLost !== R.conn.dataset.on) { R.conn.dataset.on = connLost; R.conn.hidden = !connLost; }
   updateCamera(dt);
 
   pingTimer += dt;
-  if (pingTimer > 0.45) { pingTimer = 0; ping(); }
+  if (pingTimer > 0.45 && !sessionConflict) { pingTimer = 0; ping(); }
   renderer.render(scene, camera);
   if (firstFrame) {
     firstFrame = false;
-    setLoad(100, 'READY');
-    booted = true; window.__w3booted = true;
+    // READY requires BOTH a rendered first frame AND a validated server
+    // handshake — never one without the other.
+    if (handshakeOk && !sessionConflict) { setLoad(100, 'READY'); booted = true; window.__w3booted = true; }
     window.__w3state = function () {
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, remotes: remotes.size, fps: Math.round(fpsEma) };
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma) };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }
     loadDone = true;
     R.wrap.classList.add('ready');
     setTimeout(() => { R.load.classList.add('hide'); }, 300);
-    if (new URLSearchParams(location.search).get('from') === 'portal') toast('✦ u crossed over. wasd + mouse — click the world to lock the camera', 5200);
+    if (booted && new URLSearchParams(location.search).get('from') === 'portal') toast('✦ u crossed over. wasd + mouse — click the world to lock the camera', 5200);
   }
 }
 
@@ -869,7 +897,7 @@ function bindSettings() {
 function init() {
   R.barfill = $('w3barfill'); R.loadpct = $('w3loadpct'); R.loadmsg = $('w3loadmsg'); R.loaderr = $('w3loaderr'); R.loadbtns = $('w3loadbtns');
   R.load = $('w3load'); R.wrap = $('w3wrap'); R.cv = $('w3cv'); R.bal = $('w3bal'); R.who = $('w3who'); R.count = $('w3count');
-  R.toast = $('w3toast'); R.act = $('w3act'); R.conn = $('w3conn'); R.camh = $('w3camh'); R.joy = $('w3joy'); R.knob = $('w3knob'); R.joyzone = $('w3joyzone');
+  R.toast = $('w3toast'); R.act = $('w3act'); R.conn = $('w3conn'); R.camh = $('w3camh'); R.conflict = $('w3conflict'); R.reclaim = $('w3reclaim'); R.confback = $('w3confback'); R.joy = $('w3joy'); R.knob = $('w3knob'); R.joyzone = $('w3joyzone');
   R.jump = $('w3jump'); R.sprint = $('w3sprint'); R.setbtn = $('w3setbtn'); R.set = $('w3set'); R.setclose = $('w3setclose');
   R.sens = $('w3sens'); R.camd = $('w3camd'); R.gfxsel = $('w3gfxsel'); R.shadow = $('w3shadow'); R.snd = $('w3snd'); R.vol = $('w3vol');
 
@@ -905,16 +933,30 @@ function init() {
   window.addEventListener('keydown', kd); window.addEventListener('keyup', ku);
   window.addEventListener('resize', onResize); window.addEventListener('blur', onBlur);
   document.addEventListener('visibilitychange', onVis);
-  window.addEventListener('pagehide', () => { try { navigator.sendBeacon && navigator.sendBeacon('/api/world3d/leave', new Blob(['{}'], { type: 'application/json' })); } catch (e) { } cleanup(); });
+  window.addEventListener('pagehide', () => { if (!sessionConflict) { try { navigator.sendBeacon && navigator.sendBeacon('/api/world3d/leave', new Blob(['{}'], { type: 'application/json' })); } catch (e) { } } cleanup(); });
   bindInput();
   bindSettings();
   R.act.addEventListener('click', goBack);
 
-  ping().then(() => {
-    if (window.__w3fatal) return;
-    setLoad(84, 'INITIALIZING_CONTROLS'); // checkpoint: server hello answered; controls bound
-    raf = requestAnimationFrame(loop); // first frame completes the load at 100
-  }).catch((e) => { loadError('could not reach the world server: ' + (e && e.message ? e.message : e)); });
+  setLoad(72, 'INITIALIZING_CONTROLS'); // checkpoint: input + settings bound
+  if (R.reclaim) R.reclaim.addEventListener('click', reclaimSession);
+  if (R.confback) R.confback.addEventListener('click', () => { location.href = '/world'; });
+
+  // CONNECTING: the initial handshake must return a validated response
+  // (HTTP ok + JSON + ok:true) before the render loop starts, and READY
+  // additionally waits for the first rendered frame. a failed handshake
+  // lands on the error screen — progress is never faked.
+  setLoad(84, 'CONNECTING');
+  ping().then((hs) => {
+    if (window.__w3fatal) return; // auth failure already surfaced by ping()
+    if (!hs.ok) {
+      if (hs.kind === 'takeover') { raf = requestAnimationFrame(loop); return; } // frozen world renders behind the conflict card
+      loadError('could not reach the world server (' + hs.err + '). check ur connection, then retry.');
+      return;
+    }
+    handshakeOk = true;
+    raf = requestAnimationFrame(loop); // first frame completes the load at READY
+  });
 }
 
 try { init(); } catch (e) { loadError('the 3d engine hit an error: ' + (e && e.message ? e.message : e)); }

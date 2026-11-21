@@ -38,10 +38,33 @@ How the 3D world actually works, end to end. Read this before editing.
 INITIALIZING → LOADING_ASSETS (module + three.js executing) →
 BUILDING_WORLD (renderer live, scene built) → INITIALIZING_PLAYER
 (avatar spawned) → INITIALIZING_CONTROLS (input + settings bound) →
-READY (first ping answered AND first frame rendered; only then does
-the loader fade and input go live) → ERROR (any failure: message +
-retry + back-to-2D shown; a 16s watchdog in the page covers a module
-that never executes). Progress bar % is bound to these checkpoints.
+CONNECTING (initial ping in flight) → READY (validated handshake —
+HTTP ok + JSON + ok:true — AND first frame rendered; only then does
+the loader fade and input go live). Post-READY states: RECONNECTING
+(no successful ping for >3.2s; returns to READY on the next valid
+ping), SESSION_CONFLICT (server rejected our sid — see below), ERROR
+(handshake failure, WebGL loss, module failure: message + retry +
+back-to-2D; a 16s watchdog covers a module that never executes).
+Progress bar % is bound to these checkpoints. Input is live ONLY in
+READY and RECONNECTING.
+Pure math (movement basis, damping, boom segments) lives in
+`world3d/math3d.js`, imported by the client and by the tests.
+
+## Session ownership (one live tab per account)
+The server entry holds one sid. A movement ping from a different sid
+is rejected `{ok:false, err:'session taken over'}`; a position-less
+ping transfers ownership. The client treats a takeover reply as a
+hard freeze (SESSION_CONFLICT): inputs cleared, velocity zeroed, the
+ping scheduler stops submitting positions, a persistent card offers
+'use this tab instead' (one position-less reclaim ping) or back to
+2D. A conflicted tab also skips the pagehide leave beacon — the entry
+belongs to the live tab, and deleting it would respawn them.
+
+## Tests (world3d/tests/, see its README)
+- `math.test.mjs` — node only, imports math3d.js directly.
+- `server.test.mjs` — API/asset contract against a local test server.
+- `browser.test.mjs` — real Chrome battery (loader, handshake failure,
+  movement/camera, throttled frame rates, portal, takeover, mobile).
 
 ## Data & multiplayer (single source of truth)
 - Identity: the site's session cookie; `ctx.voterUser(req)` resolves

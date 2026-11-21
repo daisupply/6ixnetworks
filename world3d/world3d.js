@@ -48,6 +48,7 @@ function dist2(ax, az, bx, bz) { const dx = bx - ax, dz = bz - az; return Math.s
 function createWorld3D(ctx) {
   const CSS = fs.readFileSync(path.join(__dirname, 'world3d.css'), 'utf8');
   const CLIENT = fs.readFileSync(path.join(__dirname, 'client3d.js'), 'utf8');
+  const MATH = fs.readFileSync(path.join(__dirname, 'math3d.js'), 'utf8');
   const THREE_MIN = fs.readFileSync(path.join(__dirname, 'vendor', 'three.module.min.js'), 'utf8');
 
   const P = new Map(); // user -> { x, z, ry, at, sid, win, clampStreak, fx, hue }
@@ -141,6 +142,7 @@ function createWorld3D(ctx) {
   function asset(pathname) {
     if (pathname === '/world3d/world3d.css') return { type: 'text/css; charset=utf-8', body: CSS };
     if (pathname === '/world3d/client3d.js') return { type: 'text/javascript; charset=utf-8', body: CLIENT };
+    if (pathname === '/world3d/math3d.js') return { type: 'text/javascript; charset=utf-8', body: MATH };
     if (pathname === '/world3d/vendor/three.module.min.js') return { type: 'text/javascript; charset=utf-8', body: THREE_MIN };
     return null;
   }
@@ -194,6 +196,13 @@ function createWorld3D(ctx) {
       '</div>\n' +
       '<div id="w3toast" hidden></div>\n' +
       '<button id="w3act" type="button" hidden>RETURN TO THE 2D WORLD</button>\n' +
+      '<div id="w3conflict" hidden>\n' +
+      '  <div class="w3conf-card">\n' +
+      '    <div class="w3conf-title">this world moved to another tab</div>\n' +
+      '    <p>ur account opened the third dimension somewhere else, so this tab is frozen. no movement is being sent from here, and nothing here can move ur character over there.</p>\n' +
+      '    <div class="w3conf-btns"><button id="w3reclaim" type="button" class="w3btn-go">use this tab instead</button><button id="w3confback" type="button" class="w3btn-ghost">back to the 2d world</button></div>\n' +
+      '  </div>\n' +
+      '</div>\n' +
       '<div id="w3joyzone" class="touchui"><div id="w3joy"><div id="w3knob"></div></div></div>\n' +
       '<div class="w3rbtns touchui"><button id="w3sprint" type="button">sprint</button><button id="w3jump" type="button">jump</button></div>\n' +
       '</div>\n' +
