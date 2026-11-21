@@ -3323,6 +3323,58 @@ function closeCollect() { $('wcollect').hidden = true; document.body.classList.r
 $('wcollect-x').addEventListener('click', closeCollect);
 $('wcollect').addEventListener('click', function (e) { if (e.target === $('wcollect')) closeCollect(); });
 window.__collect = { open: openCollect, close: closeCollect };
+function openSeason() {
+  $('wseason').hidden = false;
+  document.body.classList.add('wov');
+  $('wseason-body').innerHTML = '<div class="jq-row">asking six\u2026</div>';
+  loadSeason();
+}
+function loadSeason() {
+  fetch('/api/world/season', { headers: { accept: 'application/json' } }).then(function (x) { return x.json(); }).then(function (r) {
+    if (!r || !r.ok) { $('wseason-body').innerHTML = '<div class="jq-row">couldnt load the season</div>'; return; }
+    renderSeason(r);
+  }).catch(function () { $('wseason-body').innerHTML = '<div class="jq-row">couldnt load the season</div>'; });
+}
+function renderSeason(r) {
+  var pct = Math.min(100, Math.floor(100 * r.xp / r.maxXp));
+  var h = '<div class="jq-sec">season ' + r.season.id + ' \u00b7 ' + escH(r.season.name) + ' \u00b7 tier ' + r.tier + '/20</div>';
+  h += '<div class="col-bar"><i style="width:' + pct + '%"></i></div>';
+  h += '<div class="jq-row">' + r.xp + ' season xp \u00b7 ' + (r.season.active ? r.season.daysLeft + ' days left \u00b7 season xp comes from everything that earns xp' : 'the season has ended \u00b7 earned rewards stay claimable') + '</div>';
+  h += '<div class="jq-sec">season quests</div>';
+  h += r.quests.map(function (q) {
+    return '<div class="szn-row' + (q.state === 'claimed' ? ' done' : '') + '"><span>' + escH(q.label) + ' \u00b7 ' + q.n + '/' + q.need + '</span>' +
+      (q.state === 'ready' ? '<button class="col-claim" data-sq="' + q.id + '" type="button">claim +\u00a2' + q.amt + '</button>' : '<span style="margin-left:auto;opacity:.75">+\u00a2' + q.amt + (q.state === 'claimed' ? ' \u00b7 claimed' : '') + '</span>') + '</div>';
+  }).join('');
+  h += '<div class="jq-sec">the track \u00b7 free forever, no paid pass</div>';
+  h += r.tiers.map(function (t) {
+    var reward = t.item ? '<b style="color:' + (RAR_C[t.rarity] || '#fff') + '">' + escH(t.itemName) + '</b>' + (t.cents ? ' + \u00a2' + t.cents : '') : '+\u00a2' + t.cents;
+    return '<div class="szn-row' + (t.state === 'claimed' ? ' done' : '') + '"><span class="szn-t">' + t.t + '</span><span>' + reward + '<br><span style="font-size:11px;opacity:.65">' + t.need + ' xp</span></span>' +
+      (t.state === 'ready' ? '<button class="col-claim" data-st="' + t.t + '" type="button">claim</button>' : '<span style="margin-left:auto;opacity:.75">' + (t.state === 'claimed' ? 'claimed' : '') + '</span>') + '</div>';
+  }).join('');
+  $('wseason-body').innerHTML = h;
+  Array.prototype.forEach.call(document.querySelectorAll('[data-st]'), function (btn) {
+    btn.addEventListener('click', function () {
+      jpost('/api/world/season', { tier: Number(btn.getAttribute('data-st')) }).then(function (rr) {
+        if (rr && rr.ok) { toast('\u2726 tier ' + rr.tier + ' claimed' + (rr.item ? ' \u00b7 check ur bag' : '') + (rr.cents ? ' \u00b7 +\u00a2' + rr.cents : ''), 3600); sndQuest(); }
+        else toast('claim failed', (rr && rr.err) || '');
+        loadSeason();
+      });
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-sq]'), function (btn) {
+    btn.addEventListener('click', function () {
+      jpost('/api/world/season', { quest: btn.getAttribute('data-sq') }).then(function (rr) {
+        if (rr && rr.ok) { toast('\u2726 season quest done \u00b7 +\u00a2' + rr.amt, 3600); sndQuest(); }
+        else toast('claim failed', (rr && rr.err) || '');
+        loadSeason();
+      });
+    });
+  });
+}
+function closeSeason() { $('wseason').hidden = true; document.body.classList.remove('wov'); }
+$('wseason-x').addEventListener('click', closeSeason);
+$('wseason').addEventListener('click', function (e) { if (e.target === $('wseason')) closeSeason(); });
+window.__season = { open: openSeason, close: closeSeason };
 /* settings, ambient audio, hub, inventory, big map, admin */
 var SET = { vol: 0.85, music: true, sfx: true };
 try { var svSet = JSON.parse(localStorage.getItem('sixSettings') || 'null'); if (svSet) SET = Object.assign(SET, svSet); } catch (e) {}
@@ -3369,6 +3421,7 @@ var HUB_DEFS = [
   ['leaderboards', '<path d="M3 3v18h18"/><path d="M8 17v-6"/><path d="M13 17V7"/><path d="M18 17v-9"/>', function () { openBoards(); }],
   ['events', '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>', function () { openEvents(); }],
   ['collections', '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h7"/><path d="M9 11h5"/>', function () { openCollect(); }],
+  ['season 1', '<path d="M12 2v20"/><path d="M4 6l16 12"/><path d="M20 6L4 18"/><path d="M12 2l-2 3m2-3 2 3"/><path d="M12 22l-2-3m2 3 2-3"/>', function () { openSeason(); }],
   ['character', '<circle cx="12" cy="8" r="4"/><path d="M4 21c.8-3.6 4-5.5 8-5.5s7.2 1.9 8 5.5"/>', function () { openChar(); }],
   ['emotes', '<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5c1 1.2 2.2 1.8 3.5 1.8s2.5-.6 3.5-1.8"/><path d="M9 9.5h.01M15 9.5h.01"/>', function () { var ep = $('wemotes'); if (ep) ep.hidden = !ep.hidden; }],
   ['settings', '<circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.14-1.4l2-1.55-2-3.46-2.36.95a7 7 0 0 0-2.42-1.4L13.7 2.6h-3.4l-.38 2.54a7 7 0 0 0-2.42 1.4l-2.36-.95-2 3.46 2 1.55a7 7 0 0 0 0 2.8l-2 1.55 2 3.46 2.36-.95a7 7 0 0 0 2.42 1.4l.38 2.54h3.4l.38-2.54a7 7 0 0 0 2.42-1.4l2.36.95 2-3.46-2-1.55c.1-.45.14-.92.14-1.4Z"/>', function () { openSettings(); }],

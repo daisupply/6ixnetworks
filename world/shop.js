@@ -1474,6 +1474,72 @@ const ITEMS = [
   "color": "#fde68a",
   "kind": "wisp",
   "craftOnly": true
+ },
+ {
+  "id": "s164",
+  "cat": "trail",
+  "name": "first frost trail",
+  "rarity": "epic",
+  "price": 99999,
+  "color": "#bae6fd",
+  "kind": "spark",
+  "vaultOnly": true,
+  "season": 1
+ },
+ {
+  "id": "s165",
+  "cat": "face",
+  "name": "frost sparkle",
+  "rarity": "epic",
+  "price": 99999,
+  "color": "#e0f2fe",
+  "kind": "stareyes",
+  "vaultOnly": true,
+  "season": 1
+ },
+ {
+  "id": "s166",
+  "cat": "pet",
+  "name": "snowkit",
+  "rarity": "epic",
+  "price": 99999,
+  "color": "#f0f9ff",
+  "kind": "cat",
+  "vaultOnly": true,
+  "season": 1
+ },
+ {
+  "id": "s167",
+  "cat": "aura",
+  "name": "aurora veil",
+  "rarity": "legendary",
+  "price": 99999,
+  "color": "#6ee7b7",
+  "kind": "orbit",
+  "vaultOnly": true,
+  "season": 1
+ },
+ {
+  "id": "s168",
+  "cat": "mount",
+  "name": "sleigh glider",
+  "rarity": "legendary",
+  "price": 99999,
+  "color": "#93c5fd",
+  "kind": "hover",
+  "vaultOnly": true,
+  "season": 1
+ },
+ {
+  "id": "s169",
+  "cat": "hat",
+  "name": "frostbite crown",
+  "rarity": "legendary",
+  "price": 99999,
+  "color": "#a5f3fc",
+  "kind": "crown",
+  "vaultOnly": true,
+  "season": 1
  }
 ];
 const BY_ID = {};

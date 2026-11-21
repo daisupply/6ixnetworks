@@ -338,6 +338,7 @@ function createWorld(ctx) {
     const pg = progFor(user);
     const before = levelOf(pg.xp || 0);
     pg.xp = (pg.xp || 0) + amt;
+    seasonXpAdd(user, amt);
     const after = levelOf(pg.xp);
     if (after > before) LVLUP.set(user, { lvl: after, title: titleOf(after) });
     progSave(user);
@@ -377,6 +378,8 @@ function createWorld(ctx) {
     { id: 'event-legend', name: 'event legend', desc: 'win 5 derbies or tournaments', cat: 'events', reward: 250, test: (pg) => (pg.c.evwin || 0) >= 5 },
     { id: 'collector', name: 'collector', desc: 'complete any collection category', cat: 'collection', reward: 100, test: (pg) => (pg.c.colsets || 0) >= 1 },
     { id: 'grand-collector', name: 'grand collector', desc: 'complete 3 collection categories', cat: 'collection', reward: 300, test: (pg) => (pg.c.colsets || 0) >= 3 },
+    { id: 'seasoned', name: 'seasoned', desc: 'reach season tier 10', cat: 'season', reward: 100, test: (pg) => (pg.c.sztier || 0) >= 10 },
+    { id: 'season-master', name: 'season master', desc: 'complete the season track (tier 20)', cat: 'season', reward: 300, test: (pg) => (pg.c.sztier || 0) >= 20 },
     { id: 'quest-starter', name: 'quest starter', desc: 'complete ur first quest', cat: 'quests', reward: 5, test: (pg) => (pg.c.quest || 0) >= 1 },
     { id: 'quest-pro', name: 'quest pro', desc: 'complete 10 quests', cat: 'quests', reward: 30, test: (pg) => (pg.c.quest || 0) >= 10 },
     { id: 'quest-legend', name: 'quest legend', desc: 'complete 50 quests', cat: 'quests', reward: 100, test: (pg) => (pg.c.quest || 0) >= 50 },
@@ -636,6 +639,7 @@ function createWorld(ctx) {
     awardXp(me, 20);
     const pg = progFor(me); pg.c.race = (pg.c.race || 0) + 1; progSave(me);
     guildWkBump(me, 'race', now);
+    seasonQuestAdd(me, 'races', 1);
     { const evT = worldEvent(now); if (evT && evT.type === 'tourney' && EV_RUN && EV_RUN.id === evT.id && EV_RUN.course === rc.course) { const prev = EV_RUN.scores.get(me); if (prev == null || ms < prev) EV_RUN.scores.set(me, ms); evPart(me); } }
     return { course: rc.course, name: C.name, ms, pb: isPb, rec: isRec, pay };
   }
@@ -932,6 +936,41 @@ function createWorld(ctx) {
     }
     return EV_RUN;
   }
+  // ---- season 1: first frost (E4) — free track, XP from playing, tier + quest rewards ----
+  const SEASON = { id: 1, name: 'first frost', start: Date.UTC(2026, 10, 21), end: Date.UTC(2027, 0, 2) };
+  const SZN_TIER_XP = (t) => 40 * t + 10 * t * t;
+  const SZN_TIERS = [null,
+    { cents: 30 }, { cents: 35 }, { cents: 40 }, { item: 's165' }, { cents: 55 },
+    { cents: 60 }, { cents: 65 }, { item: 's164' }, { cents: 75 }, { cents: 80 },
+    { cents: 85 }, { item: 's166' }, { cents: 95 }, { cents: 100 }, { cents: 110 },
+    { item: 's167' }, { cents: 120 }, { item: 's168' }, { cents: 140 }, { item: 's169', cents: 250 }];
+  const SZN_QUESTS = [
+    { id: 'fish', label: 'catch 15 fish', need: 15, amt: 150 },
+    { id: 'mg', label: 'play 25 minigames', need: 25, amt: 150 },
+    { id: 'events', label: 'join 5 world events', need: 5, amt: 200 },
+    { id: 'shards', label: 'claim 40 star shards', need: 40, amt: 120 },
+    { id: 'races', label: 'finish 5 races', need: 5, amt: 150 },
+    { id: 'lich', label: 'help drop the drowned lich', need: 1, amt: 300 }];
+  function seasonActive(now) { return now >= SEASON.start && now < SEASON.end; }
+  function seasonFor(user) {
+    const s = wload('season', user);
+    if (s && s.s === SEASON.id) { if (!s.q) s.q = {}; if (!s.claimed) s.claimed = []; if (!s.qclaimed) s.qclaimed = []; return s; }
+    return { s: SEASON.id, xp: 0, claimed: [], q: {}, qclaimed: [] };
+  }
+  function seasonSave(user, s) { wsave('season', user, s); }
+  function seasonXpAdd(user, amt) {
+    if (!amt || !seasonActive(Date.now())) return;
+    const s = seasonFor(user);
+    s.xp = Math.min(SZN_TIER_XP(20), (s.xp || 0) + amt);
+    seasonSave(user, s);
+  }
+  function seasonQuestAdd(user, key, n) {
+    if (!seasonActive(Date.now())) return;
+    const s = seasonFor(user);
+    s.q[key] = Math.min(999, (s.q[key] || 0) + n);
+    seasonSave(user, s);
+  }
+  function seasonTierOf(xp) { let t = 0; for (let i = 1; i <= 20; i++) if (xp >= SZN_TIER_XP(i)) t = i; return t; }
   function noteSeen(user, cat, id) {
     try {
       const key = cat === 'item' ? 'colseen' : cat === 'minigame' ? 'mgseen' : cat === 'event' ? 'evseen' : null;
@@ -943,7 +982,7 @@ function createWorld(ctx) {
     } catch { }
   }
   function journalNoteItems(user, ids) { (ids || []).forEach((id) => noteSeen(user, 'item', id)); }
-  function evPart(user) { if (EV_RUN) { EV_RUN.parts.add(user); noteSeen(user, 'event', EV_RUN.type); } }
+  function evPart(user) { if (EV_RUN) { const fresh = !EV_RUN.parts.has(user); EV_RUN.parts.add(user); noteSeen(user, 'event', EV_RUN.type); if (fresh) seasonQuestAdd(user, 'events', 1); } }
   function evScore(user, pts) { if (!EV_RUN) return; evPart(user); EV_RUN.scores.set(user, (EV_RUN.scores.get(user) || 0) + pts); }
   function evGoalBump(kind, user) { if (EV_RUN && EV_RUN.type === 'community' && EV_RUN.goal && EV_RUN.goal.kind === kind) { evPart(user); EV_RUN.prog = (EV_RUN.prog || 0) + 1; } }
   async function evSettle(now) {
@@ -1256,6 +1295,7 @@ function createWorld(ctx) {
           txLog(me, s.gold ? 'gold shard' : 'shard', amt);
           statsSave(me);
           pg.c.shard = (pg.c.shard || 0) + 1;
+          seasonQuestAdd(me, 'shards', 1);
           if (s.gold) pg.c.gold = (pg.c.gold || 0) + 1;
           awardXp(me, s.gold ? 5 : 1);
           achCheck(me);
@@ -1616,6 +1656,7 @@ function createWorld(ctx) {
           txLog(u2, 'boss', share, 'the drowned lich');
           if ((bs.hits.get(u2) || 0) >= 5) awardXp(u2, 30);
           const pg2 = progFor(u2); pg2.c.boss = (pg2.c.boss || 0) + 1; progSave(u2);
+          seasonQuestAdd(u2, 'lich', 1);
           rewards[u2] = share;
           guildWkBump(u2, 'boss', now3);
           if ((bs.hits.get(u2) || 0) >= 5) matAdd(u2, 'essence', 1);
@@ -1681,6 +1722,66 @@ function createWorld(ctx) {
       if ((pg.c.colsets || 0) !== colsets) { pg.c.colsets = colsets; progSave(me); }
       const recent = (wload('colrecent', me) || []).map((r) => ({ cat: r.cat, id: r.id, at: r.at, name: r.cat === 'item' && SHOP.BY_ID[r.id] ? SHOP.BY_ID[r.id].name : r.cat === 'fish' ? ((FISH_SPECIES.find((s) => s.id === r.id) || {}).name || r.id) : r.cat === 'minigame' ? ((GAMES_MOD.BY_ID[r.id] || {}).name || r.id) : r.cat === 'zone' ? zoneName(r.id) : r.cat === 'event' ? (EV_NAMES_J[r.id] || r.id) : r.id }));
       return { cats, overall, milestones, recent };
+    }
+
+    if (u.pathname === '/api/world/season' && req.method === 'GET') {
+      const s = seasonFor(me);
+      const tier = seasonTierOf(s.xp || 0);
+      const pgS = progFor(me);
+      if ((pgS.c.sztier || 0) !== tier) { pgS.c.sztier = tier; progSave(me); }
+      achCheck(me);
+      J({ ok: true,
+        season: { id: SEASON.id, name: SEASON.name, start: SEASON.start, end: SEASON.end, active: seasonActive(now), daysLeft: Math.max(0, Math.ceil((SEASON.end - now) / 86400000)) },
+        xp: s.xp || 0, tier, maxXp: SZN_TIER_XP(20),
+        tiers: SZN_TIERS.slice(1).map((r, i) => { const t = i + 1; const it = r.item ? SHOP.BY_ID[r.item] : null; return { t, need: SZN_TIER_XP(t), cents: r.cents || 0, item: r.item || null, itemName: it ? it.name : null, rarity: it ? it.rarity : null, state: s.claimed.includes(t) ? 'claimed' : ((s.xp || 0) >= SZN_TIER_XP(t) ? 'ready' : 'locked') }; }),
+        quests: SZN_QUESTS.map((q) => ({ id: q.id, label: q.label, n: Math.min(q.need, s.q[q.id] || 0), need: q.need, amt: q.amt, state: s.qclaimed.includes(q.id) ? 'claimed' : ((s.q[q.id] || 0) >= q.need ? 'ready' : 'doing') })) });
+      return true;
+    }
+
+    if (u.pathname === '/api/world/season' && req.method === 'POST') {
+      const s = seasonFor(me);
+      if (b.tier != null) {
+        const t = Math.floor(Number(b.tier) || 0);
+        const r = SZN_TIERS[t];
+        if (!r) { J({ ok: false, err: 'no such tier' }, 400); return true; }
+        if (s.claimed.includes(t)) { J({ ok: false, err: 'already claimed' }, 400); return true; }
+        if ((s.xp || 0) < SZN_TIER_XP(t)) { J({ ok: false, err: 'not enough season xp yet' }, 400); return true; }
+        let grantedItem = false;
+        if (r.item) {
+          let inv = []; try { inv = ctx.getInv(me) || []; } catch { }
+          if (!inv.includes(r.item)) {
+            inv.push(r.item);
+            try { ctx.setInv(me, inv); grantedItem = (ctx.getInv(me) || []).includes(r.item); } catch { grantedItem = false; }
+            if (!grantedItem) { J({ ok: false, err: 'grant glitched — try again' }, 500); return true; }
+          } else grantedItem = true;
+        }
+        if (r.cents) {
+          let bal = null; try { bal = await ctx.awardCents(me, r.cents); } catch { }
+          if (typeof bal !== 'number') {
+            if (grantedItem && r.item) { try { const inv2 = (ctx.getInv(me) || []).filter((x) => x !== r.item); ctx.setInv(me, inv2); } catch { } }
+            J({ ok: false, err: 'payout glitched — try again' }, 500); return true;
+          }
+          txLog(me, 'season', r.cents, 'season tier ' + t);
+        }
+        s.claimed.push(t); seasonSave(me, s);
+        if (r.item) journalNoteItems(me, [r.item]);
+        achCheck(me);
+        J({ ok: true, tier: t, item: r.item || null, cents: r.cents || 0 });
+        return true;
+      }
+      if (b.quest != null) {
+        const q = SZN_QUESTS.find((x) => x.id === String(b.quest || ''));
+        if (!q) { J({ ok: false, err: 'no such quest' }, 400); return true; }
+        if (s.qclaimed.includes(q.id)) { J({ ok: false, err: 'already claimed' }, 400); return true; }
+        if ((s.q[q.id] || 0) < q.need) { J({ ok: false, err: 'not done yet — ' + (s.q[q.id] || 0) + '/' + q.need }, 400); return true; }
+        let bal = null; try { bal = await ctx.awardCents(me, q.amt); } catch { }
+        if (typeof bal !== 'number') { J({ ok: false, err: 'payout glitched — try again' }, 500); return true; }
+        s.qclaimed.push(q.id); seasonSave(me, s);
+        txLog(me, 'season', q.amt, 'season quest: ' + q.label);
+        J({ ok: true, quest: q.id, amt: q.amt, bal });
+        return true;
+      }
+      J({ ok: false, err: 'bad act' }, 400); return true;
     }
 
     if (u.pathname === '/api/world/journal' && req.method === 'GET') {
@@ -2273,6 +2374,7 @@ function createWorld(ctx) {
       awardXp(me, 4);
       const pg = progFor(me);
       pg.c.fish = (pg.c.fish || 0) + 1;
+      seasonQuestAdd(me, 'fish', 1);
       { const evF = worldEvent(Date.now()); if (evF && EV_RUN && EV_RUN.id === evF.id) { if (evF.type === 'derby') evScore(me, DERBY_PTS[sp.band] || 1); if (evF.type === 'community') evGoalBump('fish', me); } }
       if (Math.random() < 0.5) matAdd(me, 'scale', 1);
       achCheck(me);
@@ -2470,6 +2572,7 @@ function createWorld(ctx) {
       const tk = MTOK.get(String(b.token || ''));
       let live = false;
       if (tk && tk.user === me && tk.game === g.id && now - tk.at >= 2000 && now - tk.at <= 240000) { live = true; MTOK.delete(String(b.token || '')); }
+      if (live) seasonQuestAdd(me, 'mg', 1);
       // per-engine plausibility floor: finishing faster than a real run can
       // possibly take makes the session practice, same as an invalid token
       if (live && now - tk.at < mgMinMs(g, pts)) live = false;
@@ -2823,6 +2926,10 @@ function createWorld(ctx) {
       '<div id="wcollect" hidden><div class="wa-card">\n' +
       '  <div class="wa-head"><span>\u2726 collection journal</span><button id="wcollect-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
       '  <div id="wcollect-body"></div>\n' +
+      '</div></div>\n' +
+      '<div id="wseason" hidden><div class="wa-card">\n' +
+      '  <div class="wa-head"><span>\u2726 season 1 \u00b7 first frost</span><button id="wseason-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
+      '  <div id="wseason-body"></div>\n' +
       '</div></div>\n' +
       '<div id="wboards" hidden><div class="wa-card">\n' +
       '  <div class="wa-head"><span>\u2726 leaderboards</span><button id="wboards-x" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>\n' +
