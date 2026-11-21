@@ -1229,7 +1229,7 @@ function createWorld(ctx) {
         guildMsgs: (() => { const q = GMSG.get(me) || []; GMSG.delete(me); return q; })(),
         myGuildTag: guildTagOf(me),
         petNames: wload('petname', me) || {},
-        crys: CRYSTALS.map((c) => ({ id: c.id, x: c.x, y: c.y, rare: c.rare, got: pg.crystals.indexOf(c.id) >= 0 })),
+        crys: CRYSTALS.filter((c) => pg.crystals.indexOf(c.id) < 0).map((c) => ({ id: c.id, x: c.x, y: c.y, rare: c.rare })),
         lvlUp: (() => { const v = LVLUP.get(me) || null; LVLUP.delete(me); return v; })(),
         achNew: (() => { const v = ACHNEW.get(me) || []; ACHNEW.delete(me); return v; })(),
         dqDone: (() => { const v = DQ_DONE.get(me) || []; DQ_DONE.delete(me); return v; })(),

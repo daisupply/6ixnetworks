@@ -559,7 +559,9 @@ function ping() {
       }
     });
     Object.keys(shards).forEach(function (id) { if (!sSeen[id]) delete shards[id]; });
-    (r.crys || []).forEach(function (c) { crys[c.id] = c; });
+    var cSeen = {};
+    (r.crys || []).forEach(function (c) { cSeen[c.id] = 1; crys[c.id] = c; });
+    Object.keys(crys).forEach(function (id) { if (!cSeen[id]) delete crys[id]; });
     if (r.gotC) {
       sndPick(true);
       burst(px, py - 8, '#f0abfc', 22, 130);

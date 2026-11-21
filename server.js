@@ -17799,11 +17799,11 @@ async function coinsAward(user, n) {
 const CENTS = { bal: {}, inv: {}, wear: {}, hue: {}, ready: false };
 const WDATA = { ready: false, data: {} };
 let wdataDirty = false;
-async function wdataLoad() { if (WDATA.ready) return; WDATA.ready = true; try { const got = await storeCmd([['GET', 'cfg:wdata']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o && typeof o === 'object') { for (const k of Object.keys(o)) if (!(k in WDATA.data)) WDATA.data[k] = o[k]; } } } catch (e) {} }
-function wdataSave() { if (wdataDirty) return; wdataDirty = true; setTimeout(() => { wdataDirty = false; try { storeSet('cfg:wdata', JSON.stringify(WDATA.data)); } catch (e) {} }, 800); }
+async function wdataLoad() { if (WDATA.ready) return; WDATA.ready = true; WDATA.loading = true; try { const got = await storeCmd([['GET', 'cfg:wdata']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o && typeof o === 'object') { for (const k of Object.keys(o)) { if (!(k in WDATA.data)) WDATA.data[k] = o[k]; else if (o[k] && WDATA.data[k] && typeof o[k] === 'object' && typeof WDATA.data[k] === 'object' && !Array.isArray(o[k]) && !Array.isArray(WDATA.data[k])) { for (const u of Object.keys(o[k])) if (!(u in WDATA.data[k])) WDATA.data[k][u] = o[k][u]; } } } } } catch (e) {} WDATA.loading = false; }
+function wdataSave() { if (wdataDirty) return; wdataDirty = true; setTimeout(() => { wdataDirty = false; if (WDATA.loading) { wdataSave(); return; } try { storeSet('cfg:wdata', JSON.stringify(WDATA.data)); } catch (e) {} }, 800); }
 let centsDirty = false;
-async function centsLoad() { if (CENTS.ready) return; CENTS.ready = true; try { const got = await storeCmd([['GET', 'cfg:cents']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o) { if (o.bal) CENTS.bal = o.bal; if (o.inv) CENTS.inv = o.inv; if (o.wear) CENTS.wear = o.wear; if (o.hue) CENTS.hue = o.hue; } } } catch (e) {} }
-function centsSave() { if (centsDirty) return; centsDirty = true; setTimeout(() => { centsDirty = false; try { storeSet('cfg:cents', JSON.stringify({ bal: CENTS.bal, inv: CENTS.inv, wear: CENTS.wear, hue: CENTS.hue })); } catch (e) {} }, 800); }
+async function centsLoad() { if (CENTS.ready) return; CENTS.ready = true; CENTS.loading = true; try { const got = await storeCmd([['GET', 'cfg:cents']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o) { for (const f of ['bal', 'inv', 'wear', 'hue']) { if (o[f] && typeof o[f] === 'object') { for (const u of Object.keys(o[f])) if (!(u in CENTS[f])) CENTS[f][u] = o[f][u]; } } } } } catch (e) {} CENTS.loading = false; }
+function centsSave() { if (centsDirty) return; centsDirty = true; setTimeout(() => { centsDirty = false; if (CENTS.loading) { centsSave(); return; } try { storeSet('cfg:cents', JSON.stringify({ bal: CENTS.bal, inv: CENTS.inv, wear: CENTS.wear, hue: CENTS.hue })); } catch (e) {} }, 800); }
 async function centsAward(user, n) {
   try {
     if (!user) return 0;
