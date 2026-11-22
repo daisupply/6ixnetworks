@@ -920,7 +920,7 @@ function buildTown() {
   buildTownDoors545();
   buildShards();
   buildStrollers();
-  buildDressing(); buildVegetation(); buildForest(); buildWildlife();
+  buildDressing(); buildVegetation(); buildForest(); buildWildlife(); buildEntrances();
   cozyInteriors();
 }
 
@@ -1909,6 +1909,48 @@ function cozyInteriors() {
  * small ones around solid props. birds + petals run off the clock so
  * every client sees the same sky. */
 let BIRDS = [], petals = null, petalDat = null;
+/* ================= stage 12: entrance dressing + houses =================
+ * Every enterable building gets the same entrance language the
+ * modeled buildings have: a stone step, a colored door mat, twin
+ * planters and lantern posts (emissive only — no new point
+ * lights). Houses get chimneys. Small props, deliberate spots,
+ * paths and door swings stay clear. */
+function buildEntrances() {
+  const stoneM = new THREE.MeshStandardMaterial({ color: 0xa79b7f, roughness: 0.95 });
+  const terraM = new THREE.MeshStandardMaterial({ color: 0xa35a3c, roughness: 0.9 });
+  const shrubM = new THREE.MeshStandardMaterial({ color: 0x3d6030, roughness: 1, flatShading: true });
+  const postM = new THREE.MeshStandardMaterial({ color: 0x3f3a36, roughness: 0.7, metalness: 0.4 });
+  const glowM = new THREE.MeshStandardMaterial({ color: 0xffe2b0, emissive: 0xffc98a, emissiveIntensity: 2.2 });
+  // [doorX, doorZ, outward(+1 = town is +z of the door), accent]
+  const doors = [
+    [-62, -42.8, 1, 0xa78bfa], [58, -44.8, 1, 0xffb36b], [62, 40.3, -1, 0x4ade80],
+    [-64, 38.3, -1, 0xf9a8d4], [0, -72.6, 1, 0xffd257],
+  ];
+  for (const [dx, dz, out, acc] of doors) {
+    const mat1 = new THREE.Mesh(new THREE.CircleGeometry(1.15, 20), new THREE.MeshStandardMaterial({ color: acc, roughness: 0.9 }));
+    mat1.rotation.x = -Math.PI / 2; mat1.position.set(dx, 0.035, dz + out * 0.4); mat1.receiveShadow = true; scene.add(mat1);
+    const step = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.16, 1.0), stoneM);
+    step.position.set(dx, 0.08, dz - out * 0.55); scene.add(step);
+    for (const sgn of [-1, 1]) {
+      const pl = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.6, 0.85), terraM);
+      pl.position.set(dx + sgn * 2.1, 0.3, dz - out * 0.4); pl.castShadow = true; scene.add(pl);
+      const sh = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.8, 7), shrubM);
+      sh.position.set(dx + sgn * 2.1, 0.95, dz - out * 0.4); scene.add(sh);
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 1.5, 6), postM);
+      post.position.set(dx + sgn * 1.55, 0.75, dz + out * 0.9); scene.add(post);
+      const orb = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 7), glowM);
+      orb.position.set(dx + sgn * 1.55, 1.58, dz + out * 0.9); scene.add(orb);
+    }
+  }
+  // house chimneys + porch glow dots
+  for (const [hx, hz] of [[-108, -28], [-116, 6], [-104, 40]]) {
+    const ch = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.8, 0.9), new THREE.MeshStandardMaterial({ color: 0x9a6a52, roughness: 1 }));
+    ch.position.set(hx + 2.6, 6.4, hz - 1.2); ch.castShadow = true; scene.add(ch);
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 7), glowM);
+    dot.position.set(hx + 4.4, 2.6, hz + 4.9); scene.add(dot);
+  }
+}
+
 /* ================= stage 11: wildlife =================
  * Butterflies over the flowers, rabbits in the grass, deer at the
  * forest edge and in the meadow. Base wander paths are pure
