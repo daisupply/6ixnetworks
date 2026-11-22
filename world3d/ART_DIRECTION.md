@@ -50,3 +50,6 @@ on the horizon, festoon lights overhead.
   lit interior shell — no fake prompts, no fake buttons.
 - Characters must match this direction: warm stylized proportions,
   readable silhouettes at third-person distance (upgrade lands v544).
+
+## v2 — COZY GOLDEN HOUR (v548, supersedes the palette above for the 3D town)
+Direction (his spec, 2026-11-21): cozy dreamy open-world town. Golden-hour sun low in the west (#ffb36b), soft blue-to-peach gradient sky, warm haze fog (#cf9a68), cream buildings (#e6d7b8 walls / #f5ecd8 tint), sage landscaping (#67784f grass, #476b38/#5d8148 pines), natural wood, terracotta roofs (#a35a3c shingles, #9a5a40 slabs), sakura pink stays, water reflects the sky (#6aa3cf). Brand gold (#ffd257) and the neon district signs remain as ACCENTS only — no more purple-night wash over everything. The 2D world keeps its moonlit identity; v2 governs the 3D town only. Interior palettes move cozy in v550.
