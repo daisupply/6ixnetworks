@@ -134,6 +134,7 @@ function createWorld3D(ctx) {
   const THREE_MIN = fs.readFileSync(path.join(__dirname, 'vendor', 'three.module.min.js'), 'utf8');
   const GLTF_LOADER = fs.readFileSync(path.join(__dirname, 'vendor', 'addons', 'loaders', 'GLTFLoader.js'), 'utf8');
   const BG_UTILS = fs.readFileSync(path.join(__dirname, 'vendor', 'addons', 'utils', 'BufferGeometryUtils.js'), 'utf8');
+  const SKEL_UTILS = fs.readFileSync(path.join(__dirname, 'vendor', 'addons', 'utils', 'SkeletonUtils.js'), 'utf8');
   const assetBinCache = new Map();
 
   const P = new Map(); // user -> { x, z, ry, at, sid, win, clampStreak, fx, hue }
@@ -358,6 +359,7 @@ function createWorld3D(ctx) {
     if (pathname === '/world3d/vendor/three.module.min.js') return { type: 'text/javascript; charset=utf-8', body: THREE_MIN };
     if (pathname === '/world3d/vendor/addons/loaders/GLTFLoader.js') return { type: 'text/javascript; charset=utf-8', body: GLTF_LOADER };
     if (pathname === '/world3d/vendor/addons/utils/BufferGeometryUtils.js') return { type: 'text/javascript; charset=utf-8', body: BG_UTILS };
+    if (pathname === '/world3d/vendor/addons/utils/SkeletonUtils.js') return { type: 'text/javascript; charset=utf-8', body: SKEL_UTILS };
     if (pathname.startsWith('/world3d/assets/') && pathname.endsWith('.glb') && !pathname.includes('..')) {
       // GLBs ship in the repo base64-wrapped (.glb.b64, the repo is
       // text-only through the push pipeline); decode on serve, cache.

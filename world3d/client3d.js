@@ -29,6 +29,7 @@
 import * as THREE from 'three';
 import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT } from './math3d.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as skelClone } from 'three/addons/utils/SkeletonUtils.js';
 
 const $ = (id) => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
@@ -1016,7 +1017,7 @@ function loadGltf(url) {
 function attachRig(entry, hue) {
   loadGltf('/world3d/assets/characters/character.glb').then((gltf) => {
     if (!gltf || disposed || !gltf.animations || !gltf.animations.length) return;
-    const model = gltf.scene;
+    const model = skelClone(gltf.scene);
     model.traverse((o) => {
       if (o.isMesh) {
         o.castShadow = true;
@@ -1571,7 +1572,9 @@ function buildArcade() {
   const vex = makeAvatar(265, 'vex');
   vex.position.set(CX + 8.6, 0, -0.5); vex.rotation.y = -1.2;
   scene.add(vex);
-  NPCS.push({ zone: 'arcade', g: vex, st: { phase: 2.6, speed: 0, grounded: true, landT: 0, pose: 'stand' } });
+  const vexEntry = { zone: 'arcade', g: vex, st: { phase: 2.6, speed: 0, grounded: true, landT: 0, pose: 'stand' } };
+  NPCS.push(vexEntry);
+  attachRig(vexEntry, 265);
   addInteract('arcade', CX + 8.6, -0.5, 2.4, 'talk to vex', () => openDlg('@vex — arcade attendant', [
     'every cabinet in here runs the sites own games. no tokens, no catch.',
     'the 2048 high score board is a war zone rn.',
@@ -1632,7 +1635,9 @@ function buildClothing() {
   const sol = makeAvatar(285, 'sol');
   sol.position.set(CX + 7.6, 0, -7.6); sol.rotation.y = 0.1;
   scene.add(sol);
-  NPCS.push({ zone: 'clothing', routine: { a: [2074, 0], b: [2086, 0], dwell: 6, off: 4, faceA: 0.4, faceB: -0.4 }, g: sol, st: { phase: 4.1, speed: 0, grounded: true, landT: 0, pose: 'stand' } });
+  const solEntry = { zone: 'clothing', routine: { a: [2074, 0], b: [2086, 0], dwell: 6, off: 4, faceA: 0.4, faceB: -0.4 }, g: sol, st: { phase: 4.1, speed: 0, grounded: true, landT: 0, pose: 'stand' } };
+  NPCS.push(solEntry);
+  attachRig(solEntry, 285);
   addInteract('clothing', CX + 7.6, -5.2, 2.2, 'talk to sol', () => openDlg('@sol — clothing co.', [
     'the mirror over there is the wardrobe. try stuff on, save when it hits.',
     'the crown is 600. yes it is worth it. no i will not discount it.',
@@ -1711,7 +1716,7 @@ function tickStrollers(dt, now) {
       s.g.rotation.y = Math.atan2(b[0] - a[0], b[1] - a[1]);
       s.st.speed = 2.1;
     }
-    animateAvatar(s.g, s.st, dt, now);
+    if (s.rig) updateRig(s, dt); else animateAvatar(s.g, s.st, dt, now);
   }
 }
 function tickNPCRoutines(now) {
@@ -2076,7 +2081,9 @@ function buildLibrary() {
   const noor = makeAvatar(40, 'noor');
   noor.position.set(CX + 8.6, 0, -6.8); noor.rotation.y = -0.5;
   scene.add(noor);
-  NPCS.push({ zone: 'library', routine: { a: [2114, -5], b: [2120, 1.2], dwell: 7, off: 2, faceA: -1.2, faceB: 0.6 }, g: noor, st: { phase: 0.7, speed: 0, grounded: true, landT: 0, pose: 'stand' } });
+  const noorEntry = { zone: 'library', routine: { a: [2114, -5], b: [2120, 1.2], dwell: 7, off: 2, faceA: -1.2, faceB: 0.6 }, g: noor, st: { phase: 0.7, speed: 0, grounded: true, landT: 0, pose: 'stand' } };
+  NPCS.push(noorEntry);
+  attachRig(noorEntry, 40);
   addInteract('library', CX + 8.6, -5.6, 2.2, 'talk to noor', () => openDlg('@noor — librarian', [
     'shh. …okay we do not actually shush here. welcome in.',
     'every book on those shelves was written by somebody in this town. allegedly.',
@@ -2129,7 +2136,9 @@ function buildRec() {
   const junie = makeAvatar(120, 'junie');
   junie.position.set(CX - 2, 0, -4.6); junie.rotation.y = 0.9;
   scene.add(junie);
-  NPCS.push({ zone: 'rec', routine: { a: [2154, 4], b: [2158, 1], dwell: 5, off: 7, faceA: 2.6, faceB: 0 }, g: junie, st: { phase: 5.2, speed: 0, grounded: true, landT: 0, pose: 'stand' } });
+  const junieEntry = { zone: 'rec', routine: { a: [2154, 4], b: [2158, 1], dwell: 5, off: 7, faceA: 2.6, faceB: 0 }, g: junie, st: { phase: 5.2, speed: 0, grounded: true, landT: 0, pose: 'stand' } };
+  NPCS.push(junieEntry);
+  attachRig(junieEntry, 120);
   addInteract('rec', CX - 2, -3.4, 2.2, 'talk to junie', () => openDlg('@junie — rec center', [
     'dance floor rules: there are none. that is the rule.',
     'the trivia terminal pays 10 cents a right answer, three a day. it has never once been wrong. it has been wrong.',
@@ -2251,7 +2260,9 @@ function buildStrollers() {
   for (const d of defs) {
     const g = makeAvatar(d.hue, d.name);
     scene.add(g);
-    STROLLERS.push({ g, off: d.off, st: { phase: Math.random() * 6, speed: 0, grounded: true, landT: 0, pose: 'stand' } });
+    const sEntry = { g, off: d.off, st: { phase: Math.random() * 6, speed: 0, grounded: true, landT: 0, pose: 'stand' } };
+    STROLLERS.push(sEntry);
+    attachRig(sEntry, d.hue);
   }
 }
 
@@ -2860,7 +2871,7 @@ function loop() {
     if (handshakeOk && !sessionConflict) { setLoad(100, 'READY'); booted = true; window.__w3booted = true; }
     window.__w3state = function () {
       const miraN = NPCS.find((n) => n.zone === 'coffee');
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), assetSwaps, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, assetSwaps, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }
