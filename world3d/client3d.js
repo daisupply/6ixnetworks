@@ -27,7 +27,7 @@
  * player data, WebGL context-loss overlay. Three.js r160 vendored.
  */
 import * as THREE from 'three';
-import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT } from './math3d.js';
+import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH } from './math3d.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as skelClone } from 'three/addons/utils/SkeletonUtils.js';
 
@@ -53,6 +53,7 @@ let renderer = null, scene = null, camera = null, raf = 0, clock = null;
 let disposed = false, booted = false;
 let me = '', mySid = 's' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 let px = 0, pz = 18, py = 0, vy = 0, grounded = true, ry = Math.PI;
+let groundY = 0; // stage 08: terrain height under the player (town only)
 let vx = 0, vz = 0, speedSm = 0, landT = 0, wasGrounded = true;
 let camYawT = Math.PI, camPitchT = 0.42, camYaw = Math.PI, camPitch = 0.42;
 let followX = 0, followY = 1.7, followZ = 18, camDistEff = 13;
@@ -385,8 +386,24 @@ function buildWorld() {
   });
 
   // ground + plaza + paths
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(BOUND_X * 2 + 160, BOUND_Z * 2 + 160), new THREE.MeshStandardMaterial({ map: groundTexture(), roughness: 1 }));
-  ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+  const groundGeo = new THREE.PlaneGeometry(BOUND_X * 2 + 160, BOUND_Z * 2 + 160, 110, 80);
+  groundGeo.rotateX(-Math.PI / 2);
+  { // stage 08: displace by groundH + tint the wild bands (forest floor west, meadow east)
+    const pos = groundGeo.attributes.position, colors = new Float32Array(pos.count * 3);
+    for (let i = 0; i < pos.count; i++) {
+      const vx = pos.getX(i), vz = pos.getZ(i);
+      pos.setY(i, groundH(vx, vz));
+      let r = 1, g = 1, b = 1;
+      if (vx < -140) { r = 0.70; g = 0.66; b = 0.55; }
+      else if (vx > 145) { r = 1.07; g = 1.03; b = 0.84; }
+      const n = 1 + 0.05 * Math.sin(vx * 0.35) * Math.cos(vz * 0.31);
+      colors[i * 3] = r * n; colors[i * 3 + 1] = g * n; colors[i * 3 + 2] = b * n;
+    }
+    groundGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    groundGeo.computeVertexNormals();
+  }
+  const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ map: groundTexture(), roughness: 1, vertexColors: true }));
+  ground.receiveShadow = true; scene.add(ground);
   const plaza = new THREE.Mesh(new THREE.CircleGeometry(30, 56), new THREE.MeshStandardMaterial({ map: plazaTexture(), roughness: 0.85 }));
   plaza.rotation.x = -Math.PI / 2; plaza.position.y = 0.02; plaza.receiveShadow = true; scene.add(plaza);
   const pathMat = new THREE.MeshStandardMaterial({ color: 0x9a8a72, roughness: 0.95 });
@@ -1737,12 +1754,13 @@ function tickStrollers(dt, now) {
     }
     if (leg.dwellAt || d < 0) {
       const p = leg.a;
-      s.g.position.set(p[0], 0, p[1]);
+      s.g.position.set(p[0], groundH(p[0], p[1]), p[1]);
       if (p[3] || p[4]) s.g.rotation.y = Math.atan2(p[3] - p[0], p[4] - p[1]);
       s.st.speed = 0;
     } else {
       const t = d / leg.walk, a = leg.a, b = leg.b;
-      s.g.position.set(a[0] + (b[0] - a[0]) * t, 0, a[1] + (b[1] - a[1]) * t);
+      const sx2 = a[0] + (b[0] - a[0]) * t, sz2 = a[1] + (b[1] - a[1]) * t;
+      s.g.position.set(sx2, groundH(sx2, sz2), sz2);
       s.g.rotation.y = Math.atan2(b[0] - a[0], b[1] - a[1]);
       s.st.speed = 2.1;
     }
@@ -2691,7 +2709,7 @@ function updateCameraFP(dt, now) {
   const cp = Math.cos(fpPitch), sp = Math.sin(fpPitch);
   _fF.set(Math.sin(camYaw) * cp, -sp, Math.cos(camYaw) * cp);
   _fR.set(-Math.cos(camYaw), 0, Math.sin(camYaw)).normalize();
-  _fE.set(px + _fR.x * bobX, py + sitEye + bobY - dip + airLift, pz + _fR.z * bobX);
+  _fE.set(px + _fR.x * bobX, groundY + py + sitEye + bobY - dip + airLift, pz + _fR.z * bobX);
   camera.position.copy(_fE);
   _fB.copy(_fE).add(_fF);
   camera.lookAt(_fB);
@@ -2750,7 +2768,7 @@ function updateCamera(dt) {
   const kF = dampK(14, dt);
   followX += (px - followX) * kF;
   followZ += (pz - followZ) * kF;
-  followY += ((SET.camH + py) - followY) * dampK(8, dt);
+  followY += ((SET.camH + groundY + py) - followY) * dampK(8, dt);
   const hx = followX, hy = followY + 0.35, hz = followZ;
   const cx = hx - Math.sin(camYaw) * Math.cos(camPitch) * SET.camDist;
   const cz = hz - Math.cos(camYaw) * Math.cos(camPitch) * SET.camDist;
@@ -2824,6 +2842,7 @@ function loop() {
   const zb = zoneNow();
   if (zb === 'town' || !ZONE_BOXES[zb]) { px = clamp(px, -BOUND_X, BOUND_X); pz = clamp(pz, -BOUND_Z, BOUND_Z); }
   else { const B = ZONE_BOXES[zb]; px = clamp(px, B.minX + 0.6, B.maxX - 0.6); pz = clamp(pz, B.minZ + 0.6, B.maxZ - 0.6); }
+  groundY = (zb === 'town') ? groundH(px, pz) : 0;
   for (const c of colliders) {
     const dx = px - c.x, dz = pz - c.z, d = Math.hypot(dx, dz), min = c.r + 0.55;
     if (d > 0.001 && d < min) { px = c.x + dx / d * min; pz = c.z + dz / d * min; }
@@ -2842,7 +2861,7 @@ function loop() {
   // my avatar + animation
   const meGroup = scene.userData.meGroup;
   if (meGroup) {
-    meGroup.position.set(px, sitting ? 0.04 : py, pz);
+    meGroup.position.set(px, groundY + (sitting ? 0.04 : py), pz);
     meGroup.rotation.y = wardOpen ? (performance.now() / 900) : ry;
     mySt.speed = speedSm; mySt.grounded = grounded; mySt.pose = sitting ? 'sit' : 'stand';
     mySt.emote = (myEmote && now - myEmoteAt < 2200) ? myEmote : null;
@@ -2858,7 +2877,7 @@ function loop() {
     const inst = dt > 0 ? Math.hypot(g.position.x - ox, g.position.z - oz) / dt : 0;
     rm.st.speed += (inst - rm.st.speed) * dampK(8, dt);
     rm.st.pose = rm.sit ? 'sit' : 'stand'; rm.st.emote = rm.emote;
-    g.position.y = rm.sit ? 0.04 : 0;
+    g.position.y = (zoneNow() === 'town' ? groundH(g.position.x, g.position.z) : 0) + (rm.sit ? 0.04 : 0);
     g.rotation.y = angLerp(g.rotation.y, rm.try_, k);
     if (rm.rig && !rm.sit && !rm.emote) { setRigShown(rm, true); updateRig(rm, dt); }
     else { if (rm.rig) setRigShown(rm, false); animateAvatar(g, rm.st, dt, now); }
@@ -2913,7 +2932,7 @@ function loop() {
     if (handshakeOk && !sessionConflict) { setLoad(100, 'READY'); booted = true; window.__w3booted = true; }
     window.__w3state = function () {
       const miraN = NPCS.find((n) => n.zone === 'coffee');
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }

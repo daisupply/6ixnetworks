@@ -63,3 +63,28 @@ export function segBoxT(ax, ay, az, bx, by, bz, b) {
   }
   return t0;
 }
+
+// ---- stage 08: terrain heightfield ----
+// The developed town sits on a flat plateau (h = 0 for |x| <= 126,
+// |z| <= 98, smooth mask beyond); gentle hills rise outside it: the
+// west forest floor, the east overlook, and thin north/south rims.
+// Pure + deterministic: the ground mesh, the player, remotes, NPCs and
+// wildlife all sample this one function, so every client agrees.
+function sstep(a, b, v) { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); }
+const HILLS = [
+  [-168, -42, 3.4, 40], [-172, 48, 2.8, 36], [-158, 92, 2.2, 30],
+  [174, 8, 7.6, 44], [162, -62, 3.2, 38], [166, 78, 2.6, 34],
+  [-40, -116, 2.4, 34], [70, -114, 2.0, 30],
+  [36, 114, 2.2, 32], [-70, 112, 1.9, 30],
+];
+export function groundH(x, z) {
+  const m = Math.max(sstep(126, 150, Math.abs(x)), sstep(98, 116, Math.abs(z)));
+  if (m <= 0) return 0;
+  let h = 0;
+  for (let i = 0; i < HILLS.length; i++) {
+    const dx = x - HILLS[i][0], dz = z - HILLS[i][1];
+    h += HILLS[i][2] * Math.exp(-(dx * dx + dz * dz) / (HILLS[i][3] * HILLS[i][3]));
+  }
+  h += 0.45 * Math.sin(x * 0.045) * Math.cos(z * 0.05);
+  return Math.max(0, h) * m;
+}

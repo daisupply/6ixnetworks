@@ -1,7 +1,7 @@
 // math.test.mjs — pure movement/camera math for the 3D world.
 // tests the EXACT functions client3d.js imports from ../math3d.js.
 // run: node world3d/tests/math.test.mjs   (no server, no deps)
-import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT } from '../math3d.js';
+import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH } from '../math3d.js';
 
 let pass = 0, fail = 0;
 const ok = (c, label, extra) => { if (c) { pass++; console.log('PASS', label); } else { fail++; console.log('FAIL', label, extra !== undefined ? JSON.stringify(extra) : ''); } };
@@ -73,5 +73,17 @@ for (const yaw of [0, 1.1, Math.PI, -2.0]) {
   ok(segBoxT(9, 2, -12, 9, 2, 12, box) === -1, 'segBoxT: boom beside the box misses');
 }
 
+// ---- stage 08: groundH ----
+ok(near(groundH(0, 18), 0), 'groundH: spawn is plateau');
+ok(near(groundH(0, -50), 0), 'groundH: north row is plateau');
+ok(near(groundH(118, 12), 0), 'groundH: pond is plateau');
+ok(near(groundH(-100, 0), 0), 'groundH: west houses are plateau');
+ok(groundH(174, 8) > 5.5, 'groundH: east overlook rises (' + groundH(174, 8).toFixed(1) + ')');
+ok(groundH(-168, -42) > 1.8, 'groundH: west forest floor rises (' + groundH(-168, -42).toFixed(1) + ')');
+ok(groundH(150, 8) > 0 && groundH(150, 8) < groundH(174, 8), 'groundH: overlook slope is gradual');
+ok(groundH(140, 8) >= 0 && groundH(140, 8) < groundH(150, 8), 'groundH: mask ramp is monotonic outward');
+ok(near(groundH(174, 8), groundH(174, 8)), 'groundH: deterministic');
+
 console.log('MATH RESULT: ' + pass + ' pass, ' + fail + ' fail');
 process.exit(fail ? 1 : 0);
+
