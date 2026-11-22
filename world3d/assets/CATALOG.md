@@ -80,6 +80,24 @@ animals don't fit the wild brief.
   green/gold so fields don't read as a hedge wall.
 - TwistedTree red crown over green understory trees reads great as a landmark.
 
+## Stage 03 — grove inventory + world-wide systems (2026-11-22)
+The CP3 test grove (34, 64) is the reference environment. What makes it read well:
+- MODELS: CommonTree_1/3/5, Pine_2/4, TwistedTree_2 (landmark), Bush_Common +
+  Bush_Common_Flowers, Rock_Medium_1/3, Fern_1, Flower_3/4_Group (Quaternius MegaKit, CC0).
+- GROUND COVER: Grass_Common_Tall instanced (240 in the grove disc; zoned world-wide
+  since CP6), instance-color variation, gentle emissive lift (0x1c2a0e x 0.38) so
+  shadow sides don't go black.
+- SYSTEMS: groundH terrain, golden-hour sun/hemi/fog (v548), seeded deterministic
+  placement, loadAsset cache (one fetch per model, clones share geometry/materials).
+Stage 03 extends this world-wide: chunked lawn grass (44u cells, 68 chunks, 5,998
+instances, distance visibility w/ hysteresis), road-edge tufts, building-perimeter
+landscaping (flowering bushes at corners, Plant_1_Big at doors, flower patches),
+tree LOD (full GLB near / merged-geometry impostor instanced far; impostor is also
+the load/failure fallback; time-based 220ms update cadence; distances scale with
+the gfx tier: low 68 / medium 95 / high 130), and a horizon ring (10 hills + 116
+silhouette trees) so the world never ends at a hard edge. Terrain + buildings are
+persistent single systems — they never unload, so streaming can't open holes.
+
 ## Conversion rules (glTF/FBX → repo GLB)
 - Blender import → apply scale → export single GLB with textures embedded.
 - Texture caps: bark/leaf atlases ≤1024px, small props ≤512px (source PNGs are 4–5.7 MB each —

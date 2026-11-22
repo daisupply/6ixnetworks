@@ -30,6 +30,7 @@ import * as THREE from 'three';
 import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH } from './math3d.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as skelClone } from 'three/addons/utils/SkeletonUtils.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const $ = (id) => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
@@ -920,7 +921,7 @@ function buildTown() {
   buildTownDoors545();
   buildShards();
   buildStrollers();
-  buildDressing(); buildForest(); buildWildlife(); buildEntrances(); buildTestGrove(); buildNature();
+  buildDressing(); buildForest(); buildWildlife(); buildEntrances(); buildTestGrove(); buildNature(); buildGroundCover();
   cozyInteriors();
 }
 
@@ -1923,14 +1924,16 @@ let BIRDS = [], petals = null, petalDat = null;
 let NATURE = { trees: 0, grass: 0, flowers: 0 };
 const NAT = '/world3d/assets/nature/';
 function natPlace(name, x, z, s, ry, colliderR) {
+  const lod = registerLOD(name, x, z, s, ry);
   loadAsset(NAT + name + '.glb').then((proto) => {
-    if (!proto) return;
+    if (!proto) return; // impostor (if any) stays as the permanent fallback
     const m = proto.clone(true);
     m.position.set(x, groundH(x, z) - 0.05, z);
     m.rotation.y = ry || 0;
     m.scale.setScalar(s);
     m.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     scene.add(m);
+    if (lod) { lod.model = m; m.visible = lod.near; }
   });
   if (colliderR) addCollider(x, z, colliderR);
 }
@@ -2081,6 +2084,240 @@ function buildNature() {
     const t = i / 8, p = curve.getPoint(t), tan = curve.getTangent(t);
     natPlace(i % 2 ? 'RockPath_Round_Wide' : 'RockPath_Round_Thin', p.x, p.z, 1.15, Math.atan2(tan.x, tan.z), 0);
   }
+}
+
+
+/* ============ STAGE 03: WORLD-WIDE COVER + DISTANCE STREAMING ======
+ * Part 1 — grove inventory (the reference environment, buildTestGrove +
+ * buildNature): Quaternius MegaKit CommonTree/Pine/TwistedTree models,
+ * Bush_Common_Flowers, Rock_Medium, Fern_1, Flower_3/4_Group clusters,
+ * Grass_Common/Wispy instanced tufts with instance-color variation and
+ * a gentle emissive lift, terrain via groundH, golden-hour lighting.
+ * This stage extends those exact systems world-wide and adds the
+ * streaming layer: chunked lawn grass with distance visibility, tree
+ * LOD (full model near / instanced impostor far, hysteresis both ways,
+ * impostor is also the loading + failure fallback), and a horizon ring
+ * so the world never ends at a hard edge. Buildings and terrain are
+ * single persistent systems — they never unload, so there are no holes.
+ * ================================================================== */
+const LODREG = [];
+let lodImp = null;
+let COVER = { lawn: 0, chunks: 0, chunksOn: 0, lodNear: 0, lodFar: 0 };
+const GRASS_CHUNKS = [];
+function registerLOD(name, x, z, s, ry) {
+  if (!/^(CommonTree_|Pine_|TwistedTree_|DeadTree_)/.test(name)) return null;
+  const e = { x, z, s, ry: ry || 0, pine: name.indexOf('Pine_') === 0, model: null, slot: -1, near: Math.hypot(x, z - 18) < 95 };
+  LODREG.push(e);
+  return e;
+}
+function impostorGeo(pine) {
+  const parts = [];
+  const paint = (g, hex) => {
+    const c = new THREE.Color(hex), n = g.attributes.position.count, arr = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { arr[i * 3] = c.r; arr[i * 3 + 1] = c.g; arr[i * 3 + 2] = c.b; }
+    g.setAttribute('color', new THREE.BufferAttribute(arr, 3));
+    return g.index ? g.toNonIndexed() : g;
+  };
+  if (pine) {
+    parts.push(paint(new THREE.CylinderGeometry(0.16, 0.24, 2.8, 6).translate(0, 1.4, 0), 0x5f4630));
+    parts.push(paint(new THREE.ConeGeometry(1.9, 3.6, 8).translate(0, 4.6, 0), 0x3d6030));
+    parts.push(paint(new THREE.ConeGeometry(1.3, 2.8, 8).translate(0, 7.0, 0), 0x476b38));
+  } else {
+    parts.push(paint(new THREE.CylinderGeometry(0.2, 0.3, 2.4, 6).translate(0, 1.2, 0), 0x6b4a2e));
+    parts.push(paint(new THREE.IcosahedronGeometry(2.7, 0).scale(1, 0.82, 1).translate(0, 5.6, 0), 0x5d8148));
+    parts.push(paint(new THREE.IcosahedronGeometry(1.8, 0).translate(0.9, 7.0, 0.3), 0x6f9a52));
+  }
+  return mergeGeometries(parts, false);
+}
+function setImpMatrix(e) {
+  if (!lodImp || e.slot < 0) return;
+  const inst = e.pine ? lodImp.pine : lodImp.leaf;
+  const d = new THREE.Object3D();
+  d.position.set(e.x, groundH(e.x, e.z) - 0.05, e.z);
+  d.rotation.y = e.ry;
+  d.scale.setScalar(e.near ? 0.0001 : e.s);
+  d.updateMatrix();
+  inst.setMatrixAt(e.slot, d.matrix);
+  inst.instanceMatrix.needsUpdate = true;
+}
+function buildImpostors() {
+  const leafN = LODREG.filter((e) => !e.pine).length, pineN = LODREG.length - leafN;
+  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, flatShading: true });
+  const mk = (geo, n) => { const im = new THREE.InstancedMesh(geo, mat, Math.max(1, n)); im.frustumCulled = false; scene.add(im); return im; };
+  lodImp = { leaf: mk(impostorGeo(false), leafN), pine: mk(impostorGeo(true), pineN) };
+  let li = 0, pi = 0;
+  for (const e of LODREG) { e.slot = e.pine ? pi++ : li++; setImpMatrix(e); if (e.model) e.model.visible = e.near; }
+  COVER.lodFar = LODREG.length;
+}
+let lodTickN = 0;
+let lodLast = 0;
+function tickLOD() {
+  const tnow = performance.now();
+  if (tnow - lodLast < 220) return; // time-based cadence: ~4.5 passes/sec at ANY frame rate
+  lodLast = tnow;
+  if (typeof zoneNow === 'function' && zoneNow() !== 'town') return;
+  const tier = tierOf();
+  const TD = tier === 'high' ? 130 : tier === 'low' ? 68 : 95;
+  const GD = tier === 'high' ? 115 : tier === 'low' ? 62 : 88;
+  let near = 0;
+  for (const e of LODREG) {
+    const d = Math.hypot(px - e.x, pz - e.z);
+    const want = e.near ? d < TD + 10 : d < TD;
+    if (want !== e.near) { e.near = want; if (e.model) e.model.visible = want; setImpMatrix(e); }
+    if (e.near) near++;
+  }
+  COVER.lodNear = near; COVER.lodFar = LODREG.length - near;
+  let on = 0;
+  for (const c of GRASS_CHUNKS) {
+    const d = Math.hypot(px - c.cx, pz - c.cz);
+    const want = c.on ? d < GD + 12 : d < GD;
+    if (want !== c.on) { c.on = want; if (c.mesh) c.mesh.visible = want; }
+    if (c.on) on++;
+  }
+  COVER.chunksOn = on;
+}
+function natInstChunked(name, list, cx, cz) {
+  const chunk = { cx, cz, on: Math.hypot(cx, cz - 18) < 100, mesh: null };
+  GRASS_CHUNKS.push(chunk);
+  if (!list.length) return;
+  loadAsset(NAT + name + '.glb').then((proto) => {
+    if (!proto) return;
+    let mesh = null;
+    proto.traverse((o) => { if (o.isMesh && !mesh) mesh = o; });
+    if (!mesh) return;
+    const mat = mesh.material.clone();
+    mat.emissive = new THREE.Color(0x1c2a0e);
+    mat.emissiveIntensity = 0.38;
+    const inst = new THREE.InstancedMesh(mesh.geometry, mat, list.length);
+    const d = new THREE.Object3D();
+    const r2 = mulberry32(4400 + GRASS_CHUNKS.length);
+    list.forEach(([x, z, s, ry], i) => {
+      d.position.set(x, groundH(x, z) - 0.03, z);
+      d.rotation.set(0, ry || 0, 0);
+      d.scale.setScalar(s);
+      d.updateMatrix();
+      inst.setMatrixAt(i, d.matrix);
+      const v = 0.86 + r2() * 0.26;
+      inst.setColorAt(i, new THREE.Color(v * 1.03, v, v * 0.92));
+    });
+    if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
+    inst.receiveShadow = true;
+    inst.frustumCulled = false;
+    inst.visible = chunk.on;
+    scene.add(inst);
+    chunk.mesh = inst;
+  });
+}
+function buildHorizon() {
+  const rnd = mulberry32(60606);
+  const hillM = new THREE.MeshStandardMaterial({ color: 0x74917c, roughness: 1 });
+  const hillM2 = new THREE.MeshStandardMaterial({ color: 0x87a0a8, roughness: 1 });
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * TAU + rnd() * 0.3;
+    const hill = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), i % 2 ? hillM : hillM2);
+    hill.position.set(Math.cos(a) * 258, -5, Math.sin(a) * 192);
+    hill.scale.set(40 + rnd() * 34, 17 + rnd() * 17, 32 + rnd() * 24);
+    scene.add(hill);
+  }
+  const band = (geo, mat, n, fn) => {
+    const im = new THREE.InstancedMesh(geo, mat, n);
+    const d = new THREE.Object3D();
+    for (let i = 0; i < n; i++) { fn(d, i); d.updateMatrix(); im.setMatrixAt(i, d.matrix); }
+    im.frustumCulled = false;
+    scene.add(im);
+  };
+  band(new THREE.ConeGeometry(1.7, 6.5, 6), new THREE.MeshStandardMaterial({ color: 0x33502f, roughness: 1, flatShading: true }), 90, (d, i) => {
+    const a = (i / 90) * TAU + rnd() * 0.05;
+    d.position.set(Math.cos(a) * 234, 1.6, Math.sin(a) * 174);
+    d.rotation.set(0, rnd() * TAU, 0);
+    d.scale.setScalar(0.9 + rnd() * 0.9);
+  });
+  band(new THREE.IcosahedronGeometry(3.1, 0), new THREE.MeshStandardMaterial({ color: 0x3f6038, roughness: 1, flatShading: true }), 26, (d, i) => {
+    const a = (i / 26) * TAU + 0.12 + rnd() * 0.06;
+    d.position.set(Math.cos(a) * 228, 3.4, Math.sin(a) * 170);
+    d.rotation.set(0, rnd() * TAU, 0);
+    d.scale.set(1, 0.8, 1).multiplyScalar(0.9 + rnd() * 0.8);
+  });
+}
+function buildGroundCover() {
+  const rnd = mulberry32(777333);
+  const BRECTS = [
+    [-36, -44, 13.2, 8.2], [0, -50, 16.2, 9.2], [36, -44, 13.2, 8.2],
+    [-62, -52, 14.2, 9.2], [58, -54, 14.2, 9.2], [-64, 46, 12.2, 7.7], [62, 48, 12.2, 7.7], [0, -80, 16.2, 8.2],
+    [-108, -28, 7.5, 6], [-116, 6, 7.5, 6], [-104, 40, 7.5, 6],
+  ];
+  const DOORS = [[-28.6, -35], [43.4, -35], [-62, -42.8], [58, -44.8], [62, 40.3], [-64, 38.3], [0, -72.6]];
+  function grassOK(x, z) {
+    if (Math.hypot(x, z) < 39.5) return false;
+    if (Math.abs(x) < 49 && z < -30 && z > -46.5) return false;
+    if (Math.abs(x) < 9.4 && z > 37 && z < 95) return false;
+    if (Math.abs(z) < 9.4 && Math.abs(x) > 35 && Math.abs(x) < 157) return false;
+    if (Math.hypot(x - 118, z - 12) < 15.5) return false;
+    for (const [cx, cz, hw, hd] of BRECTS) if (Math.abs(x - cx) < hw && Math.abs(z - cz) < hd) return false;
+    for (const [dx, dz] of DOORS) if (Math.hypot(x - dx, z - dz) < 2.3) return false;
+    if (Math.hypot(x, z - 18) < 1.6) return false;
+    return true;
+  }
+  const buckets = new Map();
+  const bucketFor = (x, z, wispy) => {
+    const key = (wispy ? 'w' : 'c') + Math.floor(x / 44) + ':' + Math.floor(z / 44);
+    if (!buckets.has(key)) buckets.set(key, { list: [], wispy, cx: 0, cz: 0 });
+    return buckets.get(key);
+  };
+  const drop = (x, z, s) => {
+    const wispy = Math.abs(x) > 126 || Math.abs(z) > 98;
+    const b = bucketFor(x, z, wispy);
+    b.list.push([x, z, s, rnd() * TAU]);
+    b.cx += x; b.cz += z;
+  };
+  let placed = 0, guard = 0;
+  while (placed < 5200 && guard++ < 60000) {
+    const x = -130 + rnd() * 260, z = -102 + rnd() * 204;
+    if (!grassOK(x, z)) continue;
+    drop(x, z, 0.62 + rnd() * 0.45);
+    placed++;
+  }
+  // road-edge tufts: along both avenues, just off the sidewalks
+  for (let z = 42; z < 93; z += 3.05) for (const sx of [-1, 1]) {
+    const x = sx * (8.9 + rnd() * 0.7), zz = z + (rnd() - 0.5) * 1.4;
+    if (grassOK(x, zz)) drop(x, zz, 0.6 + rnd() * 0.4);
+  }
+  for (let ax = 40; ax < 152; ax += 3.05) for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+    const x = sx * ax + (rnd() - 0.5) * 1.4, z = sz * (8.9 + rnd() * 0.7);
+    if (grassOK(x, z)) drop(x, z, 0.6 + rnd() * 0.4);
+  }
+  // hillside + fringe bands (wispy)
+  let hp = 0; guard = 0;
+  while (hp < 750 && guard++ < 9000) {
+    const bandPick = rnd();
+    let x, z;
+    if (bandPick < 0.3) { x = -135 + rnd() * 270; z = -116 + rnd() * 15; }
+    else if (bandPick < 0.6) { x = -135 + rnd() * 270; z = 101 + rnd() * 15; }
+    else if (bandPick < 0.8) { x = -146 + rnd() * 14; z = -110 + rnd() * 220; }
+    else { x = 132 + rnd() * 14; z = -110 + rnd() * 220; }
+    if (!grassOK(x, z)) continue;
+    drop(x, z, 0.7 + rnd() * 0.5);
+    hp++;
+  }
+  for (const b of buckets.values()) {
+    const n = Math.max(1, b.list.length);
+    natInstChunked(b.wispy ? 'Grass_Wispy_Short' : 'Grass_Common_Short', b.list, b.cx / n, b.cz / n);
+    COVER.lawn += b.list.length;
+  }
+  COVER.chunks = GRASS_CHUNKS.length;
+  // flower patches at doors + plaza ring (composed clusters, unchunked)
+  const fl3 = [], fl4 = [];
+  const patch = (cx, cz, list) => { const n = 3 + (rnd() * 3 | 0); for (let i = 0; i < n; i++) { const a = rnd() * TAU, d = Math.sqrt(rnd()) * 2.2; list.push([cx + Math.cos(a) * d, cz + Math.sin(a) * d, 0.85 + rnd() * 0.4, rnd() * TAU]); } };
+  DOORS.forEach(([dx, dz], i) => patch(dx + (i % 2 ? 3.4 : -3.4), dz + 1.6, i % 2 ? fl4 : fl3));
+  for (let i = 0; i < 7; i++) { const a = rnd() * TAU; patch(Math.cos(a) * 43.5, Math.sin(a) * 43.5, i % 2 ? fl3 : fl4); }
+  natInst('Flower_3_Group', fl3, null);
+  natInst('Flower_4_Group', fl4, null);
+  // perimeter landscaping: flowering bushes at building corners, plants at doors
+  const BUSHES = [[-47, -36.5], [-25, -36.5], [-14, -41], [14, -41], [25, -36.5], [47, -36.5], [-74, -43], [-50, -43], [46, -45], [70, -45], [-74, 39], [-54, 39], [52, 41], [72, 41], [-13, -72], [13, -72], [-101, -22], [-110, 12], [-98, 34]];
+  for (const [x, z] of BUSHES) natPlace('Bush_Common_Flowers', x, z, 1.1 + rnd() * 0.35, rnd() * TAU, 0);
+  DOORS.forEach(([dx, dz], i) => natPlace('Plant_1_Big', dx + (i % 2 ? 2.1 : -2.1), dz + 0.4, 1.0 + rnd() * 0.3, rnd() * TAU, 0));
+  buildImpostors();
+  buildHorizon();
 }
 
 
@@ -3438,7 +3675,7 @@ function loop() {
     else { if (rm.rig) setRigShown(rm, false); animateAvatar(g, rm.st, dt, now); }
   }
   // npcs idle in place; prompt scan + seat snap (v543)
-  tickStrollers(dt, now); tickShards(now); tickDressing(now); tickAudio(); tickWildlife(now, dt);
+  tickStrollers(dt, now); tickShards(now); tickDressing(now); tickAudio(); tickWildlife(now, dt); tickLOD();
   tickNPCRoutines(now);
   for (const n of NPCS) { if (n.zone && zoneNow() !== n.zone) continue; if (n.rig) updateRig(n, dt); else animateAvatar(n.g, n.st, dt, now); }
   if (sitting) { px = sitting.x; pz = sitting.z; if (joyVec.x || joyVec.y) standUp(); }
@@ -3487,7 +3724,7 @@ function loop() {
     if (handshakeOk && !sessionConflict) { setLoad(100, 'READY'); booted = true; window.__w3booted = true; }
     window.__w3state = function () {
       const miraN = NPCS.find((n) => n.zone === 'coffee');
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, groveN: GROVE.n, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, groveN: GROVE.n, coverN: COVER.lawn, chunksOn: COVER.chunksOn, chunks: COVER.chunks, lodNear: COVER.lodNear, lodFar: COVER.lodFar, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }
