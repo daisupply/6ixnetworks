@@ -71,12 +71,30 @@ belongs to the live tab, and deleting it would respawn them.
   the user. Unauthenticated API → 401 `{err:'login first'}`.
 - Currency/inventory/progression live in server.js systems
   (`cfg:cents`, `cfg:wdata`) and are reached ONLY through ctx
-  (`getCents`, `getHue`, `getFx`, `storeReady`). The 3D layer NEVER
-  writes player data — it reads the balance for the HUD.
+  (`getCents`, `getHue`, `getFx`, `storeReady`). Since v543 the 3D
+  layer also spends/awards through ctx hooks (`spendCents`,
+  `awardCents`) and owns one record inside `cfg:cents` — `cos`
+  (cosmetics ownership/wear, star shards, trivia day state, apartment
+  decor) via `getCos`/`cosBuy`/`cosWear`/`cosPatch`. Prices, shard
+  positions, trivia answers and decor ranges are server-side truth;
+  the client only mirrors them for display.
 - Presence: this module's own in-memory Map (dimension-separated from
   the 2D world's P map by construction). HTTP ping-polling, no sockets:
-  `POST /api/world3d/ping` {x, z, ry, sid} → {me, bal, x, z, portal,
-  roster:[{u, x, z, ry, fx, hue}]}; `POST /api/world3d/leave`.
+  `POST /api/world3d/ping` {x, z, ry, sid, sit, warp, emote} → {me, bal,
+  x, z, zone, portal, cos, roster:[{u, x, z, ry, fx, hue, sit, wear,
+  emote}]}; `POST /api/world3d/leave`.
+- Zones (v543+): positions derive the zone — town (±195/±118) or an
+  interior box at world x ≈ 2000 + 40·n (coffee 2000, arcade 2040,
+  clothing 2080, library 2120, rec 2160, apt 2200). Rosters only ever
+  contain same-zone players; the apartment zone always rosters empty
+  (solo instance). Crossing zones requires a `warp:true` ping while
+  standing at a registered DOOR_PAIRS point; any other cross-zone move
+  is refused and the position held.
+- Commerce/activity endpoints (all POST, session-authed):
+  `/api/world3d/buy` (café menu), `/api/world3d/cos` (buy/wear/hue),
+  `/api/world3d/shard` (proximity-validated pickup, +5¢ once),
+  `/api/world3d/trivia` (get/answer; 3 paid correct/day, +10¢),
+  `/api/world3d/apt` (rug/poster decor, range-validated).
 - One presence entry per account (keyed by lowercase name). A second
   tab takes over via `sid`: a stale sid cannot move the live entry.
   Entries prune after 7s without a ping.

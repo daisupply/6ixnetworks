@@ -114,3 +114,36 @@ body:not(.touch) #w3use{display:none!important}
 .w3mi-buy:disabled{opacity:.5}
 #w3menubal{margin-top:10px;font:600 12px Inter,system-ui,sans-serif;color:#bdb2e8}
 #w3menures{margin-top:4px;font:600 13px Inter,system-ui,sans-serif;color:#ffd9a0;min-height:18px}
+/* v544: wardrobe + games overlays share the menu overlay shell */
+#w3ward,#w3games{position:fixed;inset:0;z-index:29;background:rgba(5,3,14,.55);display:flex;align-items:center;justify-content:center}
+#w3ward[hidden],#w3games[hidden]{display:none}
+.w3ward-card{width:min(430px,calc(100vw - 28px));max-height:86vh;overflow-y:auto}
+.w3ward-sec{font:700 11px Inter,system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#cdbffa;margin:14px 0 7px}
+.w3ward-sec span{color:#ffd257;text-transform:none;letter-spacing:0}
+#w3hue{width:100%;accent-color:#a78bfa;height:26px}
+.w3chips{display:flex;flex-wrap:wrap;gap:7px}
+.w3chip{background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.35);color:#f3efff;border-radius:999px;padding:7px 13px;font:600 13px Inter,system-ui,sans-serif;cursor:pointer}
+.w3chip.on{background:#ffd257;color:#241335;border-color:#ffd257;font-weight:800}
+#w3wardres{min-height:20px;margin-top:12px;font:600 13px Inter,system-ui,sans-serif;color:#ffd9a0}
+.w3ward-btns{display:flex;gap:9px;margin-top:8px}
+#w3wardsave{flex:1;background:#ffd257;color:#241335;border:0;border-radius:999px;padding:10px;font:800 14px Inter,system-ui,sans-serif;cursor:pointer}
+#w3wardcancel{background:transparent;color:#cdbffa;border:1px solid rgba(167,139,250,.4);border-radius:999px;padding:10px 18px;font:700 13px Inter,system-ui,sans-serif;cursor:pointer}
+.w3game-list{display:flex;flex-direction:column;gap:9px}
+.w3game{display:block;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);border-radius:13px;padding:12px 14px;color:#f3efff;text-decoration:none;font:800 15px Inter,system-ui,sans-serif}
+.w3game span{display:block;font:500 12px Inter,system-ui,sans-serif;color:#cdbffa;margin-top:2px}
+.w3games-note{margin-top:12px;font:500 12px Inter,system-ui,sans-serif;color:#9d8fd0}
+/* v545: quiz + map overlays, map button */
+#w3quiz,#w3map{position:fixed;inset:0;z-index:29;background:rgba(5,3,14,.55);display:flex;align-items:center;justify-content:center}
+#w3quiz[hidden],#w3map[hidden]{display:none}
+#w3quizq{font:600 16px/1.5 Inter,system-ui,sans-serif;margin:6px 0 12px}
+#w3quizchoices{display:flex;flex-direction:column;gap:8px}
+.w3qchoice{background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.35);color:#f3efff;border-radius:11px;padding:10px 14px;font:600 14px Inter,system-ui,sans-serif;cursor:pointer;text-align:left}
+#w3quizres{min-height:20px;margin-top:12px;font:700 13px Inter,system-ui,sans-serif;color:#ffd9a0}
+.w3map-card{width:min(560px,calc(100vw - 28px))}
+#w3mapcv{width:100%;height:auto;border-radius:11px;border:1px solid rgba(167,139,250,.3);background:#14102e}
+#w3mapseen{margin-top:10px;font:500 12px Inter,system-ui,sans-serif;color:#cdbffa}
+#w3mapbtn{position:fixed;top:64px;right:14px;z-index:26;width:40px;height:40px;border-radius:50%;background:rgba(18,11,42,.85);border:1px solid rgba(167,139,250,.45);color:#ffd257;display:flex;align-items:center;justify-content:center;cursor:pointer}
+/* v546: emote buttons under the map button */
+#w3wavebtn,#w3partybtn{position:fixed;right:14px;z-index:26;width:40px;height:40px;border-radius:50%;background:rgba(18,11,42,.85);border:1px solid rgba(167,139,250,.45);color:#cdbffa;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#w3wavebtn{top:112px}
+#w3partybtn{top:160px;color:#ffd257}

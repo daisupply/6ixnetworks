@@ -17796,14 +17796,14 @@ async function coinsAward(user, n) {
 }
 /* SIX CENTS — the world-only currency of six's network. Separate ledger from
    site coins on purpose: world earnings/spending never touch cfg:coins. */
-const CENTS = { bal: {}, inv: {}, wear: {}, hue: {}, ready: false };
+const CENTS = { bal: {}, inv: {}, wear: {}, hue: {}, cos: {}, ready: false };
 const WDATA = { ready: false, data: {} };
 let wdataDirty = false;
 async function wdataLoad() { if (WDATA.ready) return; WDATA.ready = true; WDATA.loading = true; try { const got = await storeCmd([['GET', 'cfg:wdata']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o && typeof o === 'object') { for (const k of Object.keys(o)) { if (!(k in WDATA.data)) WDATA.data[k] = o[k]; else if (o[k] && WDATA.data[k] && typeof o[k] === 'object' && typeof WDATA.data[k] === 'object' && !Array.isArray(o[k]) && !Array.isArray(WDATA.data[k])) { for (const u of Object.keys(o[k])) if (!(u in WDATA.data[k])) WDATA.data[k][u] = o[k][u]; } } } } } catch (e) {} WDATA.loading = false; }
 function wdataSave() { if (wdataDirty) return; wdataDirty = true; setTimeout(() => { wdataDirty = false; if (WDATA.loading) { wdataSave(); return; } try { storeSet('cfg:wdata', JSON.stringify(WDATA.data)); } catch (e) {} }, 800); }
 let centsDirty = false;
-async function centsLoad() { if (CENTS.ready) return; CENTS.ready = true; CENTS.loading = true; try { const got = await storeCmd([['GET', 'cfg:cents']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o) { for (const f of ['bal', 'inv', 'wear', 'hue']) { if (o[f] && typeof o[f] === 'object') { for (const u of Object.keys(o[f])) if (!(u in CENTS[f])) CENTS[f][u] = o[f][u]; } } } } } catch (e) {} CENTS.loading = false; }
-function centsSave() { if (centsDirty) return; centsDirty = true; setTimeout(() => { centsDirty = false; if (CENTS.loading) { centsSave(); return; } try { storeSet('cfg:cents', JSON.stringify({ bal: CENTS.bal, inv: CENTS.inv, wear: CENTS.wear, hue: CENTS.hue })); } catch (e) {} }, 800); }
+async function centsLoad() { if (CENTS.ready) return; CENTS.ready = true; CENTS.loading = true; try { const got = await storeCmd([['GET', 'cfg:cents']], 6000); if (got && got[0]) { const o = JSON.parse(got[0]); if (o) { for (const f of ['bal', 'inv', 'wear', 'hue', 'cos']) { if (o[f] && typeof o[f] === 'object') { for (const u of Object.keys(o[f])) if (!(u in CENTS[f])) CENTS[f][u] = o[f][u]; } } } } } catch (e) {} CENTS.loading = false; }
+function centsSave() { if (centsDirty) return; centsDirty = true; setTimeout(() => { centsDirty = false; if (CENTS.loading) { centsSave(); return; } try { storeSet('cfg:cents', JSON.stringify({ bal: CENTS.bal, inv: CENTS.inv, wear: CENTS.wear, hue: CENTS.hue, cos: CENTS.cos })); } catch (e) {} }, 800); }
 async function centsAward(user, n) {
   try {
     if (!user) return 0;
@@ -19068,6 +19068,11 @@ function world3dMod() {
       getCents: (u) => { try { centsLoad(); return CENTS.bal[String(u).toLowerCase()] || 0; } catch (e) { return 0; } },
       getHue: (u) => { try { centsLoad(); const h = CENTS.hue[String(u).toLowerCase()]; return (typeof h === 'number') ? h : null; } catch (e) { return null; } },
       spendCents: async (u, n) => { try { const k = String(u).toLowerCase(); await centsLoad(); const bal = CENTS.bal[k] || 0; if (bal < n) return -1; CENTS.bal[k] = bal - n; centsSave(); return CENTS.bal[k]; } catch (e) { return -1; } },
+      getCos: (u) => { try { centsLoad(); return CENTS.cos[String(u).toLowerCase()] || null; } catch (e) { return null; } },
+      cosBuy: async (u, id, price) => { try { const k = String(u).toLowerCase(); await centsLoad(); const c = CENTS.cos[k] || (CENTS.cos[k] = { own: [], wear: {} }); if (!Array.isArray(c.own)) c.own = []; if (c.own.includes(id)) return { err: 'already owned' }; const bal = CENTS.bal[k] || 0; if (bal < price) return { err: 'not enough six cents' }; CENTS.bal[k] = bal - price; c.own.push(id); centsSave(); return { bal: CENTS.bal[k] }; } catch (e) { return { err: 'buy failed' }; } },
+      cosWear: (u, slot, id) => { try { centsLoad(); const k = String(u).toLowerCase(); const c = CENTS.cos[k] || (CENTS.cos[k] = { own: [], wear: {} }); if (!c.wear || typeof c.wear !== 'object') c.wear = {}; if (slot === 'hue') CENTS.hue[k] = id; else c.wear[slot] = id; centsSave(); return { ok: true }; } catch (e) { return { err: 'wear failed' }; } },
+      awardCents: async (u, n) => { try { await centsAward(u, n); return true; } catch (e) { return false; } },
+      cosPatch: (u, patch) => { try { centsLoad(); const k = String(u).toLowerCase(); const c = CENTS.cos[k] || (CENTS.cos[k] = { own: [], wear: {} }); Object.assign(c, patch); centsSave(); return { ok: true }; } catch (e) { return { err: 'patch failed' }; } },
       storeReady: () => { try { centsLoad(); wdataLoad(); return !CENTS.loading && !WDATA.loading; } catch (e) { return false; } },
       FONT_LINKS, GALAXY_CSS, SIDEBAR_HTML, STAR_CANVAS, NOTIF_JS,
     });

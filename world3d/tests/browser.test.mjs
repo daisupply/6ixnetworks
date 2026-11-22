@@ -515,6 +515,69 @@ ok(page._errs.length === 0, 'desktop: zero page errors', page._errs.slice(0, 3))
   await page.close();
 }
 
+/* ---- 8) v544: wardrobe/games DOM + cosmetics state plumbing ----
+ * the deep flows (door walks) are server-proven; here we verify the
+ * real client carries the panels and the ping cosmetics land in
+ * __w3state with the free defaults. */
+{
+  const { page } = await bootSmall();
+  const dom = await page.evaluate(() => {
+    const w = document.getElementById('w3ward'); const g = document.getElementById('w3games');
+    return { ward: !!w, wardHidden: w ? w.hidden : null, games: !!g, gamesHidden: g ? g.hidden : null,
+      hue: !!document.getElementById('w3hue'), save: !!document.getElementById('w3wardsave'),
+      game2048: !!document.querySelector('#w3games a[href="/g/2048"]') };
+  });
+  ok(dom.ward && dom.wardHidden && dom.hue && dom.save, 'v544: wardrobe panel present, hidden, with hue slider + save', dom);
+  ok(dom.games && dom.gamesHidden && dom.game2048, 'v544: games overlay present, hidden, links the real 2048', dom);
+  const st = await state(page);
+  ok(!!st && !!st.wear && st.wear.hat === 'none' && st.wear.hair === 'crest' && st.wear.acc === 'none', 'v544: state carries default wear from the ping cos', st && st.wear);
+  ok(page._errs.length === 0, 'v544: zero page errors', page._errs.slice(0, 3));
+  await page.close();
+}
+
+/* ---- 9) v545: quiz/map DOM + shard/district state plumbing ---- */
+{
+  const { page } = await bootSmall();
+  const dom = await page.evaluate(() => {
+    const q = document.getElementById('w3quiz'); const m = document.getElementById('w3map');
+    return { quiz: !!q, quizHidden: q ? q.hidden : null, choices: !!document.getElementById('w3quizchoices'),
+      map: !!m, mapHidden: m ? m.hidden : null, cv: !!document.getElementById('w3mapcv'), btn: !!document.getElementById('w3mapbtn') };
+  });
+  ok(dom.quiz && dom.quizHidden && dom.choices, 'v545: trivia quiz panel present + hidden', dom);
+  ok(dom.map && dom.mapHidden && dom.cv && dom.btn, 'v545: world map panel + canvas + HUD button present', dom);
+  const opened = await page.evaluate(() => { document.getElementById('w3mapbtn').click(); return !document.getElementById('w3map').hidden; });
+  ok(opened, 'v545: map button opens the world map');
+  const drawn = await page.evaluate(() => {
+    const cv = document.getElementById('w3mapcv'); const g = cv.getContext('2d');
+    const d = g.getImageData(0, 0, cv.width, cv.height).data;
+    let lit = 0; for (let i = 0; i < d.length; i += 401) if (d[i] + d[i + 1] + d[i + 2] > 60) lit++;
+    return lit;
+  });
+  ok(drawn > 40, 'v545: map canvas actually paints the town (sampled lit pixels)', drawn);
+  await page.evaluate(() => document.getElementById('w3mapclose').click());
+  const st = await state(page);
+  ok(!!st && st.shards === 0 && typeof st.district === 'string' && st.mapOpen === false, 'v545: state carries shards/district/map fields', st && { shards: st.shards, district: st.district });
+  ok(page._errs.length === 0, 'v545: zero page errors', page._errs.slice(0, 3));
+  await page.close();
+}
+
+/* ---- 10) v546: emotes in the real client + perf state ---- */
+{
+  const { page } = await bootSmall();
+  const dom = await page.evaluate(() => ({ wave: !!document.getElementById('w3wavebtn'), party: !!document.getElementById('w3partybtn') }));
+  ok(dom.wave && dom.party, 'v546: emote buttons present', dom);
+  const st0 = await state(page);
+  ok(!!st0 && st0.emote === null && typeof st0.calls === 'number', 'v546: state carries emote + draw calls', st0 && { emote: st0.emote, calls: st0.calls });
+  await page.keyboard.press('Digit1');
+  const waved = await waitDom(page, () => window.__w3state && window.__w3state().emote === 'wave', 6000);
+  ok(!!waved, 'v546: pressing 1 waves (state reports the emote)');
+  await page.keyboard.press('Digit2');
+  const partied = await waitDom(page, () => window.__w3state && window.__w3state().emote === 'celebrate', 6000);
+  ok(!!partied, 'v546: pressing 2 celebrates');
+  ok(page._errs.length === 0, 'v546: zero page errors', page._errs.slice(0, 3));
+  await page.close();
+}
+
 await browser.close();
 
 console.log('BROWSER RESULT: ' + pass + ' pass, ' + fail + ' fail');
