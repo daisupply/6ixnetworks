@@ -196,6 +196,14 @@ function animateAvatar(g, st, dt, now) {
   st.phase = (st.phase || 0) + dt * (2.2 + st.speed * 1.05);
   const sf = clamp(st.speed / WALK, 0, 1.6);
   const swing = Math.sin(st.phase) * 0.62 * Math.min(1, sf);
+  if (st.pose === 'sit') {
+    P.legL.rotation.x = -1.1; P.legR.rotation.x = -1.1;
+    P.armL.rotation.x = -0.45; P.armR.rotation.x = -0.45;
+    P.armL.rotation.z = 0.14; P.armR.rotation.z = -0.14;
+    P.body.position.y = 1.32; P.head.position.y = 2.06; P.body.rotation.x = 0.05;
+    g.scale.set(1, 1 + Math.sin(now / 620) * 0.008, 1);
+    return;
+  }
   if (!st.grounded) {
     P.legL.rotation.x = -0.55; P.legR.rotation.x = 0.35;
     P.armL.rotation.x = -2.6; P.armR.rotation.x = -2.6;
@@ -816,6 +824,301 @@ function buildTown() {
     });
     scene.add(fIM);
   }
+  buildCafe();
+}
+
+
+/* ---------- v543: interactions, doors, interiors, seats, npcs ----------
+ * one registry drives every prompt: { zone, x, z, r, label, action }.
+ * the nearest in-range entry in the player's zone wins; E (desktop) or
+ * the touch button runs it. interiors are real geometry far east of
+ * the town (x ~2000) — the server zones presence by position and only
+ * allows crossing zones through a validated door warp. */
+let sitting = null, warpNext = false, curPrompt = null;
+let dlgOpen = false, menuOpen = false, scanTick = 0;
+const INTERACT = [];
+const NPCS = [];
+const ZONE_BOXES = { coffee: { minX: 1989, maxX: 2011, minZ: -9, maxZ: 9 } };
+function zoneNow() {
+  for (const id in ZONE_BOXES) { const b = ZONE_BOXES[id]; if (px >= b.minX && px <= b.maxX && pz >= b.minZ && pz <= b.maxZ) return id; }
+  if (Math.abs(px) <= 195 && Math.abs(pz) <= 118) return 'town';
+  return 'void';
+}
+function addInteract(zone, x, z, r, label, action, when) { INTERACT.push({ zone, x, z, r, label, action, when }); }
+
+/* ----- doors ----- */
+function warpTo(x, z, ry2) {
+  px = x; pz = z; vx = 0; vz = 0; vy = 0; py = 0;
+  if (ry2 != null) { ry = ry2; camYaw = ry2; camYawT = ry2; }
+  followX = x; followZ = z; warpNext = true; ping(true);
+}
+function fadeThrough(fn) {
+  if (transitioning) return;
+  transitioning = true; clearInput(); setPrompt(null);
+  R.fade.classList.add('on');
+  setTimeout(() => { fn(); setTimeout(() => { R.fade.classList.remove('on'); transitioning = false; }, 140); }, 300);
+}
+function enterCafe() { standUp(); fadeThrough(() => warpTo(2000, 5.5, Math.PI)); }
+function exitCafe() { standUp(); fadeThrough(() => warpTo(-28.6, -35.0, 0)); }
+
+/* ----- seats ----- */
+function seatTaken(s) {
+  for (const rm of remotes.values()) if (rm.sit && Math.hypot(rm.tx - s.x, rm.tz - s.z) < 0.6) return true;
+  return false;
+}
+function sitDown(s) {
+  sitting = s; px = s.x; pz = s.z; ry = s.ry; vx = 0; vz = 0; clearInput(); ping(true);
+}
+function standUp() { if (!sitting) return; sitting = null; ping(true); }
+
+/* ----- dialogue + menu ----- */
+let dlgLines = [], dlgIdx = 0;
+function openDlg(name, lines) {
+  dlgOpen = true; dlgLines = lines; dlgIdx = 0;
+  R.dlgname.textContent = name; R.dlgtext.textContent = lines[0];
+  R.dlgnext.textContent = lines.length > 1 ? 'next' : 'close';
+  R.dlg.hidden = false; clearInput(); setPrompt(null);
+}
+function advanceDlg() {
+  dlgIdx++;
+  if (dlgIdx >= dlgLines.length) { dlgOpen = false; R.dlg.hidden = true; return; }
+  R.dlgtext.textContent = dlgLines[dlgIdx];
+  R.dlgnext.textContent = dlgIdx >= dlgLines.length - 1 ? 'close' : 'next';
+}
+const MENU3 = [
+  { id: 'espresso', name: 'starlight espresso', price: 30, desc: 'small, strong, a little sparkly' },
+  { id: 'mocha', name: 'mocha', price: 40, desc: 'the classic — chocolate + moonroast' },
+  { id: 'nebula', name: 'nebula latte', price: 65, desc: 'purple, sweet, the house favorite' },
+];
+function openMenu() {
+  menuOpen = true; R.menu.hidden = false; R.menures.textContent = '';
+  R.menubal.textContent = 'ur balance: ' + R.bal.textContent;
+  R.menulist.innerHTML = '';
+  for (const m of MENU3) {
+    const row = document.createElement('div'); row.className = 'w3mi';
+    const tx = document.createElement('div'); tx.className = 'w3mi-tx';
+    const nm = document.createElement('div'); nm.className = 'w3mi-nm'; nm.textContent = m.name + ' — ' + m.price + '¢';
+    const ds = document.createElement('div'); ds.className = 'w3mi-ds'; ds.textContent = m.desc;
+    tx.appendChild(nm); tx.appendChild(ds); row.appendChild(tx);
+    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'w3mi-buy'; btn.textContent = 'order';
+    btn.addEventListener('click', () => buyItem(m.id, btn));
+    row.appendChild(btn); R.menulist.appendChild(row);
+  }
+  clearInput(); setPrompt(null);
+}
+function closeMenu() { menuOpen = false; R.menu.hidden = true; }
+async function buyItem(id, btn) {
+  btn.disabled = true;
+  try {
+    const r = await (await fetch('/api/world3d/buy', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ item: id }) })).json();
+    if (r.ok) {
+      R.menures.textContent = 'one ' + r.name + ', coming up. (-' + r.price + '¢)';
+      R.bal.textContent = '¢ ' + r.bal + ' six cents';
+      R.menubal.textContent = 'ur balance: ' + R.bal.textContent;
+      toast(r.name + ' — enjoy');
+    } else {
+      R.menures.textContent = r.err || 'that did not work';
+      if (typeof r.bal === 'number') { R.bal.textContent = '¢ ' + r.bal + ' six cents'; R.menubal.textContent = 'ur balance: ' + R.bal.textContent; }
+    }
+  } catch (e) { R.menures.textContent = 'network hiccup — try again'; }
+  btn.disabled = false;
+}
+
+/* ----- prompt machinery ----- */
+function setPrompt(it) {
+  curPrompt = it;
+  if (!it) { R.prompt.hidden = true; R.use.hidden = true; return; }
+  const lbl = typeof it.label === 'function' ? it.label() : it.label;
+  const touch = document.body.classList.contains('touch');
+  R.prompt.textContent = (touch ? '' : 'E — ') + lbl;
+  R.prompt.hidden = false;
+  R.use.textContent = lbl;
+  R.use.hidden = !touch;
+}
+function scanPrompts() {
+  if (dlgOpen || menuOpen || transitioning || sessionConflict) { setPrompt(null); return; }
+  if (sitting) { setPrompt({ label: 'stand up', action: standUp }); return; }
+  const z = zoneNow(); let best = null, bd = 1e9;
+  for (const it of INTERACT) {
+    if (it.zone !== z) continue;
+    if (it.when && !it.when()) continue;
+    const d = Math.hypot(px - it.x, pz - it.z);
+    if (d <= it.r && d < bd) { bd = d; best = it; }
+  }
+  setPrompt(best);
+}
+function tryInteract() {
+  if (dlgOpen) { advanceDlg(); return; }
+  if (menuOpen || transitioning) return;
+  if (curPrompt) { const a = curPrompt.action; setPrompt(null); a(); }
+}
+
+/* ----- the coffee shop interior (world x 1989..2011) ----- */
+function buildCafe() {
+  const CX = 2000;
+  const M = (c, o) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.88, metalness: 0.02 }, o || {}));
+  const box = (w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; scene.add(m); return m; };
+  const wood = M(0x6b4226, { roughness: 0.92 }), woodDark = M(0x3d2417, { roughness: 0.95 });
+  const plankTex = canvasTex(128, 128, (g, w, h) => {
+    g.fillStyle = '#5a3a20'; g.fillRect(0, 0, w, h);
+    g.fillStyle = 'rgba(0,0,0,.25)';
+    for (let y = 0; y < h; y += 21) g.fillRect(0, y, w, 2);
+    for (let i = 0; i < 30; i++) { g.fillStyle = 'rgba(255,210,150,.05)'; g.fillRect((i * 53) % w, (i * 37) % h, 22, 3); }
+  }, 5, 4);
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(22.6, 0.2, 18.6), M(0xffffff, { map: plankTex, roughness: 0.9 }));
+  floor.position.set(CX, -0.1, 0); floor.receiveShadow = true; scene.add(floor);
+  const rug = new THREE.Mesh(new THREE.CircleGeometry(3.4, 26), M(0x4c1d5e, { roughness: 1 }));
+  rug.rotation.x = -Math.PI / 2; rug.position.set(CX - 2, 0.02, 1); rug.receiveShadow = true; scene.add(rug);
+  const wallTex = canvasTex(256, 128, (g, w, h) => {
+    g.fillStyle = '#8a6a9e'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#3d2417'; g.fillRect(0, h * 0.62, w, h * 0.38);
+    g.fillStyle = '#c9a227'; g.fillRect(0, h * 0.62 - 3, w, 3);
+    g.fillStyle = 'rgba(255,255,255,.05)'; for (let x = 0; x < w; x += 32) g.fillRect(x, 0, 2, h * 0.62);
+  }, 3, 1);
+  const wallM = M(0xffffff, { map: wallTex, roughness: 0.95 });
+  // walls (door gap in the south wall; a collider plug keeps the gap
+  // shut — leaving happens through the door interaction, not walking)
+  box(22.6, 4.3, 0.3, wallM, CX, 2.15, -9.15);
+  box(10.1, 4.3, 0.3, wallM, CX - 6.05, 2.15, 9.15); box(10.1, 4.3, 0.3, wallM, CX + 6.05, 2.15, 9.15);
+  box(2.4, 1.5, 0.3, wallM, CX, 3.55, 9.15);
+  box(0.3, 4.3, 18.6, wallM, CX - 11.15, 2.15, 0); box(0.3, 4.3, 18.6, wallM, CX + 11.15, 2.15, 0);
+  box(22.6, 0.25, 18.6, woodDark, CX, 4.42, 0);
+  for (let i = -1; i <= 1; i++) box(22.6, 0.22, 0.3, woodDark, CX, 4.24, i * 6);
+  boxColliders.push(
+    { minX: CX - 11.3, maxX: CX + 11.3, minZ: -9.5, maxZ: -8.8 },
+    { minX: CX - 11.3, maxX: CX - 0.9, minZ: 8.8, maxZ: 9.5 },
+    { minX: CX + 0.9, maxX: CX + 11.3, minZ: 8.8, maxZ: 9.5 },
+    { minX: CX - 1.1, maxX: CX + 1.1, minZ: 8.7, maxZ: 9.5 },
+    { minX: CX - 11.5, maxX: CX - 10.8, minZ: -9.3, maxZ: 9.3 },
+    { minX: CX + 10.8, maxX: CX + 11.5, minZ: -9.3, maxZ: 9.3 });
+  // the door itself (south wall, inside face)
+  const doorM = box(1.7, 2.8, 0.12, wood, CX, 1.4, 8.95);
+  doorM.castShadow = false;
+  const knob = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), M(0xc9a227, { metalness: 0.7, roughness: 0.3 }));
+  knob.position.set(CX - 0.55, 1.4, 8.85); scene.add(knob);
+  // windows on the side walls: warm night glass, no see-through
+  const winTex = canvasTex(64, 96, (g, w, h) => {
+    const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#232a5e'); gr.addColorStop(1, '#3a2a6e');
+    g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#f3efff'; g.beginPath(); g.arc(46, 22, 7, 0, 7); g.fill();
+    g.fillStyle = 'rgba(249,168,212,.5)'; g.fillRect(4, h - 16, 10, 12); g.fillRect(w - 14, h - 20, 10, 16);
+  });
+  for (const sx of [-1, 1]) for (let i = 0; i < 3; i++) {
+    const wz = -5.4 + i * 5.4;
+    const win = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 2.0), new THREE.MeshBasicMaterial({ map: winTex }));
+    win.position.set(CX + sx * 10.96, 2.3, wz); win.rotation.y = sx < 0 ? Math.PI / 2 : -Math.PI / 2; scene.add(win);
+    const fr = box(0.08, 2.2, 2.1, woodDark, CX + sx * 11.0, 2.3, wz); fr.castShadow = false;
+  }
+  // counter run along the north wall + back counter + machine + case
+  box(11, 1.08, 1.3, woodDark, CX - 1.5, 0.54, -6.2);
+  box(11.4, 0.09, 1.6, M(0xd8c8a8, { roughness: 0.5 }), CX - 1.5, 1.13, -6.2);
+  box(11, 0.95, 0.8, wood, CX - 1.5, 0.48, -8.2);
+  boxColliders.push({ minX: CX - 7, maxX: CX + 4, minZ: -6.9, maxZ: -5.5 }, { minX: CX - 7, maxX: CX + 4, minZ: -8.6, maxZ: -7.8 });
+  const mach = box(1.15, 0.95, 0.9, M(0x8a8fa8, { metalness: 0.65, roughness: 0.35 }), CX - 4.2, 1.65, -6.2);
+  mach.castShadow = false;
+  const boiler = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.7, 12), M(0xb9bed4, { metalness: 0.7, roughness: 0.3 }));
+  boiler.position.set(CX - 4.2, 2.45, -6.2); scene.add(boiler);
+  for (let i = 0; i < 3; i++) {
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.07, 0.14, 8), M(0xf3efff, { roughness: 0.4 }));
+    cup.position.set(CX - 2.6 + i * 0.5, 1.25, -6.1); scene.add(cup);
+  }
+  const caseM = box(1.9, 0.55, 1.0, M(0xbfd9ff, { transparent: true, opacity: 0.3, roughness: 0.1 }), CX + 1.6, 1.45, -6.2);
+  caseM.castShadow = false;
+  for (let i = 0; i < 3; i++) {
+    const muf = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8), M(i === 1 ? 0xf472b6 : 0xc98a4b, { roughness: 0.9 }));
+    muf.position.set(CX + 1.1 + i * 0.5, 1.28, -6.2); muf.scale.y = 0.75; scene.add(muf);
+  }
+  // menu board (prices match the server menu — server is the source)
+  const menuTex = canvasTex(512, 200, (g, w, h) => {
+    g.fillStyle = '#17102c'; g.fillRect(0, 0, w, h);
+    g.strokeStyle = '#c9a227'; g.lineWidth = 4; g.strokeRect(6, 6, w - 12, h - 12);
+    g.fillStyle = '#ffd9a0'; g.font = '800 30px Inter'; g.textAlign = 'center'; g.fillText('— MENU —', w / 2, 44);
+    g.font = '600 24px Inter'; g.textAlign = 'left';
+    g.fillText('starlight espresso', 40, 92); g.fillText('nebula latte', 40, 130); g.fillText('mocha', 40, 168);
+    g.textAlign = 'right'; g.fillText('30¢', w - 40, 92); g.fillText('65¢', w - 40, 130); g.fillText('40¢', w - 40, 168);
+  });
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 1.9), new THREE.MeshBasicMaterial({ map: menuTex }));
+  board.position.set(CX - 1.5, 2.8, -8.96); scene.add(board);
+  // shelves + jars on the west wall
+  for (let s = 0; s < 3; s++) {
+    box(0.35, 0.06, 3.4, wood, CX - 10.8, 1.2 + s * 0.7, -3);
+    for (let j = 0; j < 4; j++) {
+      const jar = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.42, 8), M([0xa78bfa, 0xf472b6, 0xffd257, 0x4ade80][(s + j) % 4], { roughness: 0.4 }));
+      jar.position.set(CX - 10.8, 1.44 + s * 0.7, -4.2 + j * 0.8); scene.add(jar);
+    }
+  }
+  boxColliders.push({ minX: CX - 11, maxX: CX - 10.3, minZ: -4.8, maxZ: -1.2 });
+  // pendant lights + the room's warm lights
+  const shadeM = M(0xffc98a, { emissive: 0xffb36b, emissiveIntensity: 1.6 });
+  [[CX - 5.5, -0.5], [CX, 1], [CX + 5, -0.5], [CX - 1.5, -4.6]].forEach(([lx, lz]) => {
+    const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.1, 5), woodDark);
+    cord.position.set(lx, 3.75, lz); scene.add(cord);
+    const sh = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.4, 12, 1, true), shadeM);
+    sh.position.set(lx, 3.15, lz); scene.add(sh);
+  });
+  const pl1 = new THREE.PointLight(0xffc98a, 480, 19, 2); pl1.position.set(CX, 3.1, 0); scene.add(pl1);
+  const pl2 = new THREE.PointLight(0xffb36b, 260, 11, 2); pl2.position.set(CX - 1.5, 2.9, -5.6); scene.add(pl2);
+  // tables + chairs (chairs are seats; tables collide, chairs don't)
+  const chairM = M(0x7a4a8a, { roughness: 0.8 }), tableM = M(0xd8c8a8, { roughness: 0.5 });
+  const SEATS = [];
+  function chair(x, z, ry2) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry2; scene.add(g);
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.07, 0.52), chairM); seat.position.y = 0.55; seat.castShadow = true; g.add(seat);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.75, 0.07), chairM); back.position.set(0, 0.95, -0.24); g.add(back);
+    const ped = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.52, 0.4), woodDark); ped.position.y = 0.26; g.add(ped);
+    SEATS.push({ x, z, ry: ry2 });
+  }
+  function table(x, z) {
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.88, 0.88, 0.07, 18), tableM);
+    top.position.set(x, 0.76, z); top.castShadow = true; scene.add(top);
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.74, 8), woodDark);
+    leg.position.set(x, 0.37, z); scene.add(leg);
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.06, 0.13, 8), M(0xf3efff, { roughness: 0.4 }));
+    cup.position.set(x + 0.3, 0.86, z + 0.2); scene.add(cup);
+    addCollider(x, z, 0.8);
+    chair(x - 1.45, z, Math.PI / 2); chair(x + 1.45, z, -Math.PI / 2);
+  }
+  table(CX - 5.5, 1.0); table(CX - 5.5, -3.5); table(CX + 4.5, 2.0); table(CX + 5, -3.0);
+  // sofa along the east wall, two seats
+  const sofaM = M(0x31235e, { roughness: 0.95 });
+  box(1.1, 0.55, 2.8, sofaM, CX + 10.2, 0.28, 3.5);
+  box(0.3, 1.0, 2.8, sofaM, CX + 10.75, 0.5, 3.5);
+  box(1.1, 0.25, 0.25, sofaM, CX + 10.2, 0.62, 2.15); box(1.1, 0.25, 0.25, sofaM, CX + 10.2, 0.62, 4.85);
+  SEATS.push({ x: CX + 10.2, z: 2.85, ry: -Math.PI / 2 }, { x: CX + 10.2, z: 4.15, ry: -Math.PI / 2 });
+  // plants in the corners
+  for (const [qx, qz] of [[CX - 10.3, 8.2], [CX + 10.3, -8.2]]) {
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.26, 0.55, 10), M(0x8a2f3e, { roughness: 0.8 }));
+    pot.position.set(qx, 0.28, qz); scene.add(pot);
+    for (let i = 0; i < 3; i++) {
+      const blob = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42 - i * 0.08, 1), M(0x1d6b3c, { flatShading: true, roughness: 1 }));
+      blob.position.set(qx + (i - 1) * 0.3, 0.85 + i * 0.22, qz + (i % 2) * 0.24 - 0.12); blob.castShadow = true; scene.add(blob);
+    }
+    addCollider(qx, qz, 0.5);
+  }
+  // mira, the barista
+  const mira = makeAvatar(25, 'mira');
+  mira.position.set(CX - 2.2, 0, -7.35); mira.rotation.y = 0.15;
+  scene.add(mira);
+  NPCS.push({ g: mira, st: { phase: 1.3, speed: 0, grounded: true, landT: 0, pose: 'stand' } });
+  // ---- interactions for this room + its town door ----
+  for (const s of SEATS) {
+    addInteract('coffee', s.x, s.z, 1.7,
+      () => seatTaken(s) ? 'seat taken' : 'sit',
+      () => { if (seatTaken(s)) { toast('someone is sitting there'); return; } sitDown(s); });
+  }
+  // seal the staff corridor: counter + back counter + the gap between
+  // them are ONE solid for the player, or the 0.4u gap pins them
+  // between two box colliders forever (found by the test walks).
+  boxColliders.push({ minX: CX - 6.1, maxX: CX + 5.1, minZ: -8.35, maxZ: -5.45 });
+  addInteract('coffee', CX + 0.5, -4.4, 2.4, 'order a drink', openMenu);
+  addInteract('coffee', CX - 2.2, -5.15, 1.6, 'talk to mira', () => openDlg('@mira — barista', [
+    'welcome in. sit anywhere u like — the sofa is the good seat.',
+    'the nebula latte is the one. purple, sweet, a little sparkly.',
+    'u look like u have been walking that plaza all night.',
+    'regulars get the good mugs. u are a regular now.',
+  ]));
+  addInteract('coffee', CX, 7.2, 2.5, 'leave the coffee shop', exitCafe);
+  addInteract('town', -28.6, -35.0, 2.7, 'enter the coffee shop', enterCafe);
 }
 
 /* ---------- networking: ping-poll presence, like the 2d world ---------- */
@@ -834,7 +1137,8 @@ async function ping(sendPos) {
   if (sendPos === undefined) sendPos = true;
   let res;
   try {
-    res = await fetch('/api/world3d/ping', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(sendPos ? { x: Math.round(px * 10) / 10, z: Math.round(pz * 10) / 10, ry, sid: mySid } : { sid: mySid }) });
+    const wn = warpNext; warpNext = false;
+    res = await fetch('/api/world3d/ping', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(sendPos ? { x: Math.round(px * 10) / 10, z: Math.round(pz * 10) / 10, ry, sid: mySid, sit: sitting ? 1 : 0, warp: wn } : { sid: mySid }) });
   } catch (e) { return { ok: false, kind: 'network', err: 'network error' }; }
   let r = null;
   try { r = await res.json(); } catch (e) { return { ok: false, kind: 'badjson', err: 'non-JSON reply (HTTP ' + res.status + ')' }; }
@@ -868,7 +1172,7 @@ async function ping(sendPos) {
       rm = { group, tx: p.x, tz: p.z, try_: p.ry || 0, st: { phase: Math.random() * 6, speed: 0, grounded: true, landT: 0 }, lx: p.x, lz: p.z };
       remotes.set(p.u, rm);
     }
-    rm.tx = p.x; rm.tz = p.z; rm.try_ = p.ry || 0;
+    rm.tx = p.x; rm.tz = p.z; rm.try_ = p.ry || 0; rm.sit = p.sit ? 1 : 0;
   }
   for (const [u, rm] of remotes) {
     if (!seen.has(u)) { scene.remove(rm.group); disposeAvatar(rm.group); remotes.delete(u); }
@@ -917,6 +1221,8 @@ function onKey(down) {
     if (e.code === 'Space' || e.code.startsWith('Arrow')) e.preventDefault();
     if (e.code === 'Space' && down) doJump();
     if (e.code === 'KeyP' && down && R.set) R.set.hidden = !R.set.hidden;
+    if (e.code === 'KeyE' && down) tryInteract();
+    if (down && sitting && (e.code === 'KeyW' || e.code === 'KeyA' || e.code === 'KeyS' || e.code === 'KeyD' || e.code === 'Space')) standUp();
     if (down) ensureAudio();
   };
 }
@@ -992,6 +1298,10 @@ function bindInput() {
     knob.style.transform = 'translate(' + (dx * 34) + 'px,' + (dy * 34) + 'px)';
   }
   R.jump.addEventListener('pointerdown', (e) => { e.preventDefault(); ensureAudio(); doJump(); });
+  R.use.addEventListener('click', () => tryInteract());
+  R.dlgnext.addEventListener('click', () => advanceDlg());
+  R.dlg.addEventListener('click', (e) => { if (e.target === R.dlg) advanceDlg(); });
+  $('w3menuclose').addEventListener('click', () => closeMenu());
   R.sprint.addEventListener('pointerdown', (e) => { e.preventDefault(); sprintTouch = true; R.sprint.classList.add('on'); });
   const endSprint = () => { sprintTouch = false; R.sprint.classList.remove('on'); };
   R.sprint.addEventListener('pointerup', endSprint); R.sprint.addEventListener('pointercancel', endSprint); R.sprint.addEventListener('pointerleave', endSprint);
@@ -1017,7 +1327,8 @@ function updateCamera(dt) {
   let maxT = 1;
   for (const s of camSpheres) { const t = segSphereT(hx, hy, hz, cx, cy, cz, s); if (t >= 0) maxT = Math.min(maxT, t); }
   for (const b of camBoxes) { const t = segBoxT(hx, hy, hz, cx, cy, cz, b); if (t >= 0) maxT = Math.min(maxT, t); }
-  const wantDist = SET.camDist * clamp(maxT * 0.94, 0.12, 1);
+  let wantDist = SET.camDist * clamp(maxT * 0.94, 0.12, 1);
+  if (zoneNow() !== 'town') wantDist = Math.min(wantDist, 6.2); // indoor boom clamp
   const rate = wantDist < camDistEff ? 22 : 6; // pull in fast, ease back out
   camDistEff += (wantDist - camDistEff) * dampK(rate, dt);
   const inv = camDistEff / SET.camDist;
@@ -1039,7 +1350,7 @@ function loop() {
   // input direction (keyboard + joystick), camera-relative.
   // input is dead until READY and while a transition screen is active.
   let ix = 0, iz = 0;
-  if (!transitioning && !sessionConflict && (bootState === 'READY' || bootState === 'RECONNECTING')) {
+  if (!transitioning && !sessionConflict && !sitting && !dlgOpen && !menuOpen && (bootState === 'READY' || bootState === 'RECONNECTING')) {
   if (keys.KeyW || keys.ArrowUp) iz -= 1;
   if (keys.KeyS || keys.ArrowDown) iz += 1;
   if (keys.KeyA || keys.ArrowLeft) ix -= 1;
@@ -1074,8 +1385,12 @@ function loop() {
   }
   if (!wasGrounded && grounded) mySt.landT = 0.16;
 
-  // bounds + colliders
-  px = clamp(px, -BOUND_X, BOUND_X); pz = clamp(pz, -BOUND_Z, BOUND_Z);
+  // bounds + colliders — ZONE-AWARE: interiors live far outside the
+  // town bounds; clamping to town while inside yanked the player to
+  // the town edge the moment they moved (the v543 cafe bug).
+  const zb = zoneNow();
+  if (zb === 'town') { px = clamp(px, -BOUND_X, BOUND_X); pz = clamp(pz, -BOUND_Z, BOUND_Z); }
+  else { const B = ZONE_BOXES[zb]; if (B) { px = clamp(px, B.minX + 0.6, B.maxX - 0.6); pz = clamp(pz, B.minZ + 0.6, B.maxZ - 0.6); } }
   for (const c of colliders) {
     const dx = px - c.x, dz = pz - c.z, d = Math.hypot(dx, dz), min = c.r + 0.55;
     if (d > 0.001 && d < min) { px = c.x + dx / d * min; pz = c.z + dz / d * min; }
@@ -1094,9 +1409,9 @@ function loop() {
   // my avatar + animation
   const meGroup = scene.userData.meGroup;
   if (meGroup) {
-    meGroup.position.set(px, py, pz);
+    meGroup.position.set(px, sitting ? 0.04 : py, pz);
     meGroup.rotation.y = ry;
-    mySt.speed = speedSm; mySt.grounded = grounded;
+    mySt.speed = speedSm; mySt.grounded = grounded; mySt.pose = sitting ? 'sit' : 'stand';
     animateAvatar(meGroup, mySt, dt, now);
   }
   // remotes: interpolate + animate from their real speed
@@ -1107,9 +1422,15 @@ function loop() {
     g.position.z += (rm.tz - g.position.z) * k;
     const inst = dt > 0 ? Math.hypot(g.position.x - ox, g.position.z - oz) / dt : 0;
     rm.st.speed += (inst - rm.st.speed) * dampK(8, dt);
+    rm.st.pose = rm.sit ? 'sit' : 'stand';
+    g.position.y = rm.sit ? 0.04 : 0;
     g.rotation.y = angLerp(g.rotation.y, rm.try_, k);
     animateAvatar(g, rm.st, dt, now);
   }
+  // npcs idle in place; prompt scan + seat snap (v543)
+  for (const n of NPCS) animateAvatar(n.g, n.st, dt, now);
+  if (sitting) { px = sitting.x; pz = sitting.z; if (joyVec.x || joyVec.y) standUp(); }
+  if ((scanTick = (scanTick + 1) % 5) === 0) scanPrompts();
 
   // ambient life: portal swirl, fountain spray + water, orb pulse, motes
   if (portalRing) { portalRing.rotation.z = now / 600; portalRing.scale.setScalar(1 + Math.sin(now / 480) * 0.04); }
@@ -1153,7 +1474,7 @@ function loop() {
     // handshake — never one without the other.
     if (handshakeOk && !sessionConflict) { setLoad(100, 'READY'); booted = true; window.__w3booted = true; }
     window.__w3state = function () {
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma) };
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }
@@ -1209,6 +1530,9 @@ function bindSettings() {
 function init() {
   R.barfill = $('w3barfill'); R.loadpct = $('w3loadpct'); R.loadmsg = $('w3loadmsg'); R.loaderr = $('w3loaderr'); R.loadbtns = $('w3loadbtns');
   R.load = $('w3load'); R.wrap = $('w3wrap'); R.cv = $('w3cv'); R.bal = $('w3bal'); R.who = $('w3who'); R.count = $('w3count');
+  R.prompt = $('w3prompt'); R.use = $('w3use'); R.fade = $('w3fade');
+  R.dlg = $('w3dlg'); R.dlgname = $('w3dlgname'); R.dlgtext = $('w3dlgtext'); R.dlgnext = $('w3dlgnext');
+  R.menu = $('w3menu'); R.menulist = $('w3menulist'); R.menubal = $('w3menubal'); R.menures = $('w3menures');
   R.toast = $('w3toast'); R.act = $('w3act'); R.conn = $('w3conn'); R.camh = $('w3camh'); R.conflict = $('w3conflict'); R.reclaim = $('w3reclaim'); R.confback = $('w3confback'); R.joy = $('w3joy'); R.knob = $('w3knob'); R.joyzone = $('w3joyzone');
   R.jump = $('w3jump'); R.sprint = $('w3sprint'); R.setbtn = $('w3setbtn'); R.set = $('w3set'); R.setclose = $('w3setclose');
   R.sens = $('w3sens'); R.camd = $('w3camd'); R.gfxsel = $('w3gfxsel'); R.shadow = $('w3shadow'); R.snd = $('w3snd'); R.vol = $('w3vol');

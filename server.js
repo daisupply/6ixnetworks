@@ -19067,6 +19067,7 @@ function world3dMod() {
       getFx: (u) => { try { coinsLoad(); const f = COINS.fx[String(u).toLowerCase()]; return (f && FXSHOP[f]) ? f : ''; } catch (e) { return ''; } },
       getCents: (u) => { try { centsLoad(); return CENTS.bal[String(u).toLowerCase()] || 0; } catch (e) { return 0; } },
       getHue: (u) => { try { centsLoad(); const h = CENTS.hue[String(u).toLowerCase()]; return (typeof h === 'number') ? h : null; } catch (e) { return null; } },
+      spendCents: async (u, n) => { try { const k = String(u).toLowerCase(); await centsLoad(); const bal = CENTS.bal[k] || 0; if (bal < n) return -1; CENTS.bal[k] = bal - n; centsSave(); return CENTS.bal[k]; } catch (e) { return -1; } },
       storeReady: () => { try { centsLoad(); wdataLoad(); return !CENTS.loading && !WDATA.loading; } catch (e) { return false; } },
       FONT_LINKS, GALAXY_CSS, SIDEBAR_HTML, STAR_CANVAS, NOTIF_JS,
     });

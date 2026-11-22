@@ -84,5 +84,63 @@ const S = await signup(user);
   ok(fresh.j && fresh.j.ok === true && fresh.j.x === 0 && fresh.j.z === 18, 'leave: next ping respawns clean at spawn');
 }
 
+
+/* ---- v543: zones, door warps, roster zoning, sit, buy ---- */
+{
+  const A = await signup('w3zone' + Math.random().toString(36).slice(2, 7));
+  const B = await signup('w3town' + Math.random().toString(36).slice(2, 7));
+  const sidA = { sid: 'za' + Math.random().toString(36).slice(2, 10) };
+  const sidB = { sid: 'zb' + Math.random().toString(36).slice(2, 10) };
+  await ping(A, { x: 0, z: 18, ry: 0, ...sidA });
+  await ping(B, { x: 2, z: 16, ry: 0, ...sidB });
+  // buy: unauthenticated, unknown item, insufficient funds
+  const noauth = await raw('POST', '/api/world3d/buy', { 'content-type': 'application/json' }, { item: 'mocha' });
+  ok(noauth.status === 401, 'buy: unauthenticated rejected', noauth.status);
+  const unk = await raw('POST', '/api/world3d/buy', A.json, { item: 'rocket' });
+  ok(unk.j && unk.j.ok === false, 'buy: unknown item refused');
+  const poor = await raw('POST', '/api/world3d/buy', A.json, { item: 'mocha' });
+  ok(poor.j && poor.j.ok === false && /not enough/.test(poor.j.err || '') && poor.j.bal === 0, 'buy: insufficient funds refused server-side, balance untouched', poor.j);
+  // warp from spawn (not at a door) must be refused
+  const w0 = await ping(A, { x: 2000, z: 5.5, ry: 0, warp: true, ...sidA });
+  ok(w0.j && w0.j.x === 0 && w0.j.zone === 'town', 'warp: refused when not standing at a door', w0.j && { x: w0.j.x, zone: w0.j.zone });
+  // walk A to the coffee shop door in legal steps
+  const stepTo = async (S, sid, tx, tz) => {
+    let cx = (await ping(S, { ...sid })).j, px2 = cx.x, pz2 = cx.z;
+    for (let i = 0; i < 24; i++) {
+      const dx = tx - px2, dz = tz - pz2, d = Math.hypot(dx, dz);
+      if (d < 0.6) break;
+      const st = Math.min(9, d);
+      const r = await ping(S, { x: Math.round((px2 + dx / d * st) * 10) / 10, z: Math.round((pz2 + dz / d * st) * 10) / 10, ry: 0, ...sid });
+      px2 = r.j.x; pz2 = r.j.z;
+    }
+    return { x: px2, z: pz2 };
+  };
+  const atDoor = await stepTo(A, sidA, -28.6, -35.0);
+  ok(Math.hypot(atDoor.x + 28.6, atDoor.z + 35) < 1.6, 'walk: reached the coffee shop door legally', atDoor);
+  const w1 = await ping(A, { x: 2000, z: 5.5, ry: 3.14, warp: true, ...sidA });
+  ok(w1.j && w1.j.x === 2000 && w1.j.zone === 'coffee', 'warp: door warp lands inside the cafe', w1.j && { x: w1.j.x, zone: w1.j.zone });
+  // roster zoning both ways
+  const ra = await ping(A, { ...sidA });
+  ok(ra.j && !ra.j.roster.some((e) => e.u.startsWith('w3town')), 'roster: cafe player does not see town players');
+  const rb = await ping(B, { ...sidB });
+  ok(rb.j && !rb.j.roster.some((e) => e.u.startsWith('w3zone')), 'roster: town player does not see cafe players');
+  // movement inside the cafe works; walking out of the zone does not
+  const mv = await ping(A, { x: 2000, z: 2, ry: 0, ...sidA });
+  ok(mv.j && mv.j.z === 2 && mv.j.zone === 'coffee', 'move: walking inside the cafe accepted');
+  const out = await ping(A, { x: 1980, z: 0, ry: 0, ...sidA });
+  ok(out.j && out.j.x >= 1989, 'move: cross-zone walk refused (position held)', out.j && out.j.x);
+  // B comes in too; sit flag passes through to A's roster
+  await stepTo(B, sidB, -28.6, -35.0);
+  await ping(B, { x: 2000, z: 5.5, ry: 3.14, warp: true, ...sidB });
+  await ping(B, { x: 1995.95, z: 1, ry: 1.57, sit: 1, ...sidB });
+  const ra2 = await ping(A, { ...sidA });
+  const bEntry = ra2.j && ra2.j.roster.find((e) => e.u.startsWith('w3town'));
+  ok(!!bEntry && bEntry.sit === 1, 'roster: seated flag passes through inside the cafe', bEntry);
+  // warp back out
+  await ping(A, { x: 2000, z: 5.5, ry: 3.14, ...sidA });
+  const w2 = await ping(A, { x: -28.6, z: -35, ry: 0, warp: true, ...sidA });
+  ok(w2.j && w2.j.x === -28.6 && w2.j.zone === 'town', 'warp: exit warp returns to the town door', w2.j && { x: w2.j.x, zone: w2.j.zone });
+}
+
 console.log('SERVER RESULT: ' + pass + ' pass, ' + fail + ' fail');
 process.exit(fail ? 1 : 0);

@@ -53,6 +53,55 @@ async function newPage(w, h, touch) {
   return page;
 }
 const state = (page) => page.evaluate(() => window.__w3state && window.__w3state());
+async function creepTo(page, tx, tz, tol) {
+  // burst-walk homing for small interiors: hold W ~0.65s, release,
+  // re-aim. continuous homing overshoots whole rooms between polls
+  // under sandbox throttle (15 u/s x ~1.5s per state read).
+  const t0 = Date.now();
+  while (Date.now() - t0 < 150000) {
+    const s = await state(page);
+    if (!s) break;
+    const dx = tx - s.x, dz = tz - s.z, dist = Math.hypot(dx, dz);
+    if (dist < tol) return true;
+    const wantYaw = Math.atan2(dx, dz);
+    let diff = wantYaw - s.camYaw;
+    while (diff > Math.PI) diff -= 2 * Math.PI; while (diff < -Math.PI) diff += 2 * Math.PI;
+    if (Math.abs(diff) > 0.09) await dragCam(page, Math.max(-260, Math.min(260, -diff / 0.0021)));
+    await page.keyboard.down('KeyW');
+    await sleep(Math.min(700, Math.max(220, dist * 42)));
+    await page.keyboard.up('KeyW');
+    await sleep(250);
+  }
+  return false;
+}
+async function bootSmall() {
+  const page = await newPage(800, 500, false);
+  await page.evaluateOnNewDocument(() => {
+    try { Element.prototype.requestPointerLock = function () { }; } catch (e) { }
+    try { localStorage.setItem('w3settings', JSON.stringify({ sens: 1, camd: 12.2, gfx: 'low', shadows: false, snd: false, vol: 0 })); } catch (e) { }
+  });
+  await page.goto(B + '/world3d?from=portal', { waitUntil: 'load', timeout: 30000 });
+  const s = await pollState(page, (x) => x.booted, 30000);
+  return { page, booted: !!s };
+}
+async function interactWhen(page, promptRe, effect, timeoutMs) {
+  // a human taps E when the prompt is up — and taps again if it did not
+  // take. homing drift can drop the prompt between a poll and a press,
+  // so: press whenever the prompt is showing until the effect lands.
+  const t0 = Date.now();
+  while (Date.now() - t0 < timeoutMs) {
+    if (await effect()) return true;
+    const s = await state(page);
+    if (s && promptRe.test(s.prompt || '')) { await page.keyboard.press('KeyE'); await sleep(800); }
+    else await sleep(250);
+  }
+  return !!(await effect());
+}
+async function waitDom(page, fn, timeoutMs) {
+  const t0 = Date.now();
+  while (Date.now() - t0 < timeoutMs) { if (await page.evaluate(fn).catch(() => false)) return true; await sleep(250); }
+  return false;
+}
 async function pollState(page, fn, timeoutMs) {
   const t0 = Date.now(); let s = null;
   while (Date.now() - t0 < timeoutMs) { s = await state(page); if (s && fn(s)) return s; await sleep(180); }
@@ -424,6 +473,49 @@ ok(page._errs.length === 0, 'desktop: zero page errors', page._errs.slice(0, 3))
   await mp.close();
 }
 
+/* ---- 7) v543: cafe door, interior, sit, menu, dialogue, exit ----
+ * small viewport + low gfx so the sandbox CPU ticks the loop at a
+ * sane rate; interior targets use burst-walk creepTo (continuous
+ * homing overshoots a 20-unit room between state polls). */
+{
+  const { page } = await bootSmall();
+  await homeTo(page, -28.6, -33.4, 2.2);
+  const entered = await interactWhen(page, /enter the coffee shop/, async () => { const x = await state(page); return !!(x && x.zone === 'coffee' && x.x > 1900); }, 60000);
+  ok(entered, 'cafe: E at the door enters — player is inside (zone coffee)');
+  const exitPr = await pollState(page, (x) => /leave the coffee shop/.test(x.prompt || ''), 10000);
+  ok(!!exitPr, 'cafe: exit prompt visible from the entry', exitPr && exitPr.prompt);
+  await creepTo(page, 1995.95, 1.0, 1.3);
+  const sat = await interactWhen(page, /^sit$/, async () => { const x = await state(page); return !!(x && x.sitting === true); }, 45000);
+  ok(sat, 'cafe: chair offers sit and E sits (state reports sitting)');
+  await page.keyboard.press('KeyE');
+  const stood = await pollState(page, (x) => x.sitting === false, 10000);
+  ok(!!stood, 'cafe: E on the stand-up prompt stands back up');
+  await creepTo(page, 2000.5, -4.2, 1.1);
+  const menuOpened = await interactWhen(page, /order a drink/, async () => page.evaluate(() => !document.getElementById('w3menu').hidden).catch(() => false), 45000);
+  ok(menuOpened, 'cafe: order menu opens at the counter');
+  if (menuOpened) {
+    await page.waitForSelector('.w3mi-buy', { timeout: 10000 });
+    await page.click('.w3mi-buy');
+    const refused = await waitDom(page, () => /not enough/.test(document.getElementById('w3menures').textContent || ''), 10000);
+    ok(refused, 'cafe: buy with 0 balance refused by the server (menu shows it)');
+    await page.click('#w3menuclose');
+    ok(await waitDom(page, () => document.getElementById('w3menu').hidden, 8000), 'cafe: menu closes');
+  }
+  await creepTo(page, 1997.8, -4.6, 1.1);
+  const dlgOpened = await interactWhen(page, /talk to mira/, async () => page.evaluate(() => !document.getElementById('w3dlg').hidden && /welcome/.test(document.getElementById('w3dlgtext').textContent || '')).catch(() => false), 45000);
+  ok(dlgOpened, 'cafe: dialogue opens with mira’s greeting');
+  if (dlgOpened) {
+    for (let i = 0; i < 4; i++) await page.click('#w3dlgnext').catch(() => {});
+    ok(await waitDom(page, () => document.getElementById('w3dlg').hidden, 8000), 'cafe: dialogue advances and closes');
+  }
+  await creepTo(page, 2000, 6.6, 1.2);
+  const left = await interactWhen(page, /leave the coffee shop/, async () => { const x = await state(page); return !!(x && x.zone === 'town' && x.x < 200); }, 45000);
+  ok(left, 'cafe: leaving returns the player to town by the storefront');
+  ok(page._errs.length === 0, 'cafe: zero page errors', page._errs.slice(0, 3));
+  await page.close();
+}
+
 await browser.close();
+
 console.log('BROWSER RESULT: ' + pass + ' pass, ' + fail + ' fail');
 process.exit(fail ? 1 : 0);

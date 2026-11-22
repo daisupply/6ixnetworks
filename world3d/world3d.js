@@ -42,6 +42,30 @@ const WALK_CAP = 38;   // units/s sustained (2D on-foot cap is 372px/s)
 const PORTAL_POS = { x: 22, z: 0 };
 const SPAWN = { x: 0, z: 18 };
 
+/* v543: enterable interiors live far east of the town in world-space
+ * coords (x ~2000), so rendering and collision need no offset math.
+ * zoneOf derives a player's zone from position alone: 'town', an
+ * interior id, or null (the void — visible to nobody). movement is
+ * only accepted inside the player's current zone; crossing zones
+ * requires a warp ping while standing at a registered door pair.
+ * the menu is server-side truth: prices never come from the client. */
+const INTERIORS = {
+  coffee: { minX: 1989, maxX: 2011, minZ: -9, maxZ: 9 },
+};
+const DOOR_PAIRS = [
+  { town: { x: -28.6, z: -35.0 }, inside: { x: 2000, z: 5.5 } },
+];
+const MENU = {
+  espresso: { name: 'starlight espresso', price: 30 },
+  mocha: { name: 'mocha', price: 40 },
+  nebula: { name: 'nebula latte', price: 65 },
+};
+function zoneOf(x, z) {
+  if (Math.abs(x) <= BOUND_X && Math.abs(z) <= BOUND_Z) return 'town';
+  for (const id in INTERIORS) { const b = INTERIORS[id]; if (x >= b.minX && x <= b.maxX && z >= b.minZ && z <= b.maxZ) return id; }
+  return null;
+}
+
 function clampN(v, a, b) { v = Number(v); if (!isFinite(v)) return a; return v < a ? a : (v > b ? b : v); }
 function dist2(ax, az, bx, bz) { const dx = bx - ax, dz = bz - az; return Math.sqrt(dx * dx + dz * dz); }
 
@@ -58,10 +82,13 @@ function createWorld3D(ctx) {
   }
 
   function roster(me) {
+    const mp = P.get(me);
+    const mz = mp ? (zoneOf(mp.x, mp.z) || 'town') : 'town';
     const out = [];
     for (const [u, p] of P) {
       if (u === me) continue;
-      out.push({ u, x: Math.round(p.x * 10) / 10, z: Math.round(p.z * 10) / 10, ry: Math.round(p.ry * 100) / 100, fx: p.fx || '', hue: (typeof p.hue === 'number') ? p.hue : null });
+      if ((zoneOf(p.x, p.z) || 'town') !== mz) continue; // zones never see each other
+      out.push({ u, x: Math.round(p.x * 10) / 10, z: Math.round(p.z * 10) / 10, ry: Math.round(p.ry * 100) / 100, fx: p.fx || '', hue: (typeof p.hue === 'number') ? p.hue : null, sit: p.sit ? 1 : 0 });
     }
     return out;
   }
@@ -87,7 +114,7 @@ function createWorld3D(ctx) {
       if (!p) {
         // one entry per account, keyed by name: a reconnect or second tab
         // reuses this same entry (new sid takes over) — never a duplicate.
-        p = { x: SPAWN.x, z: SPAWN.z, ry: Math.PI, at: now, sid: '', win: null, clampStreak: 0, fx: '', hue: null };
+        p = { x: SPAWN.x, z: SPAWN.z, ry: Math.PI, at: now, sid: '', win: null, clampStreak: 0, fx: '', hue: null, sit: 0 };
         P.set(me, p);
       }
       if (b.sid) {
@@ -97,27 +124,40 @@ function createWorld3D(ctx) {
         if (sid !== p.sid && b.x != null) { J({ ok: false, err: 'session taken over', roster: roster(me) }); return true; }
         if (sid !== p.sid) p.sid = sid; // takeover only when not moving
       }
+      if (b.sit != null) p.sit = b.sit ? 1 : 0;
       const prevAt = p.at;
       if (b.x != null || b.z != null) {
-        let nx = b.x != null ? clampN(b.x, -BOUND_X, BOUND_X) : p.x;
-        let nz = b.z != null ? clampN(b.z, -BOUND_Z, BOUND_Z) : p.z;
-        const dtS = Math.min(2, Math.max(0.15, (now - prevAt) / 1000));
-        const dd = dist2(p.x, p.z, nx, nz), maxStep = 52 * dtS + 6;
-        if (dd > maxStep) { nx = p.x + (nx - p.x) * maxStep / dd; nz = p.z + (nz - p.z) * maxStep / dd; }
-        // sustained-speed window, same shape as the 2D handler: legit
-        // walkers at cap never trip it, teleport scripts get re-anchored.
-        const stepD = dist2(p.x, p.z, nx, nz);
-        if (dd > maxStep && !p.clampStreak) { p.win = { t: now, d: 0, x: nx, z: nz }; p.clampStreak = 1; }
-        else {
-          p.clampStreak = dd > maxStep ? 2 : 0;
-          if (!p.win || now - p.win.t > 6000) { p.win = { t: now, d: 0, x: p.x, z: p.z }; }
-          else {
-            p.win.d += stepD;
-            const wEl = (now - p.win.t) / 1000;
-            if (wEl > 2 && p.win.d > WALK_CAP * wEl * 1.05 + WALK_CAP * 0.6) { nx = p.win.x; nz = p.win.z; p.win = { t: now, d: 0, x: nx, z: nz }; }
+        let nx = b.x != null ? clampN(b.x, -2400, 2400) : p.x;
+        let nz = b.z != null ? clampN(b.z, -2400, 2400) : p.z;
+        const curZone = zoneOf(p.x, p.z) || 'town';
+        let warped = false;
+        if (b.warp === true) {
+          for (const d of DOOR_PAIRS) {
+            const crossA = dist2(p.x, p.z, d.town.x, d.town.z) < 3.5 && dist2(nx, nz, d.inside.x, d.inside.z) < 2.5;
+            const crossB = dist2(p.x, p.z, d.inside.x, d.inside.z) < 3.5 && dist2(nx, nz, d.town.x, d.town.z) < 2.5;
+            if (crossA || crossB) { warped = true; break; }
           }
         }
-        p.x = nx; p.z = nz;
+        if (warped) {
+          p.x = nx; p.z = nz; p.win = null; p.clampStreak = 0;
+        } else if (zoneOf(nx, nz) === curZone) {
+          const dtS = Math.min(2, Math.max(0.15, (now - prevAt) / 1000));
+          const dd = dist2(p.x, p.z, nx, nz), maxStep = 52 * dtS + 6;
+          if (dd > maxStep) { nx = p.x + (nx - p.x) * maxStep / dd; nz = p.z + (nz - p.z) * maxStep / dd; }
+          const stepD = dist2(p.x, p.z, nx, nz);
+          if (dd > maxStep && !p.clampStreak) { p.win = { t: now, d: 0, x: nx, z: nz }; p.clampStreak = 1; }
+          else {
+            p.clampStreak = dd > maxStep ? 2 : 0;
+            if (!p.win || now - p.win.t > 6000) { p.win = { t: now, d: 0, x: p.x, z: p.z }; }
+            else {
+              p.win.d += stepD;
+              const wEl = (now - p.win.t) / 1000;
+              if (wEl > 2 && p.win.d > WALK_CAP * wEl * 1.05 + WALK_CAP * 0.6) { nx = p.win.x; nz = p.win.z; p.win = { t: now, d: 0, x: nx, z: nz }; }
+            }
+          }
+          p.x = nx; p.z = nz;
+        }
+        // else: cross-zone or void move without a valid door warp — refused, position unchanged
       }
       if (b.ry != null) p.ry = clampN(b.ry, -Math.PI * 4, Math.PI * 4);
       p.at = now;
@@ -125,7 +165,20 @@ function createWorld3D(ctx) {
       try { p.hue = ctx.getHue(me); } catch (e) { p.hue = null; }
       let bal = null;
       try { bal = ctx.getCents(me); } catch (e) { }
-      J({ ok: true, me, bal, x: p.x, z: p.z, portal: PORTAL_POS, roster: roster(me) });
+      J({ ok: true, me, bal, x: p.x, z: p.z, zone: zoneOf(p.x, p.z), portal: PORTAL_POS, roster: roster(me) });
+      return true;
+    }
+
+    if (u.pathname === '/api/world3d/buy' && req.method === 'POST') {
+      let b = {};
+      try { b = await ctx.readJsonBody(req) || {}; } catch (e) { b = {}; }
+      const item = MENU[String(b.item || '')];
+      if (!item) { J({ ok: false, err: 'unknown item' }, 400); return true; }
+      if (!ctx.spendCents) { J({ ok: false, err: 'shop unavailable' }, 501); return true; }
+      if (ctx.storeReady) { for (let i = 0; i < 16 && !ctx.storeReady(); i++) await new Promise((r) => setTimeout(r, 150)); }
+      const bal = await ctx.spendCents(me, item.price);
+      if (bal < 0) { let cur = null; try { cur = ctx.getCents(me); } catch (e) { } J({ ok: false, err: 'not enough six cents', bal: cur }); return true; }
+      J({ ok: true, item: String(b.item), name: item.name, price: item.price, bal });
       return true;
     }
 
@@ -195,6 +248,11 @@ function createWorld3D(ctx) {
       '  <div class="w3how">wasd move · mouse camera (click the world to lock) · space jump · shift sprint<br>on touch: left stick moves, drag right side for camera</div>\n' +
       '</div>\n' +
       '<div id="w3toast" hidden></div>\n' +
+      '<div id="w3prompt" hidden></div>\n' +
+      '<button id="w3use" class="touchui" type="button" hidden>interact</button>\n' +
+      '<div id="w3dlg" hidden><div id="w3dlgname"></div><div id="w3dlgtext"></div><button id="w3dlgnext" type="button">next</button></div>\n' +
+      '<div id="w3menu" hidden><div class="w3menu-card"><div class="w3menu-t">the coffee shop <span>menu</span><button id="w3menuclose" type="button" aria-label="close">✕</button></div><div id="w3menulist"></div><div id="w3menubal"></div><div id="w3menures"></div></div></div>\n' +
+      '<div id="w3fade"></div>\n' +
       '<button id="w3act" type="button" hidden>RETURN TO THE 2D WORLD</button>\n' +
       '<div id="w3conflict" hidden>\n' +
       '  <div class="w3conf-card">\n' +
