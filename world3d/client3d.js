@@ -920,7 +920,7 @@ function buildTown() {
   buildTownDoors545();
   buildShards();
   buildStrollers();
-  buildDressing(); buildVegetation(); buildForest();
+  buildDressing(); buildVegetation(); buildForest(); buildWildlife();
   cozyInteriors();
 }
 
@@ -1909,6 +1909,139 @@ function cozyInteriors() {
  * small ones around solid props. birds + petals run off the clock so
  * every client sees the same sky. */
 let BIRDS = [], petals = null, petalDat = null;
+/* ================= stage 11: wildlife =================
+ * Butterflies over the flowers, rabbits in the grass, deer at the
+ * forest edge and in the meadow. Base wander paths are pure
+ * functions of the clock (seeded waypoints, stroller-style), so
+ * every client sees the same animal in the same place with ZERO
+ * network traffic. Fleeing is a local additive offset that decays
+ * back to the true path. Distance-culled past ~95 units.
+ * Animal models face +X; yaw to a travel dir is atan2(-dz, dx). */
+let WILD = { bfly: [], rabbits: [], deer: [] };
+function wildWander(wps, period, t) {
+  const n = wps.length;
+  const ph = ((t % period) / period) * n;
+  const i = Math.floor(ph) % n, f = ph - Math.floor(ph);
+  const a = wps[i], b = wps[(i + 1) % n];
+  if (f > 0.62) return { x: b[0], z: b[1], moving: false, dirx: b[0] - a[0], dirz: b[1] - a[1], dwell: true };
+  const u = f / 0.62, s = u * u * (3 - 2 * u);
+  return { x: a[0] + (b[0] - a[0]) * s, z: a[1] + (b[1] - a[1]) * s, moving: u > 0.02 && u < 0.98, dirx: b[0] - a[0], dirz: b[1] - a[1], dwell: false };
+}
+function buildWildlife() {
+  const wrnd = mulberry32(90210);
+  const bcols = [0xf9a8d4, 0xc4b5fd, 0xfde68a, 0xffffff, 0x93c5fd];
+  const anchors = [[150, 20], [160, -30], [112, 30], [140, 70], [-176, -34], [146, -62], [120, -6], [168, 30], [100, 44], [-150, 20]];
+  anchors.forEach(([ax, az], i) => {
+    const g = new THREE.Group(); scene.add(g);
+    const wm = new THREE.MeshBasicMaterial({ color: bcols[i % bcols.length], side: THREE.DoubleSide });
+    const wgeo = new THREE.PlaneGeometry(0.36, 0.26);
+    const mkWing = (sgn) => {
+      const holder = new THREE.Group();
+      const w = new THREE.Mesh(wgeo, wm);
+      w.rotation.x = -Math.PI / 2;
+      w.position.x = sgn * 0.18;
+      holder.add(w); g.add(holder);
+      return holder;
+    };
+    const hl = mkWing(-1), hr = mkWing(1);
+    const bd = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.24), new THREE.MeshBasicMaterial({ color: 0x2c2434 }));
+    g.add(bd);
+    WILD.bfly.push({ g, hl, hr, ax, az, ph: wrnd() * TAU, r: 2.5 + wrnd() * 4, sp: 0.14 + wrnd() * 0.1 });
+  });
+  const rabM = new THREE.MeshStandardMaterial({ color: 0xb8a89a, roughness: 1 });
+  const rabM2 = new THREE.MeshStandardMaterial({ color: 0x8f8074, roughness: 1 });
+  const rabHomes = [[150, -20], [160, 40], [122, 42], [145, 82], [-138, 62]];
+  rabHomes.forEach(([hx, hz], i) => {
+    const g = new THREE.Group(); scene.add(g);
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.30, 10, 8), i % 2 ? rabM2 : rabM);
+    body.scale.set(1.25, 0.95, 0.95); body.position.y = 0.34; body.castShadow = true; g.add(body);
+    const head = new THREE.Group(); head.position.set(0.34, 0.52, 0); g.add(head);
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.17, 9, 7), body.material); head.add(skull);
+    for (const sgn of [-1, 1]) {
+      const ear = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.30, 0.09), body.material);
+      ear.position.set(-0.03, 0.24, sgn * 0.07); ear.rotation.x = sgn * 0.15; head.add(ear);
+    }
+    const tail = new THREE.Mesh(new THREE.SphereGeometry(0.10, 7, 6), new THREE.MeshStandardMaterial({ color: 0xf5efe4, roughness: 1 }));
+    tail.position.set(-0.36, 0.4, 0); g.add(tail);
+    const wps = [];
+    for (let k = 0; k < 4; k++) wps.push([hx + (wrnd() - 0.5) * 15, hz + (wrnd() - 0.5) * 15]);
+    WILD.rabbits.push({ g, head, wps, period: 24 + wrnd() * 10, off: new THREE.Vector2(0, 0) });
+  });
+  const deerM = new THREE.MeshStandardMaterial({ color: 0xa9805c, roughness: 1 });
+  const deerM2 = new THREE.MeshStandardMaterial({ color: 0x8a6a48, roughness: 1 });
+  const deerHomes = [[-152, -12], [166, -32], [-160, 72]];
+  deerHomes.forEach(([hx, hz], i) => {
+    const g = new THREE.Group(); scene.add(g);
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.62, 11, 9), i % 2 ? deerM2 : deerM);
+    body.scale.set(1.45, 1.0, 0.78); body.position.y = 1.12; body.castShadow = true; g.add(body);
+    const legs = [];
+    for (const [lx, lz] of [[0.55, 0.24], [0.55, -0.24], [-0.55, 0.24], [-0.55, -0.24]]) {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.045, 1.0, 6), deerM2);
+      leg.position.set(lx, 0.5, lz); g.add(leg); legs.push(leg);
+    }
+    const neck = new THREE.Group(); neck.position.set(0.82, 1.42, 0); g.add(neck);
+    const nk = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.17, 0.62, 7), body.material);
+    nk.rotation.z = -0.6; nk.position.set(0.12, 0.22, 0); neck.add(nk);
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.19, 9, 7), body.material);
+    skull.scale.set(1.35, 0.9, 0.8); skull.position.set(0.38, 0.5, 0); neck.add(skull);
+    if (i === 0) for (const sgn of [-1, 1]) {
+      const ant = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.5, 5), deerM2);
+      ant.position.set(0.3, 0.78, sgn * 0.12); ant.rotation.x = sgn * 0.35; neck.add(ant);
+    }
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.3, 6), new THREE.MeshStandardMaterial({ color: 0xf5efe4, roughness: 1 }));
+    tail.position.set(-0.92, 1.25, 0); tail.rotation.z = 2.6; g.add(tail);
+    const wps = [];
+    for (let k = 0; k < 4; k++) wps.push([hx + (wrnd() - 0.5) * 22, hz + (wrnd() - 0.5) * 22]);
+    WILD.deer.push({ g, neck, legs, wps, period: 38 + wrnd() * 12, off: new THREE.Vector2(0, 0) });
+  });
+}
+function tickWildlife(now, dt) {
+  const t = now / 1000;
+  const inTown = zoneNow() === 'town';
+  for (const b of WILD.bfly) {
+    const x = b.ax + Math.sin(t * b.sp * TAU + b.ph) * b.r, z = b.az + Math.cos(t * b.sp * 0.83 * TAU + b.ph * 1.7) * b.r;
+    if (!inTown || Math.hypot(x - px, z - pz) > 95) { b.g.visible = false; continue; }
+    b.g.visible = true;
+    b.g.position.set(x, groundH(x, z) + 1.05 + Math.sin(t * 1.7 + b.ph) * 0.3, z);
+    const flap = Math.sin(t * 11 + b.ph) * 0.85;
+    b.hl.rotation.z = flap; b.hr.rotation.z = -flap;
+  }
+  const herd = (a, fleeR, fleeSp) => {
+    const w = wildWander(a.wps, a.period, t + a.period * 0.37);
+    let fx = w.x + a.off.x, fz = w.z + a.off.y;
+    const dxp = fx - px, dzp = fz - pz, dp = Math.hypot(dxp, dzp);
+    const fleeing = inTown && dp < fleeR && dp > 0.01;
+    if (fleeing) {
+      a.off.x += (dxp / dp) * fleeSp * dt; a.off.y += (dzp / dp) * fleeSp * dt;
+      const l = Math.hypot(a.off.x, a.off.y); if (l > 8) { a.off.x *= 8 / l; a.off.y *= 8 / l; }
+    } else {
+      a.off.multiplyScalar(Math.max(0, 1 - dt * 0.35));
+    }
+    fx = w.x + a.off.x; fz = w.z + a.off.y;
+    const far = Math.hypot(fx - px, fz - pz) > 95;
+    a.g.visible = inTown && !far;
+    if (!a.g.visible) return null;
+    return { w, fx, fz, fleeing };
+  };
+  for (const r of WILD.rabbits) {
+    const s = herd(r, 6, 7); if (!s) continue;
+    const hop = (s.w.moving || s.fleeing) ? Math.abs(Math.sin(t * 9)) * 0.30 : 0;
+    r.g.position.set(s.fx, groundH(s.fx, s.fz) + hop, s.fz);
+    if (s.w.moving || s.fleeing) r.g.rotation.y = Math.atan2(-s.w.dirz, s.w.dirx);
+    r.head.rotation.z = s.w.dwell ? Math.sin(t * 2.1) * 0.18 - 0.1 : 0;
+  }
+  for (const d of WILD.deer) {
+    const s = herd(d, 9.5, 5.5); if (!s) continue;
+    d.g.position.set(s.fx, groundH(s.fx, s.fz), s.fz);
+    if (s.w.moving || s.fleeing) d.g.rotation.y = Math.atan2(-s.w.dirz, s.w.dirx);
+    const graze = s.w.dwell && Math.sin(t * 0.55 + d.period) > 0.25;
+    d.neck.rotation.z += ((graze ? -0.85 : 0) - d.neck.rotation.z) * 0.04;
+    const lp = s.w.moving ? Math.sin(t * 5.2) * 0.3 : 0;
+    d.legs[0].rotation.z = lp; d.legs[3].rotation.z = lp;
+    d.legs[1].rotation.z = -lp; d.legs[2].rotation.z = -lp;
+  }
+}
+
 /* ================= stage 10: the west forest =================
  * Modeled trees (five families) clustered on the west hills, a
  * winding dirt path from the town edge to a stone-ring clearing,
@@ -3083,7 +3216,7 @@ function loop() {
     else { if (rm.rig) setRigShown(rm, false); animateAvatar(g, rm.st, dt, now); }
   }
   // npcs idle in place; prompt scan + seat snap (v543)
-  tickStrollers(dt, now); tickShards(now); tickDressing(now); tickAudio();
+  tickStrollers(dt, now); tickShards(now); tickDressing(now); tickAudio(); tickWildlife(now, dt);
   tickNPCRoutines(now);
   for (const n of NPCS) { if (n.zone && zoneNow() !== n.zone) continue; if (n.rig) updateRig(n, dt); else animateAvatar(n.g, n.st, dt, now); }
   if (sitting) { px = sitting.x; pz = sitting.z; if (joyVec.x || joyVec.y) standUp(); }
@@ -3132,7 +3265,7 @@ function loop() {
     if (handshakeOk && !sessionConflict) { setLoad(100, 'READY'); booted = true; window.__w3booted = true; }
     window.__w3state = function () {
       const miraN = NPCS.find((n) => n.zone === 'coffee');
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }
