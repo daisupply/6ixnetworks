@@ -795,7 +795,14 @@ function buildTown() {
     const holder = new THREE.Group(); hallG.add(holder);
     swapModel('/world3d/assets/architecture/hall.glb', holder, fb);
   }
-  storefront({ x: 36, z: -44, w: 24, d: 14, h: 10.5, name: 'CLOTHING CO.', glyph: 'hanger', col: '#f3efff', kind: 'clothing', warm: '#6b5a8a', awn: '#1f5f5b', seed: 83 });
+  const clothingG = storefront({ x: 36, z: -44, w: 24, d: 14, h: 10.5, name: 'CLOTHING CO.', glyph: 'hanger', col: '#f3efff', kind: 'clothing', warm: '#6b5a8a', awn: '#1f5f5b', seed: 83 });
+  { // stage 06: the modeled boutique swaps over the shell
+    const fb = new THREE.Group(); clothingG.add(fb);
+    const keepers = clothingG.userData.keepers.filter((k) => !k.userData.signPart);
+    [...clothingG.children].forEach((c) => { if (c !== fb && !keepers.includes(c)) fb.add(c); });
+    const holder = new THREE.Group(); clothingG.add(holder);
+    swapModel('/world3d/assets/architecture/clothing.glb', holder, fb);
+  }
 
   /* ----- hip roofs + awnings on the five district buildings ----- */
   const districts2 = [
