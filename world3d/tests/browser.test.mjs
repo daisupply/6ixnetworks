@@ -606,6 +606,15 @@ ok(page._errs.length === 0, 'desktop: zero page errors', page._errs.slice(0, 3))
   await page.close();
 }
 
+/* ---- 12) v549: environment dressing ---- */
+{
+  const { page } = await bootSmall();
+  const s0 = await state(page);
+  ok(!!s0 && s0.birds === 5 && s0.petals === true, 'v549: birds circle the park and petals drift', s0 && { birds: s0.birds, petals: s0.petals });
+  ok(page._errs.length === 0, 'v549: zero page errors', page._errs.slice(0, 3));
+  await page.close();
+}
+
 await browser.close();
 
 console.log('BROWSER RESULT: ' + pass + ' pass, ' + fail + ' fail');

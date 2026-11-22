@@ -471,7 +471,7 @@ function buildWorld() {
     const back = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.75, 0.13), woodMat); back.position.set(0, 1.08, -0.4); back.rotation.x = -0.16; bg.add(back);
     scene.add(bg); addCollider(bx, bz, 1.35);
   });
-  const planterMat = new THREE.MeshStandardMaterial({ color: 0x2c2160, roughness: 0.8 });
+  const planterMat = new THREE.MeshStandardMaterial({ color: 0xa35a3c, roughness: 0.8 });
   const flowerMat = new THREE.MeshBasicMaterial({ color: 0xf0abfc });
   const stemMat = new THREE.MeshStandardMaterial({ color: 0x1d4d33, roughness: 1 });
   for (let i = 0; i < 6; i++) {
@@ -549,7 +549,7 @@ function buildWorld() {
   for (let i = 0; i < mN; i++) { const a = rnd() * TAU, Rr = rnd() * 60; mPos[i * 3] = Math.cos(a) * Rr; mPos[i * 3 + 1] = 0.4 + rnd() * 6; mPos[i * 3 + 2] = Math.sin(a) * Rr; }
   const mGeo = new THREE.BufferGeometry();
   mGeo.setAttribute('position', new THREE.BufferAttribute(mPos, 3));
-  motes = new THREE.Points(mGeo, new THREE.PointsMaterial({ color: 0xa78bfa, size: 0.09, transparent: true, opacity: 0.55, depthWrite: false }));
+  motes = new THREE.Points(mGeo, new THREE.PointsMaterial({ color: 0xffe6b0, size: 0.09, transparent: true, opacity: 0.55, depthWrite: false }));
   scene.add(motes);
   buildTown();
 }
@@ -871,6 +871,7 @@ function buildTown() {
   buildTownDoors545();
   buildShards();
   buildStrollers();
+  buildDressing();
 }
 
 
@@ -883,6 +884,7 @@ function buildTown() {
 let sitting = null, warpNext = false, curPrompt = null;
 let dlgOpen = false, menuOpen = false, scanTick = 0;
 const INTERACT = [];
+const SEATS = []; // shared seat registry (v549 fix: buildCafe used to declare its own function-scoped SEATS, so the top-level seatTaken() read an undefined name — the intermittent cafe sit-prompt failures)
 const NPCS = [];
 const ZONE_BOXES = { coffee: { minX: 1989, maxX: 2011, minZ: -9, maxZ: 9 }, arcade: { minX: 2029, maxX: 2051, minZ: -9, maxZ: 9 }, clothing: { minX: 2069, maxX: 2091, minZ: -9, maxZ: 9 }, library: { minX: 2109, maxX: 2131, minZ: -9, maxZ: 9 }, rec: { minX: 2149, maxX: 2171, minZ: -9, maxZ: 9 }, apt: { minX: 2189, maxX: 2211, minZ: -9, maxZ: 9 } };
 function zoneNow() {
@@ -1109,7 +1111,7 @@ function buildCafe() {
   interiorLights.push({ light: pl1, zone: 'coffee' }, { light: pl2, zone: 'coffee' });
   // tables + chairs (chairs are seats; tables collide, chairs don't)
   const chairM = M(0x7a4a8a, { roughness: 0.8 }), tableM = M(0xd8c8a8, { roughness: 0.5 });
-  const SEATS = [];
+  // SEATS is the shared module-scope registry (declared by INTERACT)
   function chair(x, z, ry2) {
     const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry2; scene.add(g);
     const seat = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.07, 0.52), chairM); seat.position.y = 0.55; seat.castShadow = true; g.add(seat);
@@ -1507,6 +1509,132 @@ function buildTownDoors544() {
   step.position.set(-62, 0.09, -43.4); scene.add(step);
 }
 
+
+
+/* ---------- v549: environment dressing — the town feels lived in ----------
+ * leafy trees beside the pines, garden beds in the park, a bus stop
+ * on south avenue, mailboxes at the houses, sittable park benches,
+ * birds circling the pond and petals drifting off the sakuras.
+ * all client-side dressing: no server state, no new colliders except
+ * small ones around solid props. birds + petals run off the clock so
+ * every client sees the same sky. */
+let BIRDS = [], petals = null, petalDat = null;
+function buildDressing() {
+  const woodD = new THREE.MeshStandardMaterial({ color: 0x6b4226, roughness: 0.9 });
+  const woodL = new THREE.MeshStandardMaterial({ color: 0x9a6b40, roughness: 0.9 });
+  const terra = new THREE.MeshStandardMaterial({ color: 0xa35a3c, roughness: 0.9 });
+  const soil = new THREE.MeshStandardMaterial({ color: 0x4a3421, roughness: 1 });
+  const trunkM = new THREE.MeshStandardMaterial({ color: 0x5f4630, roughness: 1 });
+  const leafA = new THREE.MeshStandardMaterial({ color: 0x5d8148, roughness: 1, flatShading: true });
+  const leafB = new THREE.MeshStandardMaterial({ color: 0x74945a, roughness: 1, flatShading: true });
+  const bx = (w, h, d, m, x, y, z, ry) => { const q = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); q.position.set(x, y, z); if (ry) q.rotation.y = ry; q.castShadow = true; q.receiveShadow = true; scene.add(q); return q; };
+
+  // leafy round trees — variety next to the two-tier pines
+  const leafSpots = [[86, -18], [98, 44], [132, -6], [70, 66], [-88, 74], [-132, -8], [44, 96], [-40, 104], [150, 40], [-150, 52]];
+  for (const [x, z] of leafSpots) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
+    const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.36, 2.6, 7), trunkM); tr.position.y = 1.3; tr.castShadow = true; g.add(tr);
+    const fol = new THREE.Group(); fol.position.y = 3.4; g.add(fol);
+    const main = new THREE.Mesh(new THREE.IcosahedronGeometry(2.1, 0), Math.random() > 0.5 ? leafA : leafB); main.castShadow = true; fol.add(main);
+    const off = new THREE.Mesh(new THREE.IcosahedronGeometry(1.4, 0), leafB); off.position.set(1.2, 0.7, 0.5); fol.add(off);
+    const off2 = new THREE.Mesh(new THREE.IcosahedronGeometry(1.1, 0), leafA); off2.position.set(-1.1, 0.5, -0.6); fol.add(off2);
+    swayers.push({ g: fol, ph: x * 0.7 + z });
+    addCollider(x, z, 0.95);
+  }
+
+  // park garden beds: soil + their own instanced flowers
+  const beds = [[104, 26, 0.3], [128, 30, -0.4], [112, -12, 0.9]];
+  const bedFlowers = [];
+  for (const [x, z, ry] of beds) {
+    bx(7, 0.28, 2.4, soil, x, 0.14, z, ry);
+    bx(7.3, 0.2, 2.7, terra, x, 0.07, z, ry);
+    for (let i = 0; i < 30; i++) bedFlowers.push([x + (Math.random() - 0.5) * 6.2, z + (Math.random() - 0.5) * 1.7]);
+  }
+  const bfIM = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.13, 0), new THREE.MeshStandardMaterial({ roughness: 0.8, flatShading: true }), bedFlowers.length);
+  const dummy = new THREE.Object3D(); const bCols = [new THREE.Color(0xf9a8d4), new THREE.Color(0xffd257), new THREE.Color(0xffffff), new THREE.Color(0xf28b82)];
+  bedFlowers.forEach((f, i) => { dummy.position.set(f[0], 0.42, f[1]); dummy.updateMatrix(); bfIM.setMatrixAt(i, dummy.matrix); bfIM.setColorAt(i, bCols[i % 4]); });
+  scene.add(bfIM);
+
+  // bus stop on south avenue: pole sign, shelter, bench
+  {
+    const g = new THREE.Group(); g.position.set(18, 0, 88); scene.add(g);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.6, 6), trunkM); pole.position.y = 1.3; g.add(pole);
+    const sTex = canvasTex(128, 128, (gg) => { gg.fillStyle = '#2e5a8a'; gg.fillRect(0, 0, 128, 128); gg.fillStyle = '#fff'; gg.font = '800 44px system-ui'; gg.textAlign = 'center'; gg.fillText('BUS', 64, 55); gg.fillText('STOP', 64, 100); });
+    const sign = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.06), new THREE.MeshBasicMaterial({ map: sTex })); sign.position.y = 2.5; g.add(sign);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.12, 1.8), terra); roof.position.set(2.6, 2.3, 0); roof.castShadow = true; g.add(roof);
+    for (const dx of [0.7, 4.5]) { const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.3, 6), trunkM); post.position.set(dx, 1.15, -0.7); g.add(post); }
+    const bench = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.12, 0.6), woodL); bench.position.set(2.6, 0.62, -0.55); g.add(bench);
+    addCollider(18 + 2.6, 88 - 0.55, 1.2);
+  }
+
+  // mailboxes at the three houses + the apartments door
+  for (const [x, z] of [[-99, -24], [-107, 10], [-95, 44], [-56, 36]]) {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.05, 0.12), woodD); post.position.set(x, 0.52, z); scene.add(post);
+    bx(0.85, 0.5, 0.5, new THREE.MeshStandardMaterial({ color: 0x38618c, roughness: 0.6, metalness: 0.3 }), x, 1.3, z);
+    bx(0.1, 0.34, 0.06, new THREE.MeshBasicMaterial({ color: 0xd64541 }), x + 0.44, 1.52, z);
+    addCollider(x, z, 0.45);
+  }
+
+  // sittable benches: two by the pond, two along fountain avenue
+  const benchSeat = (x, z, ry) => {
+    const bg = new THREE.Group(); bg.position.set(x, 0, z); bg.rotation.y = ry; scene.add(bg);
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.16, 0.85), woodL); seat.position.y = 0.62; seat.castShadow = true; bg.add(seat);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.75, 0.13), woodL); back.position.set(0, 1.08, -0.4); back.rotation.x = -0.16; bg.add(back);
+    for (const dx of [-1.1, 1.1]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.62, 0.7), woodD); leg.position.set(dx, 0.31, 0); bg.add(leg); }
+    const st = { x, z, ry, zone: 'town' };
+    SEATS.push(st);
+    addInteract('town', x, z, 1.8, () => (seatTaken(st) ? 'seat taken' : 'sit on the bench'), () => sitDown(st));
+  };
+  benchSeat(104, 20, 2.6); benchSeat(126, 2, -1.2); benchSeat(-14, 30, 0); benchSeat(16, -30, Math.PI);
+
+  // park entrance sign
+  {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.7, 0.14), woodD); post.position.set(96, 0.85, 34); scene.add(post);
+    const board = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.7, 0.1), woodL); board.position.set(96, 1.6, 34); board.rotation.y = 0.5; scene.add(board);
+    const t = signTexture('SAKURA PARK', '#ffd9a0');
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 0.62), new THREE.MeshBasicMaterial({ map: t, transparent: true })); face.position.set(96 + Math.sin(0.5) * 0.06, 1.6, 34 + Math.cos(0.5) * 0.06); face.rotation.y = 0.5; scene.add(face);
+    addCollider(96, 34, 0.5);
+  }
+
+  // birds over the park: bodies + flapping wings, clock-driven orbits
+  const birdM = new THREE.MeshStandardMaterial({ color: 0x3a4a63, roughness: 0.8, flatShading: true });
+  const wingM = new THREE.MeshStandardMaterial({ color: 0x54677f, roughness: 0.8, side: THREE.DoubleSide });
+  for (let i = 0; i < 5; i++) {
+    const b = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.85, 5), birdM); body.rotation.x = Math.PI / 2; b.add(body);
+    const wl = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.3), wingM); wl.position.x = -0.5; b.add(wl);
+    const wr = wl.clone(); wr.position.x = 0.5; b.add(wr);
+    b.userData = { wl, wr, r: 17 + i * 3.5, h: 14 + (i % 3) * 2.5, sp: 0.05 + i * 0.008, ph: i * 1.7 };
+    scene.add(b); BIRDS.push(b);
+  }
+
+  // drifting petals / pollen over the plaza + park
+  const pN = 150, pPos = new Float32Array(pN * 3); petalDat = [];
+  for (let i = 0; i < pN; i++) { pPos[i * 3] = -70 + Math.random() * 200; pPos[i * 3 + 1] = 0.3 + Math.random() * 6.5; pPos[i * 3 + 2] = -60 + Math.random() * 110; petalDat.push({ ph: Math.random() * 6.28, sp: 0.4 + Math.random() * 0.7 }); }
+  const pGeo = new THREE.BufferGeometry(); pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+  petals = new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0xffd7e8, size: 0.14, transparent: true, opacity: 0.75, depthWrite: false }));
+  scene.add(petals);
+}
+function tickDressing(now) {
+  const t = now / 1000;
+  for (const b of BIRDS) {
+    const u = b.userData, a = t * u.sp + u.ph;
+    b.position.set(118 + Math.cos(a) * u.r, u.h + Math.sin(t * 0.7 + u.ph) * 0.8, 12 + Math.sin(a) * u.r);
+    b.rotation.y = -a;
+    const flap = Math.sin(t * 9 + u.ph) * 0.65;
+    u.wl.rotation.z = flap; u.wr.rotation.z = -flap;
+  }
+  if (petals) {
+    const arr = petals.geometry.attributes.position.array;
+    for (let i = 0; i < petalDat.length; i++) {
+      const d = petalDat[i];
+      arr[i * 3] += 0.008 * d.sp; arr[i * 3 + 1] += Math.sin(t * 0.9 + d.ph) * 0.0022 - 0.0012; arr[i * 3 + 2] += Math.cos(t * 0.6 + d.ph) * 0.003;
+      if (arr[i * 3] > 135) arr[i * 3] = -70;
+      if (arr[i * 3 + 1] < 0.2) arr[i * 3 + 1] = 6.5;
+    }
+    petals.geometry.attributes.position.needsUpdate = true;
+  }
+}
 
 /* ---------- v545: library + rec center + apartments, town NPCs,
  * star shards, trivia terminal, world map, district toasts ----------
@@ -2358,7 +2486,7 @@ function loop() {
     animateAvatar(g, rm.st, dt, now);
   }
   // npcs idle in place; prompt scan + seat snap (v543)
-  tickStrollers(dt, now); tickShards(now);
+  tickStrollers(dt, now); tickShards(now); tickDressing(now);
   for (const n of NPCS) animateAvatar(n.g, n.st, dt, now);
   if (sitting) { px = sitting.x; pz = sitting.z; if (joyVec.x || joyVec.y) standUp(); }
   if ((scanTick = (scanTick + 1) % 5) === 0) scanPrompts();
@@ -2405,7 +2533,7 @@ function loop() {
     // handshake — never one without the other.
     if (handshakeOk && !sessionConflict) { setLoad(100, 'READY'); booted = true; window.__w3booted = true; }
     window.__w3state = function () {
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }
