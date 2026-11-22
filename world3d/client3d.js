@@ -39,6 +39,7 @@ const TAU = Math.PI * 2;
 function mulberry32(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
 const PORTAL = { x: 22, z: 0 };
+let DISTRICT_REFS = [];
 const BOUND_X = 195, BOUND_Z = 118;
 const WALK = 15, SPRINT = 26, ACCEL = 90, DECEL = 120, TURN = 14;
 const GRAV = 30, JUMP_V = 11.5;
@@ -550,6 +551,7 @@ function buildWorld() {
     { x: 62, z: 48, w: 22, d: 13, h: 10, name: 'REC CENTER', col: '#4ade80', seed: 48 },
     { x: 0, z: -80, w: 30, d: 14, h: 9, name: '6IX MUSIC', col: '#ffd257', seed: 59 },
   ];
+  const districtParts = [];
   districts.forEach((b) => {
     const tex = windowsTexture(b.seed, b.col);
     const mat = new THREE.MeshStandardMaterial({ color: 0xf5ecd8, map: tex, emissive: 0xffffff, emissiveMap: windowsTexture(b.seed, b.col, true), emissiveIntensity: 0.55, roughness: 0.85 });
@@ -564,7 +566,9 @@ function buildWorld() {
     scene.add(sign);
     boxColliders.push({ minX: b.x - b.w / 2, maxX: b.x + b.w / 2, minZ: b.z - b.d / 2, maxZ: b.z + b.d / 2 });
     camBoxes.push({ minX: b.x - b.w / 2 - 0.4, maxX: b.x + b.w / 2 + 0.4, minZ: b.z - b.d / 2 - 0.4, maxZ: b.z + b.d / 2 + 0.4, h: b.h + 0.6 });
+    districtParts.push([m, roof, sign]);
   });
+  DISTRICT_REFS = districts.map((b, i) => ({ b, parts: districtParts[i] }));
 
   // drifting dust motes over the plaza
   const mN = 220, mPos = new Float32Array(mN * 3);
@@ -829,11 +833,25 @@ function buildTown() {
     { x: 0, z: -80, w: 30, d: 14, h: 9 },
   ];
   districts2.forEach((b) => {
-    hipRoof(b.x, b.z, b.w + 1.6, b.d + 1.6, b.h + 0.4, 3.4, shingle);
+    const hr = hipRoof(b.x, b.z, b.w + 1.6, b.d + 1.6, b.h + 0.4, 3.4, shingle);
     const fz = b.z + (b.z < 0 ? b.d / 2 : -b.d / 2), dir = b.z < 0 ? 1 : -1;
     const awn = box(b.w * 0.5, 0.14, 1.9, M(0x31235e, { roughness: 0.9 }), b.x, 3.6, fz + dir * 0.95);
     awn.rotation.x = dir * 0.3;
+    const ref = DISTRICT_REFS.find((r) => r.b.x === b.x && r.b.z === b.z);
+    if (ref) ref.parts.push(hr, awn);
   });
+  { // CP7: modeled district exteriors (Blender) swap over the v542 shells
+    const DIST_GLB = { ARCADE: 'arcade', LIBRARY: 'library', APARTMENTS: 'apartments', 'REC CENTER': 'rec', '6IX MUSIC': 'music' };
+    for (const ref of DISTRICT_REFS) {
+      const fb = new THREE.Group(); scene.add(fb);
+      ref.parts.forEach((p) => fb.add(p));
+      const holder = new THREE.Group();
+      holder.position.set(ref.b.x, 0, ref.b.z);
+      if (ref.b.z > 0) holder.rotation.y = Math.PI; // south buildings front -z; models are authored front +z
+      scene.add(holder);
+      swapModel('/world3d/assets/architecture/' + DIST_GLB[ref.b.name] + '.glb', holder, fb);
+    }
+  }
 
   /* ----- café terrace in front of the coffee shop ----- */
   [[-45, -31], [-36, -30], [-27, -31]].forEach(([tx, tz]) => {
@@ -855,6 +873,13 @@ function buildTown() {
     const door = new THREE.Mesh(new THREE.BoxGeometry(1.3, 2.4, 0.12), woodDark); door.position.set(0, 1.2, 4.56); g.add(door);
     const pl = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8), M(0xffd9a0, { emissive: 0xffc98a, emissiveIntensity: 2.4 }));
     pl.position.set(1.1, 2.2, 4.62); g.add(pl);
+    { // CP7: modeled house swaps over the primitive shell (walls tinted per house)
+      const fb = new THREE.Group(); g.add(fb);
+      [base, roof, door, pl].forEach((p) => fb.add(p));
+      const holder = new THREE.Group(); g.add(holder);
+      holder.userData.onSwap = () => { holder.traverse((o) => { if (o.isMesh && o.material && o.material.name === 'walls') { o.material = o.material.clone(); o.material.color.setHex(wallCol); } }); };
+      swapModel('/world3d/assets/architecture/house.glb', holder, fb);
+    }
     const mb = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.45, 0.45), M(0x8a2f3e, { roughness: 0.7 })); mb.position.set(4.4, 1.05, 6.4); g.add(mb);
     const mp = new THREE.Mesh(new THREE.BoxGeometry(0.09, 1.05, 0.09), woodDark); mp.position.set(4.4, 0.5, 6.4); g.add(mp);
     boxColliders.push({ minX: x - 6, maxX: x + 6, minZ: z - 5, maxZ: z + 5 });
@@ -3722,6 +3747,7 @@ function loop() {
     // READY requires BOTH a rendered first frame AND a validated server
     // handshake — never one without the other.
     if (handshakeOk && !sessionConflict) { setLoad(100, 'READY'); booted = true; window.__w3booted = true; }
+    window.__w3scene = scene; // diagnostic handle (mesh census in tests)
     window.__w3state = function () {
       const miraN = NPCS.find((n) => n.zone === 'coffee');
       return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, groveN: GROVE.n, coverN: COVER.lawn, chunksOn: COVER.chunksOn, chunks: COVER.chunks, lodNear: COVER.lodNear, lodFar: COVER.lodFar, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
