@@ -139,3 +139,18 @@ Art direction (palette, districts, construction rules): `world3d/ART_DIRECTION.m
 - Dressing (v549): `buildDressing()` (leafy trees, garden beds, bus stop, mailboxes, bench SEATS, park sign), `BIRDS` + `petals` ticked by `tickDressing(now)` — clock-driven, client-only. SEATS is a module-scope registry (hoisted in v549; seatTaken reads it there).
 - Sound (v550): `AMB` per-zone pad voicing via `setAmbience()` (filter center + pad gain on the ensureAudio graph; `acFilter`/`acSfx` exposed), footsteps from the bob cycle in `tickAudio()`, `sfxDoor()` on fadeThrough, SET.sfx + #w3sfx slider. `cozyInteriors()` adds emissive-only dressing per interior.
 - NPC schedules (v551): strollers follow `STROLL_WP` (waypoints with dwell + face targets) via `strollTimeline()`/`tickStrollers`; interior NPCS carry `zone` + optional `routine {a, b, dwell, off, faceA, faceB}` walked by `tickNPCRoutines(now)`; the animate loop skips NPC bone math when the player is in another zone.
+
+## v553: modeled-asset pipeline
+- Blender 4.2 (headless, scripted) is the modeling tool; sources in
+  `assets-src/*.py`, exports in `assets/<family>/*.glb`, manifest in
+  `assets/ASSETS.md`, full plan in `PIPELINE.md`.
+- Runtime: vendored GLTFLoader (three r160) via importmap
+  `three/addons/`; server serves `/world3d/assets/*.glb` +
+  `/world3d/vendor/addons/*` from world3d.js `asset()`.
+- `loadAsset`/`swapModel(url, holder, fallback, scale, ry)`: async
+  visual-only swaps over procedural fallbacks — colliders, SEATS,
+  door pairs, NPC posts unchanged. `loadGltf`/`attachRig`/
+  `updateRig`: rigged characters driven by the existing st.speed.
+- Live swaps (assetSwaps counter in __w3state): 10 round trees,
+  8 hero sakuras, café table/chairs/sofa/counter/espresso,
+  coffee shop exterior, Mira's rig = 35.

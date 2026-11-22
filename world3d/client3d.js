@@ -28,6 +28,7 @@
  */
 import * as THREE from 'three';
 import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT } from './math3d.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const $ = (id) => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
@@ -621,7 +622,13 @@ function buildTown() {
       m.position.set(b[0] * s, b[1] * s, b[2] * s); m.castShadow = true; fol.add(m);
     });
     g.add(fol); scene.add(g);
-    if (hero) swayers.push({ g: fol, ph: rnd() * 6 });
+    if (hero) {
+      swayers.push({ g: fol, ph: rnd() * 6 });
+      const holder = new THREE.Group(); g.add(holder);
+      const fb2 = new THREE.Group(); fb2.add(trunk); fb2.add(fol); g.add(fb2);
+      holder.userData.onSwap = () => { swayers.push({ g: holder, ph: rnd() * 6 }); };
+      swapModel('/world3d/assets/environment/tree_sakura.glb', holder, fb2, s * 1.3);
+    }
     addCollider(x, z, 0.55); camSpheres.push({ x, y: 3.2 * s, z, r: 2.3 * s });
     return g;
   }
@@ -750,9 +757,9 @@ function buildTown() {
     const awn = new THREE.Mesh(new THREE.BoxGeometry(b.w * 0.72, 0.16, 2.3), M(0xffffff, { map: awnTex, roughness: 0.9 }));
     awn.position.set(0, 4.05, fz + 1.05); awn.rotation.x = -0.32; g.add(awn);
     const board = new THREE.Mesh(new THREE.BoxGeometry(Math.min(b.w * 0.78, 17), 1.7, 0.3), woodDark);
-    board.position.set(0, b.h - 1.15, fz + 0.12); g.add(board);
+    board.position.set(0, b.h - 1.15, fz + 0.12); g.add(board); g.userData.keepers = [board];
     const sign = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(b.w * 0.76, 16.4), 1.55), new THREE.MeshBasicMaterial({ map: iconSign(b.glyph, b.name, b.col), transparent: true, depthWrite: false }));
-    sign.position.set(0, b.h - 1.15, fz + 0.29); g.add(sign);
+    sign.position.set(0, b.h - 1.15, fz + 0.29); g.add(sign); g.userData.keepers.push(sign);
     const door = new THREE.Mesh(new THREE.BoxGeometry(1.7, 2.9, 0.14), woodDark);
     door.position.set(b.w * 0.31, 1.45, fz + 0.09); g.add(door);
     const knob = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), brass);
@@ -764,13 +771,20 @@ function buildTown() {
     // planters with flowers flanking the front
     for (const sgn of [-1, 1]) {
       const pl = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.55, 0.8), wood);
-      pl.position.set(sgn * b.w * 0.36, 0.28, fz + 0.75); pl.castShadow = true; g.add(pl);
+      pl.position.set(sgn * b.w * 0.36, 0.28, fz + 0.75); pl.castShadow = true; g.add(pl); g.userData.keepers.push(pl);
       for (let i = 0; i < 7; i++) flowerSpots.push([b.x + sgn * b.w * 0.36 + (rnd() - 0.5) * 2, b.z + fz + 0.75 + (rnd() - 0.5) * 0.5]);
     }
     boxColliders.push({ minX: b.x - b.w / 2, maxX: b.x + b.w / 2, minZ: b.z - b.d / 2, maxZ: b.z + b.d / 2 });
     camBoxes.push({ minX: b.x - b.w / 2 - 0.4, maxX: b.x + b.w / 2 + 0.4, minZ: b.z - b.d / 2 - 0.4, maxZ: b.z + b.d / 2 + 0.4, h: b.h + 3.6 });
+    return g;
   }
-  storefront({ x: -36, z: -44, w: 24, d: 14, h: 10.5, name: 'COFFEE SHOP', glyph: 'cup', col: '#ffc98a', kind: 'coffee', warm: '#8a5a20', awn: '#7c2d3e', seed: 71 });
+  const coffeeG = storefront({ x: -36, z: -44, w: 24, d: 14, h: 10.5, name: 'COFFEE SHOP', glyph: 'cup', col: '#ffc98a', kind: 'coffee', warm: '#8a5a20', awn: '#7c2d3e', seed: 71 });
+  { // v553: the modeled coffee shop (Blender kit build) swaps over the shell
+    const fb = new THREE.Group(); coffeeG.add(fb);
+    [...coffeeG.children].forEach((c) => { if (c !== fb && !coffeeG.userData.keepers.includes(c)) fb.add(c); });
+    const holder = new THREE.Group(); coffeeG.add(holder);
+    swapModel('/world3d/assets/architecture/coffee_shop.glb', holder, fb);
+  }
   storefront({ x: 0, z: -50, w: 30, d: 16, h: 16, name: '6IXNETWORKS', glyph: 'crown', col: '#ffd257', kind: 'hall', warm: '#7a5c14', awn: '#7a5c14', seed: 97 });
   storefront({ x: 36, z: -44, w: 24, d: 14, h: 10.5, name: 'CLOTHING CO.', glyph: 'hanger', col: '#f3efff', kind: 'clothing', warm: '#6b5a8a', awn: '#1f5f5b', seed: 83 });
 
@@ -976,6 +990,74 @@ async function buyItem(id, btn) {
 }
 
 /* ----- prompt machinery ----- */
+
+/* ---------- v553: modeled-asset pipeline (see PIPELINE.md) ----------
+ * GLB assets modeled in Blender (assets-src/) load async and swap in
+ * over their procedural fallbacks. Gameplay never waits on them:
+ * colliders, seats, interact points and positions are unchanged, and
+ * if a model fails to load the procedural build simply stays. */
+const gltfLoader = new GLTFLoader();
+let assetSwaps = 0;
+const assetCache = new Map();
+function loadAsset(url) {
+  if (!assetCache.has(url)) assetCache.set(url, gltfLoader.loadAsync(url).then((g) => g.scene).catch(() => null));
+  return assetCache.get(url);
+}
+const gltfCache = new Map();
+function loadGltf(url) {
+  if (!gltfCache.has(url)) gltfCache.set(url, gltfLoader.loadAsync(url).catch(() => null));
+  return gltfCache.get(url);
+}
+/* attach a rigged character model to an NPC entry: real skeleton +
+ * AnimationMixer clips (idle/walk) driven by the entry's existing
+ * st.speed — the same state the sync and routines already maintain.
+ * The procedural avatar stays as the fallback until the rig lands. */
+function attachRig(entry, hue) {
+  loadGltf('/world3d/assets/characters/character.glb').then((gltf) => {
+    if (!gltf || disposed || !gltf.animations || !gltf.animations.length) return;
+    const model = gltf.scene;
+    model.traverse((o) => {
+      if (o.isMesh) {
+        o.castShadow = true;
+        if (o.material && o.material.name === 'body') { o.material = o.material.clone(); o.material.color.setHSL(hue / 360, 0.55, 0.52); }
+      }
+    });
+    const mixer = new THREE.AnimationMixer(model);
+    const acts = {};
+    for (const clip of gltf.animations) { const a = mixer.clipAction(clip); a.setLoop(THREE.LoopRepeat); acts[clip.name] = a; }
+    if (!acts.idle) return;
+    acts.idle.play();
+    entry.g.children.forEach((c) => { if (!c.isSprite) c.visible = false; });
+    entry.g.add(model);
+    assetSwaps++;
+    entry.rig = { mixer, acts, cur: 'idle' };
+  });
+}
+function updateRig(n, dt) {
+  const r = n.rig;
+  const want = n.st.speed > 0.25 ? 'walk' : 'idle';
+  if (r.acts[want] && r.cur !== want) {
+    r.acts[want].reset().fadeIn(0.22).play();
+    if (r.acts[r.cur]) r.acts[r.cur].fadeOut(0.22);
+    r.cur = want;
+  }
+  if (r.acts.walk) r.acts.walk.timeScale = THREE.MathUtils.clamp(n.st.speed / 2.1, 0.5, 1.8);
+  r.mixer.update(dt);
+}
+function swapModel(url, holder, fallback, scale, ry) {
+  loadAsset(url).then((tpl) => {
+    if (!tpl || disposed) return;
+    const m = tpl.clone(true);
+    if (scale) { if (typeof scale === 'number') m.scale.setScalar(scale); else m.scale.set(scale[0], scale[1], scale[2]); }
+    if (ry) m.rotation.y = ry;
+    m.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    holder.add(m);
+    assetSwaps++;
+    if (fallback) fallback.visible = false;
+    if (holder.userData.onSwap) holder.userData.onSwap(m);
+  });
+}
+
 /* ---------- v552: the icon system ----------
  * one design language for the whole 3D interface: 24x24 viewBox,
  * stroke 2, round caps + joins, currentColor. paths live in this
@@ -1111,12 +1193,17 @@ function buildCafe() {
     const fr = box(0.08, 2.2, 2.1, woodDark, CX + sx * 11.0, 2.3, wz); fr.castShadow = false;
   }
   // counter run along the north wall + back counter + machine + case
-  box(11, 1.08, 1.3, woodDark, CX - 1.5, 0.54, -6.2);
-  box(11.4, 0.09, 1.6, M(0xd8c8a8, { roughness: 0.5 }), CX - 1.5, 1.13, -6.2);
+  const counterFb = new THREE.Group(); scene.add(counterFb);
+  const c1 = box(11, 1.08, 1.3, woodDark, CX - 1.5, 0.54, -6.2); counterFb.attach(c1);
+  const c2 = box(11.4, 0.09, 1.6, M(0xd8c8a8, { roughness: 0.5 }), CX - 1.5, 1.13, -6.2); counterFb.attach(c2);
+  const counterHolder = new THREE.Group(); counterHolder.position.set(CX - 1.5, 0, -6.2); scene.add(counterHolder);
+  swapModel('/world3d/assets/furniture/cafe_counter.glb', counterHolder, counterFb, null, Math.PI);
   box(11, 0.95, 0.8, wood, CX - 1.5, 0.48, -8.2);
   boxColliders.push({ minX: CX - 7, maxX: CX + 4, minZ: -6.9, maxZ: -5.5 }, { minX: CX - 7, maxX: CX + 4, minZ: -8.6, maxZ: -7.8 });
   const mach = box(1.15, 0.95, 0.9, M(0x8a8fa8, { metalness: 0.65, roughness: 0.35 }), CX - 4.2, 1.65, -6.2);
   mach.castShadow = false;
+  const machHolder = new THREE.Group(); machHolder.position.set(CX - 4.2, 1.17, -6.2); scene.add(machHolder);
+  swapModel('/world3d/assets/furniture/espresso.glb', machHolder, mach, null, Math.PI);
   const boiler = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.7, 12), M(0xb9bed4, { metalness: 0.7, roughness: 0.3 }));
   boiler.position.set(CX - 4.2, 2.45, -6.2); scene.add(boiler);
   for (let i = 0; i < 3; i++) {
@@ -1165,27 +1252,34 @@ function buildCafe() {
   // SEATS is the shared module-scope registry (declared by INTERACT)
   function chair(x, z, ry2) {
     const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry2; scene.add(g);
-    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.07, 0.52), chairM); seat.position.y = 0.55; seat.castShadow = true; g.add(seat);
-    const back = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.75, 0.07), chairM); back.position.set(0, 0.95, -0.24); g.add(back);
-    const ped = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.52, 0.4), woodDark); ped.position.y = 0.26; g.add(ped);
+    const fb = new THREE.Group(); g.add(fb);
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.07, 0.52), chairM); seat.position.y = 0.55; seat.castShadow = true; fb.add(seat);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.75, 0.07), chairM); back.position.set(0, 0.95, -0.24); fb.add(back);
+    const ped = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.52, 0.4), woodDark); ped.position.y = 0.26; fb.add(ped);
+    const holder = new THREE.Group(); g.add(holder);
+    swapModel('/world3d/assets/furniture/cafe_chair.glb', holder, fb, null, Math.PI);
     SEATS.push({ x, z, ry: ry2 });
   }
   function table(x, z) {
+    const fb = new THREE.Group(); fb.position.set(x, 0, z); scene.add(fb);
     const top = new THREE.Mesh(new THREE.CylinderGeometry(0.88, 0.88, 0.07, 18), tableM);
-    top.position.set(x, 0.76, z); top.castShadow = true; scene.add(top);
+    top.position.set(0, 0.76, 0); top.castShadow = true; fb.add(top);
     const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.74, 8), woodDark);
-    leg.position.set(x, 0.37, z); scene.add(leg);
+    leg.position.set(0, 0.37, 0); fb.add(leg);
     const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.06, 0.13, 8), M(0xf3efff, { roughness: 0.4 }));
-    cup.position.set(x + 0.3, 0.86, z + 0.2); scene.add(cup);
+    cup.position.set(0.3, 0.86, 0.2); fb.add(cup);
+    const holder = new THREE.Group(); holder.position.set(x, 0, z); scene.add(holder);
+    swapModel('/world3d/assets/furniture/cafe_table.glb', holder, fb, [1.3, 1.05, 1.3]);
     addCollider(x, z, 0.8);
     chair(x - 1.45, z, Math.PI / 2); chair(x + 1.45, z, -Math.PI / 2);
   }
   table(CX - 5.5, 1.0); table(CX - 5.5, -3.5); table(CX + 4.5, 2.0); table(CX + 5, -3.0);
   // sofa along the east wall, two seats
   const sofaM = M(0x31235e, { roughness: 0.95 });
-  box(1.1, 0.55, 2.8, sofaM, CX + 10.2, 0.28, 3.5);
-  box(0.3, 1.0, 2.8, sofaM, CX + 10.75, 0.5, 3.5);
-  box(1.1, 0.25, 0.25, sofaM, CX + 10.2, 0.62, 2.15); box(1.1, 0.25, 0.25, sofaM, CX + 10.2, 0.62, 4.85);
+  const sofaFb = new THREE.Group(); scene.add(sofaFb);
+  for (const sm of [box(1.1, 0.55, 2.8, sofaM, CX + 10.2, 0.28, 3.5), box(0.3, 1.0, 2.8, sofaM, CX + 10.75, 0.5, 3.5), box(1.1, 0.25, 0.25, sofaM, CX + 10.2, 0.62, 2.15), box(1.1, 0.25, 0.25, sofaM, CX + 10.2, 0.62, 4.85)]) sofaFb.attach(sm);
+  const sofaHolder = new THREE.Group(); sofaHolder.position.set(CX + 10.2, 0, 3.5); scene.add(sofaHolder);
+  swapModel('/world3d/assets/furniture/cafe_sofa.glb', sofaHolder, sofaFb, 1.25, Math.PI / 2);
   SEATS.push({ x: CX + 10.2, z: 2.85, ry: -Math.PI / 2 }, { x: CX + 10.2, z: 4.15, ry: -Math.PI / 2 });
   // plants in the corners
   for (const [qx, qz] of [[CX - 10.3, 8.2], [CX + 10.3, -8.2]]) {
@@ -1201,7 +1295,9 @@ function buildCafe() {
   const mira = makeAvatar(25, 'mira');
   mira.position.set(CX - 2.2, 0, -7.35); mira.rotation.y = 0.15;
   scene.add(mira);
-  NPCS.push({ zone: 'coffee', routine: { a: [1995.5, -6.9], b: [2002.5, -6.9], dwell: 5, off: 0, faceA: 0.3, faceB: -0.3 }, g: mira, st: { phase: 1.3, speed: 0, grounded: true, landT: 0, pose: 'stand' } });
+  const miraEntry = { zone: 'coffee', routine: { a: [1995.5, -6.9], b: [2002.5, -6.9], dwell: 5, off: 0, faceA: 0.3, faceB: -0.3 }, g: mira, st: { phase: 1.3, speed: 0, grounded: true, landT: 0, pose: 'stand' } };
+  NPCS.push(miraEntry);
+  attachRig(miraEntry, 25);
   // ---- interactions for this room + its town door ----
   for (const s of SEATS) {
     addInteract('coffee', s.x, s.z, 1.7,
@@ -1773,8 +1869,12 @@ function buildDressing() {
   const leafSpots = [[86, -18], [98, 44], [132, -6], [70, 66], [-88, 74], [-132, -8], [44, 96], [-40, 104], [150, 40], [-150, 52]];
   for (const [x, z] of leafSpots) {
     const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
-    const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.36, 2.6, 7), trunkM); tr.position.y = 1.3; tr.castShadow = true; g.add(tr);
-    const fol = new THREE.Group(); fol.position.y = 3.4; g.add(fol);
+    const fb = new THREE.Group(); g.add(fb);
+    const holder = new THREE.Group(); g.add(holder);
+    holder.userData.onSwap = () => { swayers.push({ g: holder, ph: x * 0.7 + z }); };
+    swapModel('/world3d/assets/environment/tree_round.glb', holder, fb, 1.25);
+    const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.36, 2.6, 7), trunkM); tr.position.y = 1.3; tr.castShadow = true; fb.add(tr);
+    const fol = new THREE.Group(); fol.position.y = 3.4; fb.add(fol);
     const main = new THREE.Mesh(new THREE.IcosahedronGeometry(2.1, 0), Math.random() > 0.5 ? leafA : leafB); main.castShadow = true; fol.add(main);
     const off = new THREE.Mesh(new THREE.IcosahedronGeometry(1.4, 0), leafB); off.position.set(1.2, 0.7, 0.5); fol.add(off);
     const off2 = new THREE.Mesh(new THREE.IcosahedronGeometry(1.1, 0), leafA); off2.position.set(-1.1, 0.5, -0.6); fol.add(off2);
@@ -2712,7 +2812,7 @@ function loop() {
   // npcs idle in place; prompt scan + seat snap (v543)
   tickStrollers(dt, now); tickShards(now); tickDressing(now); tickAudio();
   tickNPCRoutines(now);
-  for (const n of NPCS) { if (n.zone && zoneNow() !== n.zone) continue; animateAvatar(n.g, n.st, dt, now); }
+  for (const n of NPCS) { if (n.zone && zoneNow() !== n.zone) continue; if (n.rig) updateRig(n, dt); else animateAvatar(n.g, n.st, dt, now); }
   if (sitting) { px = sitting.x; pz = sitting.z; if (joyVec.x || joyVec.y) standUp(); }
   if ((scanTick = (scanTick + 1) % 5) === 0) scanPrompts();
 
@@ -2758,7 +2858,8 @@ function loop() {
     // handshake — never one without the other.
     if (handshakeOk && !sessionConflict) { setLoad(100, 'READY'); booted = true; window.__w3booted = true; }
     window.__w3state = function () {
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
+      const miraN = NPCS.find((n) => n.zone === 'coffee');
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), assetSwaps, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }

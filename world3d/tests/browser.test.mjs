@@ -668,7 +668,7 @@ ok(page._errs.length === 0, 'desktop: zero page errors', page._errs.slice(0, 3))
   await page.click('#w3wavebtn');
   ok(await waitDom(page, () => window.__w3state() && window.__w3state().emote === 'wave', 6000), 'v552 action: wave button still emotes');
   // prompt carries a real icon at the coffee shop door
-  await homeTo(page, -28.6, -31.5);
+  await homeTo(page, -28.6, -33.2);
   const pr = await page.evaluate(() => {
     const p = document.getElementById('w3prompt');
     const svg = p && p.querySelector('.w3p-ico svg');
@@ -696,6 +696,19 @@ ok(page._errs.length === 0, 'desktop: zero page errors', page._errs.slice(0, 3))
   ok(tIcons.w3jump.w > 8 && tIcons.w3sprint.w > 8, 'v552 touch: jump + sprint render their icons', tIcons);
   await tp.screenshot({ path: process.env.HOME + '/workspace/.tests/shots/phone.png' });
   await tp.close();
+}
+
+/* ---- 16) v553: the modeled-asset pipeline ---- */
+{
+  const { page } = await bootSmall();
+  let s = null;
+  for (let i = 0; i < 30; i++) { s = await state(page); if (s && s.assetSwaps >= 30 && s.miraRig) break; await sleep(1500); }
+  ok('v553 GLB assets swapped in over procedural fallbacks (>=30)', s && s.assetSwaps >= 30, s && String(s.assetSwaps));
+  ok('v553 rigged character live on mira (animation mixer)', s && s.miraRig === true);
+  const glbs = await page.evaluate(() => performance.getEntriesByType('resource').filter((r) => r.name.includes('.glb')).length);
+  ok('v553 all 9 GLB files fetched over the asset route', glbs >= 9, String(glbs));
+  ok('v553 zero page errors with the pipeline live', page._errs.length === 0, page._errs[0] || '');
+  await page.close();
 }
 
 await browser.close();

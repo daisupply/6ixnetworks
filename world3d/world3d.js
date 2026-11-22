@@ -132,6 +132,9 @@ function createWorld3D(ctx) {
   const CLIENT = fs.readFileSync(path.join(__dirname, 'client3d.js'), 'utf8');
   const MATH = fs.readFileSync(path.join(__dirname, 'math3d.js'), 'utf8');
   const THREE_MIN = fs.readFileSync(path.join(__dirname, 'vendor', 'three.module.min.js'), 'utf8');
+  const GLTF_LOADER = fs.readFileSync(path.join(__dirname, 'vendor', 'addons', 'loaders', 'GLTFLoader.js'), 'utf8');
+  const BG_UTILS = fs.readFileSync(path.join(__dirname, 'vendor', 'addons', 'utils', 'BufferGeometryUtils.js'), 'utf8');
+  const assetBinCache = new Map();
 
   const P = new Map(); // user -> { x, z, ry, at, sid, win, clampStreak, fx, hue }
 
@@ -353,6 +356,19 @@ function createWorld3D(ctx) {
     if (pathname === '/world3d/client3d.js') return { type: 'text/javascript; charset=utf-8', body: CLIENT };
     if (pathname === '/world3d/math3d.js') return { type: 'text/javascript; charset=utf-8', body: MATH };
     if (pathname === '/world3d/vendor/three.module.min.js') return { type: 'text/javascript; charset=utf-8', body: THREE_MIN };
+    if (pathname === '/world3d/vendor/addons/loaders/GLTFLoader.js') return { type: 'text/javascript; charset=utf-8', body: GLTF_LOADER };
+    if (pathname === '/world3d/vendor/addons/utils/BufferGeometryUtils.js') return { type: 'text/javascript; charset=utf-8', body: BG_UTILS };
+    if (pathname.startsWith('/world3d/assets/') && pathname.endsWith('.glb') && !pathname.includes('..')) {
+      // GLBs ship in the repo base64-wrapped (.glb.b64, the repo is
+      // text-only through the push pipeline); decode on serve, cache.
+      const rel = pathname.slice('/world3d/'.length);
+      try {
+        if (!assetBinCache.has(rel)) assetBinCache.set(rel, Buffer.from(fs.readFileSync(path.join(__dirname, rel + '.b64'), 'utf8').replace(/\s+/g, ''), 'base64'));
+        return { type: 'model/gltf-binary', body: assetBinCache.get(rel) };
+      } catch (e) {
+        try { return { type: 'model/gltf-binary', body: fs.readFileSync(path.join(__dirname, rel)) }; } catch (e2) { return null; }
+      }
+    }
     return null;
   }
 
@@ -385,7 +401,7 @@ function createWorld3D(ctx) {
       '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">\n' +
       '<title>the third dimension — six\'s network</title>\n<link rel="icon" href="/icon-192.png">\n' + ctx.FONT_LINKS +
       '\n<style>' + ctx.GALAXY_CSS + '</style>\n' + CRIT + '\n<link rel="stylesheet" href="/world3d/world3d.css">\n' +
-      '<script type="importmap">{"imports":{"three":"/world3d/vendor/three.module.min.js"}}</script>\n</head>\n<body>\n' +
+      '<script type="importmap">{"imports":{"three":"/world3d/vendor/three.module.min.js","three/addons/":"/world3d/vendor/addons/"}}</script>\n</head>\n<body>\n' +
       ctx.STAR_CANVAS + '\n' + ctx.SIDEBAR_HTML + '\n' +
       '<div id="w3wrap">\n<canvas id="w3cv"></canvas>\n' +
       '<div id="w3hud">\n' +
