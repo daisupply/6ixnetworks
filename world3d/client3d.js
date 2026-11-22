@@ -1945,18 +1945,25 @@ function buildDressing() {
 
   // mailboxes at the three houses + the apartments door
   for (const [x, z] of [[-99, -24], [-107, 10], [-95, 44], [-56, 36]]) {
-    const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.05, 0.12), woodD); post.position.set(x, 0.52, z); scene.add(post);
-    bx(0.85, 0.5, 0.5, new THREE.MeshStandardMaterial({ color: 0x38618c, roughness: 0.6, metalness: 0.3 }), x, 1.3, z);
-    bx(0.1, 0.34, 0.06, new THREE.MeshBasicMaterial({ color: 0xd64541 }), x + 0.44, 1.52, z);
+    const mg = new THREE.Group(); mg.position.set(x, 0, z); scene.add(mg);
+    const fb = new THREE.Group(); mg.add(fb);
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.05, 0.12), woodD); post.position.y = 0.52; fb.add(post);
+    const mbox = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.5, 0.5), new THREE.MeshStandardMaterial({ color: 0x38618c, roughness: 0.6, metalness: 0.3 })); mbox.position.y = 1.3; fb.add(mbox);
+    const mflag = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.34, 0.06), new THREE.MeshBasicMaterial({ color: 0xd64541 })); mflag.position.set(0.44, 1.52, 0); fb.add(mflag);
+    const holder = new THREE.Group(); mg.add(holder);
+    swapModel('/world3d/assets/environment/mailbox.glb', holder, fb);
     addCollider(x, z, 0.45);
   }
 
   // sittable benches: two by the pond, two along fountain avenue
   const benchSeat = (x, z, ry) => {
     const bg = new THREE.Group(); bg.position.set(x, 0, z); bg.rotation.y = ry; scene.add(bg);
-    const seat = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.16, 0.85), woodL); seat.position.y = 0.62; seat.castShadow = true; bg.add(seat);
-    const back = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.75, 0.13), woodL); back.position.set(0, 1.08, -0.4); back.rotation.x = -0.16; bg.add(back);
-    for (const dx of [-1.1, 1.1]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.62, 0.7), woodD); leg.position.set(dx, 0.31, 0); bg.add(leg); }
+    const fb = new THREE.Group(); bg.add(fb);
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.16, 0.85), woodL); seat.position.y = 0.62; seat.castShadow = true; fb.add(seat);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.75, 0.13), woodL); back.position.set(0, 1.08, -0.4); back.rotation.x = -0.16; fb.add(back);
+    for (const dx of [-1.1, 1.1]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.62, 0.7), woodD); leg.position.set(dx, 0.31, 0); fb.add(leg); }
+    const holder = new THREE.Group(); bg.add(holder);
+    swapModel('/world3d/assets/environment/bench.glb', holder, fb);
     const st = { x, z, ry, zone: 'town' };
     SEATS.push(st);
     addInteract('town', x, z, 1.8, () => (seatTaken(st) ? 'seat taken' : 'sit on the bench'), () => sitDown(st));

@@ -21,6 +21,8 @@ world3d.js decodes on serve, so runtime URLs stay `.glb`.
 | architecture/coffee_shop.glb | assets-src/coffee_shop.py | 468KB | coffee shop exterior — STAGE 01 build: gable roof w/ tile texture, rail-framed storefront w/ lit-interior texture, recessed porch, modeled STARLIGHT CAFÉ sign; 6,640 tris, 33 meshes, 33 materials |
 | architecture/hall.glb | assets-src/hall.py | 578KB | 6IXNETWORKS grand hall — STAGE 05 build: columned portico + pediment w/ gold crown, arched lit windows, slate hip roof, modeled gold sign; 8,380 tris, 13 meshes, 13 materials |
 | architecture/clothing.glb | assets-src/clothing.py | 387KB | Clothing Co. boutique — STAGE 06 build: sage + cream, striped storefront awning, display windows w/ boutique interior texture, modeled sign; 6,378 tris, 18 meshes, 19 materials |
+| environment/bench.glb | assets-src/props.py | 63KB | park bench — STAGE 07: slatted wood seat/back, iron frames, armrests; 180 tris, 3 meshes |
+| environment/mailbox.glb | assets-src/props.py | 46KB | mailbox — STAGE 07: post, rounded-top box, door, red flag; 204 tris, 4 meshes |
 | characters/character.glb | assets-src/character.py | 199KB | rigged character — skeleton + idle/walk clips; Mira (café) first |
 
 Conventions: meters = world units; origin at ground contact center;
