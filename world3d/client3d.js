@@ -920,7 +920,7 @@ function buildTown() {
   buildTownDoors545();
   buildShards();
   buildStrollers();
-  buildDressing(); buildVegetation(); buildForest(); buildWildlife(); buildEntrances(); buildTestGrove();
+  buildDressing(); buildForest(); buildWildlife(); buildEntrances(); buildTestGrove(); buildNature();
   cozyInteriors();
 }
 
@@ -1915,6 +1915,175 @@ let BIRDS = [], petals = null, petalDat = null;
  * planters and lantern posts (emissive only — no new point
  * lights). Houses get chimneys. Small props, deliberate spots,
  * paths and door swings stay clear. */
+/* ============ CP6 NATURE (stage 02 rebuild): the west forest, east
+ * meadow and all ground cover rebuilt from the curated Quaternius
+ * MegaKit library (CC0 — assets/ASSET_SOURCES.md). Replaces the stage-09
+ * primitive instancing and the stage-10 Blender-tree forest. Placement
+ * is seeded + deterministic: every client grows the identical world. */
+let NATURE = { trees: 0, grass: 0, flowers: 0 };
+const NAT = '/world3d/assets/nature/';
+function natPlace(name, x, z, s, ry, colliderR) {
+  loadAsset(NAT + name + '.glb').then((proto) => {
+    if (!proto) return;
+    const m = proto.clone(true);
+    m.position.set(x, groundH(x, z) - 0.05, z);
+    m.rotation.y = ry || 0;
+    m.scale.setScalar(s);
+    m.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    scene.add(m);
+  });
+  if (colliderR) addCollider(x, z, colliderR);
+}
+/* one InstancedMesh from a (single-mesh) library model.
+ * list entries: [x, z, scale, ry]. Optional tint(x,z,i) -> THREE.Color. */
+function natInst(name, list, tint, lift) {
+  if (!list.length) return;
+  loadAsset(NAT + name + '.glb').then((proto) => {
+    if (!proto) return;
+    let mesh = null;
+    proto.traverse((o) => { if (o.isMesh && !mesh) mesh = o; });
+    if (!mesh) return;
+    let mat = mesh.material;
+    if (lift) { // grass cards read near-black in shadow: clone + gentle emissive lift
+      mat = mat.clone();
+      mat.emissive = new THREE.Color(0x1c2a0e);
+      mat.emissiveIntensity = 0.38;
+    }
+    const inst = new THREE.InstancedMesh(mesh.geometry, mat, list.length);
+    const d = new THREE.Object3D();
+    list.forEach(([x, z, s, ry], i) => {
+      d.position.set(x, groundH(x, z) - 0.03, z);
+      d.rotation.set(0, ry || 0, 0);
+      d.scale.setScalar(s);
+      d.updateMatrix();
+      inst.setMatrixAt(i, d.matrix);
+      if (tint) inst.setColorAt(i, tint(x, z, i));
+    });
+    if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
+    inst.receiveShadow = true;
+    inst.frustumCulled = false;
+    scene.add(inst);
+  });
+}
+function buildNature() {
+  const rnd = mulberry32(90221022);
+  const pathPts = [[-127, 32], [-140, 24], [-150, 8], [-158, -6], [-167, -19], [-174, -30], [-179, -37]];
+  const nearPath = (x, z, r) => pathPts.some((p) => Math.hypot(x - p[0], z - p[1]) < r);
+  const COMMON = ['CommonTree_1', 'CommonTree_2', 'CommonTree_3', 'CommonTree_4', 'CommonTree_5'];
+  const PINES = ['Pine_1', 'Pine_2', 'Pine_3', 'Pine_4', 'Pine_5'];
+  const treeSpots = [];
+  // ---- west forest: dense clusters + scatter, path + clearing carved out
+  const clusters = [[-168, -42, 30], [-172, 48, 27], [-158, 92, 20], [-180, -85, 22], [-150, -95, 20]];
+  for (const [cx, cz, r] of clusters) {
+    const n = 12 + (rnd() * 5 | 0);
+    for (let i = 0; i < n; i++) {
+      const a = rnd() * TAU, d = Math.sqrt(rnd()) * r;
+      treeSpots.push([cx + Math.cos(a) * d, cz + Math.sin(a) * d * 0.8]);
+    }
+  }
+  for (let i = 0; i < 16; i++) treeSpots.push([-140 - rnd() * 48, -100 + rnd() * 205]);
+  const kept = treeSpots.filter(([x, z]) => x > -195 && x < -131 && Math.abs(z) < 112 && !nearPath(x, z, 5.5) && Math.hypot(x + 179, z + 38) > 9.5);
+  kept.forEach(([x, z], i) => {
+    const pine = rnd() < 0.32;
+    const name = pine ? PINES[(rnd() * 5) | 0] : COMMON[(rnd() * 5) | 0];
+    const sc = (pine ? 0.95 : 0.9) + rnd() * 0.45;
+    natPlace(name, x, z, sc, rnd() * TAU, 0.8 * sc);
+    FOREST.trees++; NATURE.trees++;
+  });
+  // ---- landmarks: red twisted trees + bare snags
+  natPlace('TwistedTree_2', -179, -38, 0.66, 0.4, 1.1);
+  natPlace('TwistedTree_1', -160, 78, 0.55, 2.2, 0.9);
+  natPlace('TwistedTree_3', -146, -64, 0.5, 4.0, 0.9);
+  natPlace('DeadTree_3', -186, -70, 1.0, 1.1, 0.7);
+  natPlace('DeadTree_3', -138, 96, 0.85, 3.3, 0.6);
+  NATURE.trees += 5;
+  // ---- east meadow trees: lone broadleafs + a pine trio at the rim
+  const meadowSpots = [[142, -18], [156, 58], [146, 88], [172, -52], [186, 22], [158, -84], [138, 30], [184, 66], [168, 96]];
+  for (const [x, z] of meadowSpots) {
+    natPlace(COMMON[(rnd() * 5) | 0], x, z, 1.0 + rnd() * 0.3, rnd() * TAU, 0.85);
+    NATURE.trees++;
+  }
+  for (const [x, z] of [[190, -20], [192, 14], [188, 48]]) {
+    natPlace(PINES[(rnd() * 5) | 0], x, z, 1.15 + rnd() * 0.25, rnd() * TAU, 0.9);
+    NATURE.trees++;
+  }
+  // ---- boulders: forest + meadow + rim
+  const ROCKS = ['Rock_Medium_1', 'Rock_Medium_2', 'Rock_Medium_3'];
+  const rockSpots = [[-150, -20], [-166, 12], [-142, 66], [-176, -88], [-156, -100], [148, 8], [176, 40], [160, -30], [-136, -48], [142, 66]];
+  for (const [x, z] of rockSpots) natPlace(ROCKS[(rnd() * 3) | 0], x, z, 0.8 + rnd() * 0.9, rnd() * TAU, 0);
+  // ---- ground cover: grass by zone (instanced real models)
+  const grassTall = [], grassShort = [], wispyTall = [], wispyShort = [];
+  const scatter = (list, n, x0, x1, z0, z1, sMin, sMax, reject) => {
+    let placed = 0, guard = 0;
+    while (placed < n && guard++ < n * 30) {
+      const x = x0 + rnd() * (x1 - x0), z = z0 + rnd() * (z1 - z0);
+      if (reject && reject(x, z)) continue;
+      list.push([x, z, sMin + rnd() * (sMax - sMin), rnd() * TAU]);
+      placed++;
+    }
+  };
+  const pondReject = (x, z) => Math.hypot(x - 118, z - 12) < 15.5;
+  scatter(grassTall, 700, -194, -133, -108, 108, 0.85, 1.5, (x, z) => nearPath(x, z, 3.2));
+  scatter(grassTall, 240, 92, 132, -30, 62, 0.8, 1.3, pondReject);
+  scatter(grassShort, 380, -126, 126, -100, 104, 0.7, 1.1, pondReject);
+  scatter(wispyTall, 620, 133, 194, -104, 106, 0.85, 1.45, (x, z) => Math.hypot(x - 174, z - 8) < 7);
+  scatter(wispyShort, 360, 128, 194, -104, 106, 0.65, 1.0, null);
+  scatter(wispyShort, 120, -132, -126, -40, 60, 0.65, 1.0, null);
+  const tintGrass = () => {
+    const v = 0.86 + rnd() * 0.26;
+    return new THREE.Color(v * 1.03, v, v * 0.92);
+  };
+  natInst('Grass_Common_Tall', grassTall, tintGrass, true);
+  natInst('Grass_Common_Short', grassShort, tintGrass, true);
+  natInst('Grass_Wispy_Tall', wispyTall, tintGrass, true);
+  natInst('Grass_Wispy_Short', wispyShort, tintGrass, true);
+  NATURE.grass = grassTall.length + grassShort.length + wispyTall.length + wispyShort.length;
+  VEG.grass = NATURE.grass;
+  // ---- flowers: composed clusters, not uniform scatter
+  const fl3 = [], fl4 = [];
+  const flowerCenters = [];
+  for (let i = 0; i < 16; i++) flowerCenters.push([136 + rnd() * 54, -100 + rnd() * 204]);
+  for (let i = 0; i < 6; i++) flowerCenters.push([94 + rnd() * 36, -26 + rnd() * 84]);
+  for (let i = 0; i < 4; i++) flowerCenters.push([-179 + (rnd() - 0.5) * 22, -38 + (rnd() - 0.5) * 22]);
+  flowerCenters.forEach(([cx, cz], ci) => {
+    const list = ci % 2 ? fl4 : fl3;
+    const n = 3 + (rnd() * 3 | 0);
+    for (let i = 0; i < n; i++) {
+      const a = rnd() * TAU, d = Math.sqrt(rnd()) * 2.6;
+      list.push([cx + Math.cos(a) * d, cz + Math.sin(a) * d, 0.9 + rnd() * 0.5, rnd() * TAU]);
+    }
+  });
+  natInst('Flower_3_Group', fl3, null);
+  natInst('Flower_4_Group', fl4, null);
+  NATURE.flowers = fl3.length + fl4.length;
+  VEG.flowers = NATURE.flowers;
+  // ---- forest floor detail: ferns, mushrooms, plants, pebbles
+  const ferns = [], mush = [], plants = [], pebbles = [];
+  for (const [x, z] of kept) {
+    if (rnd() < 0.55) ferns.push([x + (rnd() - 0.5) * 3.4, z + (rnd() - 0.5) * 3.4, 0.9 + rnd() * 0.5, rnd() * TAU]);
+    if (rnd() < 0.3) mush.push([x + (rnd() - 0.5) * 2.2, z + (rnd() - 0.5) * 2.2, 0.8 + rnd() * 0.6, rnd() * TAU]);
+  }
+  scatter(plants, 54, 92, 132, -30, 62, 0.8, 1.2, pondReject);
+  scatter(plants, 26, -194, -133, -108, 108, 0.8, 1.2, (x, z) => nearPath(x, z, 3.2));
+  const curve = new THREE.CatmullRomCurve3(pathPts.map(([x, z]) => new THREE.Vector3(x, 0, z)));
+  for (let i = 0; i < 46; i++) {
+    const p = curve.getPoint(rnd());
+    pebbles.push([p.x + (rnd() - 0.5) * 4.4, p.z + (rnd() - 0.5) * 4.4, 0.7 + rnd() * 0.9, rnd() * TAU]);
+  }
+  scatter(pebbles, 70, -194, 194, -108, 108, 0.6, 1.1, pondReject);
+  natInst('Fern_1', ferns, null);
+  natInst('Mushroom_Common', mush, null);
+  natInst('Plant_7', plants, null);
+  natInst('Pebble_Round_2', pebbles, null);
+  VEG.pebbles = pebbles.length; VEG.mushrooms = mush.length;
+  // ---- cobble patches along the forest path (real path stones)
+  for (let i = 0; i <= 8; i++) {
+    const t = i / 8, p = curve.getPoint(t), tan = curve.getTangent(t);
+    natPlace(i % 2 ? 'RockPath_Round_Wide' : 'RockPath_Round_Thin', p.x, p.z, 1.15, Math.atan2(tan.x, tan.z), 0);
+  }
+}
+
+
 /* ============ CP3 TEST GROVE (stage 02 rebuild): curated Quaternius
  * MegaKit models composed on the east meadow to lock the art direction
  * in-engine before large-scale placement. Temporary — CP6 replaces the
@@ -1956,27 +2125,7 @@ function buildTestGrove() {
   for (const [x, z, r] of [[CX - 6, CZ - 6, 1.0], [CX + 6, CZ + 6, 0.9], [CX - 2, CZ + 14, 0.9], [CX + 10, CZ - 8, 0.9], [CX - 12, CZ + 10, 0.8], [CX, CZ, 1.1], [CX - 8, CZ, 1.5], [CX + 8, CZ + 10, 1.1]]) {
     addCollider(x, z, r);
   }
-  // grass: ONE InstancedMesh built from the real grass model
-  loadAsset('/world3d/assets/nature/Grass_Common_Tall.glb').then((proto) => {
-    if (!proto) return;
-    let mesh = null;
-    proto.traverse((o) => { if (o.isMesh && !mesh) mesh = o; });
-    if (!mesh) return;
-    const N = 240, inst = new THREE.InstancedMesh(mesh.geometry, mesh.material, N);
-    const rng = mulberry32(31337), d = new THREE.Object3D();
-    for (let i = 0; i < N; i++) {
-      const a = rng() * Math.PI * 2, rr = Math.sqrt(rng()) * 15;
-      const x = CX + Math.cos(a) * rr, z = CZ + Math.sin(a) * rr;
-      d.position.set(x, groundH(x, z) - 0.03, z);
-      d.rotation.set((rng() - 0.5) * 0.16, rng() * Math.PI, (rng() - 0.5) * 0.16);
-      d.scale.setScalar(0.8 + rng() * 0.7);
-      d.updateMatrix();
-      inst.setMatrixAt(i, d.matrix);
-    }
-    inst.receiveShadow = true;
-    scene.add(inst);
-    GROVE.n++;
-  });
+  // (grass ring removed at CP6 — buildNature covers this area)
 }
 
 function buildEntrances() {
@@ -2157,41 +2306,8 @@ function tickWildlife(now, dt) {
 let FOREST = { trees: 0 };
 function buildForest() {
   const frnd = mulberry32(424242);
-  const urls = [
-    '/world3d/assets/trees/tree_tall.glb',
-    '/world3d/assets/trees/tree_broad.glb',
-    '/world3d/assets/environment/tree_pine.glb',
-    '/world3d/assets/environment/tree_round.glb',
-    '/world3d/assets/environment/tree_sakura.glb',
-  ];
-  const spots = [];
-  const clusters = [[-168, -42, 30], [-172, 48, 27], [-158, 92, 20], [-180, -85, 22], [-150, -95, 20]];
-  for (const [cx, cz, r] of clusters) {
-    const n = 7 + (frnd() * 4 | 0);
-    for (let i = 0; i < n; i++) {
-      const a = frnd() * TAU, d = Math.sqrt(frnd()) * r;
-      spots.push([cx + Math.cos(a) * d, cz + Math.sin(a) * d * 0.8]);
-    }
-  }
-  for (let i = 0; i < 12; i++) spots.push([-140 - frnd() * 48, -100 + frnd() * 205]);
+  // CP6: forest trees moved to buildNature() (curated MegaKit library).
   const pathPts = [[-127, 32], [-140, 24], [-150, 8], [-158, -6], [-167, -19], [-174, -30], [-179, -37]];
-  const nearPath = (x, z) => pathPts.some((p) => Math.hypot(x - p[0], z - p[1]) < 5.5) || Math.hypot(x + 179, z + 38) < 8.5;
-  const kept = spots.filter(([x, z]) => x > -195 && x < -131 && Math.abs(z) < 112 && !nearPath(x, z));
-  kept.forEach(([x, z], i) => {
-    const url = urls[i % urls.length];
-    const sc = 1.15 + frnd() * 0.95;
-    loadAsset(url).then((proto) => {
-      if (!proto) return;
-      const m = proto.clone(true);
-      m.position.set(x, groundH(x, z) - 0.05, z);
-      m.rotation.y = frnd() * TAU;
-      m.scale.setScalar(sc);
-      m.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-      scene.add(m);
-    });
-    addCollider(x, z, 0.85 * sc);
-    FOREST.trees++;
-  });
   // ---- winding dirt path (ribbon over the terrain) ----
   const curve = new THREE.CatmullRomCurve3(pathPts.map(([x, z]) => new THREE.Vector3(x, 0, z)));
   const N = 60, posArr = [], idx = [];
