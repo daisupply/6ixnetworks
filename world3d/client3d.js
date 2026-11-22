@@ -787,7 +787,14 @@ function buildTown() {
     const holder = new THREE.Group(); coffeeG.add(holder);
     swapModel('/world3d/assets/architecture/coffee_shop.glb', holder, fb);
   }
-  storefront({ x: 0, z: -50, w: 30, d: 16, h: 16, name: '6IXNETWORKS', glyph: 'crown', col: '#ffd257', kind: 'hall', warm: '#7a5c14', awn: '#7a5c14', seed: 97 });
+  const hallG = storefront({ x: 0, z: -50, w: 30, d: 16, h: 16, name: '6IXNETWORKS', glyph: 'crown', col: '#ffd257', kind: 'hall', warm: '#7a5c14', awn: '#7a5c14', seed: 97 });
+  { // stage 05: the modeled grand hall swaps over the shell
+    const fb = new THREE.Group(); hallG.add(fb);
+    const keepers = hallG.userData.keepers.filter((k) => !k.userData.signPart);
+    [...hallG.children].forEach((c) => { if (c !== fb && !keepers.includes(c)) fb.add(c); });
+    const holder = new THREE.Group(); hallG.add(holder);
+    swapModel('/world3d/assets/architecture/hall.glb', holder, fb);
+  }
   storefront({ x: 36, z: -44, w: 24, d: 14, h: 10.5, name: 'CLOTHING CO.', glyph: 'hanger', col: '#f3efff', kind: 'clothing', warm: '#6b5a8a', awn: '#1f5f5b', seed: 83 });
 
   /* ----- hip roofs + awnings on the five district buildings ----- */
