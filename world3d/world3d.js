@@ -404,6 +404,7 @@ function createWorld3D(ctx) {
       '  <label class="w3chk">shadows <input id="w3shadow" type="checkbox"></label>\n' +
       '  <label class="w3chk">ambient sound <input id="w3snd" type="checkbox"></label>\n' +
       '  <label>sound volume <input id="w3vol" type="range" min="0" max="1" step="0.05"></label>\n' +
+      '  <label>effects volume <input id="w3sfx" type="range" min="0" max="1" step="0.05"></label>\n' +
       '  <div class="w3how">wasd move · mouse camera (click the world to lock) · space jump · shift sprint<br>on touch: left stick moves, drag right side for camera</div>\n' +
       '</div>\n' +
       '<div id="w3toast" hidden></div>\n' +

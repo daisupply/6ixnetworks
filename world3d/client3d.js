@@ -41,7 +41,7 @@ const WALK = 15, SPRINT = 26, ACCEL = 90, DECEL = 120, TURN = 14;
 const GRAV = 30, JUMP_V = 11.5;
 
 /* ---------- settings (persisted) ---------- */
-const SET_DEF = { sens: 1, camDist: 13, camH: 1.7, gfx: 'auto', shadows: true, snd: false, vol: 0.5, view: 'fp', fov: 72, bob: true };
+const SET_DEF = { sens: 1, camDist: 13, camH: 1.7, gfx: 'auto', shadows: true, snd: false, vol: 0.5, view: 'fp', fov: 72, bob: true, sfx: 0.8 };
 let SET = { ...SET_DEF };
 try { const s = JSON.parse(localStorage.getItem('w3settings') || 'null'); if (s) SET = { ...SET_DEF, ...s }; } catch (e) { }
 function saveSet() { try { localStorage.setItem('w3settings', JSON.stringify(SET)); } catch (e) { } }
@@ -106,6 +106,8 @@ function ensureAudio() {
     acMaster = AC.createGain(); acMaster.gain.value = SET.vol * 0.14;
     const f = AC.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 420;
     acMaster.connect(f); f.connect(AC.destination);
+    acFilter = f;
+    acSfx = AC.createGain(); acSfx.gain.value = 0.9; acSfx.connect(AC.destination);
     [[110, 'sine', 0.5], [164.81, 'sine', 0.42], [220, 'triangle', 0.16]].forEach((cfg, i) => {
       const o = AC.createOscillator(); o.type = cfg[1]; o.frequency.value = cfg[0]; o.detune.value = (i - 1) * 4;
       const g = AC.createGain(); g.gain.value = cfg[2];
@@ -119,7 +121,7 @@ function ensureAudio() {
 function applyAudio() {
   if (!SET.snd) { if (AC && AC.suspend) AC.suspend(); return; }
   ensureAudio();
-  if (acMaster) acMaster.gain.value = SET.vol * 0.14;
+  if (acMaster) acMaster.gain.value = SET.vol * ((AMB[ambZone] || AMB.town).g);
 }
 
 /* ---------- avatars: articulated, procedurally animated ---------- */
@@ -872,6 +874,7 @@ function buildTown() {
   buildShards();
   buildStrollers();
   buildDressing();
+  cozyInteriors();
 }
 
 
@@ -902,7 +905,7 @@ function warpTo(x, z, ry2) {
 }
 function fadeThrough(fn) {
   if (transitioning) return;
-  transitioning = true; clearInput(); setPrompt(null);
+  transitioning = true; clearInput(); setPrompt(null); sfxDoor();
   R.fade.classList.add('on');
   setTimeout(() => { fn(); setTimeout(() => { R.fade.classList.remove('on'); transitioning = false; }, 140); }, 300);
 }
@@ -1374,7 +1377,7 @@ function buildArcade() {
     }
     g.globalAlpha = 1;
   }, 5, 4);
-  const { M, box } = roomShell(CX, { floor: 0xffffff, floorTex: carpetTex, wall: 0x1d1440 });
+  const { M, box } = roomShell(CX, { floor: 0xffffff, floorTex: carpetTex, wall: 0x3a2a33 });
   for (const [nz, col] of [[-8.92, 0xa78bfa], [8.92, 0x67e8f9]]) {
     const strip = box(21, 0.14, 0.06, M(col, { emissive: col, emissiveIntensity: 2 }), CX, 3.6, nz);
     strip.castShadow = false;
@@ -1437,7 +1440,7 @@ function closeGames() { gamesOpen = false; R.games.hidden = true; }
 /* ----- the clothing store (world x 2069..2091) ----- */
 function buildClothing() {
   const CX = 2080;
-  const { M, box } = roomShell(CX, { floor: 0x8a7f9e, wall: 0xd8d2ea });
+  const { M, box } = roomShell(CX, { floor: 0xa08b6d, wall: 0xe8dcc8 });
   const glow = new THREE.PointLight(0xffe9c4, 430, 18, 2); glow.position.set(CX, 3.2, 0); scene.add(glow);
   interiorLights.push({ light: glow, zone: 'clothing' });
   const shirtCols = [0xf472b6, 0xa78bfa, 0x67e8f9, 0xffd257, 0x4ade80, 0xfb923c, 0xf3efff, 0xd43a4a];
@@ -1510,6 +1513,121 @@ function buildTownDoors544() {
 }
 
 
+
+
+/* ---------- v550: sound design — zone ambience + footsteps + doors ----------
+ * the pad from ensureAudio gets a per-zone voice: the filter center
+ * and pad level ease toward the room ur in (cafe warmer, library
+ * quieter, arcade brighter). footsteps are short filtered noise
+ * bursts fired off the head-bob cycle, voiced by surface (grass /
+ * stone / wood). doors get a soft sweep when u pass through one.
+ * everything rides the same AudioContext the jukebox suspends, and
+ * nothing sounds until the first user gesture (ensureAudio's rule). */
+let acFilter = null, acSfx = null, ambZone = '', lastStepSign = 0, noiseBuf = null;
+const AMB = {
+  town: { f: 420, g: 0.14 },
+  coffee: { f: 660, g: 0.11 },
+  arcade: { f: 940, g: 0.12 },
+  clothing: { f: 520, g: 0.10 },
+  library: { f: 300, g: 0.07 },
+  rec: { f: 560, g: 0.12 },
+  apt: { f: 380, g: 0.09 },
+};
+function setAmbience(zone) {
+  ambZone = zone;
+  if (!AC || !acMaster || !acFilter) return;
+  const a = AMB[zone] || AMB.town, t = AC.currentTime;
+  acFilter.frequency.setTargetAtTime(a.f, t, 0.6);
+  acMaster.gain.setTargetAtTime(SET.vol * a.g, t, 0.6);
+}
+function sfxStep() {
+  if (!AC || AC.state !== 'running' || !acSfx || !SET.sfx) return;
+  if (!noiseBuf) {
+    noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.12, AC.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+  }
+  const src = AC.createBufferSource(); src.buffer = noiseBuf;
+  const bp = AC.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 0.9;
+  const z = zoneNow();
+  bp.frequency.value = z === 'town' ? (districtNow === 'the plaza' ? 700 : 480) : 950;
+  const g = AC.createGain();
+  g.gain.value = SET.sfx * (sprintingNow() ? 0.20 : 0.13);
+  src.connect(bp); bp.connect(g); g.connect(acSfx);
+  src.start();
+}
+function sfxDoor() {
+  if (!AC || AC.state !== 'running' || !acSfx || !SET.sfx) return;
+  const o = AC.createOscillator(); o.type = 'triangle';
+  const t = AC.currentTime;
+  o.frequency.setValueAtTime(320, t); o.frequency.exponentialRampToValueAtTime(170, t + 0.13);
+  const g = AC.createGain();
+  g.gain.setValueAtTime(SET.sfx * 0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+  o.connect(g); g.connect(acSfx); o.start(t); o.stop(t + 0.18);
+}
+function tickAudio() {
+  const z = zoneNow();
+  if (z !== ambZone) setAmbience(z);
+  if (!AC) return;
+  // a footstep each time the bob cycle crosses zero (two per stride)
+  if (grounded && !sitting && speedSm > 1.2) {
+    const sn = Math.sin(bobPhase * 2) >= 0 ? 1 : -1;
+    if (lastStepSign !== 0 && sn !== lastStepSign) sfxStep();
+    lastStepSign = sn;
+  } else lastStepSign = 0;
+}
+
+/* ---------- v550: cozy interiors — pendants, string lights, lamps, plants ----------
+ * emissive-only dressing (no new point lights — the perf rule), one
+ * pass over the six interiors at their fixed world anchors. */
+function cozyInteriors() {
+  const cordM = new THREE.MeshStandardMaterial({ color: 0x2c2622, roughness: 0.8 });
+  const shadeM = new THREE.MeshStandardMaterial({ color: 0xa35a3c, roughness: 0.7 });
+  const bulbM = new THREE.MeshBasicMaterial({ color: 0xffd9a0 });
+  const leafM = new THREE.MeshStandardMaterial({ color: 0x5d8148, roughness: 1, flatShading: true });
+  const potM = new THREE.MeshStandardMaterial({ color: 0xa35a3c, roughness: 0.9 });
+  const pendant = (x, y, z) => {
+    const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.1, 5), cordM); cord.position.set(x, y + 0.55, z); scene.add(cord);
+    const shade = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.3, 10, 1, true), shadeM); shade.position.set(x, y, z); scene.add(shade);
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), bulbM); bulb.position.set(x, y - 0.1, z); scene.add(bulb);
+  };
+  const plant = (x, z, s) => {
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.22 * s, 0.16 * s, 0.34 * s, 8), potM); pot.position.set(x, 0.17 * s, z); scene.add(pot);
+    const fol = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42 * s, 0), leafM); fol.position.set(x, 0.62 * s, z); fol.castShadow = true; scene.add(fol);
+  };
+  const stringLights = (cx, z, y, n, span) => {
+    const cols = [0xffd9a0, 0xf9a8d4, 0xa8d8f0, 0xffd257];
+    for (let i = 0; i < n; i++) {
+      const x = cx - span / 2 + (span * i) / (n - 1);
+      const sag = Math.sin((i / (n - 1)) * Math.PI) * -0.22;
+      const b = new THREE.Mesh(new THREE.SphereGeometry(0.055, 6, 6), new THREE.MeshBasicMaterial({ color: cols[i % 4] }));
+      b.position.set(x, y + sag, z); scene.add(b);
+    }
+  };
+  // cafe: pendants over the counter + plants by the sofa
+  pendant(1996, 3.1, -5.2); pendant(2000, 3.1, -5.2); pendant(2004, 3.1, -5.2);
+  plant(1991.5, 6.5, 1); plant(2009, -6.5, 1.2);
+  // arcade: string lights along both long walls
+  stringLights(2040, -8.4, 3.7, 13, 19); stringLights(2040, 8.4, 3.7, 13, 19);
+  // clothing: plants + a real mirror sheen by the wardrobe station
+  plant(2071.5, -7.5, 1.1); plant(2088.5, 6.8, 1);
+  const mirror = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 3.1), new THREE.MeshStandardMaterial({ color: 0xdfe9ee, roughness: 0.06, metalness: 0.9 }));
+  mirror.position.set(2086, 1.9, -8.85); scene.add(mirror);
+  // library: it already has table lamps — just plants by the door wall
+  plant(2111, 7.8, 1.2); plant(2129, 7.8, 1.2);
+  // rec: string lights over the lounge + plants
+  stringLights(2160, 0, 3.8, 11, 16);
+  plant(2151.5, -7.6, 1); plant(2168.5, 7.6, 1.1);
+  // apartment: floor lamp by the couch, plant on the desk, picture frames
+  const fl = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 1.5, 6), cordM); fl.position.set(2207.8, 0.75, 3.4); scene.add(fl);
+  const fls = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.3, 8, 1, true), new THREE.MeshStandardMaterial({ color: 0xffd9a0, emissive: 0xffbf70, emissiveIntensity: 0.9, side: THREE.DoubleSide })); fls.position.set(2207.8, 1.6, 3.4); scene.add(fls);
+  plant(2192, -7.6, 0.9);
+  const artTex = canvasTex(64, 48, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#7ba7dc'); gr.addColorStop(0.7, '#f7b267'); gr.addColorStop(1, '#e88ca0'); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.fillStyle = '#fff2cf'; g.beginPath(); g.arc(46, 12, 5, 0, 7); g.fill(); });
+  for (const [x, z, ry] of [[2196, -8.8, 0], [2204, -8.8, 0]]) {
+    const fr = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.95, 0.06), shadeM); fr.position.set(x, 2.1, z); scene.add(fr);
+    const art = new THREE.Mesh(new THREE.PlaneGeometry(1.14, 0.8), new THREE.MeshBasicMaterial({ map: artTex })); art.position.set(x, 2.1, z + 0.045); scene.add(art);
+  }
+}
 
 /* ---------- v549: environment dressing — the town feels lived in ----------
  * leafy trees beside the pines, garden beds in the park, a bus stop
@@ -1703,7 +1821,7 @@ function buildLibrary() {
     let x = 0;
     while (x < w) { const bw = 5 + r2() * 8; g.fillStyle = cols[(r2() * 6) | 0]; g.fillRect(x, 3, bw - 1, h - 6); g.fillStyle = 'rgba(255,217,160,.5)'; g.fillRect(x, 8, bw - 1, 2); x += bw; }
   }, 6, 1);
-  const { M, box } = roomShell(CX, { floor: 0x4a3826, wall: 0x2c2140 });
+  const { M, box } = roomShell(CX, { floor: 0x4a3826, wall: 0x4a3626 });
   const glow = new THREE.PointLight(0xffd9a0, 430, 18, 2); glow.position.set(CX, 3.2, 0); scene.add(glow);
   interiorLights.push({ light: glow, zone: 'library' });
   const shelfM = M(0xffffff, { map: spineTex, roughness: 0.9 });
@@ -1758,7 +1876,7 @@ function togglePad() {
 }
 function buildRec() {
   const CX = 2160;
-  const { M, box } = roomShell(CX, { floor: 0x27354a, wall: 0x1e2c22 });
+  const { M, box } = roomShell(CX, { floor: 0x5a4a3a, wall: 0x39503c });
   const glow = new THREE.PointLight(0xb8ffd9, 400, 18, 2); glow.position.set(CX, 3.2, 0); scene.add(glow);
   interiorLights.push({ light: glow, zone: 'rec' });
   // dance floor: emissive tile grid (v546 hooks the celebrate emote here)
@@ -1850,7 +1968,7 @@ async function setApt(key, val) {
 }
 function buildApt() {
   const CX = 2200;
-  const { M, box } = roomShell(CX, { floor: 0x5a4632, wall: 0x3a2c50 });
+  const { M, box } = roomShell(CX, { floor: 0x5a4632, wall: 0xd9c6a5 });
   const glow = new THREE.PointLight(0xffc98a, 380, 17, 2); glow.position.set(CX, 3.1, 0); scene.add(glow);
   interiorLights.push({ light: glow, zone: 'apt' });
   aptRugMesh = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.05, 3.8), M(APT_RUGS[0], { roughness: 1 }));
@@ -2486,7 +2604,7 @@ function loop() {
     animateAvatar(g, rm.st, dt, now);
   }
   // npcs idle in place; prompt scan + seat snap (v543)
-  tickStrollers(dt, now); tickShards(now); tickDressing(now);
+  tickStrollers(dt, now); tickShards(now); tickDressing(now); tickAudio();
   for (const n of NPCS) animateAvatar(n.g, n.st, dt, now);
   if (sitting) { px = sitting.x; pz = sitting.z; if (joyVec.x || joyVec.y) standUp(); }
   if ((scanTick = (scanTick + 1) % 5) === 0) scanPrompts();
@@ -2533,7 +2651,7 @@ function loop() {
     // handshake — never one without the other.
     if (handshakeOk && !sessionConflict) { setLoad(100, 'READY'); booted = true; window.__w3booted = true; }
     window.__w3state = function () {
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, amb: ambZone, sfx: SET.sfx, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }
@@ -2574,7 +2692,7 @@ function goBack() {
 function bindSettings() {
   R.sens.value = SET.sens; R.camd.value = SET.camDist; R.camh.value = SET.camH; R.gfxsel.value = SET.gfx;
   if (R.viewsel) { R.viewsel.value = SET.view; R.fov.value = SET.fov; R.bob.checked = SET.bob; }
-  R.shadow.checked = SET.shadows; R.snd.checked = SET.snd; R.vol.value = SET.vol;
+  R.shadow.checked = SET.shadows; R.snd.checked = SET.snd; R.vol.value = SET.vol; if (R.sfx) R.sfx.value = SET.sfx;
   R.setbtn.addEventListener('click', () => { R.set.hidden = !R.set.hidden; });
   R.setclose.addEventListener('click', () => { R.set.hidden = true; });
   R.sens.addEventListener('input', () => { SET.sens = parseFloat(R.sens.value) || 1; saveSet(); });
@@ -2589,6 +2707,7 @@ function bindSettings() {
   R.shadow.addEventListener('change', () => { SET.shadows = R.shadow.checked; saveSet(); applyGfx(); });
   R.snd.addEventListener('change', () => { SET.snd = R.snd.checked; saveSet(); applyAudio(); });
   R.vol.addEventListener('input', () => { SET.vol = parseFloat(R.vol.value) || 0; saveSet(); applyAudio(); });
+  if (R.sfx) R.sfx.addEventListener('input', () => { SET.sfx = parseFloat(R.sfx.value) || 0; saveSet(); });
 }
 
 /* ---------- boot: checkpoints are real events, not fake numbers ---------- */
@@ -2602,7 +2721,7 @@ function init() {
   R.quiz = $('w3quiz'); R.quizq = $('w3quizq'); R.quizchoices = $('w3quizchoices'); R.quizres = $('w3quizres'); R.map = $('w3map'); R.mapcv = $('w3mapcv'); R.mapseen = $('w3mapseen');
   R.toast = $('w3toast'); R.act = $('w3act'); R.conn = $('w3conn'); R.camh = $('w3camh'); R.conflict = $('w3conflict'); R.reclaim = $('w3reclaim'); R.confback = $('w3confback'); R.joy = $('w3joy'); R.knob = $('w3knob'); R.joyzone = $('w3joyzone');
   R.jump = $('w3jump'); R.sprint = $('w3sprint'); R.setbtn = $('w3setbtn'); R.set = $('w3set'); R.setclose = $('w3setclose');
-  R.sens = $('w3sens'); R.camd = $('w3camd'); R.gfxsel = $('w3gfxsel'); R.shadow = $('w3shadow'); R.snd = $('w3snd'); R.vol = $('w3vol');
+  R.sens = $('w3sens'); R.camd = $('w3camd'); R.gfxsel = $('w3gfxsel'); R.shadow = $('w3shadow'); R.snd = $('w3snd'); R.vol = $('w3vol'); R.sfx = $('w3sfx');
   R.viewsel = $('w3viewsel'); R.fov = $('w3fov'); R.bob = $('w3bob');
 
   flavorTimer = setInterval(() => { if (!loadDone && R.loadmsg) { flavorI = (flavorI + 1) % FLAVOR.length; R.loadmsg.textContent = FLAVOR[flavorI]; } }, 1500);

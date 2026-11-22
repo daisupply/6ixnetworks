@@ -615,6 +615,17 @@ ok(page._errs.length === 0, 'desktop: zero page errors', page._errs.slice(0, 3))
   await page.close();
 }
 
+/* ---- 13) v550: sound wiring + cozy interiors ---- */
+{
+  const { page } = await bootSmall();
+  const s0 = await state(page);
+  ok(!!s0 && s0.amb === 'town' && s0.sfx === 0.8, 'v550: ambience tracks the zone, sfx level saved', s0 && { amb: s0.amb, sfx: s0.sfx });
+  const hasSlider = await page.evaluate(() => !!document.getElementById('w3sfx'));
+  ok(hasSlider, 'v550: effects volume slider in settings');
+  ok(page._errs.length === 0, 'v550: zero page errors', page._errs.slice(0, 3));
+  await page.close();
+}
+
 await browser.close();
 
 console.log('BROWSER RESULT: ' + pass + ' pass, ' + fail + ' fail');
