@@ -895,6 +895,14 @@ function buildTown() {
     const dum = new THREE.Object3D();
     pickets.forEach(([px2, pz2], i) => { dum.position.set(px2, 0.52, pz2); dum.updateMatrix(); pIM.setMatrixAt(i, dum.matrix); });
     pIM.castShadow = true; scene.add(pIM);
+    // STAGE 04: rails tie the pickets into a fence - posts alone read as
+    // disconnected sticks. Both runs sit on the flat plateau, so level
+    // rails at two heights follow the ground exactly.
+    const railM = M(0xe8e2f2, { roughness: 0.9 });
+    for (const rz of [-16.5, 52]) for (const ry2 of [0.3, 0.76]) {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(38.4, 0.09, 0.045), railM);
+      rail.position.set(-107, ry2, rz); rail.castShadow = true; scene.add(rail);
+    }
   }
 
   /* ----- the park (east): pond, waterfall, stepping stones, grove ----- */
@@ -2391,9 +2399,6 @@ function buildTestGrove() {
 }
 
 function buildEntrances() {
-  const stoneM = new THREE.MeshStandardMaterial({ color: 0xa79b7f, roughness: 0.95 });
-  const terraM = new THREE.MeshStandardMaterial({ color: 0xa35a3c, roughness: 0.9 });
-  const shrubM = new THREE.MeshStandardMaterial({ color: 0x3d6030, roughness: 1, flatShading: true });
   const postM = new THREE.MeshStandardMaterial({ color: 0x3f3a36, roughness: 0.7, metalness: 0.4 });
   const glowM = new THREE.MeshStandardMaterial({ color: 0xffe2b0, emissive: 0xffc98a, emissiveIntensity: 2.2 });
   // [doorX, doorZ, outward(+1 = town is +z of the door), accent]
@@ -2404,25 +2409,29 @@ function buildEntrances() {
   for (const [dx, dz, out, acc] of doors) {
     const mat1 = new THREE.Mesh(new THREE.CircleGeometry(1.15, 20), new THREE.MeshStandardMaterial({ color: acc, roughness: 0.9 }));
     mat1.rotation.x = -Math.PI / 2; mat1.position.set(dx, 0.035, dz + out * 0.4); mat1.receiveShadow = true; scene.add(mat1);
-    const step = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.16, 1.0), stoneM);
-    step.position.set(dx, 0.08, dz - out * 0.55); scene.add(step);
+    // STAGE 04: no procedural step or planters here - the building GLBs
+    // carry their own (grounded planters + a real 2-step stair since this
+    // stage); the old slab intersected the GLB landing and the chunky
+    // planters duplicated the modeled ones.
     for (const sgn of [-1, 1]) {
-      const pl = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.6, 0.85), terraM);
-      pl.position.set(dx + sgn * 2.1, 0.3, dz - out * 0.4); pl.castShadow = true; scene.add(pl);
-      const sh = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.8, 7), shrubM);
-      sh.position.set(dx + sgn * 2.1, 0.95, dz - out * 0.4); scene.add(sh);
       const post = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 1.5, 6), postM);
       post.position.set(dx + sgn * 1.55, 0.75, dz + out * 0.9); scene.add(post);
       const orb = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 7), glowM);
       orb.position.set(dx + sgn * 1.55, 1.58, dz + out * 0.9); scene.add(orb);
     }
   }
-  // house chimneys + porch glow dots
-  for (const [hx, hz] of [[-108, -28], [-116, 6], [-104, 40]]) {
+  // STAGE 04: house chimneys placed in each house's LOCAL frame (the
+  // houses are rotated) on the back roof slope - base embedded in the
+  // slope (7.76 at that offset), cap clear of it. The old world-axis
+  // offsets left them buried in the roof; the porch glow dots duplicated
+  // the GLB bracket lanterns and floated in the yards, so they are gone.
+  for (const [hx, hz, hry] of [[-108, -28, 0.5], [-116, 6, 0.9], [-104, 40, 0.25]]) {
     const ch = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.8, 0.9), new THREE.MeshStandardMaterial({ color: 0x9a6a52, roughness: 1 }));
-    ch.position.set(hx + 2.6, 6.4, hz - 1.2); ch.castShadow = true; scene.add(ch);
-    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 7), glowM);
-    dot.position.set(hx + 4.4, 2.6, hz + 4.9); scene.add(dot);
+    const lx = 2.6, lz = -1.2, cs = Math.cos(hry), sn = Math.sin(hry);
+    ch.position.set(hx + lx * cs + lz * sn, 7.5, hz - lx * sn + lz * cs);
+    ch.rotation.y = hry; ch.castShadow = true; scene.add(ch);
+    const cap = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.18, 1.1), new THREE.MeshStandardMaterial({ color: 0x8a8a92, roughness: 0.9 }));
+    cap.position.set(ch.position.x, 8.48, ch.position.z); cap.rotation.y = hry; scene.add(cap);
   }
 }
 
@@ -2775,6 +2784,7 @@ function buildDressing() {
     const roof = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.12, 1.8), terra); roof.position.set(2.6, 2.3, 0); roof.castShadow = true; g.add(roof);
     for (const dx of [0.7, 4.5]) { const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.3, 6), trunkM); post.position.set(dx, 1.15, -0.7); g.add(post); }
     const bench = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.12, 0.6), woodL); bench.position.set(2.6, 0.62, -0.55); g.add(bench);
+    for (const lx of [1.2, 4.0]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.62, 0.5), woodD); leg.position.set(lx, 0.31, -0.55); g.add(leg); }
     addCollider(18 + 2.6, 88 - 0.55, 1.2);
   }
 
@@ -2989,12 +2999,21 @@ function buildRec() {
     t.castShadow = false;
   }
   // pool table (visual) + lounge sofas with seats
-  box(3.2, 0.75, 1.8, M(0x1e6b4a, { roughness: 0.7 }), CX + 6.5, 0.5, -5.5);
+  // STAGE 04: the body now reaches the floor (it floated 0.13) and meets
+  // the rail slab above it.
+  box(3.2, 0.88, 1.8, M(0x1e6b4a, { roughness: 0.7 }), CX + 6.5, 0.44, -5.5);
   box(3.5, 0.18, 2.1, M(0x3d2417), CX + 6.5, 0.95, -5.5);
   boxColliders.push({ minX: CX + 4.7, maxX: CX + 8.3, minZ: -6.5, maxZ: -4.5 });
   for (const [sx, sz, ry] of [[CX - 7.5, 3.5, 0.6], [CX - 6, 5.8, 0.2]]) {
-    const sofa = box(2.9, 0.55, 1.05, M(0x37503f, { roughness: 0.95 }), sx, 0.42, sz, ry);
+    // STAGE 04: plinth base + backrest - the seat block floated 0.15 with
+    // nothing under or behind it.
+    const sofaM2 = M(0x37503f, { roughness: 0.95 });
+    const plinth = box(2.9, 0.15, 1.05, M(0x2a3d2f, { roughness: 1 }), sx, 0.075, sz, ry);
+    plinth.castShadow = true;
+    const sofa = box(2.9, 0.55, 1.05, sofaM2, sx, 0.42, sz, ry);
     sofa.castShadow = true;
+    const back = box(2.9, 0.6, 0.22, sofaM2, sx + 0.415 * Math.sin(ry), 0.72, sz + 0.415 * Math.cos(ry), ry);
+    back.castShadow = true;
     addInteract('rec', sx, sz + 0.4, 1.7, 'sit', () => sitDown({ x: sx, z: sz, ry: Math.PI + ry }));
   }
   // jukebox: toggles the ambient pad (real webaudio, generated live)
