@@ -98,7 +98,8 @@ world3d/
 ## 8. Staging
 - v553: foundation (loader, structure, manifest, material presets)
   + tree family + café furniture (interior slice) + rigged NPC (Mira).
-- v554: coffee shop exterior from the architecture kit.
+- v554 (STAGE 01): coffee shop exterior, complete modeling overhaul
+  (gable roof, deep storefront, porch, modeled sign) — the quality bar.
 - v555: street props + remaining NPCs on the rig.
 - v556: north-row buildings kit pass; apartments/rec polish.
 Each stage: suites + draw-call check + screenshots, then push.

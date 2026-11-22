@@ -757,9 +757,9 @@ function buildTown() {
     const awn = new THREE.Mesh(new THREE.BoxGeometry(b.w * 0.72, 0.16, 2.3), M(0xffffff, { map: awnTex, roughness: 0.9 }));
     awn.position.set(0, 4.05, fz + 1.05); awn.rotation.x = -0.32; g.add(awn);
     const board = new THREE.Mesh(new THREE.BoxGeometry(Math.min(b.w * 0.78, 17), 1.7, 0.3), woodDark);
-    board.position.set(0, b.h - 1.15, fz + 0.12); g.add(board); g.userData.keepers = [board];
+    board.position.set(0, b.h - 1.15, fz + 0.12); g.add(board); board.userData.signPart = true; g.userData.keepers = [board];
     const sign = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(b.w * 0.76, 16.4), 1.55), new THREE.MeshBasicMaterial({ map: iconSign(b.glyph, b.name, b.col), transparent: true, depthWrite: false }));
-    sign.position.set(0, b.h - 1.15, fz + 0.29); g.add(sign); g.userData.keepers.push(sign);
+    sign.position.set(0, b.h - 1.15, fz + 0.29); g.add(sign); sign.userData.signPart = true; g.userData.keepers.push(sign);
     const door = new THREE.Mesh(new THREE.BoxGeometry(1.7, 2.9, 0.14), woodDark);
     door.position.set(b.w * 0.31, 1.45, fz + 0.09); g.add(door);
     const knob = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), brass);
@@ -781,7 +781,8 @@ function buildTown() {
   const coffeeG = storefront({ x: -36, z: -44, w: 24, d: 14, h: 10.5, name: 'COFFEE SHOP', glyph: 'cup', col: '#ffc98a', kind: 'coffee', warm: '#8a5a20', awn: '#7c2d3e', seed: 71 });
   { // v553: the modeled coffee shop (Blender kit build) swaps over the shell
     const fb = new THREE.Group(); coffeeG.add(fb);
-    [...coffeeG.children].forEach((c) => { if (c !== fb && !coffeeG.userData.keepers.includes(c)) fb.add(c); });
+    const keepers = coffeeG.userData.keepers.filter((k) => !k.userData.signPart); // the modeled building carries its own sign now; planters stay
+    [...coffeeG.children].forEach((c) => { if (c !== fb && !keepers.includes(c)) fb.add(c); });
     const holder = new THREE.Group(); coffeeG.add(holder);
     swapModel('/world3d/assets/architecture/coffee_shop.glb', holder, fb);
   }
@@ -2770,8 +2771,8 @@ function loop() {
   // town bounds; clamping to town while inside yanked the player to
   // the town edge the moment they moved (the v543 cafe bug).
   const zb = zoneNow();
-  if (zb === 'town') { px = clamp(px, -BOUND_X, BOUND_X); pz = clamp(pz, -BOUND_Z, BOUND_Z); }
-  else { const B = ZONE_BOXES[zb]; if (B) { px = clamp(px, B.minX + 0.6, B.maxX - 0.6); pz = clamp(pz, B.minZ + 0.6, B.maxZ - 0.6); } }
+  if (zb === 'town' || !ZONE_BOXES[zb]) { px = clamp(px, -BOUND_X, BOUND_X); pz = clamp(pz, -BOUND_Z, BOUND_Z); }
+  else { const B = ZONE_BOXES[zb]; px = clamp(px, B.minX + 0.6, B.maxX - 0.6); pz = clamp(pz, B.minZ + 0.6, B.maxZ - 0.6); }
   for (const c of colliders) {
     const dx = px - c.x, dz = pz - c.z, d = Math.hypot(dx, dz), min = c.r + 0.55;
     if (d > 0.001 && d < min) { px = c.x + dx / d * min; pz = c.z + dz / d * min; }
