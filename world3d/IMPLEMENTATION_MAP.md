@@ -132,3 +132,10 @@ belongs to the live tab, and deleting it would respawn them.
   is exited. WebGL context loss shows the ERROR state with retry.
 
 Art direction (palette, districts, construction rules): `world3d/ART_DIRECTION.md` — v542 added buildTown() to client3d.js (gazebo well, sakura, streets, north storefront row, houses, park) on top of the v540 plaza; interiors land per-building from v543.
+
+## v547–v551: first person + cozy program
+- FP engine (v547): `updateCameraFP()` in client3d.js — eye 1.95 (sit 1.32), own fpPitch state, SET.view 'fp'|'tp' (V key / settings), SET.fov 60–90, SET.bob, view-model hands (`buildHands`/`updateHands`, sleeve color follows hue). TP boom fully preserved in `updateCamera()`. Server contract unchanged.
+- Cozy direction (v548): ART_DIRECTION.md v2 — golden-hour sun (the DirectionalLight slot is still `scene.userData.moon` for applyGfx), gradient sky dome, warm haze, cream walls via windowsTexture's dark emissive pass. 2D world untouched.
+- Dressing (v549): `buildDressing()` (leafy trees, garden beds, bus stop, mailboxes, bench SEATS, park sign), `BIRDS` + `petals` ticked by `tickDressing(now)` — clock-driven, client-only. SEATS is a module-scope registry (hoisted in v549; seatTaken reads it there).
+- Sound (v550): `AMB` per-zone pad voicing via `setAmbience()` (filter center + pad gain on the ensureAudio graph; `acFilter`/`acSfx` exposed), footsteps from the bob cycle in `tickAudio()`, `sfxDoor()` on fadeThrough, SET.sfx + #w3sfx slider. `cozyInteriors()` adds emissive-only dressing per interior.
+- NPC schedules (v551): strollers follow `STROLL_WP` (waypoints with dwell + face targets) via `strollTimeline()`/`tickStrollers`; interior NPCS carry `zone` + optional `routine {a, b, dwell, off, faceA, faceB}` walked by `tickNPCRoutines(now)`; the animate loop skips NPC bone math when the player is in another zone.

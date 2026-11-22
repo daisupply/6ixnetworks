@@ -626,6 +626,16 @@ ok(page._errs.length === 0, 'desktop: zero page errors', page._errs.slice(0, 3))
   await page.close();
 }
 
+/* ---- 14) v551: npc schedules ---- */
+{
+  const { page } = await bootSmall();
+  const s0 = await state(page);
+  ok(!!s0 && s0.npcs === 5 && s0.strollers === 2, 'v551: five npcs on duty, two strollers touring', s0 && { npcs: s0.npcs, strollers: s0.strollers });
+  ok(!!s0 && s0.miraX >= 1995 && s0.miraX <= 2003, 'v551: mira works her counter track', s0 && s0.miraX);
+  ok(page._errs.length === 0, 'v551: zero page errors', page._errs.slice(0, 3));
+  await page.close();
+}
+
 await browser.close();
 
 console.log('BROWSER RESULT: ' + pass + ' pass, ' + fail + ' fail');
