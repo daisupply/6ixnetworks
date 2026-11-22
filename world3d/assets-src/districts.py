@@ -75,11 +75,18 @@ def diorama_texture(name, warm):
     return m
 
 def box(name, sx, sy, sz, x, y, z, material, bevel=0.0, rx=0.0, ry=0.0, rz=0.0):
-    bpy.ops.mesh.primitive_cube_add(location=(x, y, z))
+    # STAGE 04 FIX: build at the origin, apply scale, THEN set location.
+    # transform_apply(scale=True) in this Blender build bakes any existing
+    # location into the geometry and zeroes it, so parts created at their
+    # final position ended up world-baked with origin pivots - every rotated
+    # part (roof slabs, canopies, arms) swung around the world origin.
+    # Centered geometry + object transform = exactly one transform.
+    bpy.ops.mesh.primitive_cube_add(location=(0, 0, 0))
     o = bpy.context.active_object
     o.name = name
     o.dimensions = (sx, sy, sz)
     bpy.ops.object.transform_apply(scale=True)
+    o.location = (x, y, z)
     o.rotation_euler = (rx, ry, rz)
     if bevel > 0:
         mod = o.modifiers.new("bev", "BEVEL"); mod.width = bevel; mod.segments = 2
@@ -172,6 +179,15 @@ def finish(fname):
         bpy.context.view_layer.objects.active = objs[0]
         bpy.ops.object.join()
         objs[0].name = "joined_" + mname
+
+    # STAGE 04: bake world transforms into joined meshes (see coffee_shop.py).
+    bpy.context.view_layer.update()
+    for o in list(bpy.context.scene.objects):
+        if o.type == "MESH" and o.name.startswith("joined_"):
+            o.data.transform(o.matrix_world)
+            o.location = (0, 0, 0)
+            o.rotation_euler = (0, 0, 0)
+            o.scale = (1, 1, 1)
     tris = 0; meshes = 0
     for o in bpy.context.scene.objects:
         if o.type == "MESH":
@@ -196,8 +212,8 @@ def base_mats():
     }
 
 def planter(px, py, M):
-    box("planter", 1.5, 0.85, 0.68, px, py, 1.0, M["terra"], bevel=0.05)
-    cyl("planter_shrub", 0.5, 0.12, 0.85, px, py, 1.75, M["shrub"], verts=7)
+    box("planter", 1.5, 0.85, 0.68, px, py, 0.34, M["terra"], bevel=0.05)
+    cyl("planter_shrub", 0.5, 0.12, 0.85, px, py, 1.0, M["shrub"], verts=7)
 
 def build_district(cfg):
     bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -300,6 +316,11 @@ def build_district(cfg):
     bpy.ops.mesh.primitive_uv_sphere_add(segments=10, ring_count=8, radius=0.075, location=(-0.78, fy - 0.22, 2.35))
     knob = bpy.context.active_object; knob.name = "door_knob"; knob.data.materials.append(M["brass"])
     box("door_step", 3.6, 1.7, 0.22, 0, fy - 0.75, 0.71, M["stone"], bevel=0.03)
+    # STAGE 04: a real stair under the landing - even rises from the ground
+    # (0 -> 0.32 -> 0.60 -> landing top 0.82 -> foundation top 0.85), each
+    # tread resting on the one below, fronts proud of the foundation face.
+    box("stair_a", 3.4, 2.1, 0.32, 0, fy - 1.15, 0.16, M["stone"], bevel=0.02)
+    box("stair_b", 3.0, 1.6, 0.32, 0, fy - 0.95, 0.44, M["stone"], bevel=0.02)
     can = cfg["canopy"]
     if can == "marquee":
         box("marquee", 6.6, 2.0, 0.3, 0, fy - 0.95, 4.85, trim, bevel=0.04)
@@ -324,7 +345,7 @@ def build_district(cfg):
         pitch = math.atan2(roof_h, W / 2 + 0.9)
         slope_len = math.hypot(W / 2 + 0.9, roof_h) + 0.4
         for sgn in (-1, 1):
-            r = box("roof_slab", slope_len, D + 1.8, 0.26, sgn * (W / 4 + 0.2), 0, wall_top + roof_h / 2 + 0.1, roof_m)
+            r = box("roof_slab", slope_len, D + 1.8, 0.26, sgn * (W / 4 + 0.45), 0, wall_top + roof_h / 2 + 0.1, roof_m)
             r.rotation_euler = (0, sgn * pitch, 0)
         box("ridge_cap", 0.5, D + 2.0, 0.3, 0, 0, wall_top + roof_h + 0.22, M["timber_d"], bevel=0.05)
         # gable infills front/back (prism in XZ at fixed y)
@@ -427,6 +448,9 @@ box("door_glass", 0.7, 0.04, 0.9, 0, fy - 0.17, 2.45, glass)
 bpy.ops.mesh.primitive_uv_sphere_add(segments=10, ring_count=8, radius=0.06, location=(-0.5, fy - 0.2, 1.9))
 knob = bpy.context.active_object; knob.name = "door_knob"; knob.data.materials.append(M["brass"])
 box("door_step", 2.4, 1.4, 0.22, 0, fy - 0.65, 0.71, M["stone"], bevel=0.03)
+# STAGE 04: ground stair under the house landing (same rise pattern).
+box("stair_a", 2.8, 1.9, 0.32, 0, fy - 1.0, 0.16, M["stone"], bevel=0.02)
+box("stair_b", 2.5, 1.4, 0.32, 0, fy - 0.8, 0.44, M["stone"], bevel=0.02)
 for px in (-1.35, 1.35):
     box("porch_post", 0.18, 0.18, 3.0, px, fy - 1.15, 2.1, M["timber"], bevel=0.02)
     box("post_base", 0.32, 0.32, 0.42, px, fy - 1.15, 0.81, M["stone"], bevel=0.02)

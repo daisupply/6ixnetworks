@@ -18,9 +18,9 @@ world3d.js decodes on serve, so runtime URLs stay `.glb`.
 | furniture/cafe_sofa.glb | assets-src/cafe_furniture.py | 61KB | café sofa |
 | furniture/cafe_counter.glb | assets-src/cafe_furniture.py | 25KB | café counter run |
 | furniture/espresso.glb | assets-src/cafe_furniture.py | 24KB | espresso machine on the counter |
-| architecture/coffee_shop.glb | assets-src/coffee_shop.py | 468KB | coffee shop exterior — STAGE 01 build: gable roof w/ tile texture, rail-framed storefront w/ lit-interior texture, recessed porch, modeled STARLIGHT CAFÉ sign; 6,640 tris, 33 meshes, 33 materials |
-| architecture/hall.glb | assets-src/hall.py | 578KB | 6IXNETWORKS grand hall — STAGE 05 build: columned portico + pediment w/ gold crown, arched lit windows, slate hip roof, modeled gold sign; 8,380 tris, 13 meshes, 13 materials |
-| architecture/clothing.glb | assets-src/clothing.py | 387KB | Clothing Co. boutique — STAGE 06 build: sage + cream, striped storefront awning, display windows w/ boutique interior texture, modeled sign; 6,378 tris, 18 meshes, 19 materials |
+| architecture/coffee_shop.glb | assets-src/coffee_shop.py | 481KB | coffee shop exterior — STAGE 01 build, STAGE 04 alignment rebuild: gable roof w/ tile texture, rail-framed storefront w/ lit-interior texture, recessed porch, modeled STARLIGHT CAFÉ sign, ground stair; 33 meshes |
+| architecture/hall.glb | assets-src/hall.py | 567KB | 6IXNETWORKS grand hall — STAGE 05 build, STAGE 04 roof replaced: columned portico + pediment w/ gold crown, arched lit windows, exact slate gable prism on the cornice, modeled gold sign; 13 meshes |
+| architecture/clothing.glb | assets-src/clothing.py | 394KB | Clothing Co. boutique — STAGE 06 build, STAGE 04 alignment rebuild: sage + cream, striped storefront awning, display windows w/ boutique interior texture, modeled sign, ground step; 18 meshes |
 | environment/bench.glb | assets-src/props.py | 63KB | park bench — STAGE 07: slatted wood seat/back, iron frames, armrests; 180 tris, 3 meshes |
 | environment/mailbox.glb | assets-src/props.py | 46KB | mailbox — STAGE 07: post, rounded-top box, door, red flag; 204 tris, 4 meshes |
 | trees/tree_tall.glb | assets-src/trees2.py | 10KB | tall layered pine for the west forest — STAGE 10; 108 tris, 3 meshes |
@@ -33,9 +33,9 @@ front faces +Z in three.js space; materials named by slot
 Runtime loading: `loadAsset`/`swapModel`/`attachRig` in client3d.js —
 async, cached, procedural fallback stays if a load fails.
 
-- arcade.glb — CP7 district exterior (plum arcade, marquee canopy, violet glass) — districts.py (original) — 4,202 tris
-- library.glb — CP7 district exterior (sandstone, arched windows, porch) — districts.py (original) — 5,340 tris
-- apartments.glb — CP7 district exterior (cream block, balconies, gable roof) — districts.py (original) — 5,101 tris
-- rec.glb — CP7 district exterior (sage community hall, flat canopy) — districts.py (original) — 5,004 tris
-- music.glb — CP7 district exterior (charcoal-gold hall, ribbon windows) — districts.py (original) — 4,971 tris
-- house.glb — CP7 residential house (tintable 'walls' material, porch, flower boxes) — districts.py (original) — 1,356 tris
+- arcade.glb — CP7 district exterior (plum arcade, marquee canopy, violet glass) — districts.py (original) — STAGE 04: grounded planters + 2-step entrance stair
+- library.glb — CP7 district exterior (sandstone, arched windows, porch) — districts.py (original) — STAGE 04: grounded planters + 2-step entrance stair
+- apartments.glb — CP7 district exterior (cream block, balconies, gable roof) — districts.py (original) — STAGE 04: roof slabs re-pivoted + derived centers, grounded planters + 2-step stair
+- rec.glb — CP7 district exterior (sage community hall, flat canopy) — districts.py (original) — STAGE 04: grounded planters + 2-step entrance stair
+- music.glb — CP7 district exterior (charcoal-gold hall, ribbon windows) — districts.py (original) — STAGE 04: grounded planters + 2-step entrance stair
+- house.glb — CP7 residential house (tintable 'walls' material, porch, flower boxes) — districts.py (original) — STAGE 04: roof slabs re-pivoted, grounded planters + 2-step porch stair

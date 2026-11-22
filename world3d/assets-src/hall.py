@@ -70,11 +70,18 @@ INTERIOR_M = hall_texture()
 
 # ---------------- helpers ----------------
 def box(name, sx, sy, sz, x, y, z, material, bevel=0.0, rx=0.0, ry=0.0, rz=0.0):
-    bpy.ops.mesh.primitive_cube_add(location=(x, y, z))
+    # STAGE 04 FIX: build at the origin, apply scale, THEN set location.
+    # transform_apply(scale=True) in this Blender build bakes any existing
+    # location into the geometry and zeroes it, so parts created at their
+    # final position ended up world-baked with origin pivots - every rotated
+    # part (roof slabs, canopies, arms) swung around the world origin.
+    # Centered geometry + object transform = exactly one transform.
+    bpy.ops.mesh.primitive_cube_add(location=(0, 0, 0))
     o = bpy.context.active_object
     o.name = name
     o.dimensions = (sx, sy, sz)
     bpy.ops.object.transform_apply(scale=True)
+    o.location = (x, y, z)
     o.rotation_euler = (rx, ry, rz)
     if bevel > 0:
         mod = o.modifiers.new("bev", "BEVEL"); mod.width = bevel; mod.segments = 2
@@ -207,19 +214,26 @@ bpy.context.collection.objects.link(cr)
 cr.location = (0, -10.42, 11.55)
 cr.data.materials.append(GOLD)
 
-# ---------------- hip roof (slate) + gold finials ----------------
-pitch = math.atan2(3.2, 6.4)
-for sgn in (-1, 1):
-    r = box("roof_fb", 24.5, 7.6, 0.24, 0, sgn * 4.6, 13.6, SLATE)
-    r.rotation_euler = (sgn * pitch * 0.82, 0, 0)
-    r2 = box("roof_side", 7.6, 11.5, 0.24, sgn * 11.8, 0, 13.6, SLATE)
-    r2.rotation_euler = (0, -sgn * pitch * 0.82, 0)
-box("roof_cap", 23.5, 4.6, 0.35, 0, 0, 15.35, SLATE)
-box("ridge_gold", 23.5, 0.18, 0.18, 0, -2.35, 15.55, GOLD)
-for fx in (-14.2, 14.2):
-    for fy in (-7.2, 7.2):
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=10, ring_count=8, radius=0.22, location=(fx, fy, 12.35))
-        fn = bpy.context.active_object; fn.name = "finial"; fn.data.materials.append(GOLD)
+# ---------------- gable roof (slate prism, ridge along Y) + gold trim ----------------
+# STAGE 04: the old 4-slab hip approximation could never close its corners
+# (front slabs 24.5 long on a 30-wide building) and the box() pivot bug had
+# swung the slabs around the world origin. This prism derives the roof from
+# the wall box exactly: base = footprint + 0.9 overhang per side, resting on
+# the cornice (top 11.92), apex on the center line. The portico pediment
+# stands proud of its front triangle.
+_hw, _hd, _base, _apex = 15.0 + 0.9, 8.0 + 0.9, 11.85, 15.3
+_verts = [(-_hw, -_hd, _base), (_hw, -_hd, _base), (0, -_hd, _apex),
+          (-_hw, _hd, _base), (_hw, _hd, _base), (0, _hd, _apex)]
+_faces = [(0, 1, 2), (3, 5, 4), (0, 3, 4, 1), (1, 4, 5, 2), (2, 5, 3, 0)]
+_me = bpy.data.meshes.new("gable_roof")
+_me.from_pydata(_verts, [], _faces)
+_roof = bpy.data.objects.new("gable_roof", _me)
+bpy.context.collection.objects.link(_roof)
+_roof.data.materials.append(SLATE)
+box("ridge_gold", 0.2, 17.9, 0.2, 0, 0, 15.42, GOLD)
+for fy in (-8.95, 8.95):
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=10, ring_count=8, radius=0.26, location=(0, fy, 15.42))
+    fn = bpy.context.active_object; fn.name = "finial"; fn.data.materials.append(GOLD)
 
 # ---------------- windows: frames, glass, lit interior ----------------
 for wx in (-12.5, -6.0, 6.0, 12.5):
@@ -248,8 +262,8 @@ for lx in (-2.7, 2.7):
     bpy.ops.mesh.primitive_uv_sphere_add(segments=10, ring_count=8, radius=0.09, location=(lx, FRONT - 0.3, 5.38))
     lm = bpy.context.active_object; lm.name = "lantern_glow"; lm.data.materials.append(LAMP)
 for px in (-7.6, 7.6):
-    box("planter", 1.7, 0.95, 0.72, px, -9.6, 1.05, TERRA, bevel=0.05)
-    bpy.ops.mesh.primitive_cone_add(vertices=7, radius1=0.55, radius2=0.13, depth=0.95, location=(px, -9.6, 1.9))
+    box("planter", 1.7, 0.95, 0.72, px, -9.6, 0.36, TERRA, bevel=0.05)
+    bpy.ops.mesh.primitive_cone_add(vertices=7, radius1=0.55, radius2=0.13, depth=0.95, location=(px, -9.6, 1.1))
     sh = bpy.context.active_object; sh.name = "planter_shrub"; sh.data.materials.append(SHRUB)
 
 # ---------------- the sign: modeled board + raised gold letters ----------------
@@ -293,6 +307,20 @@ for mname, objs in groups.items():
     bpy.context.view_layer.objects.active = objs[0]
     bpy.ops.object.join()
     objs[0].name = "joined_" + mname
+
+
+# STAGE 04: bake world transforms into the joined meshes before export.
+# A joined group keeps its first part's frame as its node transform, and
+# that frame does not survive the glTF round trip when it is rotated -
+# the roof groups landed swung in-game while Blender showed them correct.
+# World-baked verts + identity nodes are loader-exact.
+bpy.context.view_layer.update()
+for o in list(bpy.context.scene.objects):
+    if o.type == "MESH" and o.name.startswith("joined_"):
+        o.data.transform(o.matrix_world)
+        o.location = (0, 0, 0)
+        o.rotation_euler = (0, 0, 0)
+        o.scale = (1, 1, 1)
 
 # ---------------- stats + export ----------------
 tris = 0; meshes = 0

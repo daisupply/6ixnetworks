@@ -107,11 +107,18 @@ INTERIOR_M = diorama_texture()
 
 # ---------------- helpers ----------------
 def box(name, sx, sy, sz, x, y, z, material, bevel=0.0, rx=0.0, ry=0.0, rz=0.0):
-    bpy.ops.mesh.primitive_cube_add(location=(x, y, z))
+    # STAGE 04 FIX: build at the origin, apply scale, THEN set location.
+    # transform_apply(scale=True) in this Blender build bakes any existing
+    # location into the geometry and zeroes it, so parts created at their
+    # final position ended up world-baked with origin pivots - every rotated
+    # part (roof slabs, canopies, arms) swung around the world origin.
+    # Centered geometry + object transform = exactly one transform.
+    bpy.ops.mesh.primitive_cube_add(location=(0, 0, 0))
     o = bpy.context.active_object
     o.name = name
     o.dimensions = (sx, sy, sz)
     bpy.ops.object.transform_apply(scale=True)
+    o.location = (x, y, z)
     o.rotation_euler = (rx, ry, rz)
     if bevel > 0:
         mod = o.modifiers.new("bev", "BEVEL"); mod.width = bevel; mod.segments = 2
@@ -173,9 +180,7 @@ for cx in (-11.9, 11.9):
 pitch = math.atan2(4.4, 13.0)
 slope_len = math.hypot(13.0, 4.4) + 0.4
 for sgn in (-1, 1):
-    r = box("roof_slab", slope_len, 16.4, 0.26, sgn * 6.5, 0, 10.2, ROOF_M, ry=sgn * pitch)
-    r.rotation_euler = (0, sgn * pitch, 0)
-    r.location = (sgn * 6.35, 0, 10.28)
+    box("roof_slab", slope_len, 16.4, 0.26, sgn * 6.5, 0, 10.2, ROOF_M, ry=sgn * pitch)
 box("ridge_cap", 0.5, 16.6, 0.3, 0, 0, 12.52, TIMBER_D, bevel=0.05)
 # fascia along both eaves
 for sgn in (-1, 1):
@@ -251,6 +256,9 @@ box("door_glass", 1.15, 0.04, 1.5, 7.4, -7.17, 3.0, GLASS)
 bpy.ops.mesh.primitive_uv_sphere_add(segments=10, ring_count=8, radius=0.075, location=(6.62, -7.22, 2.35))
 knob = bpy.context.active_object; knob.name = "door_knob"; knob.data.materials.append(BRASS)
 box("door_step", 3.6, 1.7, 0.22, 7.4, -7.75, 0.71, STONE, bevel=0.03)
+# STAGE 04: ground stair under the porch landing (rises 0.32 -> 0.60 -> 0.82).
+box("stair_a", 3.4, 2.1, 0.32, 7.4, -8.05, 0.16, STONE, bevel=0.02)
+box("stair_b", 3.0, 1.6, 0.32, 7.4, -7.85, 0.44, STONE, bevel=0.02)
 # lanterns flanking the door + at the storefront ends
 for lx in (5.35, 9.45, -11.2, 3.6):
     box("lantern_cap", 0.24, 0.24, 0.09, lx, -7.22, 3.82, BRONZE)
@@ -292,8 +300,8 @@ if verts < 100:  # fallback if the accented glyph is missing
 # ---------------- outdoor details ----------------
 # planters flanking the entrance
 for px in (4.35, 10.45):
-    box("planter", 1.5, 0.85, 0.68, px, -7.7, 1.0, TERRA, bevel=0.05)
-    bpy.ops.mesh.primitive_cone_add(vertices=7, radius1=0.5, radius2=0.12, depth=0.85, location=(px, -7.7, 1.75))
+    box("planter", 1.5, 0.85, 0.68, px, -7.7, 0.34, TERRA, bevel=0.05)
+    bpy.ops.mesh.primitive_cone_add(vertices=7, radius1=0.5, radius2=0.12, depth=0.85, location=(px, -7.7, 1.0))
     sh = bpy.context.active_object; sh.name = "planter_shrub"; sh.data.materials.append(SHRUB)
 # A-frame chalkboard by the door
 af1 = box("aframe", 0.95, 0.08, 1.25, 3.1, -8.35, 1.15, TIMBER_D); af1.rotation_euler = (0.28, 0.35, 0)
@@ -317,6 +325,20 @@ for mname, objs in groups.items():
     bpy.context.view_layer.objects.active = objs[0]
     bpy.ops.object.join()
     objs[0].name = "joined_" + mname
+
+
+# STAGE 04: bake world transforms into the joined meshes before export.
+# A joined group keeps its first part's frame as its node transform, and
+# that frame does not survive the glTF round trip when it is rotated -
+# the roof groups landed swung in-game while Blender showed them correct.
+# World-baked verts + identity nodes are loader-exact.
+bpy.context.view_layer.update()
+for o in list(bpy.context.scene.objects):
+    if o.type == "MESH" and o.name.startswith("joined_"):
+        o.data.transform(o.matrix_world)
+        o.location = (0, 0, 0)
+        o.rotation_euler = (0, 0, 0)
+        o.scale = (1, 1, 1)
 
 # ---------------- stats + export ----------------
 tris = 0; meshes = 0
