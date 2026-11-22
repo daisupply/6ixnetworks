@@ -386,7 +386,7 @@ function buildWorld() {
   });
 
   // ground + plaza + paths
-  const groundGeo = new THREE.PlaneGeometry(BOUND_X * 2 + 160, BOUND_Z * 2 + 160, 110, 80);
+  const groundGeo = new THREE.PlaneGeometry(BOUND_X * 2 + 160, BOUND_Z * 2 + 160, 138, 100);
   groundGeo.rotateX(-Math.PI / 2);
   { // stage 08: displace by groundH + tint the wild bands (forest floor west, meadow east)
     const pos = groundGeo.attributes.position, colors = new Float32Array(pos.count * 3);

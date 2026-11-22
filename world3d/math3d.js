@@ -77,7 +77,7 @@ const HILLS = [
   [-40, -116, 2.4, 34], [70, -114, 2.0, 30],
   [36, 114, 2.2, 32], [-70, 112, 1.9, 30],
 ];
-export function groundH(x, z) {
+function groundHBase(x, z) {
   const m = Math.max(sstep(126, 150, Math.abs(x)), sstep(98, 116, Math.abs(z)));
   if (m <= 0) return 0;
   let h = 0;
@@ -86,5 +86,25 @@ export function groundH(x, z) {
     h += HILLS[i][2] * Math.exp(-(dx * dx + dz * dz) / (HILLS[i][3] * HILLS[i][3]));
   }
   h += 0.45 * Math.sin(x * 0.045) * Math.cos(z * 0.05);
-  return Math.max(0, h) * m;
+  h = Math.max(0, h) * m;
+  // v2 (stage 02 rebuild): gentle forest-floor undulation, west band only
+  if (x < -135) h += 0.35 * Math.sin(x * 0.11 + 1.7) * Math.cos(z * 0.09) * m;
+  return Math.max(0, h);
+}
+// v2: designed flat pads — the forest clearing and the overlook terrace
+// blend to their center height so landmarks sit on level ground.
+const PAD_CLEAR_H = groundHBase(-179, -38);
+const PAD_OVER_H = groundHBase(174, 8);
+function flatPad(h, x, z, cx, cz, r, ch) {
+  const d = Math.hypot(x - cx, z - cz);
+  if (d >= r + 7) return h;
+  const w = 1 - sstep(r, r + 7, d);
+  return h * (1 - w) + ch * w;
+}
+export function groundH(x, z) {
+  let h = groundHBase(x, z);
+  if (h <= 0) return h;
+  h = flatPad(h, x, z, -179, -38, 11, PAD_CLEAR_H);
+  h = flatPad(h, x, z, 174, 8, 9, PAD_OVER_H);
+  return h;
 }

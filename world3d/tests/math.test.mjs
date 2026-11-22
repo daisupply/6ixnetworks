@@ -83,6 +83,10 @@ ok(groundH(-168, -42) > 1.8, 'groundH: west forest floor rises (' + groundH(-168
 ok(groundH(150, 8) > 0 && groundH(150, 8) < groundH(174, 8), 'groundH: overlook slope is gradual');
 ok(groundH(140, 8) >= 0 && groundH(140, 8) < groundH(150, 8), 'groundH: mask ramp is monotonic outward');
 ok(near(groundH(174, 8), groundH(174, 8)), 'groundH: deterministic');
+ok(Math.abs(groundH(-179, -38) - groundH(-174, -34)) < 0.05, 'groundH v2: clearing pad is flat');
+ok(groundH(-179, -38) > 2.0, 'groundH v2: clearing pad stays elevated (' + groundH(-179, -38).toFixed(1) + ')');
+ok(Math.abs(groundH(174, 8) - groundH(170, 5)) < 0.05, 'groundH v2: overlook pad is flat');
+ok(near(groundH(34, 64), 0), 'groundH v2: south park still plateau');
 
 console.log('MATH RESULT: ' + pass + ' pass, ' + fail + ' fail');
 process.exit(fail ? 1 : 0);
