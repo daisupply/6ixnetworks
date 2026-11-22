@@ -41,7 +41,7 @@ const WALK = 15, SPRINT = 26, ACCEL = 90, DECEL = 120, TURN = 14;
 const GRAV = 30, JUMP_V = 11.5;
 
 /* ---------- settings (persisted) ---------- */
-const SET_DEF = { sens: 1, camDist: 13, camH: 1.7, gfx: 'auto', shadows: true, snd: false, vol: 0.5 };
+const SET_DEF = { sens: 1, camDist: 13, camH: 1.7, gfx: 'auto', shadows: true, snd: false, vol: 0.5, view: 'fp', fov: 72, bob: true };
 let SET = { ...SET_DEF };
 try { const s = JSON.parse(localStorage.getItem('w3settings') || 'null'); if (s) SET = { ...SET_DEF, ...s }; } catch (e) { }
 function saveSet() { try { localStorage.setItem('w3settings', JSON.stringify(SET)); } catch (e) { } }
@@ -984,7 +984,7 @@ function scanPrompts() {
 function tryInteract() {
   if (dlgOpen) { advanceDlg(); return; }
   if (menuOpen || transitioning) return;
-  if (curPrompt) { const a = curPrompt.action; setPrompt(null); a(); }
+  if (curPrompt) { const a = curPrompt.action; setPrompt(null); punchT = performance.now(); a(); }
 }
 
 /* ----- the coffee shop interior (world x 1989..2011) ----- */
@@ -1932,6 +1932,7 @@ async function ping(sendPos) {
     const changed = JSON.stringify(r.cos.wear) !== JSON.stringify(myCos.wear) || r.cos.hue !== myCos.hue;
     myCos = r.cos;
     if (changed && !wardOpen) { const g = scene.userData.meGroup; if (g) applyWear(g, myCos.wear, myCos.hue); }
+    if (sleeveMat && typeof myCos.hue === 'number') sleeveMat.color.setHSL(myCos.hue / 360, 0.45, 0.5);
     syncShards(); applyAptDecor();
   }
   R.who.textContent = '@' + me;
@@ -2001,6 +2002,7 @@ function onKey(down) {
     if (e.code === 'KeyP' && down && R.set) R.set.hidden = !R.set.hidden;
     if (e.code === 'KeyE' && down) tryInteract();
     if (e.code === 'KeyM' && down) { if (mapOpen) closeMap(); else openMap(); }
+    if (e.code === 'KeyV' && down) toggleView();
     if (e.code === 'Digit1' && down) doEmote('wave');
     if (e.code === 'Digit2' && down) doEmote('celebrate');
     if (down && sitting && (e.code === 'KeyW' || e.code === 'KeyA' || e.code === 'KeyS' || e.code === 'KeyD' || e.code === 'Space')) standUp();
@@ -2023,7 +2025,8 @@ function onResize() {
 }
 function applyCamDelta(dx, dy) {
   camYawT -= dx * 0.0021 * SET.sens;
-  camPitchT = clamp(camPitchT + dy * 0.0019 * SET.sens, 0.06, 1.3);
+  if (SET.view === 'fp') fpPitchT = clamp(fpPitchT + dy * 0.0019 * SET.sens, -1.35, 1.35);
+  else camPitchT = clamp(camPitchT + dy * 0.0019 * SET.sens, 0.06, 1.3);
 }
 function bindInput() {
   const cv = R.cv;
@@ -2105,7 +2108,124 @@ function bindInput() {
 }
 
 /* ---------- camera collision: shorten the boom, never clip ---------- */
+
+/* ---------- v547: first-person camera controller + view-model hands ----------
+ * a dedicated FP controller, separate from the third-person boom:
+ * the eye sits at the avatar's head height (avatar head center is
+ * y 2.06, so eye 1.95), pitch is its own state (-1.35..1.35, zero =
+ * level) so TP boom pitch is never disturbed, and facing (ry) tracks
+ * the camera yaw — u face where u look, which is also what remote
+ * players see. the TP camera stays fully intact behind SET.view.
+ * hands are a world-space view model positioned from the camera
+ * basis each frame (no camera parenting, no scene-graph surprises):
+ * forearms in ur body color + hands, with idle sway, walk swing,
+ * sprint tuck, air/land response, an interact punch and a sit rest. */
+const EYE_H = 1.95, SIT_EYE_H = 1.32;
+let fpPitch = 0, fpPitchT = 0, bobPhase = 0, sitEye = EYE_H, punchT = -1e9, fovApplied = 0;
+let handsGroup = null, handL = null, handR = null, sleeveMat = null;
+function buildHands() {
+  sleeveMat = new THREE.MeshStandardMaterial({ color: 0x8a7fd4, roughness: 0.6, metalness: 0.05 });
+  const skin = new THREE.MeshStandardMaterial({ color: 0xe8b48c, roughness: 0.75 });
+  const mk = (side) => {
+    // group origin sits at the HAND, ~0.45 ahead of the eye; the
+    // forearm dives back-down-outward from it so its near end stays
+    // off-axis and small in frame (a first v547 build put the arm's
+    // cross-section right at the eye plane and it filled the screen).
+    const g = new THREE.Group();
+    const hand = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.05, 0.19), skin);
+    g.add(hand);
+    // four fingers at the front edge — the cue that makes it read as a hand
+    for (let f = 0; f < 4; f++) {
+      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.04, 0.085 - Math.abs(f - 1.5) * 0.012), skin);
+      fin.position.set(-0.039 + f * 0.026, -0.004, -0.125);
+      fin.rotation.x = 0.25;
+      g.add(fin);
+    }
+    const thumb = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.045, 0.11), skin);
+    thumb.position.set(-side * 0.085, 0.01, -0.03); thumb.rotation.y = side * 0.5; g.add(thumb);
+    const fore = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.09, 0.4), sleeveMat);
+    fore.position.set(side * 0.05, -0.08, 0.19); fore.rotation.x = 0.95; fore.rotation.z = side * 0.14; g.add(fore);
+    const cuff = new THREE.Mesh(new THREE.BoxGeometry(0.108, 0.108, 0.09), sleeveMat);
+    cuff.position.set(side * 0.032, -0.042, 0.1); cuff.rotation.x = 0.95; g.add(cuff);
+    g.userData.side = side;
+    return g;
+  };
+  handL = mk(-1); handR = mk(1);
+  handsGroup = new THREE.Group();
+  handsGroup.add(handL); handsGroup.add(handR);
+  handsGroup.visible = false;
+  scene.add(handsGroup);
+}
+const _fF = new THREE.Vector3(), _fR = new THREE.Vector3(), _fU = new THREE.Vector3(), _fB = new THREE.Vector3(), _fM = new THREE.Matrix4(), _fE = new THREE.Vector3();
+function updateCameraFP(dt, now) {
+  const kA = dampK(20, dt);
+  camYaw = angLerp(camYaw, camYawT, kA);
+  fpPitch += (fpPitchT - fpPitch) * kA;
+  if (Math.abs(angWrap(camYawT - camYaw)) < 0.0005) { camYaw = angWrap(camYaw); camYawT = camYaw; }
+  // head bob: tied to distance travelled, tiny by design (and off-able)
+  if (grounded && speedSm > 0.6) bobPhase += dt * speedSm * 1.35;
+  const sf = clamp(speedSm / WALK, 0, 1.6);
+  const bobAmp = SET.bob ? (sprintingNow() ? 0.042 : 0.028) * Math.min(1, sf) : 0;
+  const bobY = Math.sin(bobPhase * 2) * bobAmp;
+  const bobX = Math.cos(bobPhase) * bobAmp * 0.5;
+  const dip = mySt.landT > 0 ? (mySt.landT / 0.16) * 0.085 : 0; // landing absorption
+  const airLift = !grounded ? clamp(vy * 0.006, -0.05, 0.07) : 0;
+  sitEye += ((sitting ? SIT_EYE_H : EYE_H) - sitEye) * dampK(9, dt); // smooth sit/stand
+  const cp = Math.cos(fpPitch), sp = Math.sin(fpPitch);
+  _fF.set(Math.sin(camYaw) * cp, -sp, Math.cos(camYaw) * cp);
+  _fR.set(-Math.cos(camYaw), 0, Math.sin(camYaw)).normalize();
+  _fE.set(px + _fR.x * bobX, py + sitEye + bobY - dip + airLift, pz + _fR.z * bobX);
+  camera.position.copy(_fE);
+  _fB.copy(_fE).add(_fF);
+  camera.lookAt(_fB);
+  if (fovApplied !== SET.fov) { camera.fov = SET.fov; camera.updateProjectionMatrix(); fovApplied = SET.fov; }
+  // local body hidden in FP (other players still see it via THEIR
+  // clients); the wardrobe forces TP so the preview stays visible.
+  const mg = scene.userData.meGroup;
+  if (mg) mg.visible = wardOpen;
+  updateHands(now, bobY, dip);
+}
+function sprintingNow() { return speedSm > WALK * 1.15; }
+function updateHands(now, bobY, dip) {
+  if (!handsGroup) buildHands();
+  handsGroup.visible = !wardOpen && !menuOpen && !quizOpen && !mapOpen;
+  if (!handsGroup.visible) return;
+  // camera basis -> world frame for the view model
+  _fU.crossVectors(_fR, _fF); // R x F: unit up, orthonormal with R and F
+  _fB.copy(_fF).negate();
+  _fM.makeBasis(_fR, _fU, _fB);
+  handsGroup.quaternion.setFromRotationMatrix(_fM);
+  handsGroup.position.copy(_fE);
+  const sf = clamp(speedSm / WALK, 0, 1.6);
+  const swing = Math.sin(bobPhase) * 0.045 * Math.min(1, sf) * (SET.bob ? 1 : 0.4);
+  const idle = Math.sin(now / 950) * 0.006;
+  const spr = sprintingNow() && grounded;
+  const punch = Math.max(0, 1 - (now - punchT) / 260);
+  const punchExt = Math.sin(punch * Math.PI) * 0.13;
+  for (const h of [handL, handR]) {
+    const side = h.userData.side;
+    let x = side * (spr ? 0.21 : 0.27);
+    let y = -0.36 + idle + bobY * 0.55 - dip * 0.7 + (grounded ? 0 : 0.028);
+    let z = -0.5 + (spr ? 0.04 : 0) + (h === handL ? swing : -swing) * 0.4;
+    if (h === handR) z -= punchExt;
+    if (sitting) { x = side * 0.2; y = -0.48; z = -0.42; }
+    h.position.set(x, y, z);
+    h.rotation.set(sitting ? 0.5 : 0.3, side * -0.22, side * 0.06);
+  }
+}
+function toggleView() {
+  SET.view = SET.view === 'fp' ? 'tp' : 'fp';
+  saveSet();
+  if (R.viewsel) R.viewsel.value = SET.view;
+  if (SET.view === 'tp' && camera) { camera.fov = 58; camera.updateProjectionMatrix(); fovApplied = 58; }
+  else fovApplied = 0;
+  const mg = scene.userData.meGroup; if (mg) mg.visible = SET.view === 'tp';
+  if (handsGroup) handsGroup.visible = SET.view === 'fp';
+  toast(SET.view === 'fp' ? 'first person' : 'third person');
+}
+
 function updateCamera(dt) {
+  if (SET.view === 'fp') { updateCameraFP(dt, performance.now()); return; }
   const kA = dampK(18, dt);
   camYaw = angLerp(camYaw, camYawT, kA);
   camPitch += (camPitchT - camPitch) * kA;
@@ -2169,7 +2289,8 @@ function loop() {
   px += vx * dt; pz += vz * dt;
   const spd = Math.hypot(vx, vz);
   speedSm += (spd - speedSm) * dampK(12, dt);
-  if (spd > 0.7) ry = angLerp(ry, Math.atan2(vx, vz), dampK(TURN, dt));
+  if (SET.view === 'fp') ry = camYaw;
+  else if (spd > 0.7) ry = angLerp(ry, Math.atan2(vx, vz), dampK(TURN, dt));
 
   // gravity / jump / land
   wasGrounded = grounded;
@@ -2270,7 +2391,7 @@ function loop() {
     // handshake — never one without the other.
     if (handshakeOk && !sessionConflict) { setLoad(100, 'READY'); booted = true; window.__w3booted = true; }
     window.__w3state = function () {
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }
@@ -2310,6 +2431,7 @@ function goBack() {
 /* ---------- settings UI ---------- */
 function bindSettings() {
   R.sens.value = SET.sens; R.camd.value = SET.camDist; R.camh.value = SET.camH; R.gfxsel.value = SET.gfx;
+  if (R.viewsel) { R.viewsel.value = SET.view; R.fov.value = SET.fov; R.bob.checked = SET.bob; }
   R.shadow.checked = SET.shadows; R.snd.checked = SET.snd; R.vol.value = SET.vol;
   R.setbtn.addEventListener('click', () => { R.set.hidden = !R.set.hidden; });
   R.setclose.addEventListener('click', () => { R.set.hidden = true; });
@@ -2317,6 +2439,11 @@ function bindSettings() {
   R.camd.addEventListener('input', () => { SET.camDist = parseFloat(R.camd.value) || 13; saveSet(); });
   R.camh.addEventListener('input', () => { SET.camH = parseFloat(R.camh.value) || 1.7; saveSet(); });
   R.gfxsel.addEventListener('change', () => { SET.gfx = R.gfxsel.value; autoCap = 2; saveSet(); applyGfx(); toast('graphics: ' + SET.gfx); });
+  if (R.viewsel) {
+    R.viewsel.addEventListener('change', () => { if (R.viewsel.value !== SET.view) toggleView(); });
+    R.fov.addEventListener('input', () => { SET.fov = parseInt(R.fov.value, 10) || 72; saveSet(); });
+    R.bob.addEventListener('change', () => { SET.bob = R.bob.checked; saveSet(); });
+  }
   R.shadow.addEventListener('change', () => { SET.shadows = R.shadow.checked; saveSet(); applyGfx(); });
   R.snd.addEventListener('change', () => { SET.snd = R.snd.checked; saveSet(); applyAudio(); });
   R.vol.addEventListener('input', () => { SET.vol = parseFloat(R.vol.value) || 0; saveSet(); applyAudio(); });
@@ -2334,6 +2461,7 @@ function init() {
   R.toast = $('w3toast'); R.act = $('w3act'); R.conn = $('w3conn'); R.camh = $('w3camh'); R.conflict = $('w3conflict'); R.reclaim = $('w3reclaim'); R.confback = $('w3confback'); R.joy = $('w3joy'); R.knob = $('w3knob'); R.joyzone = $('w3joyzone');
   R.jump = $('w3jump'); R.sprint = $('w3sprint'); R.setbtn = $('w3setbtn'); R.set = $('w3set'); R.setclose = $('w3setclose');
   R.sens = $('w3sens'); R.camd = $('w3camd'); R.gfxsel = $('w3gfxsel'); R.shadow = $('w3shadow'); R.snd = $('w3snd'); R.vol = $('w3vol');
+  R.viewsel = $('w3viewsel'); R.fov = $('w3fov'); R.bob = $('w3bob');
 
   flavorTimer = setInterval(() => { if (!loadDone && R.loadmsg) { flavorI = (flavorI + 1) % FLAVOR.length; R.loadmsg.textContent = FLAVOR[flavorI]; } }, 1500);
   setLoad(16, 'LOADING_ASSETS'); // checkpoint: engine module + three.js executing
@@ -2350,7 +2478,7 @@ function init() {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 900);
+  camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.08, 900);
   clock = new THREE.Clock();
   setLoad(38, 'BUILDING_WORLD'); // checkpoint: renderer + WebGL context live
 

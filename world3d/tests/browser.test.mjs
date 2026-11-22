@@ -207,7 +207,7 @@ ok(booted, 'desktop: engine booted to READY after a valid handshake');
 {
   const s = await state(page);
   ok(s && Math.abs(s.x) < 0.6 && Math.abs(s.z - 18) < 0.6, 'desktop: spawn (0,18)', s && { x: s.x, z: s.z });
-  ok(s && s.camDist > 11 && s.camDist < 14.5, 'desktop: camera at boom distance ~13', s && s.camDist);
+  ok(s && s.view === 'fp' && s.eyeY > 1.8 && s.eyeY < 2.1 && s.hands === true, 'desktop: first person by default — eye at head height, hands up', s && { view: s.view, eyeY: s.eyeY, hands: s.hands });
   await page.screenshot({ path: '/tmp/w3t-desktop.png' });
 }
 // S moves toward the camera (+z at spawn yaw)
@@ -306,6 +306,8 @@ ok(booted, 'desktop: engine booted to READY after a valid handshake');
 // camera boom does not clip: stand north-facing distance from the
 // fountain, then face AWAY so the boom must cross the fountain sphere.
 {
+  await page.keyboard.press('KeyV'); // boom checks run in third person
+  await pollState(page, (x) => x.view === 'tp', 6000);
   await homeTo(page, 0, 12, 2.5);
   await turnCamTo(page, 0); // facing south: camera boom reaches north into the fountain
   const s = await pollState(page, (x) => x.camDist < 11, 12000);
@@ -313,6 +315,8 @@ ok(booted, 'desktop: engine booted to READY after a valid handshake');
   await turnCamTo(page, Math.PI); // facing the fountain again: boom over open ground
   const back = await pollState(page, (x) => x.camDist > 11.5, 12000);
   ok(!!back, 'camera: boom eases back out when the obstacle clears', back && back.camDist);
+  await page.keyboard.press('KeyV'); // back to first person
+  await pollState(page, (x) => x.view === 'fp', 6000);
 }
 // settings: panel + persistence
 {
@@ -575,6 +579,30 @@ ok(page._errs.length === 0, 'desktop: zero page errors', page._errs.slice(0, 3))
   const partied = await waitDom(page, () => window.__w3state && window.__w3state().emote === 'celebrate', 6000);
   ok(!!partied, 'v546: pressing 2 celebrates');
   ok(page._errs.length === 0, 'v546: zero page errors', page._errs.slice(0, 3));
+  await page.close();
+}
+
+/* ---- 11) v547: first-person controller ---- */
+{
+  const { page } = await bootSmall();
+  const s0 = await state(page);
+  ok(!!s0 && s0.view === 'fp' && s0.fovNow === 72, 'v547: boots into first person at fov 72', s0 && { view: s0.view, fov: s0.fovNow });
+  ok(!!s0 && s0.eyeY > 1.8 && s0.eyeY < 2.1, 'v547: eye sits at avatar head height (~1.95)', s0 && s0.eyeY);
+  ok(!!s0 && s0.hands === true, 'v547: view-model hands are up in first person');
+  await page.keyboard.press('KeyV');
+  const tp = await pollState(page, (x) => x.view === 'tp' && x.hands === false, 8000);
+  ok(!!tp, 'v547: V switches to third person and the hands drop', tp && { view: tp.view, hands: tp.hands });
+  const boom = await pollState(page, (x) => x.camDist > 11, 12000);
+  ok(!!boom, 'v547: third-person boom is back at ~13 in TP mode', boom && boom.camDist);
+  await page.keyboard.press('KeyV');
+  const fp = await pollState(page, (x) => x.view === 'fp' && x.hands === true, 8000);
+  ok(!!fp, 'v547: V again returns to first person with hands', fp && fp.view);
+  // fov setting applies: persist 84, reload, the FP camera must use it
+  await page.evaluate(() => { const s = JSON.parse(localStorage.getItem('w3settings') || '{}'); s.fov = 84; localStorage.setItem('w3settings', JSON.stringify(s)); });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  const fov = await pollState(page, (x) => x.booted && x.fovNow === 84, 30000);
+  ok(!!fov, 'v547: saved fov 84 applies to the first-person camera after reload', fov && fov.fovNow);
+  ok(page._errs.length === 0, 'v547: zero page errors', page._errs.slice(0, 3));
   await page.close();
 }
 

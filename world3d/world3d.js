@@ -398,6 +398,9 @@ function createWorld3D(ctx) {
       '  <label>camera distance <input id="w3camd" type="range" min="8" max="22" step="0.5"></label>\n' +
       '  <label>camera height <input id="w3camh" type="range" min="0.9" max="2.6" step="0.1"></label>\n' +
       '  <label>graphics <select id="w3gfxsel"><option value="auto">auto</option><option value="low">low</option><option value="medium">medium</option><option value="high">high</option></select></label>\n' +
+      '  <label>camera <select id="w3viewsel"><option value="fp">first person</option><option value="tp">third person</option></select></label>\n' +
+      '  <label>field of view <input id="w3fov" type="range" min="60" max="90" step="1"></label>\n' +
+      '  <label class="w3chk">head bob <input id="w3bob" type="checkbox"></label>\n' +
       '  <label class="w3chk">shadows <input id="w3shadow" type="checkbox"></label>\n' +
       '  <label class="w3chk">ambient sound <input id="w3snd" type="checkbox"></label>\n' +
       '  <label>sound volume <input id="w3vol" type="range" min="0" max="1" step="0.05"></label>\n' +
