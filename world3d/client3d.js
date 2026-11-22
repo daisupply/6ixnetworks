@@ -920,7 +920,7 @@ function buildTown() {
   buildTownDoors545();
   buildShards();
   buildStrollers();
-  buildDressing(); buildVegetation(); buildForest(); buildWildlife(); buildEntrances();
+  buildDressing(); buildVegetation(); buildForest(); buildWildlife(); buildEntrances(); buildTestGrove();
   cozyInteriors();
 }
 
@@ -1915,6 +1915,70 @@ let BIRDS = [], petals = null, petalDat = null;
  * planters and lantern posts (emissive only — no new point
  * lights). Houses get chimneys. Small props, deliberate spots,
  * paths and door swings stay clear. */
+/* ============ CP3 TEST GROVE (stage 02 rebuild): curated Quaternius
+ * MegaKit models composed on the east meadow to lock the art direction
+ * in-engine before large-scale placement. Temporary — CP6 replaces the
+ * world's dressing wholesale. Models: world3d/assets/nature/*.glb
+ * (CC0, see assets/ASSET_SOURCES.md + CATALOG.md). */
+let GROVE = { n: 0 };
+function grovePlace(name, x, z, s, ry) {
+  loadAsset('/world3d/assets/nature/' + name + '.glb').then((proto) => {
+    if (!proto) return;
+    const m = proto.clone(true);
+    m.position.set(x, groundH(x, z) - 0.04, z);
+    m.scale.setScalar(s);
+    m.rotation.y = ry || 0;
+    m.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    scene.add(m);
+    GROVE.n++;
+  });
+}
+function buildTestGrove() {
+  const CX = 34, CZ = 64;
+  // trees: 3 broadleaf + 2 pine + the red twisted landmark at center
+  grovePlace('CommonTree_1', CX - 6, CZ - 6, 1.15, 0.7);
+  grovePlace('CommonTree_3', CX + 6, CZ + 6, 0.95, 2.4);
+  grovePlace('CommonTree_5', CX - 2, CZ + 14, 1.05, 4.1);
+  grovePlace('Pine_2', CX + 10, CZ - 8, 1.1, 1.3);
+  grovePlace('Pine_4', CX - 12, CZ + 10, 0.9, 5.3);
+  grovePlace('TwistedTree_2', CX, CZ, 0.62, 0.2);
+  // undergrowth + rocks
+  grovePlace('Bush_Common', CX - 4, CZ + 4, 1.25, 1.1);
+  grovePlace('Bush_Common_Flowers', CX + 4, CZ - 4, 1.25, 2.9);
+  grovePlace('Rock_Medium_1', CX - 8, CZ, 1.3, 0.5);
+  grovePlace('Rock_Medium_3', CX + 8, CZ + 10, 0.9, 2.2);
+  grovePlace('Fern_1', CX - 5.4, CZ - 5.2, 1.2, 0.4);
+  grovePlace('Fern_1', CX + 1.8, CZ + 2.6, 1.0, 2.0);
+  grovePlace('Flower_3_Group', CX - 3, CZ + 9, 1.3, 0.9);
+  grovePlace('Flower_3_Group', CX + 7, CZ + 1, 1.1, 3.4);
+  grovePlace('Flower_4_Group', CX + 2, CZ - 9, 1.2, 1.8);
+  // colliders for the trees + boulders (visuals are client-side, so are these)
+  for (const [x, z, r] of [[CX - 6, CZ - 6, 1.0], [CX + 6, CZ + 6, 0.9], [CX - 2, CZ + 14, 0.9], [CX + 10, CZ - 8, 0.9], [CX - 12, CZ + 10, 0.8], [CX, CZ, 1.1], [CX - 8, CZ, 1.5], [CX + 8, CZ + 10, 1.1]]) {
+    addCollider(x, z, r);
+  }
+  // grass: ONE InstancedMesh built from the real grass model
+  loadAsset('/world3d/assets/nature/Grass_Common_Tall.glb').then((proto) => {
+    if (!proto) return;
+    let mesh = null;
+    proto.traverse((o) => { if (o.isMesh && !mesh) mesh = o; });
+    if (!mesh) return;
+    const N = 240, inst = new THREE.InstancedMesh(mesh.geometry, mesh.material, N);
+    const rng = mulberry32(31337), d = new THREE.Object3D();
+    for (let i = 0; i < N; i++) {
+      const a = rng() * Math.PI * 2, rr = Math.sqrt(rng()) * 15;
+      const x = CX + Math.cos(a) * rr, z = CZ + Math.sin(a) * rr;
+      d.position.set(x, groundH(x, z) - 0.03, z);
+      d.rotation.set((rng() - 0.5) * 0.16, rng() * Math.PI, (rng() - 0.5) * 0.16);
+      d.scale.setScalar(0.8 + rng() * 0.7);
+      d.updateMatrix();
+      inst.setMatrixAt(i, d.matrix);
+    }
+    inst.receiveShadow = true;
+    scene.add(inst);
+    GROVE.n++;
+  });
+}
+
 function buildEntrances() {
   const stoneM = new THREE.MeshStandardMaterial({ color: 0xa79b7f, roughness: 0.95 });
   const terraM = new THREE.MeshStandardMaterial({ color: 0xa35a3c, roughness: 0.9 });
@@ -3307,7 +3371,7 @@ function loop() {
     if (handshakeOk && !sessionConflict) { setLoad(100, 'READY'); booted = true; window.__w3booted = true; }
     window.__w3state = function () {
       const miraN = NPCS.find((n) => n.zone === 'coffee');
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, groveN: GROVE.n, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }
