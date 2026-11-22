@@ -32,3 +32,10 @@ front faces +Z in three.js space; materials named by slot
 (`body` on the character is recolored per-NPC at runtime).
 Runtime loading: `loadAsset`/`swapModel`/`attachRig` in client3d.js —
 async, cached, procedural fallback stays if a load fails.
+
+- arcade.glb — CP7 district exterior (plum arcade, marquee canopy, violet glass) — districts.py (original) — 4,202 tris
+- library.glb — CP7 district exterior (sandstone, arched windows, porch) — districts.py (original) — 5,340 tris
+- apartments.glb — CP7 district exterior (cream block, balconies, gable roof) — districts.py (original) — 5,101 tris
+- rec.glb — CP7 district exterior (sage community hall, flat canopy) — districts.py (original) — 5,004 tris
+- music.glb — CP7 district exterior (charcoal-gold hall, ribbon windows) — districts.py (original) — 4,971 tris
+- house.glb — CP7 residential house (tintable 'walls' material, porch, flower boxes) — districts.py (original) — 1,356 tris
