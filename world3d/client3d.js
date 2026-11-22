@@ -920,7 +920,7 @@ function buildTown() {
   buildTownDoors545();
   buildShards();
   buildStrollers();
-  buildDressing();
+  buildDressing(); buildVegetation();
   cozyInteriors();
 }
 
@@ -1909,6 +1909,99 @@ function cozyInteriors() {
  * small ones around solid props. birds + petals run off the clock so
  * every client sees the same sky. */
 let BIRDS = [], petals = null, petalDat = null;
+/* ================= stage 09: vegetation =================
+ * Instanced grass tufts, meadow flowers, pebbles and forest
+ * mushrooms, scattered by a seeded rng (identical on every client),
+ * kept off streets, buildings, the pond and entrances. Everything
+ * sits on groundH so the wild bands dress their own hills. One
+ * InstancedMesh per family = a handful of draw calls total. */
+let VEG = { grass: 0, flowers: 0, pebbles: 0, mushrooms: 0 };
+function buildVegetation() {
+  const vrnd = mulberry32(777001);
+  const dummy = new THREE.Object3D();
+  const col = new THREE.Color();
+  const scatterInto = (arr, n, x0, x1, z0, z1, reject) => {
+    let placed = 0, guard = 0;
+    while (placed < n && guard++ < n * 40) {
+      const x = x0 + vrnd() * (x1 - x0), z = z0 + vrnd() * (z1 - z0);
+      if (reject && reject(x, z)) continue;
+      arr.push([x, z]); placed++;
+    }
+  };
+  const inPond = (x, z) => Math.hypot(x - 118, z - 12) < 16;
+  const inHouse = (x, z) => [[-108, -28], [-116, 6], [-104, 40]].some((h) => Math.hypot(x - h[0], z - h[1]) < 11);
+  // ---- grass tufts ----
+  const gspots = [];
+  scatterInto(gspots, 950, 130, 194, -100, 110, null);                 // east meadow
+  scatterInto(gspots, 520, -194, -133, -105, 114, null);               // west forest floor
+  scatterInto(gspots, 260, 92, 136, -32, 62, inPond);                  // park
+  scatterInto(gspots, 220, -130, -94, -62, 62, inHouse);               // residential yards
+  const tuft = new THREE.ConeGeometry(0.17, 0.6, 5); tuft.translate(0, 0.3, 0);
+  const grass = new THREE.InstancedMesh(tuft, new THREE.MeshStandardMaterial({ roughness: 1, flatShading: true }), gspots.length);
+  gspots.forEach((sp, i) => {
+    dummy.position.set(sp[0], groundH(sp[0], sp[1]) - 0.03, sp[1]);
+    dummy.rotation.set((vrnd() - 0.5) * 0.22, vrnd() * TAU, (vrnd() - 0.5) * 0.22);
+    dummy.scale.set(0.8 + vrnd() * 0.5, 0.7 + vrnd() * 0.9, 0.8 + vrnd() * 0.5);
+    dummy.updateMatrix(); grass.setMatrixAt(i, dummy.matrix);
+    if (sp[0] < -133) col.setHSL(0.29 + vrnd() * 0.03, 0.32, 0.26 + vrnd() * 0.07);
+    else col.setHSL(0.24 + vrnd() * 0.05, 0.42, 0.32 + vrnd() * 0.10);
+    grass.setColorAt(i, col);
+  });
+  grass.instanceMatrix.needsUpdate = true; if (grass.instanceColor) grass.instanceColor.needsUpdate = true;
+  scene.add(grass);
+  // ---- meadow + park flowers ----
+  const fspots = [];
+  scatterInto(fspots, 300, 132, 192, -95, 105, null);
+  scatterInto(fspots, 120, 94, 134, -28, 58, inPond);
+  const fgeo = new THREE.IcosahedronGeometry(0.11, 0); fgeo.translate(0, 0.4, 0);
+  const flowers = new THREE.InstancedMesh(fgeo, new THREE.MeshStandardMaterial({ roughness: 0.8, flatShading: true }), fspots.length);
+  const fcols = [0xf9a8d4, 0xffffff, 0xffd257, 0xc4b5fd, 0xfda4af];
+  fspots.forEach((sp, i) => {
+    dummy.position.set(sp[0], groundH(sp[0], sp[1]), sp[1]);
+    dummy.rotation.set(0, vrnd() * TAU, 0);
+    dummy.scale.setScalar(0.8 + vrnd() * 0.7);
+    dummy.updateMatrix(); flowers.setMatrixAt(i, dummy.matrix);
+    col.setHex(fcols[(vrnd() * fcols.length) | 0]); flowers.setColorAt(i, col);
+  });
+  flowers.instanceMatrix.needsUpdate = true; if (flowers.instanceColor) flowers.instanceColor.needsUpdate = true;
+  scene.add(flowers);
+  // ---- pebbles ----
+  const pspots = [];
+  scatterInto(pspots, 70, 132, 192, -95, 105, null);
+  scatterInto(pspots, 40, -190, -136, -100, 110, null);
+  scatterInto(pspots, 24, 94, 134, -28, 58, inPond);
+  const pgeo = new THREE.DodecahedronGeometry(0.15, 0);
+  const pebbles = new THREE.InstancedMesh(pgeo, new THREE.MeshStandardMaterial({ roughness: 0.95, flatShading: true }), pspots.length);
+  pspots.forEach((sp, i) => {
+    dummy.position.set(sp[0], groundH(sp[0], sp[1]) + 0.04, sp[1]);
+    dummy.rotation.set(vrnd() * 3, vrnd() * 3, vrnd() * 3);
+    dummy.scale.set(0.6 + vrnd() * 1.1, 0.4 + vrnd() * 0.5, 0.6 + vrnd() * 1.1);
+    dummy.updateMatrix(); pebbles.setMatrixAt(i, dummy.matrix);
+    col.setHSL(0.08, 0.06 + vrnd() * 0.05, 0.42 + vrnd() * 0.18); pebbles.setColorAt(i, col);
+  });
+  pebbles.instanceMatrix.needsUpdate = true; if (pebbles.instanceColor) pebbles.instanceColor.needsUpdate = true;
+  scene.add(pebbles);
+  // ---- forest mushrooms (stem + cap instanced pair) ----
+  const mspots = [];
+  scatterInto(mspots, 36, -190, -140, -100, 110, null);
+  const stemG = new THREE.CylinderGeometry(0.05, 0.075, 0.24, 6); stemG.translate(0, 0.12, 0);
+  const capG = new THREE.ConeGeometry(0.17, 0.15, 7); capG.translate(0, 0.3, 0);
+  const stems = new THREE.InstancedMesh(stemG, new THREE.MeshStandardMaterial({ color: 0xe8dcc4, roughness: 0.9 }), mspots.length);
+  const caps = new THREE.InstancedMesh(capG, new THREE.MeshStandardMaterial({ roughness: 0.85, flatShading: true }), mspots.length);
+  mspots.forEach((sp, i) => {
+    dummy.position.set(sp[0], groundH(sp[0], sp[1]), sp[1]);
+    dummy.rotation.set((vrnd() - 0.5) * 0.15, vrnd() * TAU, (vrnd() - 0.5) * 0.15);
+    dummy.scale.setScalar(0.8 + vrnd() * 0.9);
+    dummy.updateMatrix();
+    stems.setMatrixAt(i, dummy.matrix); caps.setMatrixAt(i, dummy.matrix);
+    col.setHSL(0.03 + vrnd() * 0.03, 0.55, 0.38 + vrnd() * 0.1); caps.setColorAt(i, col);
+  });
+  stems.instanceMatrix.needsUpdate = true; caps.instanceMatrix.needsUpdate = true;
+  if (caps.instanceColor) caps.instanceColor.needsUpdate = true;
+  scene.add(stems); scene.add(caps);
+  VEG = { grass: gspots.length, flowers: fspots.length, pebbles: pspots.length, mushrooms: mspots.length };
+}
+
 function buildDressing() {
   const woodD = new THREE.MeshStandardMaterial({ color: 0x6b4226, roughness: 0.9 });
   const woodL = new THREE.MeshStandardMaterial({ color: 0x9a6b40, roughness: 0.9 });
@@ -2932,7 +3025,7 @@ function loop() {
     if (handshakeOk && !sessionConflict) { setLoad(100, 'READY'); booted = true; window.__w3booted = true; }
     window.__w3state = function () {
       const miraN = NPCS.find((n) => n.zone === 'coffee');
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }
