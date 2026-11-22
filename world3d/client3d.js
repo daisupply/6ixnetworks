@@ -920,7 +920,7 @@ function buildTown() {
   buildTownDoors545();
   buildShards();
   buildStrollers();
-  buildDressing(); buildVegetation();
+  buildDressing(); buildVegetation(); buildForest();
   cozyInteriors();
 }
 
@@ -1909,6 +1909,113 @@ function cozyInteriors() {
  * small ones around solid props. birds + petals run off the clock so
  * every client sees the same sky. */
 let BIRDS = [], petals = null, petalDat = null;
+/* ================= stage 10: the west forest =================
+ * Modeled trees (five families) clustered on the west hills, a
+ * winding dirt path from the town edge to a stone-ring clearing,
+ * an entrance signpost, and a sunset-overlook bench in the east
+ * meadow. Tree placement is seeded (same on every client); each
+ * tree is a shared-geometry clone sitting on groundH. */
+let FOREST = { trees: 0 };
+function buildForest() {
+  const frnd = mulberry32(424242);
+  const urls = [
+    '/world3d/assets/trees/tree_tall.glb',
+    '/world3d/assets/trees/tree_broad.glb',
+    '/world3d/assets/environment/tree_pine.glb',
+    '/world3d/assets/environment/tree_round.glb',
+    '/world3d/assets/environment/tree_sakura.glb',
+  ];
+  const spots = [];
+  const clusters = [[-168, -42, 30], [-172, 48, 27], [-158, 92, 20], [-180, -85, 22], [-150, -95, 20]];
+  for (const [cx, cz, r] of clusters) {
+    const n = 7 + (frnd() * 4 | 0);
+    for (let i = 0; i < n; i++) {
+      const a = frnd() * TAU, d = Math.sqrt(frnd()) * r;
+      spots.push([cx + Math.cos(a) * d, cz + Math.sin(a) * d * 0.8]);
+    }
+  }
+  for (let i = 0; i < 12; i++) spots.push([-140 - frnd() * 48, -100 + frnd() * 205]);
+  const pathPts = [[-127, 32], [-140, 24], [-150, 8], [-158, -6], [-167, -19], [-174, -30], [-179, -37]];
+  const nearPath = (x, z) => pathPts.some((p) => Math.hypot(x - p[0], z - p[1]) < 5.5) || Math.hypot(x + 179, z + 38) < 8.5;
+  const kept = spots.filter(([x, z]) => x > -195 && x < -131 && Math.abs(z) < 112 && !nearPath(x, z));
+  kept.forEach(([x, z], i) => {
+    const url = urls[i % urls.length];
+    const sc = 1.15 + frnd() * 0.95;
+    loadAsset(url).then((proto) => {
+      if (!proto) return;
+      const m = proto.clone(true);
+      m.position.set(x, groundH(x, z) - 0.05, z);
+      m.rotation.y = frnd() * TAU;
+      m.scale.setScalar(sc);
+      m.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      scene.add(m);
+    });
+    addCollider(x, z, 0.85 * sc);
+    FOREST.trees++;
+  });
+  // ---- winding dirt path (ribbon over the terrain) ----
+  const curve = new THREE.CatmullRomCurve3(pathPts.map(([x, z]) => new THREE.Vector3(x, 0, z)));
+  const N = 60, posArr = [], idx = [];
+  for (let i = 0; i <= N; i++) {
+    const p = curve.getPoint(i / N), t = curve.getTangent(i / N);
+    const nx = -t.z, nz = t.x, w = 1.35;
+    posArr.push(p.x + nx * w, groundH(p.x + nx * w, p.z + nz * w) + 0.07, p.z + nz * w,
+                p.x - nx * w, groundH(p.x - nx * w, p.z - nz * w) + 0.07, p.z - nz * w);
+    if (i < N) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+  }
+  const pg = new THREE.BufferGeometry();
+  pg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(posArr), 3));
+  pg.setIndex(idx); pg.computeVertexNormals();
+  const path = new THREE.Mesh(pg, new THREE.MeshStandardMaterial({ color: 0x8a6f4d, roughness: 1 }));
+  path.receiveShadow = true; scene.add(path);
+  // ---- the clearing: stone ring, fallen log, stumps ----
+  const cx = -179, cz = -38, cy = groundH(cx, cz);
+  const stoneM = new THREE.MeshStandardMaterial({ color: 0x8d8272, roughness: 0.95, flatShading: true });
+  for (let i = 0; i < 8; i++) {
+    const a = i / 8 * TAU, sx = cx + Math.cos(a) * 4.4, sz = cz + Math.sin(a) * 4.4;
+    const st = new THREE.Mesh(new THREE.DodecahedronGeometry(0.42, 0), stoneM);
+    st.position.set(sx, groundH(sx, sz) + 0.2, sz); st.rotation.set(frnd() * 3, frnd() * 3, 0);
+    st.castShadow = true; scene.add(st);
+  }
+  const barkM = new THREE.MeshStandardMaterial({ color: 0x5f4630, roughness: 1 });
+  const log = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.38, 3.6, 8), barkM);
+  log.rotation.z = Math.PI / 2; log.rotation.y = 0.5;
+  log.position.set(cx + 1.2, cy + 0.36, cz + 1.6); log.castShadow = true; scene.add(log);
+  addCollider(cx + 1.2, cz + 1.6, 1.1);
+  for (const [sx, sz] of [[cx - 2.6, cz - 1.2], [cx + 0.4, cz + 3.4]]) {
+    const stump = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.5, 0.55, 8), barkM);
+    stump.position.set(sx, groundH(sx, sz) + 0.27, sz); stump.castShadow = true; scene.add(stump);
+    addCollider(sx, sz, 0.55);
+  }
+  // ---- signposts + the overlook bench ----
+  const signpost = (x, z, text, ry) => {
+    const g = new THREE.Group(); g.position.set(x, groundH(x, z), z); g.rotation.y = ry; scene.add(g);
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2.3, 0.14), barkM); post.position.y = 1.15; g.add(post);
+    const board = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.62, 0.08),
+      new THREE.MeshStandardMaterial({ map: canvasTex(512, 128, (c, w, h) => {
+        c.fillStyle = '#4a3520'; c.fillRect(0, 0, w, h);
+        c.strokeStyle = '#c9a86a'; c.lineWidth = 6; c.strokeRect(8, 8, w - 16, h - 16);
+        c.fillStyle = '#f3e5c3'; c.font = 'bold 52px Georgia, serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText(text, w / 2, h / 2 + 2);
+      }), roughness: 0.9 }));
+    board.position.set(0, 1.95, 0.1); g.add(board);
+    addCollider(x, z, 0.4);
+  };
+  signpost(-129.5, 33.5, 'WHISPERING WOODS', Math.PI / 2 + 0.4);
+  signpost(158, -2, 'SUNSET OVERLOOK', -Math.PI / 2);
+  { // overlook bench (modeled), facing the town
+    const bg = new THREE.Group(); bg.position.set(166, groundH(166, 6), 6); bg.rotation.y = -Math.PI / 2; scene.add(bg);
+    const fb = new THREE.Group(); bg.add(fb);
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.16, 0.85), new THREE.MeshStandardMaterial({ color: 0x7a5230, roughness: 0.9 }));
+    seat.position.y = 0.62; fb.add(seat);
+    const holder = new THREE.Group(); bg.add(holder);
+    swapModel('/world3d/assets/environment/bench.glb', holder, fb);
+    const st = { x: 166, z: 6, ry: -Math.PI / 2, zone: 'town' };
+    SEATS.push(st);
+    addInteract('town', 166, 6, 1.9, () => (seatTaken(st) ? 'seat taken' : 'sit on the bench'), () => sitDown(st));
+  }
+}
+
 /* ================= stage 09: vegetation =================
  * Instanced grass tufts, meadow flowers, pebbles and forest
  * mushrooms, scattered by a seeded rng (identical on every client),
@@ -3025,7 +3132,7 @@ function loop() {
     if (handshakeOk && !sessionConflict) { setLoad(100, 'READY'); booted = true; window.__w3booted = true; }
     window.__w3state = function () {
       const miraN = NPCS.find((n) => n.zone === 'coffee');
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }

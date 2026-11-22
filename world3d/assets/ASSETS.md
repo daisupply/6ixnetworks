@@ -23,6 +23,8 @@ world3d.js decodes on serve, so runtime URLs stay `.glb`.
 | architecture/clothing.glb | assets-src/clothing.py | 387KB | Clothing Co. boutique — STAGE 06 build: sage + cream, striped storefront awning, display windows w/ boutique interior texture, modeled sign; 6,378 tris, 18 meshes, 19 materials |
 | environment/bench.glb | assets-src/props.py | 63KB | park bench — STAGE 07: slatted wood seat/back, iron frames, armrests; 180 tris, 3 meshes |
 | environment/mailbox.glb | assets-src/props.py | 46KB | mailbox — STAGE 07: post, rounded-top box, door, red flag; 204 tris, 4 meshes |
+| trees/tree_tall.glb | assets-src/trees2.py | 10KB | tall layered pine for the west forest — STAGE 10; 108 tris, 3 meshes |
+| trees/tree_broad.glb | assets-src/trees2.py | 21KB | broad oak-style tree for the west forest — STAGE 10; 208 tris, 3 meshes |
 | characters/character.glb | assets-src/character.py | 199KB | rigged character — skeleton + idle/walk clips; Mira (café) first |
 
 Conventions: meters = world units; origin at ground contact center;
