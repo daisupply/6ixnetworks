@@ -226,3 +226,7 @@ body.touch .w3p-key { display: none; }
 @media (max-height: 500px) {
   #w3stack { flex-direction: row; bottom: auto; top: calc(58px + env(safe-area-inset-top)); }
 }
+
+/* STAGE 05: voice states — gold = on (shared .on), green pulse = talking */
+#w3micbtn.live { border-color: #86ff9e !important; color: #86ff9e !important; box-shadow: 0 0 0 3px rgba(134,255,158,.25) !important; }
+#w3mutebtn.on { border-color: #fda4af !important; color: #fda4af !important; }

@@ -954,7 +954,7 @@ function buildTown() {
   buildTownDoors545();
   buildShards();
   buildStrollers();
-  buildDressing(); buildForest(); buildWildlife(); buildEntrances(); buildTestGrove(); buildNature(); buildGroundCover();
+  buildDressing(); buildForest(); buildWildlife(); buildEntrances(); buildTestGrove(); buildNature(); buildGroundCover(); buildSpawnGarden();
   cozyInteriors();
 }
 
@@ -1066,21 +1066,42 @@ async function buyItem(id, btn) {
 const gltfLoader = new GLTFLoader();
 let assetSwaps = 0;
 const assetCache = new Map();
-function loadAsset(url) {
-  if (!assetCache.has(url)) assetCache.set(url, gltfLoader.loadAsync(url).then((g) => g.scene).catch(() => null));
-  return assetCache.get(url);
-}
 const gltfCache = new Map();
-function loadGltf(url) {
-  if (!gltfCache.has(url)) gltfCache.set(url, gltfLoader.loadAsync(url).catch(() => null));
-  return gltfCache.get(url);
+/* STAGE 05: priority load queue. at most 4 GLBs in flight; lower prio
+ * loads first and callers pass their distance from spawn, so the
+ * spawn area dresses itself before distant scenery arrives. the
+ * caches are set at enqueue time — a url is fetched exactly once
+ * per session no matter how many systems ask for it. */
+const LOAD_MAX = 6;
+let loadActive = 0;
+const loadQ = [];
+function queueLoad(url, prio, full) {
+  const cache = full ? gltfCache : assetCache;
+  if (cache.has(url)) return cache.get(url);
+  let res;
+  const p = new Promise((r) => { res = r; });
+  cache.set(url, p);
+  loadQ.push({ url, prio: prio == null ? 60 : prio, res, full });
+  loadQ.sort((a, b) => a.prio - b.prio);
+  pumpLoads();
+  return p;
 }
+function pumpLoads() {
+  while (loadActive < LOAD_MAX && loadQ.length) {
+    const job = loadQ.shift();
+    loadActive++;
+    gltfLoader.loadAsync(job.url).then((g) => job.res(job.full ? g : g.scene)).catch(() => job.res(null)).finally(() => { loadActive--; pumpLoads(); });
+  }
+}
+function loadAsset(url, prio) { return queueLoad(url, prio, false); }
+function loadGltf(url, prio) { return queueLoad(url, prio == null ? 30 : prio, true); }
+function prioOf(x, z) { return Math.round(Math.hypot(x, z - 18)); }
 /* attach a rigged character model to an NPC entry: real skeleton +
  * AnimationMixer clips (idle/walk) driven by the entry's existing
  * st.speed — the same state the sync and routines already maintain.
  * The procedural avatar stays as the fallback until the rig lands. */
 function attachRig(entry, hue) {
-  loadGltf('/world3d/assets/characters/character.glb').then((gltf) => {
+  loadGltf('/world3d/assets/characters/character.glb', 25).then((gltf) => {
     if (!gltf || disposed || !gltf.animations || !gltf.animations.length) return;
     const model = skelClone(gltf.scene);
     model.traverse((o) => {
@@ -1128,7 +1149,9 @@ function updateRig(n, dt) {
   r.mixer.update(dt);
 }
 function swapModel(url, holder, fallback, scale, ry) {
-  loadAsset(url).then((tpl) => {
+  let prio = 60;
+  try { const v = new THREE.Vector3(); holder.getWorldPosition(v); prio = Math.min(120, prioOf(v.x, v.z)); } catch (e) { }
+  loadAsset(url, prio).then((tpl) => {
     if (!tpl || disposed) return;
     const m = tpl.clone(true);
     if (scale) { if (typeof scale === 'number') m.scale.setScalar(scale); else m.scale.set(scale[0], scale[1], scale[2]); }
@@ -1154,6 +1177,8 @@ const ICON_PATHS = {
   bag: '<path d="M5.5 8h13l-1 12.5a1 1 0 0 1-1 .5h-9a1 1 0 0 1-1-.5z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/>',
   gamepad: '<path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="16.5" cy="11" r=".6" fill="currentColor"/><circle cx="18.5" cy="14" r=".6" fill="currentColor"/><path d="M17.3 5.5H6.7a4 4 0 0 0-4 3.6C2.6 9.9 2 14.5 2 16a3 3 0 0 0 5.1 2.1L8.5 16.6a2 2 0 0 1 1.4-.6h4.2a2 2 0 0 1 1.4.6l1.4 1.5A3 3 0 0 0 22 16c0-1.5-.6-6.1-.7-6.9a4 4 0 0 0-4-3.6z"/>',
   chat: '<path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.6L3 21l1.9-5.6A8.5 8.5 0 1 1 21 11.5z"/>',
+  mic: '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/>',
+  micoff: '<line x1="2" y1="2" x2="22" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12"/><line x1="12" y1="19" x2="12" y2="22"/>',
   book: '<path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/>',
   hand: '<path d="M8 12.5V6.8a1.3 1.3 0 0 1 2.6 0V5.4a1.3 1.3 0 0 1 2.6 0V4.6a1.3 1.3 0 0 1 2.6 0v6.4"/><path d="M15.8 6.2a1.3 1.3 0 0 1 2.6.6l.5 5.7a7 7 0 0 1-7 7.5h-.8c-2.3 0-3.9-.9-5.1-3L3.9 13.6c-.5-.9.7-1.9 1.6-1.3L8 13.7"/>',
   hanger: '<path d="M12 8.5a2 2 0 1 1 2-2"/><path d="M12 8.5 3.6 15a1 1 0 0 0 .6 1.8h15.6a1 1 0 0 0 .6-1.8z"/>',
@@ -1958,7 +1983,7 @@ let NATURE = { trees: 0, grass: 0, flowers: 0 };
 const NAT = '/world3d/assets/nature/';
 function natPlace(name, x, z, s, ry, colliderR) {
   const lod = registerLOD(name, x, z, s, ry);
-  loadAsset(NAT + name + '.glb').then((proto) => {
+  loadAsset(NAT + name + '.glb', prioOf(x, z)).then((proto) => {
     if (!proto) return; // impostor (if any) stays as the permanent fallback
     const m = proto.clone(true);
     m.position.set(x, groundH(x, z) - 0.05, z);
@@ -1974,7 +1999,9 @@ function natPlace(name, x, z, s, ry, colliderR) {
  * list entries: [x, z, scale, ry]. Optional tint(x,z,i) -> THREE.Color. */
 function natInst(name, list, tint, lift) {
   if (!list.length) return;
-  loadAsset(NAT + name + '.glb').then((proto) => {
+  let prio = 120;
+  for (const p of list) { const d = prioOf(p[0], p[1]); if (d < prio) prio = d; }
+  loadAsset(NAT + name + '.glb', prio).then((proto) => {
     if (!proto) return;
     let mesh = null;
     proto.traverse((o) => { if (o.isMesh && !mesh) mesh = o; });
@@ -1997,7 +2024,14 @@ function natInst(name, list, tint, lift) {
     });
     if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
     inst.receiveShadow = true;
-    inst.frustumCulled = false;
+    // STAGE 05: real frustum culling — a bounding sphere fitted to the
+    // instance points replaces the old frustumCulled=false blanket.
+    let bcx = 0, bcz = 0;
+    for (const p of list) { bcx += p[0]; bcz += p[1]; }
+    bcx /= list.length; bcz /= list.length;
+    let brad = 0;
+    for (const p of list) { const dd = Math.hypot(p[0] - bcx, p[1] - bcz) + 3; if (dd > brad) brad = dd; }
+    inst.boundingSphere = new THREE.Sphere(new THREE.Vector3(bcx, 1, bcz), brad);
     scene.add(inst);
   });
 }
@@ -2235,7 +2269,12 @@ function natInstChunked(name, list, cx, cz) {
     });
     if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
     inst.receiveShadow = true;
-    inst.frustumCulled = false;
+    let bcx = 0, bcz = 0;
+    for (const p of list) { bcx += p[0]; bcz += p[1]; }
+    bcx /= list.length; bcz /= list.length;
+    let brad = 0;
+    for (const p of list) { const dd = Math.hypot(p[0] - bcx, p[1] - bcz) + 3; if (dd > brad) brad = dd; }
+    inst.boundingSphere = new THREE.Sphere(new THREE.Vector3(bcx, 1, bcz), brad);
     inst.visible = chunk.on;
     scene.add(inst);
     chunk.mesh = inst;
@@ -2734,6 +2773,115 @@ function buildVegetation() {
   scene.add(stems); scene.add(caps);
   VEG = { grass: gspots.length, flowers: fspots.length, pebbles: pspots.length, mushrooms: mspots.length };
 }
+
+/* ---------- STAGE 05: spawn garden ----------
+ * the grove's visual language, composed around spawn (0,18): a
+ * curated frame of library trees (sightlines to the gazebo, portal
+ * and grove kept clear), hedge arcs, four garden beds off the plaza,
+ * and a lush tall-grass band just outside the paving. hand-placed
+ * and seeded — identical on every client, no scatter randomness. */
+let SPAWNG = { trees: 0, beds: 0 };
+/* the garden band's own ground mask (buildGroundCover's grassOK is
+ * scoped inside that function): no grass on the plaza paving, the
+ * avenues, or the pond. */
+function spawnGrassOK(x, z) {
+  if (Math.hypot(x, z) < 40) return false;
+  if (Math.abs(x) < 9.4 && z > 37 && z < 95) return false;
+  if (Math.abs(z) < 9.4 && Math.abs(x) > 35 && Math.abs(x) < 157) return false;
+  if (Math.hypot(x - 118, z - 12) < 15.5) return false;
+  return true;
+}
+function buildSpawnGarden() {
+  const T = (name, x, z, s, ry) => { natPlace(name, x, z, s, ry, 0.85 * s); SPAWNG.trees++; };
+  // framing trees: west / east / south of the plaza rim
+  T('CommonTree_2', -16, 30, 1.15, 0.7);
+  T('CommonTree_4', -40, 14, 1.05, 2.4);
+  T('Pine_3', -31, -18, 1.1, 1.2);
+  T('CommonTree_1', 17, 28, 1.2, 1.9);
+  T('CommonTree_3', 27, 15, 1.0, 0.3);
+  T('CommonTree_5', -10, 36, 1.1, 2.9);
+  T('Pine_2', 12, 37, 1.15, 0.9);
+  T('TwistedTree_3', -21, 42, 0.5, 1.6); // the one autumn accent
+  T('CommonTree_2', 24, 33, 0.95, 2.2);  // toward the grove
+  // a flowering sakura on the west rim (v553 hero asset)
+  {
+    const holder = new THREE.Group();
+    holder.position.set(-28, 0, 22);
+    scene.add(holder);
+    loadAsset('/world3d/assets/environment/tree_sakura.glb', 5).then((proto) => {
+      if (!proto || disposed) return;
+      const m = proto.clone(true);
+      m.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      holder.add(m);
+      assetSwaps++;
+      swayers.push({ g: holder, ph: 1.7 });
+    });
+    addCollider(-28, 22, 1.0);
+    SPAWNG.trees++;
+  }
+  // hedge arcs of flowering bushes flanking the plaza rim
+  for (const [x, z] of [[-33, 6], [-33, 12], [-33, 18], [-33, 24], [33, 4], [33, 10], [33, 16]]) {
+    natPlace('Bush_Common_Flowers', x, z, 1.25, x * 1.7 + z);
+  }
+  natPlace('Bush_Common', -15, 28.4, 1.1, 0.5); // dark accents at two tree bases
+  natPlace('Bush_Common', 18.5, 26.5, 1.0, 2.1);
+  // ferns at the framing trees' feet
+  for (const [x, z] of [[-14.8, 28.8], [17.2, 26.6], [-9, 34.8], [25.4, 14], [-29.5, 20.5]]) {
+    natPlace('Fern_1', x, z, 0.9, x + z);
+  }
+  // decorative rocks at two cluster bases
+  natPlace('Rock_Medium_2', -15, 31.5, 0.8, 0.8, 0.6);
+  natPlace('Rock_Medium_3', 18, 30.5, 0.7, 2.0, 0.55);
+  // four garden beds on the grass outside the plaza
+  const soilM = new THREE.MeshStandardMaterial({ color: 0x4a3826, roughness: 1 });
+  for (const [bx, bz] of [[-42, -20], [42, -22], [-34, 54], [36, 52]]) {
+    const soil = new THREE.Mesh(new THREE.CircleGeometry(2.7, 22), soilM);
+    soil.rotation.x = -Math.PI / 2;
+    soil.position.set(bx, groundH(bx, bz) + 0.06, bz);
+    soil.receiveShadow = true;
+    scene.add(soil);
+    const ring = [], fl = [];
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * TAU;
+      ring.push([bx + Math.cos(a) * 2.75, bz + Math.sin(a) * 2.75, 0.55 + (i % 3) * 0.1, a]);
+    }
+    const brnd = mulberry32(31000 + bx * 7 + bz);
+    for (let i = 0; i < 7; i++) {
+      const a = brnd() * TAU, rr = 0.6 + brnd() * 1.7;
+      fl.push([bx + Math.cos(a) * rr, bz + Math.sin(a) * rr, 0.75 + brnd() * 0.3, brnd() * TAU]);
+    }
+    natInst('Pebble_Round_2', ring);
+    natInst('Flower_3_Group', fl.filter((_, i) => i % 2 === 0));
+    natInst('Flower_4_Group', fl.filter((_, i) => i % 2 === 1));
+    natPlace('Plant_1_Big', bx, bz, 0.9, bx);
+    natPlace('Fern_1', bx + 1.8, bz + 1.2, 0.85, bz);
+    SPAWNG.beds++;
+    VEG.flowers += 7;
+  }
+  // lush tall-grass band just outside the paving (r 36..54), masked
+  const rnd = mulberry32(555001);
+  const tall = [], wispy = [];
+  let tries = 0;
+  while (tall.length + wispy.length < 520 && tries < 2600) {
+    tries++;
+    const a = rnd() * TAU, rr = 36 + rnd() * 18;
+    const x = Math.cos(a) * rr, z = 18 + Math.sin(a) * rr * 0.82;
+    if (!spawnGrassOK(x, z)) continue;
+    (rnd() < 0.6 ? tall : wispy).push([x, z, 0.8 + rnd() * 0.45, rnd() * TAU]);
+  }
+  natInst('Grass_Common_Tall', tall, null, true);
+  natInst('Grass_Wispy_Short', wispy, null, true);
+  VEG.grass += tall.length + wispy.length;
+  // flower clusters at path edges near spawn
+  const fc = [];
+  for (const [cx, cz] of [[10, 24], [-11, 25], [14, -6], [-14, -8], [30, 26], [-30, 30]]) {
+    for (let i = 0; i < 4; i++) fc.push([cx + (rnd() - 0.5) * 3.4, cz + (rnd() - 0.5) * 3.4, 0.8 + rnd() * 0.3, rnd() * TAU]);
+  }
+  natInst('Flower_3_Group', fc.filter((_, i) => i % 2 === 0));
+  natInst('Flower_4_Group', fc.filter((_, i) => i % 2 === 1));
+  VEG.flowers += fc.length;
+}
+
 
 function buildDressing() {
   const woodD = new THREE.MeshStandardMaterial({ color: 0x6b4226, roughness: 0.9 });
@@ -3270,13 +3418,203 @@ function tickPerf() {
  * enters SESSION_CONFLICT. sendPos=false sends a position-less ping,
  * which is how a frozen tab reclaims the session (the server transfers
  * sid ownership only when the ping carries no movement). */
+/* ---------- STAGE 05: proximity voice chat ----------
+ * the 2d world's voice system, ported to 3d: WebRTC peers with
+ * signaling mailboxes (POST /api/world3d/signal, replies drained
+ * into the ping response), the same ICE config (STUN + openrelay
+ * TURN + the server's own TURN via window.W3ICE), a lexicographic
+ * initiator rule (glare-free offers), and per-peer gain nodes
+ * driven by 3d distance. radius 36 units = the 2d world's 360px
+ * at this world's scale. the roster is server-side and zone-
+ * filtered, so voice can never cross zones or reach players the
+ * server does not place near you. */
+const VOICE_R = 36;
+let vcOn3 = false, vcMuted = false, vcStream = null, vcCtx3 = null, vcAn3 = null, vcTalk3 = false;
+const vcPeers = {};
+const vcRetry3 = {};
+const RTC_CFG3 = {
+  iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }].concat(window.W3ICE || [])
+};
+function vcSend3(to, data) {
+  fetch('/api/world3d/signal', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ to, data }) }).catch(() => { });
+}
+function vcClosePeer(u) {
+  const p = vcPeers[u];
+  if (!p) return;
+  try { p.pc.close(); } catch (e) { }
+  try { if (p.gain) p.gain.disconnect(); } catch (e) { }
+  delete vcPeers[u];
+  const rm = remotes.get(u);
+  if (rm && rm.group.userData.label) rm.group.userData.label.material.color.setHex(0xffffff);
+}
+function vcEnsurePeer(u, initiator) {
+  if (vcPeers[u] || u === me) return;
+  if (vcRetry3[u] && Date.now() < vcRetry3[u]) return;
+  if (!vcCtx3) { try { vcCtx3 = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { } }
+  if (vcCtx3 && vcCtx3.state === 'suspended') vcCtx3.resume();
+  let pc;
+  try { pc = new RTCPeerConnection(RTC_CFG3); } catch (e) { return; }
+  let gain = null;
+  if (vcCtx3) { gain = vcCtx3.createGain(); gain.gain.value = 0; gain.connect(vcCtx3.destination); }
+  const p = { pc, gain, iceQ: [], remoteSet: false, an: null, speaking: false };
+  vcPeers[u] = p;
+  if (vcStream) vcStream.getTracks().forEach((t) => { try { pc.addTrack(t, vcStream); } catch (e) { } });
+  else { try { pc.addTransceiver('audio', { direction: 'recvonly' }); } catch (e) { } }
+  pc.onicecandidate = (e) => { if (e.candidate) vcSend3(u, { t: 'ice', c: e.candidate }); };
+  pc.ontrack = (e) => {
+    if (!vcCtx3 || !vcPeers[u]) return;
+    try {
+      const ms = (e.streams && e.streams[0]) || new MediaStream([e.track]);
+      const src = vcCtx3.createMediaStreamSource(ms);
+      src.connect(p.gain);
+      p.an = vcCtx3.createAnalyser(); p.an.fftSize = 512; src.connect(p.an);
+    } catch (err) { }
+  };
+  pc.onconnectionstatechange = () => {
+    if (pc.connectionState === 'failed') { vcRetry3[u] = Date.now() + 6000; vcClosePeer(u); }
+    else if (pc.connectionState === 'closed') vcClosePeer(u);
+    else if (pc.connectionState === 'connected') delete vcRetry3[u];
+  };
+  if (initiator) {
+    pc.onnegotiationneeded = () => {
+      pc.createOffer().then((of) => pc.setLocalDescription(of))
+        .then(() => vcSend3(u, { t: 'offer', sdp: pc.localDescription })).catch(() => { });
+    };
+  }
+}
+function vcFlushIce(p) {
+  p.remoteSet = true;
+  const q = p.iceQ || []; p.iceQ = [];
+  q.forEach((c) => { try { const pr = p.pc.addIceCandidate(new RTCIceCandidate(c)); if (pr && pr.catch) pr.catch(() => { }); } catch (e) { } });
+}
+function vcHandleSignal(from, data) {
+  if (!data || !vcOn3) return;
+  if (data.t === 'offer') {
+    vcEnsurePeer(from, false);
+    const p = vcPeers[from]; if (!p) return;
+    p.pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
+      .then(() => { vcFlushIce(p); return p.pc.createAnswer(); })
+      .then((an) => p.pc.setLocalDescription(an))
+      .then(() => vcSend3(from, { t: 'answer', sdp: p.pc.localDescription }))
+      .catch(() => { });
+  } else if (data.t === 'answer') {
+    const p2 = vcPeers[from];
+    if (p2) p2.pc.setRemoteDescription(new RTCSessionDescription(data.sdp)).then(() => vcFlushIce(p2)).catch(() => { });
+  } else if (data.t === 'ice') {
+    const p3 = vcPeers[from];
+    if (p3 && data.c) { if (p3.remoteSet) p3.pc.addIceCandidate(new RTCIceCandidate(data.c)).catch(() => { }); else p3.iceQ.push(data.c); }
+  }
+}
+function vcRms(an) {
+  if (!an) return 0;
+  const buf = new Uint8Array(an.fftSize);
+  an.getByteTimeDomainData(buf);
+  let sum = 0;
+  for (let i = 0; i < buf.length; i += 4) { const v = (buf[i] - 128) / 128; sum += v * v; }
+  return Math.sqrt(sum / (buf.length / 4));
+}
+function vcTick3(roster) {
+  if (!vcOn3) return;
+  if (vcCtx3 && vcCtx3.state === 'suspended') vcCtx3.resume();
+  const want = {};
+  for (const p of roster) {
+    if (!p || p.u === me || !p.vc) continue;
+    const d = Math.hypot(p.x - px, p.z - pz);
+    if (d < VOICE_R) want[p.u] = d;
+  }
+  Object.keys(want).forEach((u) => vcEnsurePeer(u, me < u));
+  Object.keys(vcPeers).forEach((u) => {
+    if (want[u] == null) { vcClosePeer(u); return; }
+    const pr = vcPeers[u];
+    if (pr && pr.gain && vcCtx3) {
+      const g = Math.pow(Math.max(0, 1 - want[u] / VOICE_R), 1.4);
+      pr.gain.gain.setTargetAtTime(g, vcCtx3.currentTime, 0.08);
+    }
+    // speaking indicator: tint the player's name label while they talk
+    if (pr && pr.an) {
+      const sp = vcRms(pr.an) > 0.045;
+      if (sp !== pr.speaking) {
+        pr.speaking = sp;
+        const rm = remotes.get(u);
+        if (rm && rm.group.userData.label) rm.group.userData.label.material.color.setHex(sp ? 0x86ff9e : 0xffffff);
+      }
+    }
+  });
+}
+function vcSetBtn3() {
+  const b = document.getElementById('w3micbtn');
+  const mb = document.getElementById('w3mutebtn');
+  if (b) {
+    b.innerHTML = icon((vcOn3 && !vcMuted) ? 'mic' : 'micoff', 20);
+    b.classList.toggle('on', vcOn3);
+    b.title = !vcOn3 ? 'voice chat' : (vcMuted ? 'voice on — mic muted' : 'voice on — tap to turn off');
+  }
+  if (mb) { mb.hidden = !vcOn3; mb.classList.toggle('on', vcMuted); mb.innerHTML = icon(vcMuted ? 'micoff' : 'mic', 18); }
+}
+function vcStopAll3() {
+  vcOn3 = false; vcTalk3 = false;
+  if (vcStream) { vcStream.getTracks().forEach((t) => { try { t.stop(); } catch (e) { } }); vcStream = null; }
+  vcAn3 = null;
+  Object.keys(vcPeers).forEach(vcClosePeer);
+  vcSetBtn3();
+}
+function vcApplyMute() {
+  if (vcStream) vcStream.getAudioTracks().forEach((t) => { t.enabled = !vcMuted; });
+  vcSetBtn3();
+}
+async function vcToggle3() {
+  if (vcOn3) { vcStopAll3(); toast('voice off'); return; }
+  let stream = null;
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { stream = null; }
+  }
+  vcStream = stream;
+  if (!vcCtx3) { try { vcCtx3 = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { } }
+  if (vcCtx3 && vcCtx3.state === 'suspended') vcCtx3.resume();
+  if (stream && vcCtx3) {
+    try { const src = vcCtx3.createMediaStreamSource(stream); vcAn3 = vcCtx3.createAnalyser(); vcAn3.fftSize = 512; src.connect(vcAn3); } catch (e) { }
+  }
+  vcMuted = false;
+  vcOn3 = true;
+  vcSetBtn3();
+  toast(stream ? 'voice on — walk up to someone to talk' : 'voice on (listen only — mic blocked)');
+  ping(true);
+}
+setInterval(() => {
+  if (!vcOn3 || !vcAn3) { if (vcTalk3) { vcTalk3 = false; const b = document.getElementById('w3micbtn'); if (b) b.classList.remove('live'); } return; }
+  vcTalk3 = vcRms(vcAn3) > 0.045;
+  const b = document.getElementById('w3micbtn');
+  if (b) b.classList.toggle('live', vcTalk3 && !vcMuted);
+}, 180);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && vcCtx3 && vcCtx3.state === 'suspended') vcCtx3.resume(); });
+if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+  navigator.mediaDevices.addEventListener('devicechange', () => {
+    if (vcOn3 && vcStream && vcStream.getAudioTracks().every((t) => t.readyState === 'ended')) {
+      toast('mic device changed — reconnecting mic');
+      navigator.mediaDevices.getUserMedia({ audio: true }).then((s) => {
+        vcStream = s; vcMuted = false;
+        Object.keys(vcPeers).forEach((u) => { vcClosePeer(u); });
+        vcSetBtn3();
+      }).catch(() => { vcStream = null; toast('mic unavailable — listen only'); });
+    }
+  });
+}
+window.addEventListener('pagehide', () => { if (vcOn3) vcStopAll3(); });
+
+{ const b = document.getElementById('w3micbtn'); if (b) b.addEventListener('click', () => vcToggle3());
+  const mb = document.getElementById('w3mutebtn'); if (mb) mb.addEventListener('click', () => { if (!vcOn3) return; vcMuted = !vcMuted; vcApplyMute(); toast(vcMuted ? 'mic muted' : 'mic live'); });
+  vcSetBtn3(); }
+
 let sessionConflict = false, handshakeOk = false;
 async function ping(sendPos) {
   if (sendPos === undefined) sendPos = true;
   let res;
   try {
     const wn = warpNext; warpNext = false;
-    res = await fetch('/api/world3d/ping', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(sendPos ? { x: Math.round(px * 10) / 10, z: Math.round(pz * 10) / 10, ry, sid: mySid, sit: sitting ? 1 : 0, warp: wn, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null } : { sid: mySid }) });
+    res = await fetch('/api/world3d/ping', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(sendPos ? { x: Math.round(px * 10) / 10, z: Math.round(pz * 10) / 10, ry, sid: mySid, sit: sitting ? 1 : 0, warp: wn, vc: vcOn3 ? 1 : 0, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null } : { sid: mySid, vc: vcOn3 ? 1 : 0 }) });
   } catch (e) { return { ok: false, kind: 'network', err: 'network error' }; }
   let r = null;
   try { r = await res.json(); } catch (e) { return { ok: false, kind: 'badjson', err: 'non-JSON reply (HTTP ' + res.status + ')' }; }
@@ -3327,6 +3665,8 @@ async function ping(sendPos) {
   for (const [u, rm] of remotes) {
     if (!seen.has(u)) { scene.remove(rm.group); disposeAvatar(rm.group); remotes.delete(u); }
   }
+  if (r.sig && r.sig.length) for (const s of r.sig) vcHandleSignal(s.from, s.data);
+  vcTick3(r.roster);
   return { ok: true, data: r };
 }
 
@@ -3769,7 +4109,7 @@ function loop() {
     window.__w3scene = scene; // diagnostic handle (mesh census in tests)
     window.__w3state = function () {
       const miraN = NPCS.find((n) => n.zone === 'coffee');
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, groveN: GROVE.n, coverN: COVER.lawn, chunksOn: COVER.chunksOn, chunks: COVER.chunks, lodNear: COVER.lodNear, lodFar: COVER.lodFar, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, groveN: GROVE.n, coverN: COVER.lawn, chunksOn: COVER.chunksOn, chunks: COVER.chunks, lodNear: COVER.lodNear, lodFar: COVER.lodFar, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, perfQ: loadQ.length + loadActive, garden: SPAWNG, vc: { on: vcOn3, muted: vcMuted, peers: Object.keys(vcPeers).length, states: Object.fromEntries(Object.entries(vcPeers).map(([u, p]) => [u, p.pc.connectionState])), talk: vcTalk3 }, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }

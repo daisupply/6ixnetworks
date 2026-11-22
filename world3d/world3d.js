@@ -138,6 +138,11 @@ function createWorld3D(ctx) {
   const assetBinCache = new Map();
 
   const P = new Map(); // user -> { x, z, ry, at, sid, win, clampStreak, fx, hue }
+  // STAGE 05: voice signaling mailboxes — the same contract as the 2d
+  // world's /api/world/signal (validated WebRTC payloads only, drained
+  // into the recipient's next ping), scoped to 3d presence.
+  const SIG3 = new Map();
+  const SIG_WIN3 = new Map();
 
   function prune(now) {
     for (const [u, p] of P) if (now - p.at > STALE_MS) P.delete(u);
@@ -151,7 +156,7 @@ function createWorld3D(ctx) {
     for (const [u, p] of P) {
       if (u === me) continue;
       if ((zoneOf(p.x, p.z) || 'town') !== mz) continue; // zones never see each other
-      out.push({ u, x: Math.round(p.x * 10) / 10, z: Math.round(p.z * 10) / 10, ry: Math.round(p.ry * 100) / 100, fx: p.fx || '', hue: (typeof p.hue === 'number') ? p.hue : null, sit: p.sit ? 1 : 0, wear: p.wear || null, emote: (p.emote && Date.now() - (p.emoteAt || 0) < 2600) ? p.emote : null });
+      out.push({ u, x: Math.round(p.x * 10) / 10, z: Math.round(p.z * 10) / 10, ry: Math.round(p.ry * 100) / 100, fx: p.fx || '', hue: (typeof p.hue === 'number') ? p.hue : null, sit: p.sit ? 1 : 0, wear: p.wear || null, vc: p.vc ? 1 : 0, emote: (p.emote && Date.now() - (p.emoteAt || 0) < 2600) ? p.emote : null });
     }
     return out;
   }
@@ -188,6 +193,7 @@ function createWorld3D(ctx) {
         if (sid !== p.sid) p.sid = sid; // takeover only when not moving
       }
       if (b.sit != null) p.sit = b.sit ? 1 : 0;
+      if (b.vc != null) p.vc = b.vc ? 1 : 0;
       if (b.emote != null) { if (b.emote === 'wave' || b.emote === 'celebrate') { p.emote = b.emote; p.emoteAt = now; } else p.emote = null; }
       const prevAt = p.at;
       if (b.x != null || b.z != null) {
@@ -230,7 +236,9 @@ function createWorld3D(ctx) {
       p.wear = cosOf(ctx, me).wear;
       let bal = null;
       try { bal = ctx.getCents(me); } catch (e) { }
-      J({ ok: true, me, bal, x: p.x, z: p.z, zone: zoneOf(p.x, p.z), portal: PORTAL_POS, roster: roster(me), cos: cosOf(ctx, me) });
+      const sig3 = SIG3.get(me) || [];
+      if (sig3.length) SIG3.delete(me);
+      J({ ok: true, me, bal, x: p.x, z: p.z, zone: zoneOf(p.x, p.z), portal: PORTAL_POS, roster: roster(me), cos: cosOf(ctx, me), sig: sig3 });
       return true;
     }
 
@@ -342,14 +350,47 @@ function createWorld3D(ctx) {
       return true;
     }
 
+    if (u.pathname === '/api/world3d/signal' && req.method === 'POST') {
+      let b = {};
+      try { b = await ctx.readJsonBody(req) || {}; } catch (e) { b = {}; }
+      const to = String(b.to || '').toLowerCase();
+      if (!to || to === me || !P.has(to) || b.data == null) { J({ ok: false }); return true; }
+      // WebRTC payloads only: a plain object with a known type, small
+      // enough to ride a ping payload (same rules as the 2d world).
+      const sdata = b.data;
+      if (!sdata || typeof sdata !== 'object' || Array.isArray(sdata) || (sdata.t !== 'offer' && sdata.t !== 'answer' && sdata.t !== 'ice')) { J({ ok: false }); return true; }
+      let sdLen = 0;
+      try { sdLen = JSON.stringify(sdata).length; } catch { J({ ok: false }); return true; }
+      if (sdLen > 16384) { J({ ok: false }); return true; }
+      const sigWin = (SIG_WIN3.get(me) || []).filter((t) => now - t < 2000);
+      if (sigWin.length >= 40) { J({ ok: true }); return true; }
+      sigWin.push(now); SIG_WIN3.set(me, sigWin);
+      let arr = SIG3.get(to);
+      if (!arr) { arr = []; SIG3.set(to, arr); }
+      arr.push({ from: me, data: b.data, at: now });
+      if (arr.length > 60) arr.splice(0, arr.length - 60);
+      J({ ok: true });
+      return true;
+    }
+
     if (u.pathname === '/api/world3d/leave' && req.method === 'POST') {
       P.delete(me);
+      SIG3.delete(me);
       J({ ok: true });
       return true;
     }
 
     J({ ok: false, err: 'unknown' }, 404);
     return true;
+  }
+
+  function iceExtra3() {
+    const urls = String(process.env.WORLD_TURN_URLS || '').split(',').map((s) => s.trim()).filter(Boolean);
+    if (!urls.length) return [];
+    const out = { urls };
+    if (process.env.WORLD_TURN_USER) out.username = process.env.WORLD_TURN_USER;
+    if (process.env.WORLD_TURN_PASS) out.credential = process.env.WORLD_TURN_PASS;
+    return [out];
   }
 
   function asset(pathname) {
@@ -453,6 +494,8 @@ function createWorld3D(ctx) {
       '<div id="w3stack">\n' +
       '<button id="w3mapbtn" class="w3hudbtn" type="button" title="world map" aria-label="world map"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2ZM9 4v14M15 6v14"/></svg></button>\n' +
       '<button id="w3wavebtn" class="w3hudbtn" type="button" title="wave" aria-label="wave"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 12.5V6.8a1.3 1.3 0 0 1 2.6 0V5.4a1.3 1.3 0 0 1 2.6 0V4.6a1.3 1.3 0 0 1 2.6 0v6.4"/><path d="M15.8 6.2a1.3 1.3 0 0 1 2.6.6l.5 5.7a7 7 0 0 1-7 7.5h-.8c-2.3 0-3.9-.9-5.1-3L3.9 13.6c-.5-.9.7-1.9 1.6-1.3L8 13.7"/></svg></button>\n' +
+      '<button id="w3micbtn" class="w3hudbtn" type="button" title="voice chat" aria-label="voice chat"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="2" y1="2" x2="22" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>\n' +
+      '<button id="w3mutebtn" class="w3hudbtn" type="button" title="mute mic" aria-label="mute mic" hidden></button>\n' +
       '<button id="w3partybtn" class="w3hudbtn gold" type="button" title="celebrate" aria-label="celebrate"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 13.8 9l5.7.2-4.4 3.7 1.5 5.6L12 15.4l-4.6 3.1 1.5-5.6L4.5 9.2 10.2 9z"/><path d="M19 2.8v2.4M20.2 4h-2.4M5 2.5v2M6 3.5H4"/></svg></button>\n' +
       '</div>\n' +
       '<div id="w3quiz" hidden><div class="w3menu-card"><div class="w3menu-t">rec center <span>trivia terminal</span><button id="w3quizclose" class="w3x" type="button" aria-label="close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div><div id="w3quizq"></div><div id="w3quizchoices"></div><div id="w3quizres"></div></div></div>\n' +
@@ -472,6 +515,7 @@ function createWorld3D(ctx) {
       'window.addEventListener("error",function(ev){if(!window.__w3booted&&ev&&ev.message)window.__w3fail("something failed while loading: "+ev.message);},true);' +
       'window.__w3watchdog=setTimeout(function(){if(!window.__w3booted)window.__w3fail("the 3d engine did not start — ur browser may not support WebGL, or the engine file failed to load.");},16000);' +
       'document.getElementById("w3retry").addEventListener("click",function(){location.reload();});</script>\n' +
+      '<script>window.W3ICE=' + JSON.stringify(iceExtra3()) + ';</script>\n' +
       '<script type="module" src="/world3d/client3d.js"></script>\n' +
       // NOTIF_JS is a RAW js string — every other page wraps it in a
       // <script> tag (see world.js). v539 shipped it bare, which dumped
