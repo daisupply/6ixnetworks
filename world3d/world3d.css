@@ -147,3 +147,82 @@ body:not(.touch) #w3use{display:none!important}
 #w3wavebtn,#w3partybtn{position:fixed;right:14px;z-index:26;width:40px;height:40px;border-radius:50%;background:rgba(18,11,42,.85);border:1px solid rgba(167,139,250,.45);color:#cdbffa;display:flex;align-items:center;justify-content:center;cursor:pointer}
 #w3wavebtn{top:112px}
 #w3partybtn{top:160px;color:#ffd257}
+
+/* ================= v552: HUD + ICON DESIGN SYSTEM =================
+ * root cause of the blank buttons: this page also loads the site's
+ * GALAXY_CSS, whose global button rules (padding:13px 22px and
+ * border-radius:8px!important) leak into the game — the padding
+ * crushed every icon svg to 0px wide inside the fixed-size round
+ * buttons, and the radius squared them off. the armor below takes
+ * every button inside #w3wrap back, then the design system styles
+ * them as one family: glass surfaces, warm gold accents, one radius
+ * language, visible states. */
+#w3wrap button { padding: 0 !important; box-shadow: none !important; font-family: inherit; }
+#w3wrap button:hover { transform: none; }
+#w3wrap button:active { transform: scale(.93); }
+#w3wrap button svg { flex: none; display: block; }
+#w3wrap button:focus-visible, #w3wrap a:focus-visible { outline: 2px solid #ffd257; outline-offset: 2px; }
+
+/* round glass action buttons (settings, leave, map, wave, party) */
+.w3hudbtn { display: flex !important; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50% !important; background: rgba(22,14,44,.68) !important; border: 1px solid rgba(255,217,160,.30) !important; color: #ffe9c4 !important; cursor: pointer; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: 0 6px 20px rgba(0,0,0,.35) !important; transition: background .15s, border-color .15s, color .15s, transform .1s; text-decoration: none; }
+.w3hudbtn:hover { background: rgba(52,34,92,.78) !important; border-color: rgba(255,217,160,.55) !important; }
+.w3hudbtn.on { background: rgba(122,84,20,.55) !important; border-color: #ffd257 !important; color: #ffd257 !important; box-shadow: 0 0 0 1px rgba(255,210,87,.35), 0 6px 20px rgba(0,0,0,.35) !important; }
+.w3hudbtn.gold { color: #ffd257 !important; }
+#w3setbtn { position: static; width: 44px; height: 44px; }
+.w3leave { font-size: 0; }
+
+/* the right-side stack: one intentional glass pill, not loose squares */
+#w3stack { position: fixed; top: calc(64px + env(safe-area-inset-top)); right: calc(12px + env(safe-area-inset-right)); z-index: 26; display: flex; flex-direction: column; gap: 6px; padding: 6px; border-radius: 999px; background: rgba(14,8,32,.42); border: 1px solid rgba(255,217,160,.16); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+#w3stack .w3hudbtn { position: static !important; }
+#w3mapbtn, #w3wavebtn, #w3partybtn { position: static; width: 44px; height: 44px; }
+
+/* HUD clusters get the same glass language */
+.w3left { background: rgba(14,8,32,.42); border: 1px solid rgba(255,217,160,.14); border-radius: 16px; padding: 8px 12px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.w3btns { background: rgba(14,8,32,.42); border: 1px solid rgba(255,217,160,.14); border-radius: 999px; padding: 5px 6px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); align-items: center; }
+.w3chip { border-color: rgba(255,217,160,.22) !important; }
+
+/* interaction prompt: icon in a gold disc + label + keycap */
+#w3prompt { display: flex; align-items: center; gap: 9px; padding: 7px 16px 7px 8px; background: rgba(16,10,34,.82); border-color: rgba(255,217,160,.4); animation: w3pop .18s ease; }
+#w3prompt[hidden] { display: none; }
+.w3p-ico { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: rgba(255,210,87,.16); color: #ffd257; }
+.w3p-key { font: 700 11px Inter, system-ui, sans-serif; color: #0d0a18; background: #f3efff; border-radius: 5px; padding: 2.5px 6px; box-shadow: 0 2px 0 rgba(160,150,200,.9); }
+body.touch .w3p-key { display: none; }
+@keyframes w3pop { from { opacity: 0; transform: translateX(-50%) translateY(6px) scale(.96); } to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } }
+
+/* touch controls: big glass circles with icon + caption */
+.w3rbtns { gap: 12px; }
+.w3rbtns button { display: flex !important; flex-direction: column; align-items: center; justify-content: center; gap: 2px; width: 64px; height: 64px; border-radius: 50% !important; background: rgba(22,14,44,.62) !important; border: 1px solid rgba(255,217,160,.32) !important; color: #ffe9c4 !important; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.w3rbtns button span { font: 700 9.5px Inter, system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+.w3rbtns button.on { background: rgba(122,84,20,.6) !important; border-color: #ffd257 !important; color: #ffd257 !important; }
+#w3use { display: flex; align-items: center; gap: 9px; border-radius: 999px !important; padding: 8px 18px 8px 10px !important; min-height: 54px; background: rgba(30,20,58,.9) !important; }
+#w3use[hidden] { display: none; }
+#w3use .w3p-ico { width: 34px; height: 34px; }
+#w3joy { border-color: rgba(255,217,160,.3); }
+#w3knob { background: radial-gradient(circle at 35% 35%, rgba(255,233,196,.85), rgba(167,139,250,.55) 70%); border-color: rgba(255,217,160,.5); }
+
+/* panels share one surface: settings, cards, dialogue, conflict */
+#w3set, .w3menu-card, #w3dlg, .w3conf-card { background: linear-gradient(165deg, rgba(30,20,58,.96), rgba(18,11,38,.96)) !important; border: 1px solid rgba(255,217,160,.26) !important; border-radius: 18px !important; box-shadow: 0 22px 60px rgba(0,0,0,.55) !important; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.w3menu-card, .w3conf-card { animation: w3cardin .18s ease; }
+@keyframes w3cardin { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+.w3x { display: flex !important; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50% !important; background: rgba(255,255,255,.06) !important; border: 1px solid rgba(255,217,160,.25) !important; color: #ffe9c4 !important; cursor: pointer; flex: none; }
+.w3x:hover { background: rgba(255,120,120,.18) !important; border-color: rgba(255,150,150,.5) !important; }
+#w3dlgnext { display: inline-flex !important; align-items: center; gap: 5px; background: rgba(255,210,87,.16) !important; border: 1px solid rgba(255,210,87,.5) !important; color: #ffd9a0 !important; border-radius: 999px !important; padding: 7px 14px !important; font: 700 13px Inter, system-ui, sans-serif; cursor: pointer; }
+.w3mi-buy { display: inline-flex !important; align-items: center; gap: 6px; background: rgba(255,210,87,.16) !important; border: 1px solid rgba(255,210,87,.5) !important; color: #ffd9a0 !important; border-radius: 999px !important; padding: 8px 14px !important; font: 700 13px Inter, system-ui, sans-serif; cursor: pointer; }
+.w3mi-buy:active { transform: scale(.95); }
+#w3wardsave { display: inline-flex !important; align-items: center; gap: 6px; }
+#w3wardsave.busy { opacity: .55; pointer-events: none; }
+#w3wardsave.ok { border-color: #4ade80 !important; color: #4ade80 !important; }
+#w3wardcancel { display: inline-flex !important; align-items: center; gap: 6px; }
+.w3qchoice { border-radius: 12px !important; }
+#w3retry { display: inline-flex !important; align-items: center; gap: 7px; }
+
+/* small screens: stack rides above the touch cluster, hud compacts */
+@media (max-width: 700px) {
+  #w3stack { top: auto; bottom: calc(196px + env(safe-area-inset-bottom)); right: calc(10px + env(safe-area-inset-right)); }
+  .w3hudbtn { width: 46px; height: 46px; }
+  .w3left { padding: 6px 9px; border-radius: 13px; }
+  #w3prompt { bottom: 188px; max-width: calc(100vw - 170px); }
+}
+@media (max-height: 500px) {
+  #w3stack { flex-direction: row; bottom: auto; top: calc(58px + env(safe-area-inset-top)); }
+}

@@ -636,6 +636,68 @@ ok(page._errs.length === 0, 'desktop: zero page errors', page._errs.slice(0, 3))
   await page.close();
 }
 
+/* ---- 15) v552: the icon system renders (measured, not assumed) ---- */
+{
+  const { page } = await bootSmall();
+  const icons = await page.evaluate(() => {
+    const out = {};
+    for (const id of ['w3setbtn', 'w3mapbtn', 'w3wavebtn', 'w3partybtn']) {
+      const el = document.getElementById(id);
+      const svg = el && el.querySelector('svg');
+      if (!el || !svg) { out[id] = { ok: false, why: 'missing el/svg' }; continue; }
+      const r = svg.getBoundingClientRect(), cs = getComputedStyle(svg);
+      out[id] = { ok: r.width > 4 && r.height > 4 && (cs.stroke !== 'none' || cs.fill !== 'none'), w: Math.round(r.width), h: Math.round(r.height), stroke: cs.stroke, name: el.getAttribute('aria-label') || el.title || '' };
+    }
+    const leave = document.querySelector('.w3leave');
+    const lsvg = leave && leave.querySelector('svg');
+    out.leave = lsvg ? { ok: lsvg.getBoundingClientRect().width > 4, name: leave.getAttribute('aria-label') || '' } : { ok: false };
+    out.stack = !!document.getElementById('w3stack') && !!document.querySelector('#w3stack #w3mapbtn');
+    return out;
+  });
+  for (const id of ['w3setbtn', 'w3mapbtn', 'w3wavebtn', 'w3partybtn']) ok(icons[id].ok && icons[id].name.length > 0, 'v552 icon: ' + id + ' renders visibly with an accessible name', icons[id]);
+  ok(icons.leave.ok && icons.leave.name.length > 0, 'v552 icon: leave is a door icon, not a text glyph', icons.leave);
+  ok(icons.stack, 'v552: map/wave/party live in one stack group');
+  await page.click('#w3mapbtn');
+  ok(await waitDom(page, () => window.__w3state() && window.__w3state().mapOpen === true, 6000), 'v552 action: map button still opens the map');
+  ok(await page.evaluate(() => document.getElementById('w3mapbtn').classList.contains('on')), 'v552 state: map button shows selected while open');
+  await page.click('#w3mapclose');
+  ok(await waitDom(page, () => window.__w3state() && window.__w3state().mapOpen === false, 6000), 'v552 action: map close still works');
+  await page.click('#w3setbtn');
+  ok(await waitDom(page, () => !document.getElementById('w3set').hidden, 4000), 'v552 action: settings still opens');
+  await page.click('#w3setbtn');
+  await page.click('#w3wavebtn');
+  ok(await waitDom(page, () => window.__w3state() && window.__w3state().emote === 'wave', 6000), 'v552 action: wave button still emotes');
+  // prompt carries a real icon at the coffee shop door
+  await homeTo(page, -28.6, -31.5);
+  const pr = await page.evaluate(() => {
+    const p = document.getElementById('w3prompt');
+    const svg = p && p.querySelector('.w3p-ico svg');
+    const r = svg ? svg.getBoundingClientRect() : { width: 0 };
+    return { hidden: !p || p.hidden, text: p ? p.textContent.trim() : '', svgW: Math.round(r.width) };
+  });
+  ok(!pr.hidden && /coffee/i.test(pr.text) && pr.svgW > 4, 'v552 prompt: door prompt shows a visible icon + label', pr);
+  await page.screenshot({ path: process.env.HOME + '/workspace/.tests/shots/prompt.png' });
+  ok(page._errs.length === 0, 'v552: zero page errors', page._errs.slice(0, 3));
+  await page.close();
+  // touch controls carry icons too
+  const tp = await newPage(390, 844, true);
+  await tp.goto(B + '/world3d?from=portal', { waitUntil: 'load', timeout: 30000 });
+  await pollState(tp, (x) => x.booted, 30000);
+  const tIcons = await tp.evaluate(() => {
+    const out = {};
+    for (const id of ['w3jump', 'w3sprint']) {
+      const el = document.getElementById(id);
+      const svg = el && el.querySelector('svg');
+      const r = svg ? svg.getBoundingClientRect() : { width: 0, height: 0 };
+      out[id] = { w: Math.round(r.width), h: Math.round(r.height) };
+    }
+    return out;
+  });
+  ok(tIcons.w3jump.w > 8 && tIcons.w3sprint.w > 8, 'v552 touch: jump + sprint render their icons', tIcons);
+  await tp.screenshot({ path: process.env.HOME + '/workspace/.tests/shots/phone.png' });
+  await tp.close();
+}
+
 await browser.close();
 
 console.log('BROWSER RESULT: ' + pass + ' pass, ' + fail + ' fail');

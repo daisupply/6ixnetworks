@@ -951,7 +951,7 @@ function openMenu() {
     const nm = document.createElement('div'); nm.className = 'w3mi-nm'; nm.textContent = m.name + ' — ' + m.price + '¢';
     const ds = document.createElement('div'); ds.className = 'w3mi-ds'; ds.textContent = m.desc;
     tx.appendChild(nm); tx.appendChild(ds); row.appendChild(tx);
-    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'w3mi-buy'; btn.textContent = 'order';
+    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'w3mi-buy'; btn.innerHTML = icon('bag', 14) + '<span>order</span>';
     btn.addEventListener('click', () => buyItem(m.id, btn));
     row.appendChild(btn); R.menulist.appendChild(row);
   }
@@ -976,14 +976,62 @@ async function buyItem(id, btn) {
 }
 
 /* ----- prompt machinery ----- */
+/* ---------- v552: the icon system ----------
+ * one design language for the whole 3D interface: 24x24 viewBox,
+ * stroke 2, round caps + joins, currentColor. paths live in this
+ * internal table ONLY (never user input), so icon() can safely
+ * return markup. decorative by default (aria-hidden); the BUTTON
+ * carries the accessible name. */
+const ICON_PATHS = {
+  door: '<path d="M14 4h5a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-5"/><path d="M3 12h11M10 8l-4 4 4 4"/>',
+  exit: '<path d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4"/><path d="M21 12H11M17 8l4 4-4 4"/>',
+  chair: '<path d="M7 4v7h10V4"/><path d="M7 11v9M17 11v9M7 15h10"/><path d="M5 11h14"/>',
+  bag: '<path d="M5.5 8h13l-1 12.5a1 1 0 0 1-1 .5h-9a1 1 0 0 1-1-.5z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/>',
+  gamepad: '<path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="16.5" cy="11" r=".6" fill="currentColor"/><circle cx="18.5" cy="14" r=".6" fill="currentColor"/><path d="M17.3 5.5H6.7a4 4 0 0 0-4 3.6C2.6 9.9 2 14.5 2 16a3 3 0 0 0 5.1 2.1L8.5 16.6a2 2 0 0 1 1.4-.6h4.2a2 2 0 0 1 1.4.6l1.4 1.5A3 3 0 0 0 22 16c0-1.5-.6-6.1-.7-6.9a4 4 0 0 0-4-3.6z"/>',
+  chat: '<path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.6L3 21l1.9-5.6A8.5 8.5 0 1 1 21 11.5z"/>',
+  book: '<path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/>',
+  hand: '<path d="M8 12.5V6.8a1.3 1.3 0 0 1 2.6 0V5.4a1.3 1.3 0 0 1 2.6 0V4.6a1.3 1.3 0 0 1 2.6 0v6.4"/><path d="M15.8 6.2a1.3 1.3 0 0 1 2.6.6l.5 5.7a7 7 0 0 1-7 7.5h-.8c-2.3 0-3.9-.9-5.1-3L3.9 13.6c-.5-.9.7-1.9 1.6-1.3L8 13.7"/>',
+  hanger: '<path d="M12 8.5a2 2 0 1 1 2-2"/><path d="M12 8.5 3.6 15a1 1 0 0 0 .6 1.8h15.6a1 1 0 0 0 .6-1.8z"/>',
+  bulb: '<path d="M9.5 18h5M10.5 21h3"/><path d="M12 3a6 6 0 0 1 3.5 10.9c-.7.5-1 1-1 2.1h-5c0-1.1-.3-1.6-1-2.1A6 6 0 0 1 12 3z"/>',
+  music: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  sparkles: '<path d="M12 3.5 13.8 9l5.7.2-4.4 3.7 1.5 5.6L12 15.4l-4.6 3.1 1.5-5.6L4.5 9.2 10.2 9z"/><path d="M19 2.8v2.4M20.2 4h-2.4"/>',
+  star: '<path d="M12 3l2.2 6.6 6.8.3-5.3 4.3 1.8 6.6L12 17l-5.5 3.8 1.8-6.6L3 9.9l6.8-.3z"/>',
+  check: '<path d="M4 12.5 9.5 18 20 6.5"/>',
+};
+function icon(name, size) {
+  const d = ICON_PATHS[name] || ICON_PATHS.hand;
+  return '<svg width="' + (size || 18) + '" height="' + (size || 18) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
+}
+function promptIconFor(label) {
+  const t = String(label || '').toLowerCase();
+  if (/enter|leave|exit|go in|step inside/.test(t)) return 'door';
+  if (/^sit|seat|bench|sofa/.test(t)) return 'chair';
+  if (/stand up/.test(t)) return 'hand';
+  if (/order|menu|browse|buy|shop/.test(t)) return 'bag';
+  if (/talk|chat|ask/.test(t)) return 'chat';
+  if (/play|game|cabinet/.test(t)) return 'gamepad';
+  if (/read|book/.test(t)) return 'book';
+  if (/wardrobe|try on|mirror|outfit|fit/.test(t)) return 'hanger';
+  if (/trivia|quiz|question/.test(t)) return 'bulb';
+  if (/jukebox|music|song/.test(t)) return 'music';
+  if (/decor|poster|rug|shard|star/.test(t)) return 'sparkles';
+  return 'hand';
+}
+
+let promptIcoEl = null, promptLblEl = null, useIcoEl = null, useLblEl = null;
 function setPrompt(it) {
   curPrompt = it;
   if (!it) { R.prompt.hidden = true; R.use.hidden = true; return; }
   const lbl = typeof it.label === 'function' ? it.label() : it.label;
   const touch = document.body.classList.contains('touch');
-  R.prompt.textContent = (touch ? '' : 'E — ') + lbl;
+  if (!promptIcoEl) { promptIcoEl = R.prompt.querySelector('.w3p-ico'); promptLblEl = R.prompt.querySelector('.w3p-lbl'); useIcoEl = R.use.querySelector('.w3p-ico'); useLblEl = document.getElementById('w3uselbl'); }
+  const ic = icon(promptIconFor(lbl), touch ? 22 : 17);
+  if (promptIcoEl) promptIcoEl.innerHTML = ic;
+  if (promptLblEl) promptLblEl.textContent = lbl;
   R.prompt.hidden = false;
-  R.use.textContent = lbl;
+  if (useIcoEl) useIcoEl.innerHTML = ic;
+  if (useLblEl) useLblEl.textContent = lbl;
+  R.use.setAttribute('aria-label', lbl);
   R.use.hidden = !touch;
 }
 function scanPrompts() {
@@ -1317,6 +1365,7 @@ async function buyCos(id, chip) {
   renderWard();
 }
 async function saveWardrobe() {
+  const sb = document.getElementById('w3wardsave'); if (sb) { sb.classList.add('busy'); sb.disabled = true; }
   try {
     for (const slot of ['hat', 'hair', 'acc']) {
       if (draftWear[slot] !== myCos.wear[slot]) {
@@ -1331,9 +1380,11 @@ async function saveWardrobe() {
       myCos = r.cos;
     }
     toast('fit saved');
+    if (sb) sb.classList.add('ok');
     closeWardrobe(true);
     ping(true);
   } catch (e) { R.wardres.textContent = 'network hiccup — try again'; }
+  finally { if (sb) { sb.classList.remove('busy'); sb.disabled = false; setTimeout(() => sb.classList.remove('ok'), 600); } }
 }
 
 /* ----- a generic room shell for the new interiors ----- */
@@ -2129,12 +2180,12 @@ function checkDistrict() {
   districtNow = name;
 }
 function openMap() {
-  mapOpen = true; R.map.hidden = false; clearInput(); setPrompt(null);
+  mapOpen = true; R.map.hidden = false; const mb = document.getElementById('w3mapbtn'); if (mb) mb.classList.add('on'); clearInput(); setPrompt(null);
   drawMap();
   const seen = [...seenSet()];
   R.mapseen.textContent = seen.length ? 'discovered: ' + seen.join(' · ') : 'walk around to discover the town’s districts';
 }
-function closeMap() { mapOpen = false; R.map.hidden = true; }
+function closeMap() { mapOpen = false; R.map.hidden = true; const mb = document.getElementById('w3mapbtn'); if (mb) mb.classList.remove('on'); }
 function drawMap() {
   const cv = R.mapcv; if (!cv) return;
   const g = cv.getContext('2d'); if (!g) return;
@@ -2408,8 +2459,8 @@ function bindInput() {
   $('w3quizclose').addEventListener('click', () => closeQuiz());
   $('w3mapclose').addEventListener('click', () => closeMap());
   $('w3mapbtn').addEventListener('click', () => { if (mapOpen) closeMap(); else openMap(); });
-  $('w3wavebtn').addEventListener('click', () => doEmote('wave'));
-  $('w3partybtn').addEventListener('click', () => doEmote('celebrate'));
+  $('w3wavebtn').addEventListener('click', (e) => { doEmote('wave'); const b = e.currentTarget; b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 1200); });
+  $('w3partybtn').addEventListener('click', (e) => { doEmote('celebrate'); const b = e.currentTarget; b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 1200); });
   R.hue.addEventListener('input', () => {
     draftHue = Number(R.hue.value); R.hueval.textContent = '— ' + draftHue + '°';
     const g = scene.userData.meGroup; if (g) applyWear(g, draftWear, draftHue);
@@ -2749,7 +2800,7 @@ function bindSettings() {
   R.sens.value = SET.sens; R.camd.value = SET.camDist; R.camh.value = SET.camH; R.gfxsel.value = SET.gfx;
   if (R.viewsel) { R.viewsel.value = SET.view; R.fov.value = SET.fov; R.bob.checked = SET.bob; }
   R.shadow.checked = SET.shadows; R.snd.checked = SET.snd; R.vol.value = SET.vol; if (R.sfx) R.sfx.value = SET.sfx;
-  R.setbtn.addEventListener('click', () => { R.set.hidden = !R.set.hidden; });
+  R.setbtn.addEventListener('click', () => { R.set.hidden = !R.set.hidden; R.setbtn.classList.toggle('on', !R.set.hidden); });
   R.setclose.addEventListener('click', () => { R.set.hidden = true; });
   R.sens.addEventListener('input', () => { SET.sens = parseFloat(R.sens.value) || 1; saveSet(); });
   R.camd.addEventListener('input', () => { SET.camDist = parseFloat(R.camd.value) || 13; saveSet(); });
