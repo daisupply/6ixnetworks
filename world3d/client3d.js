@@ -1029,11 +1029,27 @@ function attachRig(entry, hue) {
     for (const clip of gltf.animations) { const a = mixer.clipAction(clip); a.setLoop(THREE.LoopRepeat); acts[clip.name] = a; }
     if (!acts.idle) return;
     acts.idle.play();
-    entry.g.children.forEach((c) => { if (!c.isSprite) c.visible = false; });
-    entry.g.add(model);
+    const grp = entry.g || entry.group;
+    const proc = grp.children.filter((c) => !c.isSprite);
+    proc.forEach((c) => { c.visible = false; });
+    grp.add(model);
     assetSwaps++;
-    entry.rig = { mixer, acts, cur: 'idle' };
+    entry.rig = { mixer, acts, cur: 'idle', model, proc, shown: true };
   });
+}
+/* rig vs procedural: the rig has idle/walk clips only, so sitting,
+ * emoting and the wardrobe preview keep the procedural avatar (which
+ * carries the cosmetic anchors). toggling is visibility-only. */
+function setRigShown(entry, shown) {
+  const r = entry.rig;
+  if (!r || r.shown === shown) return;
+  r.shown = shown;
+  r.model.visible = shown;
+  r.proc.forEach((c) => { c.visible = !shown; });
+}
+function tintRig(entry, hue) {
+  if (!entry.rig) return;
+  entry.rig.model.traverse((o) => { if (o.isMesh && o.material && o.material.name === 'body') o.material.color.setHSL(hue / 360, 0.55, 0.52); });
 }
 function updateRig(n, dt) {
   const r = n.rig;
@@ -2411,6 +2427,7 @@ async function ping(sendPos) {
     myCos = r.cos;
     if (changed && !wardOpen) { const g = scene.userData.meGroup; if (g) applyWear(g, myCos.wear, myCos.hue); }
     if (sleeveMat && typeof myCos.hue === 'number') sleeveMat.color.setHSL(myCos.hue / 360, 0.45, 0.5);
+    if (meEntry && meEntry.rig && typeof myCos.hue === 'number') tintRig(meEntry, myCos.hue);
     syncShards(); applyAptDecor();
   }
   R.who.textContent = '@' + me;
@@ -2425,6 +2442,7 @@ async function ping(sendPos) {
       scene.add(group);
       rm = { group, tx: p.x, tz: p.z, try_: p.ry || 0, st: { phase: Math.random() * 6, speed: 0, grounded: true, landT: 0 }, lx: p.x, lz: p.z };
       remotes.set(p.u, rm);
+      attachRig(rm, typeof p.hue === 'number' ? p.hue : 260);
     }
     rm.tx = p.x; rm.tz = p.z; rm.try_ = p.ry || 0; rm.sit = p.sit ? 1 : 0;
     rm.emote = p.emote || null;
@@ -2731,6 +2749,7 @@ function updateCamera(dt) {
 
 /* ---------- main loop (the ONLY loop) ---------- */
 const mySt = { phase: 0, speed: 0, grounded: true, landT: 0 };
+let meEntry = null;
 let firstFrame = true;
 function loop() {
   if (disposed) return;
@@ -2806,7 +2825,8 @@ function loop() {
     meGroup.rotation.y = wardOpen ? (performance.now() / 900) : ry;
     mySt.speed = speedSm; mySt.grounded = grounded; mySt.pose = sitting ? 'sit' : 'stand';
     mySt.emote = (myEmote && now - myEmoteAt < 2200) ? myEmote : null;
-    animateAvatar(meGroup, mySt, dt, now);
+    if (meEntry && meEntry.rig && !sitting && !mySt.emote && !wardOpen) { setRigShown(meEntry, true); updateRig(meEntry, dt); }
+    else { if (meEntry && meEntry.rig) setRigShown(meEntry, false); animateAvatar(meGroup, mySt, dt, now); }
   }
   // remotes: interpolate + animate from their real speed
   for (const rm of remotes.values()) {
@@ -2819,7 +2839,8 @@ function loop() {
     rm.st.pose = rm.sit ? 'sit' : 'stand'; rm.st.emote = rm.emote;
     g.position.y = rm.sit ? 0.04 : 0;
     g.rotation.y = angLerp(g.rotation.y, rm.try_, k);
-    animateAvatar(g, rm.st, dt, now);
+    if (rm.rig && !rm.sit && !rm.emote) { setRigShown(rm, true); updateRig(rm, dt); }
+    else { if (rm.rig) setRigShown(rm, false); animateAvatar(g, rm.st, dt, now); }
   }
   // npcs idle in place; prompt scan + seat snap (v543)
   tickStrollers(dt, now); tickShards(now); tickDressing(now); tickAudio();
@@ -2871,7 +2892,7 @@ function loop() {
     if (handshakeOk && !sessionConflict) { setLoad(100, 'READY'); booted = true; window.__w3booted = true; }
     window.__w3state = function () {
       const miraN = NPCS.find((n) => n.zone === 'coffee');
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, assetSwaps, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }
@@ -2965,6 +2986,8 @@ function init() {
 
   buildWorld();
   const mine = makeAvatar(null);
+  meEntry = { g: mine, st: mySt };
+  attachRig(meEntry, 260);
   mine.position.set(px, 0, pz);
   scene.add(mine); scene.userData.meGroup = mine;
   applyGfx();
