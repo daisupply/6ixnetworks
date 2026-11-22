@@ -122,11 +122,18 @@ ROOF_M = tile_texture()
 
 # ---------------- helpers ----------------
 def box(name, sx, sy, sz, x, y, z, material, bevel=0.0, rx=0.0, ry=0.0, rz=0.0):
-    bpy.ops.mesh.primitive_cube_add(location=(x, y, z))
+    # STAGE 04 FIX: build at the origin, apply scale, THEN set location.
+    # transform_apply(scale=True) in this Blender build bakes any existing
+    # location into the geometry and zeroes it, so parts created at their
+    # final position ended up world-baked with origin pivots - every rotated
+    # part (roof slabs, canopies, arms) swung around the world origin.
+    # Centered geometry + object transform = exactly one transform.
+    bpy.ops.mesh.primitive_cube_add(location=(0, 0, 0))
     o = bpy.context.active_object
     o.name = name
     o.dimensions = (sx, sy, sz)
     bpy.ops.object.transform_apply(scale=True)
+    o.location = (x, y, z)
     o.rotation_euler = (rx, ry, rz)
     if bevel > 0:
         mod = o.modifiers.new("bev", "BEVEL"); mod.width = bevel; mod.segments = 2
@@ -186,9 +193,7 @@ for cx in (-11.9, 11.9):
 pitch = math.atan2(3.4, 13.0)
 slope_len = math.hypot(13.0, 3.4) + 0.4
 for sgn in (-1, 1):
-    r = box("roof_slab", slope_len, 16.4, 0.24, sgn * 6.5, 0, 9.9, ROOF_M)
-    r.rotation_euler = (0, sgn * pitch, 0)
-    r.location = (sgn * 6.35, 0, 9.98)
+    box("roof_slab", slope_len, 16.4, 0.24, sgn * 6.5, 0, 9.9, ROOF_M, ry=sgn * pitch)
 box("ridge_cap", 0.45, 16.6, 0.28, 0, 0, 11.62, TIMBER_D, bevel=0.05)
 for sgn in (-1, 1):
     box("fascia", 0.18, 16.4, 0.8, sgn * 13.05, 0, 7.95, SAGE_D)
@@ -242,14 +247,16 @@ box("door_glass", 1.1, 0.05, 1.7, 7.44, -7.14, 3.3, GLASS)
 bpy.ops.mesh.primitive_uv_sphere_add(segments=10, ring_count=8, radius=0.075, location=(6.55, -7.2, 2.6))
 kb = bpy.context.active_object; kb.name = "door_knob"; kb.data.materials.append(BRASS)
 box("door_step", 3.4, 1.1, 0.28, 7.44, -7.6, 0.42, STONE)
+# STAGE 04: ground step under the door step (rises 0.28 -> 0.56 -> sill).
+box("stair_a", 3.2, 1.5, 0.28, 7.44, -7.85, 0.14, STONE, bevel=0.02)
 for lx in (5.3, 9.6):
     box("lantern_cap", 0.24, 0.24, 0.09, lx, -7.24, 4.35, BRONZE)
     bpy.ops.mesh.primitive_uv_sphere_add(segments=10, ring_count=8, radius=0.085, location=(lx, -7.28, 4.14))
     lm = bpy.context.active_object; lm.name = "lantern_glow"; lm.data.materials.append(LAMP)
 # planters flanking the storefront
 for px in (-11.3, 3.4):
-    box("planter", 1.5, 0.85, 0.68, px, -7.7, 1.0, TERRA, bevel=0.05)
-    bpy.ops.mesh.primitive_cone_add(vertices=7, radius1=0.5, radius2=0.12, depth=0.85, location=(px, -7.7, 1.75))
+    box("planter", 1.5, 0.85, 0.68, px, -7.7, 0.34, TERRA, bevel=0.05)
+    bpy.ops.mesh.primitive_cone_add(vertices=7, radius1=0.5, radius2=0.12, depth=0.85, location=(px, -7.7, 1.0))
     sh = bpy.context.active_object; sh.name = "planter_shrub"; sh.data.materials.append(SHRUB)
 
 # ---------------- hanging sign: sage board, cream letters ----------------
@@ -302,6 +309,20 @@ for o in bpy.context.scene.objects:
         o.data.calc_loop_triangles()
         tris += len(o.data.loop_triangles)
 print("STATS tris:", tris, "meshes:", meshes, "materials:", len(bpy.data.materials))
+
+# STAGE 04: bake world transforms into the joined meshes before export.
+# A joined group keeps its first part's frame as its node transform, and
+# that frame does not survive the glTF round trip when it is rotated -
+# the roof groups landed swung in-game while Blender showed them correct.
+# World-baked verts + identity nodes are loader-exact.
+bpy.context.view_layer.update()
+for o in list(bpy.context.scene.objects):
+    if o.type == "MESH" and o.name.startswith("joined_"):
+        o.data.transform(o.matrix_world)
+        o.location = (0, 0, 0)
+        o.rotation_euler = (0, 0, 0)
+        o.scale = (1, 1, 1)
+
 bpy.ops.export_scene.gltf(filepath=os.path.join(OUT, "clothing.glb"),
                           export_format="GLB", export_apply=True, export_yup=True)
 print("EXPORTED clothing v1")
