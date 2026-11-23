@@ -2,7 +2,7 @@
 // tests the EXACT functions client3d.js uses from ../math3d.js and
 // ../worldgen.js. run: node world3d/tests/worldgen.test.mjs
 import { groundH, terrainNormal, terrainWeights, terrainChunkGrid, biomeFields, WATER_Y } from '../math3d.js';
-import { WORLD_SEED, SALT, hash2i, chunkSeed, chunkRng, STREAM_R, EVICT_R, chunkKey, isApronChunk, chunkCenterD, wantedChunks, planChunks, genChunkVeg, VEG_TREES, pathNetwork, pathDist, settlements, settleDist } from '../worldgen.js';
+import { WORLD_SEED, SALT, hash2i, chunkSeed, chunkRng, STREAM_R, EVICT_R, chunkKey, isApronChunk, chunkCenterD, wantedChunks, planChunks, genChunkVeg, VEG_TREES, pathNetwork, pathDist, settlements, settleDist, chunkMinH, chunkWater, landmarks, landmark } from '../worldgen.js';
 
 let pass = 0, fail = 0;
 const ok = (c, label, extra) => { if (c) { pass++; console.log('PASS', label); } else { fail++; console.log('FAIL', label, extra !== undefined ? JSON.stringify(extra) : ''); } };
@@ -278,6 +278,50 @@ const hashStr = s => { let h1 = 5381, h2 = 52711; for (let i = 0; i < s.length; 
     for (const layer of ['trees', 'shrubs', 'rocks']) for (const d of v[layer]) if (settleDist(d.x, d.z) < 25) viol++;
   }
   ok(viol === 0, 'no wild trees/shrubs/rocks inside a hamlet pad', viol);
+}
+
+/* ---- Stage 7: wild water + landmarks ----
+ * chunkWater is a pure read of groundH: apron + interior-band
+ * chunks never carry water; a wild chunk carries it iff its 5x5
+ * sampled minimum dips below WATER_Y. landmarks() picks four
+ * named sites by fixed scan — criteria are re-sampled here with
+ * the same functions the picker used, and the sites are pinned. */
+{
+  let apronWet = 0;
+  for (let cx = -5; cx < 5; cx++) for (let cz = -4; cz < 4; cz++) if (chunkWater(cx, cz).has) apronWet++;
+  ok(apronWet === 0, 'no water quads on apron chunks (town pond is separate)', apronWet);
+  ok(chunkWater(37, 0).has === false && chunkWater(38, 0).has === false, 'no water in the reserved interior band');
+  // agreement: chunkWater.has === (an independent finer min scan < WATER_Y) on a sample of wild chunks
+  let disagree = 0, wet = 0;
+  for (let cx = -17; cx < 17; cx += 3) for (let cz = -17; cz < 17; cz += 3) {
+    const w = chunkWater(cx, cz);
+    if (w.has) wet++;
+    let min = Infinity;
+    for (let i = 0; i <= 10; i++) for (let j = 0; j <= 10; j++) min = Math.min(min, groundH(cx * 55 + i * 5.5, cz * 55 + j * 5.5));
+    if (min < WATER_Y - 0.35 && !w.has) disagree++; // a deep dip the 5x5 grid missed entirely
+    if (w.has && min >= WATER_Y) disagree++;          // quad claimed but no water at 11x11 either
+  }
+  ok(disagree === 0, 'chunkWater agrees with an 11x11 ground truth scan', disagree);
+  ok(wet > 10, 'the wild actually has lakes (sampled wet chunks)', wet);
+  const L = landmarks();
+  ok(L.length === 4, 'four landmarks picked', L.map((l) => l.kind));
+  ok(JSON.stringify(landmarks()) === JSON.stringify(L), 'landmarks deterministic across calls');
+  const kinds = L.map((l) => l.kind).sort().join(',');
+  ok(kinds === 'falls,lake,overlook,ruin', 'one of each kind', kinds);
+  let badSite = '';
+  for (const l of L) {
+    if (rectD(l.x, l.z) < 80) badSite = l.kind + ' too close to town';
+    if (settleDist(l.x, l.z) < 55) badSite = l.kind + ' too close to a hamlet';
+    if (Math.abs(groundH(l.x, l.z) - l.h) > 0.001) badSite = l.kind + ' height does not re-sample';
+  }
+  ok(!badSite, 'every site is wild, hamlet-free, and re-samples to its height', badSite);
+  const lake = landmark('lake'), falls = landmark('falls'), over = landmark('overlook'), ruin = landmark('ruin');
+  ok(lake.h < WATER_Y - 0.6 && biomeFields(lake.x, lake.z).lake > 0.6, 'lake site is a real basin', lake);
+  ok(lake.island && lake.island.h > WATER_Y + 0.3, 'lake has an above-water island', lake.island);
+  ok(over.h >= 16, 'overlook is high ground', over.h);
+  ok(ruin && biomeFields(ruin.x, ruin.z).forest >= 0.72 && pathDist(ruin.x, ruin.z) >= 25, 'ruin sits in deep forest off the paths');
+  ok(falls.h > WATER_Y + 2.5 && falls.bh < WATER_Y + 0.4 && falls.h - falls.bh > 3, 'falls drops from a lip to water level', falls);
+  ok(hashStr(JSON.stringify(L)) === 'dd9f307:6a083001:340', 'LAND_PIN: sites bit-identical', hashStr(JSON.stringify(L)));
 }
 
 console.log('WORLDGEN RESULT: ' + pass + ' pass, ' + fail + ' fail');

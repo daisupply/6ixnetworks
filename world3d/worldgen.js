@@ -361,3 +361,89 @@ export function settleDist(x, z) {
   for (const s of settlements()) best = Math.min(best, Math.hypot(x - s.x, z - s.z));
   return best;
 }
+
+/* ============ Stage 7: wild water + landmarks ============
+ * chunkWater: a chunk carries a water quad iff its sampled
+ * minimum terrain height dips below WATER_Y. the 5x5 sample at
+ * 13.75u steps matches the client mesh grid, so the answer the
+ * picker gives is the answer the renderer needs. apron chunks
+ * never report water (the town pond is its own disc) and neither
+ * does the reserved interior band.
+ * landmarks(): four named sites from a fixed coarse scan of the
+ * continuous fields — same scan order and strict comparisons on
+ * every client, so the sites are identical everywhere with no
+ * rng involved at all. */
+export function chunkMinH(cx, cz) {
+  let min = Infinity;
+  for (let i = 0; i <= 4; i++) for (let j = 0; j <= 4; j++) {
+    const h = groundH(cx * CHUNK + i * (CHUNK / 4), cz * CHUNK + j * (CHUNK / 4));
+    if (h < min) min = h;
+  }
+  return min;
+}
+export function chunkWater(cx, cz) {
+  if (isApronChunk(cx, cz)) return { has: false, min: Infinity };
+  const ccx = cx * CHUNK + CHUNK / 2, ccz = cz * CHUNK + CHUNK / 2;
+  if (ccx > 1975 && ccx < 2225 && Math.abs(ccz) < 40) return { has: false, min: Infinity };
+  const min = chunkMinH(cx, cz);
+  return { has: min < WATER_Y, min };
+}
+const dOutOf = (x, z) => Math.hypot(Math.max(Math.abs(x) - 195, 0), Math.max(Math.abs(z) - 118, 0));
+let LANDS = null;
+export function landmarks() {
+  if (LANDS) return LANDS;
+  if (!pathNetwork().nodes.length) return []; // mid-build — never cache
+  let lake = null, over = null, ruin = null, falls = null;
+  for (let gx = -938; gx <= 938; gx += 14) for (let gz = -938; gz <= 938; gz += 14) {
+    const x = gx, z = gz;
+    if (dOutOf(x, z) < 80) continue;
+    if (x > 1975 && x < 2225 && Math.abs(z) < 40) continue;
+    if (settleDist(x, z) < 55) continue;
+    const h = groundH(x, z);
+    const bf = biomeFields(x, z);
+    // lake: the deepest sampled basin point with a real lake field
+    if (bf.lake > 0.6 && h < WATER_Y - 0.6 && (!lake || h < lake.h)) lake = { kind: 'lake', x, z, h };
+    // overlook + ruin need the path distance; falls needs slope
+    if (h >= 16 || bf.forest >= 0.72 || (h > WATER_Y + 2.5 && h < WATER_Y + 12)) {
+      const pd = pathDist(x, z);
+      if (h >= 16 && pd >= 10 && slopeOf(x, z).g <= 0.55 && (!over || h > over.h)) over = { kind: 'overlook', x, z, h };
+      if (bf.forest >= 0.72 && h > WATER_Y + 0.5 && pd >= 25 && slopeOf(x, z).g <= 0.4) {
+        const score = bf.forest + Math.min(pd, 60) / 300;
+        if (!ruin || score > ruin.score) ruin = { kind: 'ruin', x, z, h, score };
+      }
+      if (h > WATER_Y + 2.5 && h < WATER_Y + 12 && slopeOf(x, z).g >= 0.75) {
+        // greedy downhill walk: does this face actually reach water?
+        let cx2 = x, cz2 = z, reached = false, steps = 0;
+        while (steps < 6) {
+          let bx = cx2, bz = cz2, bh = groundH(cx2, cz2);
+          for (const d of [[6, 0], [-6, 0], [0, 6], [0, -6], [4.2, 4.2], [4.2, -4.2], [-4.2, 4.2], [-4.2, -4.2]]) {
+            const nh = groundH(cx2 + d[0], cz2 + d[1]);
+            if (nh < bh) { bh = nh; bx = cx2 + d[0]; bz = cz2 + d[1]; }
+          }
+          if (bx === cx2 && bz === cz2) break;
+          cx2 = bx; cz2 = bz; steps++;
+          if (bh < WATER_Y + 0.4) { reached = true; break; }
+        }
+        if (reached) {
+          const score = (h - groundH(cx2, cz2)) - steps * 0.5;
+          if (!falls || score > falls.score) falls = { kind: 'falls', x, z, h, bx: cx2, bz: cz2, bh: groundH(cx2, cz2), score };
+        }
+      }
+    }
+  }
+  // the lake's island: highest above-water point within 26u of it
+  if (lake) {
+    let isl = null;
+    for (let gx = lake.x - 26; gx <= lake.x + 26; gx += 4) for (let gz = lake.z - 26; gz <= lake.z + 26; gz += 4) {
+      if (Math.hypot(gx - lake.x, gz - lake.z) > 26) continue;
+      const h = groundH(gx, gz);
+      if (h > WATER_Y + 0.3 && (!isl || h > isl.h)) isl = { x: gx, z: gz, h };
+    }
+    lake.island = isl;
+  }
+  if (ruin) delete ruin.score;
+  if (falls) delete falls.score;
+  LANDS = [lake, over, ruin, falls].filter(Boolean);
+  return LANDS;
+}
+export function landmark(kind) { return landmarks().find((l) => l.kind === kind) || null; }

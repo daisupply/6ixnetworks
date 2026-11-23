@@ -27,8 +27,8 @@
  * player data, WebGL context-loss overlay. Three.js r160 vendored.
  */
 import * as THREE from 'three';
-import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH, fbm2, ridge2, terrainWeights, terrainChunkGrid, terrainChunkIndex, TERR_CHUNK } from './math3d.js';
-import { planChunks, genChunkVeg, isApronChunk, VEG_TREES, settlements } from './worldgen.js';
+import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH, fbm2, ridge2, terrainWeights, terrainChunkGrid, terrainChunkIndex, TERR_CHUNK, WATER_Y } from './math3d.js';
+import { planChunks, genChunkVeg, isApronChunk, VEG_TREES, settlements, chunkWater, landmarks } from './worldgen.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as skelClone } from 'three/addons/utils/SkeletonUtils.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -386,6 +386,29 @@ function buildTerrainChunk(cx, cz) {
 let terrMat = null, terrGroup = null;
 const TERRAIN_MESHES = new Map();
 let terrBuildQ = [], terrCellCx = null, terrCellCz = null;
+/* wild water (worldgen Stage 7): one shared material at the
+ * shared WATER_Y level; a quad rides its terrain chunk's
+ * lifecycle iff chunkWater says the chunk dips below the level.
+ * apron chunks never qualify — the town pond stays its own disc. */
+const WATER_MESHES = new Map();
+let wildWaterMat = null;
+function ensureWaterQuad(cx, cz, key) {
+  if (!chunkWater(cx, cz).has) return;
+  if (!wildWaterMat) wildWaterMat = new THREE.MeshStandardMaterial({ map: waterTexture(), roughness: 0.15, metalness: 0.25, emissive: 0x0d3355, emissiveIntensity: 0.6, transparent: true, opacity: 0.94, polygonOffset: true, polygonOffsetFactor: -2 });
+  const q = new THREE.Mesh(new THREE.PlaneGeometry(TERR_CHUNK, TERR_CHUNK), wildWaterMat);
+  q.rotation.x = -Math.PI / 2;
+  q.position.set(cx * TERR_CHUNK + TERR_CHUNK / 2, WATER_Y + 0.02, cz * TERR_CHUNK + TERR_CHUNK / 2);
+  q.receiveShadow = true;
+  terrGroup.add(q);
+  WATER_MESHES.set(key, q);
+}
+function evictWaterQuad(key) {
+  const q = WATER_MESHES.get(key);
+  if (!q) return;
+  terrGroup.remove(q);
+  q.geometry.dispose(); // the shared material is NOT disposed
+  WATER_MESHES.delete(key);
+}
 function ensureChunkMesh(cx, cz) {
   const key = cx + ',' + cz;
   if (TERRAIN_MESHES.has(key)) return;
@@ -393,12 +416,14 @@ function ensureChunkMesh(cx, cz) {
   mesh.receiveShadow = true;
   terrGroup.add(mesh);
   TERRAIN_MESHES.set(key, mesh);
+  ensureWaterQuad(cx, cz, key);
 }
 function evictChunk(key) {
   const mesh = TERRAIN_MESHES.get(key);
   if (!mesh) return;
   terrGroup.remove(mesh);
   TERRAIN_MESHES.delete(key);
+  evictWaterQuad(key);
   evictVeg(key);
   // drop the cached geometry too, or the cache grows forever on a
   // long trek. the shared index arrays (TERR_INDEX*) and the shared
@@ -436,6 +461,7 @@ function tickTerrainStreaming() {
   let vn = 0;
   while (terrVegQ.length && vn < 2) { const key = terrVegQ.shift(); const i = key.indexOf(','); ensureVegChunk(+key.slice(0, i), +key.slice(i + 1)); vn++; }
   tickSettlements();
+  tickLandmarks();
 }
 
 /* wild vegetation (worldgen Stage 4): per-chunk instanced meshes
@@ -2634,6 +2660,48 @@ function tickSettlements() {
   }
 }
 
+/* the falls (worldgen Stage 7): a translucent ribbon sheeting
+ * down the picked falls face, lip to base, following groundH.
+ * built/evicted on the settlement hysteresis (370/430). the
+ * other landmarks (lake, overlook, ruin) are sites for now —
+ * their dressing lands with later stages. */
+let fallsMesh = null;
+function ensureFalls() {
+  if (fallsMesh) return;
+  const f = landmarks().find((l) => l.kind === 'falls');
+  if (!f) return;
+  const SEG = 10, W = 1.3;
+  const dx = f.bx - f.x, dz = f.bz - f.z, len = Math.hypot(dx, dz) || 1;
+  const nx = -dz / len, nz = dx / len; // strip perpendicular in XZ
+  const pos = [], idx = [];
+  for (let i = 0; i <= SEG; i++) {
+    const t = i / SEG, cx = f.x + dx * t, cz = f.z + dz * t;
+    const y = groundH(cx, cz) + 0.22;
+    pos.push(cx - nx * W, y, cz - nz * W, cx + nx * W, y, cz + nz * W);
+    if (i < SEG) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  fallsMesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0xd6ecff, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide }));
+  scene.add(fallsMesh);
+}
+function evictFalls() {
+  if (!fallsMesh) return;
+  scene.remove(fallsMesh);
+  fallsMesh.geometry.dispose();
+  fallsMesh.material.dispose();
+  fallsMesh = null;
+}
+function tickLandmarks() {
+  const f = landmarks().find((l) => l.kind === 'falls');
+  if (!f) return;
+  const d = Math.hypot(px - f.x, pz - f.z);
+  if (d < 370 && !fallsMesh) ensureFalls();
+  else if (d > 430 && fallsMesh) evictFalls();
+}
+
 function buildGroundCover() {
   const rnd = mulberry32(777333);
   const BRECTS = [
@@ -4497,7 +4565,7 @@ function loop() {
     window.__w3scene = scene; // diagnostic handle (mesh census in tests)
     window.__w3state = function () {
       const miraN = NPCS.find((n) => n.zone === 'coffee');
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, groveN: GROVE.n, coverN: COVER.lawn, chunksOn: COVER.chunksOn, chunks: COVER.chunks, lodNear: COVER.lodNear, lodFar: COVER.lodFar, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, perfQ: loadQ.length + loadActive, tChunks: TERRAIN_CHUNKS.size, tMesh: TERRAIN_MESHES.size, vegC: VEG_MESHES.size, settleC: SETTLE_MESHES.size, terrTex: terrainTexState ? { loaded: terrainTexState.loaded, failed: terrainTexState.failed.slice() } : null, garden: SPAWNG, vc: { on: vcOn3, muted: vcMuted, peers: Object.keys(vcPeers).length, states: Object.fromEntries(Object.entries(vcPeers).map(([u, p]) => [u, p.pc.connectionState])), talk: vcTalk3 }, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, groveN: GROVE.n, coverN: COVER.lawn, chunksOn: COVER.chunksOn, chunks: COVER.chunks, lodNear: COVER.lodNear, lodFar: COVER.lodFar, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, perfQ: loadQ.length + loadActive, tChunks: TERRAIN_CHUNKS.size, tMesh: TERRAIN_MESHES.size, vegC: VEG_MESHES.size, settleC: SETTLE_MESHES.size, waterC: WATER_MESHES.size, fallsOn: !!fallsMesh, terrTex: terrainTexState ? { loaded: terrainTexState.loaded, failed: terrainTexState.failed.slice() } : null, garden: SPAWNG, vc: { on: vcOn3, muted: vcMuted, peers: Object.keys(vcPeers).length, states: Object.fromEntries(Object.entries(vcPeers).map(([u, p]) => [u, p.pc.connectionState])), talk: vcTalk3 }, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }

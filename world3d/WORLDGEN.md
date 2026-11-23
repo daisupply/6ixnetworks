@@ -264,3 +264,50 @@ measured baselines every later stage is judged against.
   + .b64s install into assets/architecture + assets/environment.
   Until they land, the client omits missing kinds gracefully
   (no crash, hamlets just lack those pieces).
+
+## Stage 7 mini-spec (written 2026-11-23, build next)
+- Behavior: wild water renders as one shared material at WATER_Y
+  (-1.15); per-chunk water quads exist only on chunks whose sampled
+  min ground height < WATER_Y; town chunks never get wild water (the
+  park pond disc stays as-is). Landmarks: pure site-picking functions
+  in worldgen.js choose a lake-island site, a highland overlook, a
+  deep-forest ruin site, and a falls site from the biome fields —
+  deterministic from WORLD_SEED, exported for tests + Stage 8/11 use.
+- Edge cases: quads must not z-fight terrain at shoreline (offset
+  +0.02, polygonOffset); a chunk fully below WATER_Y still gets one
+  quad; apron chunks excluded even if a corner dips (pond area).
+- What could break: water quads in interior band (guard like veg);
+  streaming eviction must dispose water geometry with its chunk;
+  genChunkVeg gates already keep veg out of water — landmark sites
+  must not collide with hamlet pads or path tread (min distances).
+- Unhappy path: a picked site that fails its own criteria on re-sample
+  (float drift) — pickers assert criteria in the test suite with the
+  same sampling the client will use.
+- Pins: PIN_H / PIN_W / VEG_PIN / NET_PIN / SETTLE_PIN must not move
+  (water + landmarks are additive; no groundH/weights changes).
+
+## Stage 7 results (2026-11-23) — COMPLETE, not pushed
+- worldgen.js: chunkMinH/chunkWater (5x5 sample at mesh-grid
+  steps; apron + interior band excluded) and landmarks() — a
+  fixed 14u scan picking lake / overlook / ruin / falls by
+  criteria over the continuous fields, no rng. Sites: lake
+  (-896,280) h -2.60 with island (-874,290) h -0.36; overlook
+  (882,-266) h 28.20; ruin (546,-896) h 5.27; falls lip
+  (-28,-742) h 10.01 -> base (-36.4,-762.4) h -1.89. Picker
+  cost ~0.7-0.9s one-time lazy. LAND_PIN dd9f307:6a083001:340.
+  Bug caught by survey before tests: slopeOf returns {g, ny} —
+  the picker's slope gates must read .g (object<=number is
+  always false; only the slope-free lake picked without it).
+- client3d.js: water quads ride the terrain chunk lifecycle
+  (ensureWaterQuad in ensureChunkMesh, disposed in evictChunk;
+  one shared material mirroring the pond's; polygonOffset -2,
+  y = WATER_Y + 0.02). Falls ribbon (10-segment groundH strip,
+  DoubleSide, translucent) on settlement hysteresis via
+  tickLandmarks. __w3state gained waterC + fallsOn.
+- Gate: worldgen 78/78 (14 new), math 106, roof 11, syntax OK.
+  Browser boot check vs the temp server: READY at spawn, zero
+  page errors, waterC 0 on the apron, falls correctly unbuilt
+  at 740u. Not verified: standing at a lake/falls in the wild
+  (needs Stage 11 bounds removal to walk there; sandbox treks
+  are throughput-limited regardless). Snapshot:
+  ~/workspace/.tests/stages/worldgen-s7/.
