@@ -24,6 +24,54 @@
     body {
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
+    /* 6ix design tokens (Stage 8): this file is standalone (no GALAXY_CSS),
+       so the platform token values are applied as literals over the
+       Tailwind slate/indigo utilities. Doubled classes outrank the
+       CDN-generated utilities regardless of injection order.
+       bg #0D0E13 / surface #181923 / elevated #20212D / hover #272936,
+       accent #8B78FF / hover #9A89FF / bright #A99AFF,
+       text #F5F4FA / secondary #9695A5 / muted #868793,
+       borders rgba(255,255,255,.07/.11), success #45C98A, danger #E66F78. */
+    body { background-color: #0D0E13; }
+    *::selection { background: rgba(139, 120, 255, .32) !important; }
+    .bg-slate-950.bg-slate-950 { background-color: #0D0E13; }
+    .text-slate-100.text-slate-100 { color: #F5F4FA; }
+    .text-slate-200.text-slate-200 { color: #F5F4FA; }
+    .text-slate-300.text-slate-300 { color: #C6C5D1; }
+    .text-slate-400.text-slate-400 { color: #9695A5; }
+    .text-slate-500.text-slate-500 { color: #868793; }
+    .placeholder-slate-500.placeholder-slate-500::placeholder { color: #868793; }
+    .bg-slate-900.bg-slate-900 { background-color: #181923; }
+    .bg-slate-900\/70.bg-slate-900\/70 { background-color: rgba(24, 25, 35, .7); }
+    .bg-slate-900\/80.bg-slate-900\/80 { background-color: rgba(24, 25, 35, .85); }
+    .bg-slate-800.bg-slate-800 { background-color: #20212D; }
+    .hover\:bg-slate-700:hover { background-color: #272936; }
+    .hover\:bg-slate-700\/80:hover { background-color: rgba(39, 41, 54, .85); }
+    .hover\:bg-slate-800\/60:hover { background-color: rgba(32, 33, 45, .6); }
+    .border-slate-800.border-slate-800 { border-color: rgba(255, 255, 255, .07); }
+    .border-slate-800\/80.border-slate-800\/80 { border-color: rgba(255, 255, 255, .07); }
+    .border-slate-800\/90.border-slate-800\/90 { border-color: rgba(255, 255, 255, .07); }
+    .divide-slate-800\/60 > * + * { border-color: rgba(255, 255, 255, .07); }
+    .border-slate-700.border-slate-700 { border-color: rgba(255, 255, 255, .11); }
+    .border-slate-700\/80.border-slate-700\/80 { border-color: rgba(255, 255, 255, .11); }
+    .bg-indigo-600.bg-indigo-600 { background-color: #8B78FF; }
+    .hover\:bg-indigo-500:hover { background-color: #9A89FF; }
+    .shadow-indigo-500\/20 { --tw-shadow-color: rgba(139, 120, 255, .2); }
+    .bg-indigo-500\/10.bg-indigo-500\/10 { background-color: rgba(139, 120, 255, .14); }
+    .bg-indigo-500\/15.bg-indigo-500\/15 { background-color: rgba(139, 120, 255, .14); }
+    .hover\:bg-indigo-500\/30:hover { background-color: rgba(139, 120, 255, .3); }
+    .border-indigo-500\/20.border-indigo-500\/20 { border-color: rgba(139, 120, 255, .3); }
+    .border-indigo-500\/30.border-indigo-500\/30 { border-color: rgba(139, 120, 255, .3); }
+    .text-indigo-300.text-indigo-300 { color: #A99AFF; }
+    .hover\:text-indigo-200:hover { color: #A99AFF; }
+    .bg-indigo-400.bg-indigo-400 { background-color: #A99AFF; }
+    .focus\:ring-indigo-500.focus\:ring-indigo-500:focus { --tw-ring-color: rgba(139, 120, 255, .55); }
+    .text-emerald-300.text-emerald-300 { color: #7BD8AC; }
+    .text-emerald-400.text-emerald-400 { color: #45C98A; }
+    .bg-emerald-500\/15.bg-emerald-500\/15 { background-color: rgba(69, 201, 138, .15); }
+    .hover\:bg-emerald-500\/25:hover { background-color: rgba(69, 201, 138, .25); }
+    .border-emerald-500\/30.border-emerald-500\/30 { border-color: rgba(69, 201, 138, .35); }
+    .hover\:text-rose-400:hover { color: #E66F78; }
     .toast-enter {
       animation: toastSlideIn 0.22s ease-out forwards;
     }
@@ -36,6 +84,12 @@
         opacity: 1;
         transform: translateY(0) scale(1);
       }
+    }
+    /* Stage 10: reduced-motion guard — this standalone file has no
+       GALAXY_CSS, so it carries its own copy of the platform blanket
+       pattern (cf. the GALAXY_CSS guard in server.js). */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
     }
   </style>
 </head>

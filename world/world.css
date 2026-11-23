@@ -188,9 +188,9 @@ body{display:block;padding:0;margin:0;overflow:hidden;background:#07040f}
 #wa-count{color:rgba(243,239,255,.5);font-size:12.5px;font-weight:600}
 #wg-score{margin-left:auto;color:#ffd257;font-size:14px;font-weight:800}
 #wa-x,#wg-x,#wsh-x,#wchar-x,#wach-x,#wjournal-x,#wboards-x,#wevents-x,#wmarket-x,#wcollect-x,#wseason-x,#wfriends-x,#wmatch-x,#whub-x,#winv-x,#wmap2-x,#wsettings-x,#wadmin-x,#whouse-x,#wpets-x,#wfish-x,#wrace-x,#wguild-x,#wtrade-x,#wcraft-x,#wskills-x,#wreplay-x,#wcw-x{margin-left:auto;width:34px;height:34px;flex:none;display:flex;align-items:center;justify-content:center;padding:0;border-radius:50%;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.06);color:rgba(243,239,255,.85);cursor:pointer;transition:background .15s,transform .1s}
-#wa-x:hover,#wg-x:hover,#wsh-x:hover,#wchar-x:hover,#wach-x:hover,#wjournal-x:hover,#wboards-x:hover,#wevents-x:hover,#wmarket-x:hover,#wcollect-x:hover,#wseason-x:hover,#wfriends-x:hover,#wmatch-x:hover,#whub-x:hover,#winv-x:hover,#wmap2-x:hover,#wsettings-x:hover,#wadmin-x:hover,#wreplay-x:hover,#wcw-x:hover{background:rgba(255,255,255,.14);color:#fff}
-#wa-x:active,#wg-x:active,#wsh-x:active,#wchar-x:active,#wach-x:active,#wjournal-x:active,#wboards-x:active,#wevents-x:active,#wmarket-x:active,#wcollect-x:active,#wseason-x:active,#wfriends-x:active,#wmatch-x:active,#whub-x:active,#winv-x:active,#wmap2-x:active,#wsettings-x:active,#wadmin-x:active,#wreplay-x:active,#wcw-x:active{transform:scale(.92)}
-#wa-x svg,#wg-x svg,#wsh-x svg,#wchar-x svg,#wach-x svg,#wjournal-x svg,#wboards-x svg,#whub-x svg,#winv-x svg,#wmap2-x svg,#wsettings-x svg,#wadmin-x svg{flex:none;display:block}
+#wa-x:hover,#wg-x:hover,#wsh-x:hover,#wchar-x:hover,#wach-x:hover,#wjournal-x:hover,#wboards-x:hover,#wevents-x:hover,#wmarket-x:hover,#wcollect-x:hover,#wseason-x:hover,#wfriends-x:hover,#wmatch-x:hover,#whub-x:hover,#winv-x:hover,#wmap2-x:hover,#wsettings-x:hover,#wadmin-x:hover,#wreplay-x:hover,#wcw-x:hover,#whouse-x:hover,#wpets-x:hover,#wfish-x:hover,#wrace-x:hover,#wguild-x:hover,#wtrade-x:hover,#wcraft-x:hover,#wskills-x:hover{background:rgba(255,255,255,.14);color:#fff}
+#wa-x:active,#wg-x:active,#wsh-x:active,#wchar-x:active,#wach-x:active,#wjournal-x:active,#wboards-x:active,#wevents-x:active,#wmarket-x:active,#wcollect-x:active,#wseason-x:active,#wfriends-x:active,#wmatch-x:active,#whub-x:active,#winv-x:active,#wmap2-x:active,#wsettings-x:active,#wadmin-x:active,#wreplay-x:active,#wcw-x:active,#whouse-x:active,#wpets-x:active,#wfish-x:active,#wrace-x:active,#wguild-x:active,#wtrade-x:active,#wcraft-x:active,#wskills-x:active{transform:scale(.92)}
+#wa-x svg,#wg-x svg,#wsh-x svg,#wchar-x svg,#wach-x svg,#wjournal-x svg,#wboards-x svg,#whub-x svg,#winv-x svg,#wmap2-x svg,#wsettings-x svg,#wadmin-x svg,#wevents-x svg,#wmarket-x svg,#wcollect-x svg,#wseason-x svg,#wfriends-x svg,#wmatch-x svg,#wreplay-x svg,#wcw-x svg,#whouse-x svg,#wpets-x svg,#wfish-x svg,#wrace-x svg,#wguild-x svg,#wtrade-x svg,#wcraft-x svg,#wskills-x svg{flex:none;display:block}
 .wg-head #wg-x{margin-left:8px}
 #wa-q{width:100%;box-sizing:border-box;margin:10px 0 6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font:inherit;font-size:16px;padding:10px 13px;outline:none}
 #wa-q:focus{border-color:rgba(139,124,255,.7)}
@@ -470,3 +470,48 @@ body.wov #wportal,body.wov #wact,body.wov #wemotebtn,body.wov #wdash{display:non
 #wphoto-gal img{width:74px;height:46px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.16);cursor:pointer;flex:none}
 .wphoto-none{font-size:12px;color:rgba(243,239,255,.5)}
 body.wphoto #whud,body.wphoto #wmap,body.wphoto #wtoast,body.wphoto #wlog,body.wphoto #wjoy,body.wphoto #win,body.wphoto #wbar,body.wphoto #wdash,body.wphoto #wemotebtn,body.wphoto #wemotes,body.wphoto #wportal,body.wphoto #wact{display:none!important}
+
+/* ================================================================
+   STAGE 9 ALIGNMENT (platform redesign, 2026-11-23)
+   Convention alignment with the platform design system, expressed
+   in the world's own purple-night + gold palette (identity kept):
+   - panel card radius on the platform scale (cards --radius-2xl
+     24px, HUD cards --radius-lg 14px, photo bar --radius-xl 18px)
+   - HUD glass unified to the shared chip values (rgba(11,8,24,.68),
+     blur 14px, border rgba(255,255,255,.09)) for contrast over play
+   - radius re-asserts completed: GALAXY_CSS flattens every <button>
+     to 8px !important; the lists above cover the main chrome, this
+     block restores the declared radius of every remaining world
+     button (values are the ones this file itself declares)
+   - one scrollbar treatment for every scroll region (the .wa-card
+     values, which mirror the platform base scrollbar)
+   - input :focus ring matches the gx-input convention (violet
+     border + 3px soft ring); panel text inputs are 16px (iOS zoom)
+   - hover feedback for panel buttons that had none (brightness
+     convention, so gold/violet tints survive the hover)
+   ================================================================ */
+.wa-card,.wg-card,.wl-card,.wprof-card{border-radius:var(--radius-2xl,24px)}
+#wphoto-bar{border-radius:var(--radius-xl,18px)}
+#wquest,#wlb{border-radius:var(--radius-lg,14px)}
+#wlvl{background:rgba(11,8,24,.68);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+#wlb{background:rgba(11,8,24,.68)}
+#wmap{background:rgba(11,8,24,.68);border-color:rgba(255,255,255,.09);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+#wlog div{background:rgba(11,8,24,.68)}
+.gu-swatch,.tr-chip button,#wphoto-album .alb button{border-radius:50%!important}
+#wphoto-x,#wduel button,.hs-btn,.mkt-buy,.mkt-cancel,.mkt-list-btn,.col-claim,.tr-btn,.cw-pal button,.inv-chip,.inv-preset button,.wadmin-row button,.wprof-acts button,.wprof-acts2 button,#wtrade-inv button,#wparty-inv button,#wparty-leave,#wphoto-frames button,#wphoto-filters button,#wphoto-shut,#wchar-shop{border-radius:999px!important}
+.hub-btn{border-radius:var(--radius-lg,14px)!important}
+.inv-card,.rc-start,.rc-quit{border-radius:12px!important}
+.gu-emb-b{border-radius:11px!important}
+#winv-grid,#wjournal-body,#wadmin-body,#wach-list,.gu-chat,.pet-grid,.fish-grid,#wboards-body,#wevents-body,#wmarket-body,#wcollect-body,#wseason-body,#wfriends-body,#wmatch-body,#wreplay-body,#wcw-body,#wphoto-album,#wphoto-gal{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent}
+#winv-grid::-webkit-scrollbar,#wjournal-body::-webkit-scrollbar,#wadmin-body::-webkit-scrollbar,#wach-list::-webkit-scrollbar,.gu-chat::-webkit-scrollbar,.pet-grid::-webkit-scrollbar,.fish-grid::-webkit-scrollbar,#wboards-body::-webkit-scrollbar,#wevents-body::-webkit-scrollbar,#wmarket-body::-webkit-scrollbar,#wcollect-body::-webkit-scrollbar,#wseason-body::-webkit-scrollbar,#wfriends-body::-webkit-scrollbar,#wmatch-body::-webkit-scrollbar,#wreplay-body::-webkit-scrollbar,#wcw-body::-webkit-scrollbar,#wphoto-album::-webkit-scrollbar,#wphoto-gal::-webkit-scrollbar{width:8px;height:8px}
+#winv-grid::-webkit-scrollbar-thumb,#wjournal-body::-webkit-scrollbar-thumb,#wadmin-body::-webkit-scrollbar-thumb,#wach-list::-webkit-scrollbar-thumb,.gu-chat::-webkit-scrollbar-thumb,.pet-grid::-webkit-scrollbar-thumb,.fish-grid::-webkit-scrollbar-thumb,#wboards-body::-webkit-scrollbar-thumb,#wevents-body::-webkit-scrollbar-thumb,#wmarket-body::-webkit-scrollbar-thumb,#wcollect-body::-webkit-scrollbar-thumb,#wseason-body::-webkit-scrollbar-thumb,#wfriends-body::-webkit-scrollbar-thumb,#wmatch-body::-webkit-scrollbar-thumb,#wreplay-body::-webkit-scrollbar-thumb,#wcw-body::-webkit-scrollbar-thumb,#wphoto-album::-webkit-scrollbar-thumb,#wphoto-gal::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:99px}
+#winv-grid::-webkit-scrollbar-track,#wjournal-body::-webkit-scrollbar-track,#wadmin-body::-webkit-scrollbar-track,#wach-list::-webkit-scrollbar-track,.gu-chat::-webkit-scrollbar-track,.pet-grid::-webkit-scrollbar-track,.fish-grid::-webkit-scrollbar-track,#wboards-body::-webkit-scrollbar-track,#wevents-body::-webkit-scrollbar-track,#wmarket-body::-webkit-scrollbar-track,#wcollect-body::-webkit-scrollbar-track,#wseason-body::-webkit-scrollbar-track,#wfriends-body::-webkit-scrollbar-track,#wmatch-body::-webkit-scrollbar-track,#wreplay-body::-webkit-scrollbar-track,#wcw-body::-webkit-scrollbar-track,#wphoto-album::-webkit-scrollbar-track,#wphoto-gal::-webkit-scrollbar-track{background:transparent}
+#winv-q:focus,#wa-q:focus,#wsh-q:focus,.gu-inp:focus,.hs-in:focus,.mkt-controls input:focus,.tr-row input:focus,.tr-row select:focus,.wadmin-row input:focus,.cw-search input:focus{border-color:rgba(139,124,255,.7);box-shadow:0 0 0 3px rgba(139,124,255,.16);outline:none}
+.gu-inp{font-size:16px}
+.mkt-controls input{font-size:16px}
+.tr-row input{font-size:16px}
+.cw-search input{font-size:16px}
+.hub-btn:hover,.gu-act:hover,.gu-emb-b:hover,.hs-btn:hover:not(:disabled),.mkt-buy:hover,.mkt-cancel:hover,.mkt-list-btn:hover,.tr-btn:hover:not(:disabled),.cw-pal button:hover,.inv-preset button:hover:not(:disabled),.wadmin-row button:hover,.rc-start:hover,.rc-quit:hover,.col-claim:hover,#wphoto-frames button:hover,#wphoto-filters button:hover,#wchar-shop:hover{filter:brightness(1.16)}
+.inv-card:hover:not(.on){background:rgba(139,124,255,.14);border-color:rgba(139,124,255,.4)}
+.hs-item:hover:not(.sel){background:rgba(139,124,255,.1);border-color:rgba(139,124,255,.35)}
+.inv-chip:hover{border-color:rgba(255,255,255,.32);color:#fff}
