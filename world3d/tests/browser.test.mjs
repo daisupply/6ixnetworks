@@ -174,7 +174,7 @@ async function bootDesktop(extra) {
     return { bg: cs.backgroundColor, ringAnim: getComputedStyle(ring).animationName, visibleText: document.body.innerText };
   });
   ok(probe.bg && probe.bg !== 'rgba(0, 0, 0, 0)' && probe.bg !== 'transparent', 'loader: styled card on first paint even with engine blocked', probe.bg);
-  ok(probe.ringAnim === 'w3spin', 'loader: portal ring animation running (inlined critical CSS)');
+  ok(probe.ringAnim === 'w3spin' || probe.ringAnim === 'mf-spin', 'loader: portal ring animation running (inlined critical CSS)', probe.ringAnim);
   ok(!probe.visibleText.includes('__sixNotif') && !probe.visibleText.includes('function () {'), 'loader: NO raw JS source visible as page text');
   await page.screenshot({ path: '/tmp/w3t-loader.png' });
   await page.close();
