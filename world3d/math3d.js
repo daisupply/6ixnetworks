@@ -233,6 +233,45 @@ export function terrainNormal(x, z) {
 // shoulders), moisture noise (dirt patches, wild bands only), height
 // (exposed rock up high) and the pond shoreline (sand). returns
 // [grass, forest, dirt, rock, sand], always summing to 1.
+// terrain projection spec (realism pass 2): the ONE source for the
+// terrain shader's texture projections. the GLSL in client3d.js
+// carries the same numbers as literals, and the test suite reads
+// the shader source and fails if they ever drift apart.
+// layers: [cos, sin of the breakup rotation, breakup mix,
+// normal strength] for grass, forest, dirt, rock, sand.
+export const TERR_DETAIL_SCALE = 1 / 7;
+export const TERR_BREAK_SCALE = 1 / 19;
+export const TERR_LAYERS = [
+  [0.906, 0.423, 0.30, 0.55],
+  [0.799, 0.602, 0.42, 0.70],
+  [0.326, 0.946, 0.40, 0.60],
+  [0.966, 0.259, 0.38, 0.95],
+  [0.602, 0.799, 0.30, 0.35],
+];
+export function terrainProjA(x, z) { return [x * TERR_DETAIL_SCALE, z * TERR_DETAIL_SCALE]; }
+export function terrainProjB(x, z, layer) {
+  const r = TERR_LAYERS[layer], u = x * TERR_BREAK_SCALE, v = z * TERR_BREAK_SCALE;
+  return [u * r[0] - v * r[1], u * r[1] + v * r[0]];
+}
+export function rot2(v, c, s) { return [v[0] * c - v[1] * s, v[0] * s + v[1] * c]; }
+// the per-layer tangent-space normal blend, mirrored in GLSL as
+// terrNrm: the breakup sample's xy is rotated by -theta (the
+// inverse of its UV rotation) so both samples live in the detail
+// projection's tangent frame before they are mixed.
+export function blendTerrainNormal(na, nb, c, s, m) {
+  const b = rot2([nb[0], nb[1]], c, -s);
+  return [na[0] + (b[0] - na[0]) * m, na[1] + (b[1] - na[1]) * m, na[2] + (nb[2] - na[2]) * m];
+}
+// rock side projection (steep faces): weight from the surface
+// normal's y, and the side UV from the dominant horizontal axis —
+// the same formulas the shader uses.
+export function terrainSideW(ny) { return 1 - sstep(0.60, 0.88, Math.abs(ny)); }
+export function terrainSideUV(x, y, z, nx, nz) {
+  return Math.abs(nz) >= Math.abs(nx)
+    ? [x * TERR_DETAIL_SCALE, y * TERR_DETAIL_SCALE]
+    : [z * TERR_DETAIL_SCALE, y * TERR_DETAIL_SCALE];
+}
+
 export function terrainWeights(x, z, ny, h) {
   const s = 1 - ny;
   const wild = Math.max(sstep(126, 150, Math.abs(x)), sstep(98, 116, Math.abs(z)));

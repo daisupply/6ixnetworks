@@ -1,7 +1,8 @@
 // math.test.mjs — pure movement/camera math for the 3D world.
 // tests the EXACT functions client3d.js imports from ../math3d.js.
 // run: node world3d/tests/math.test.mjs   (no server, no deps)
-import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH, noise2, fbm2, ridge2, terrainNormal, terrainWeights } from '../math3d.js';
+import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH, noise2, fbm2, ridge2, terrainNormal, terrainWeights, TERR_DETAIL_SCALE, TERR_BREAK_SCALE, TERR_LAYERS, terrainProjA, terrainProjB, rot2, blendTerrainNormal, terrainSideW, terrainSideUV } from '../math3d.js';
+import { readFileSync } from 'node:fs';
 
 let pass = 0, fail = 0;
 const ok = (c, label, extra) => { if (c) { pass++; console.log('PASS', label); } else { fail++; console.log('FAIL', label, extra !== undefined ? JSON.stringify(extra) : ''); } };
@@ -262,20 +263,126 @@ ok(near(groundH(34, 64), 0), 'groundH v2: south park still plateau');
   const corners = [[110, 55], [110, -55], [-110, 55], [-110, -55], [55, 55], [0, 0]];
   ok(corners.every(([x, z]) => groundH(x, z) === 0), 'realism: four-chunk corners inside the plateau agree at h=0');
 }
-// realism pass: texture coordinates are pure world functions — the
-// shader samples (pos.xz / 7 detail, pos.xz / 19 breakup) cannot
-// disagree across a chunk border because they never see chunk-local
-// coordinates at all. pinned here as arithmetic on both sides of
-// every vertical chunk border.
+// realism pass 2: texture projections, tested as the client
+// actually uses them. chunk (cx,cz) generates vertices on its own
+// local grid; the shared edge of two chunks must produce the same
+// world positions AND the same UVs from both sides, at both
+// resolutions, or the ground seams.
 {
-  let uvOk = true;
-  for (let cx = -4; cx < 5; cx++) for (let z = -200; z <= 200; z += 17) {
-    const x = cx * 55;
-    const aL = (x / 7) + (z / 19), aR = ((x + 55) / 7) + (z / 19); // same world point, two chunk frames
-    if (Math.abs(((x / 7) - ((x - 55 + 55) / 7))) > 0) uvOk = false;
-    if (!Number.isFinite(aL) || !Number.isFinite(aR)) uvOk = false;
+  const edgePts = (cx, cz, seg, axis) => {
+    const pts = [];
+    for (let i = 0; i <= seg; i++) {
+      const t = (55 / seg) * i;
+      pts.push(axis === 'x' ? [cx * 55 + 55, cz * 55 + t] : [cx * 55 + t, cz * 55 + 55]);
+    }
+    return pts;
+  };
+  let edgeOk = true;
+  // full-res / full-res edge at x=165 (chunks (2,0) and (3,0))
+  const eA = edgePts(2, 0, 22, 'x');
+  // the second chunk's local grid reaches the same edge from its west side:
+  const eB2 = []; for (let i = 0; i <= 22; i++) eB2.push([165, 2.5 * i]);
+  for (let i = 0; i <= 22; i++) {
+    if (eA[i][0] !== eB2[i][0] || eA[i][1] !== eB2[i][1]) edgeOk = false;
+    const [ax, az] = eA[i];
+    const pa = terrainProjA(ax, az), pb = terrainProjA(eB2[i][0], eB2[i][1]);
+    if (pa[0] !== pb[0] || pa[1] !== pb[1]) edgeOk = false;
+    for (let L = 0; L < 5; L++) {
+      const ba = terrainProjB(ax, az, L), bb = terrainProjB(eB2[i][0], eB2[i][1], L);
+      if (ba[0] !== bb[0] || ba[1] !== bb[1]) edgeOk = false;
+    }
   }
-  ok(uvOk, 'realism: world-space UVs are chunk-independent (pure functions of position)');
+  ok(edgeOk, 'proj: neighbouring chunks generate identical edge positions and UVs (detail + all 5 breakup layers)');
+  // flat (seg 2) / full-res (seg 22) edge at x=110: the flat chunk's
+  // 3 edge points are a subset of the full-res edge line, same UVs
+  let subOk = true;
+  const flatEdge = edgePts(1, 0, 2, 'x');
+  const fullEdge = new Set(); for (let i = 0; i <= 22; i++) fullEdge.add('110,' + 2.5 * i);
+  for (const [x, z] of flatEdge) if (!fullEdge.has(x + ',' + z)) subOk = false;
+  for (const [x, z] of flatEdge) {
+    const pa = terrainProjA(x, z), pb = terrainProjA(110, z);
+    if (pa[0] !== pb[0] || pa[1] !== pb[1]) subOk = false;
+  }
+  ok(subOk, 'proj: flat/full-res boundary — flat edge points are a subset with identical UVs');
+  // four-chunk corner (55,55): one world point, one UV set
+  const cA = terrainProjA(55, 55);
+  ok(TERR_LAYERS.every((_, L) => { const b = terrainProjB(55, 55, L); return Number.isFinite(b[0]) && Number.isFinite(b[1]); }) && cA[0] === 55 * TERR_DETAIL_SCALE,
+    'proj: four-chunk corner has a single well-defined UV set');
+  // rotated breakup has no jumps: stepping 1mm across a border
+  // moves every layer's breakup UV by ~the step size, never more
+  let jumpOk = true;
+  for (let L = 0; L < 5; L++) for (const z of [-30, 0, 41]) {
+    const a = terrainProjB(110 - 0.001, z, L), b = terrainProjB(110 + 0.001, z, L);
+    if (Math.abs(b[0] - a[0]) > 0.01 || Math.abs(b[1] - a[1]) > 0.01) jumpOk = false;
+  }
+  ok(jumpOk, 'proj: rotated breakup UVs are continuous across chunk borders (no jumps)');
+}
+// realism pass 2: the breakup rotations are real rotations, and
+// the normal-blend correction (rotate the breakup sample by
+// -theta) exactly recovers a known surface normal — with a
+// negative control proving the test can detect a missing
+// correction (at the dirt layer's 71 degrees, skipping it is off
+// by far more than the tolerance).
+{
+  let rotOk = true, corrOk = true, ctrlOk = true;
+  const nA = [0.3, -0.4, 0.866];
+  for (let L = 0; L < 5; L++) {
+    const [c, s, m] = TERR_LAYERS[L];
+    if (Math.abs(c * c + s * s - 1) > 2e-3) rotOk = false;
+    const rt = rot2(rot2([0.7, -0.2], c, s), c, -s);
+    if (Math.abs(rt[0] - 0.7) > 2e-3 || Math.abs(rt[1] + 0.2) > 2e-3) rotOk = false;
+    // the texture-space normal a rotated sampling would produce
+    // from the surface normal nA, then the shader's correction:
+    const nb = [...rot2([nA[0], nA[1]], c, s), nA[2]];
+    const fixed = blendTerrainNormal(nA, nb, c, s, m);
+    if (Math.abs(fixed[0] - nA[0]) > 2e-3 || Math.abs(fixed[1] - nA[1]) > 2e-3 || Math.abs(fixed[2] - nA[2]) > 2e-3) corrOk = false;
+    // negative control: same blend with the WRONG sign (+theta)
+    const wrong = (() => { const b = rot2([nb[0], nb[1]], c, s); return [nA[0] + (b[0] - nA[0]) * m, nA[1] + (b[1] - nA[1]) * m]; })();
+    if (L === 2 && Math.hypot(wrong[0] - nA[0], wrong[1] - nA[1]) < 0.05) ctrlOk = false;
+  }
+  ok(rotOk, 'proj: layer rotations are orthonormal and invertible');
+  ok(corrOk, 'proj: normal correction recovers the true normal at every layer mix');
+  ok(ctrlOk, 'proj: negative control — an uncorrected blend is measurably wrong (test has teeth)');
+}
+// realism pass 2: rock side projection — weight ramps only on
+// genuinely steep faces, the axis choice follows the dominant
+// normal, and the side UV runs smoothly up a uniform slope.
+{
+  ok(terrainSideW(1) === 0 && terrainSideW(0.95) === 0 && terrainSideW(0.5) === 1, 'proj: side weight is 0 on gentle ground, 1 on steep faces');
+  let mono = true, prev = -1;
+  for (const ny of [0.88, 0.82, 0.76, 0.70, 0.64, 0.60]) { const w = terrainSideW(ny); if (w < prev) mono = false; prev = w; }
+  ok(mono && prev === 1, 'proj: side weight ramps monotonically between 28 and 53 degrees');
+  const uvZ = terrainSideUV(10, 3, 20, 0, 0.71), uvX = terrainSideUV(10, 3, 20, 0.71, 0);
+  ok(uvZ[0] === 10 * TERR_DETAIL_SCALE && uvZ[1] === 3 * TERR_DETAIL_SCALE && uvX[0] === 20 * TERR_DETAIL_SCALE,
+    'proj: side UV uses the XY projection for z-facing slopes, ZY for x-facing');
+  const s1 = terrainSideUV(5, 1, 8, 0, 0.71), s2 = terrainSideUV(5, 2.5, 9.5, 0, 0.71);
+  ok(Math.abs((s2[1] - s1[1]) - 1.5 * TERR_DETAIL_SCALE) < 1e-9, 'proj: side UV climbs smoothly with height on a uniform slope');
+}
+// realism pass 2: shader/spec consistency — the GLSL literals in
+// client3d.js must match this spec exactly, or the tests above
+// describe a shader that does not exist.
+{
+  const glsl = readFileSync(new URL('../client3d.js', import.meta.url), 'utf8');
+  const near = (a, b) => Math.abs(a - b) < 1.5e-3;
+  let specOk = glsl.includes('vWPos.xz * 0.142857') && near(TERR_DETAIL_SCALE, 0.142857)
+    && glsl.includes('vWPos.xz * 0.052632') && near(TERR_BREAK_SCALE, 0.052632);
+  const rotCalls = [...glsl.matchAll(/terrRot\(tB, ([\d.]+), ([\d.]+)\)/g)].map((mm) => [+mm[1], +mm[2]]);
+  // breakup UV definitions in source order: bG, bF, bD, bR, bS
+  const wantRot = [TERR_LAYERS[0], TERR_LAYERS[1], TERR_LAYERS[2], TERR_LAYERS[3], TERR_LAYERS[4]];
+  if (rotCalls.length !== 5 || !rotCalls.every((r, i) => near(r[0], wantRot[i][0]) && near(r[1], wantRot[i][1]))) specOk = false;
+  const nrmCalls = [...glsl.matchAll(/terrNrm\(uT\w+n, tUvA, b\w, ([\d.]+), ([\d.]+), ([\d.]+), ([\d.]+)\)/g)]
+    .map((mm) => [+mm[1], +mm[2], +mm[3], +mm[4]]);
+  if (nrmCalls.length !== 4 || !nrmCalls.every((r, i) => near(r[0], TERR_LAYERS[i][0]) && near(r[1], TERR_LAYERS[i][1]) && near(r[2], TERR_LAYERS[i][2]) && near(r[3], TERR_LAYERS[i][3]))) specOk = false;
+  const mixCalls = [...glsl.matchAll(/terrMixD\(uT\w, tUvA, b\w, ([\d.]+)\)/g)].map((mm) => +mm[1]);
+  const wantMix = [TERR_LAYERS[0][2], TERR_LAYERS[1][2], TERR_LAYERS[2][2], TERR_LAYERS[4][2]];
+  if (mixCalls.length !== 4 || !mixCalls.every((v, i) => near(v, wantMix[i]))) specOk = false;
+  ok(specOk, 'proj: shader literals match the tested spec (scales, rotations, mixes, normal strengths)');
+  // declaration order matters in GLSL: terrNrm calls terrRot, so
+  // its definition must come after terrRot's in the shader source
+  // (pass 2 shipped this wrong once — the fragment program failed
+  // to compile and the terrain rendered unshaded white).
+  const iRot = glsl.indexOf('vec2 terrRot('), iNrm = glsl.indexOf('vec3 terrNrm(');
+  ok(iRot > 0 && iNrm > iRot, 'proj: terrNrm is declared after terrRot (GLSL declaration order)');
 }
 
 // refinement pass: full-world generation cost (all 80 chunks' halo
