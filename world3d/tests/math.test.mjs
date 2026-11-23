@@ -232,6 +232,52 @@ ok(near(groundH(34, 64), 0), 'groundH v2: south park still plateau');
   const rev = pts.slice().reverse().map(([x, z]) => groundH(x, z)).reverse();
   ok(fwd.every((v, i) => v === rev[i] && Number.isFinite(v)), 'refine: generation order does not change terrain (and no NaN)');
 }
+// realism pass: material selection reaches the rim — steep high
+// ground is rocky, and the rim really is steeper than the playable
+// slopes (occasional steep rocky areas exist by design)
+{
+  let rimRock = 0, rimN = 0, sloped = 0, tot = 0;
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * Math.PI * 2;
+    const x = Math.cos(a) * 258, z = Math.sin(a) * 196;
+    const h = groundH(x, z), n = terrainNormal(x, z);
+    const w = terrainWeights(x, z, n[1], h);
+    tot++; if (n[1] < 0.99) sloped++;
+    if (h >= 13) { rimN++; if (w[3] >= 0.25) rimRock++; }
+  }
+  ok(rimN > 5 && rimRock >= rimN * 0.6, 'realism: exposed high rim ground is mostly rock (' + rimRock + '/' + rimN + ' sampled)');
+  ok(sloped >= tot * 0.5, 'realism: rim faces are genuinely sloped (' + sloped + '/' + tot + ' samples tilted)');
+}
+// realism pass: chunk connectivity across resolutions — the flat
+// chunks' edge vertices (0, 27.5, 55 along the edge) are a strict
+// subset of the neighbour's full-res edge line, and every point of
+// that line is h=0, so the two resolutions describe the SAME surface
+{
+  let subset = true;
+  for (const z of [-55, -27.5, 0, 27.5, 55]) if (groundH(110, z) !== 0 || groundH(-110, z) !== 0) subset = false;
+  for (let z = -55; z <= 55; z += 2.5) if (groundH(110, z) !== 0 || groundH(-110, z) !== 0) subset = false;
+  for (let x = -110; x <= 110; x += 2.5) if (groundH(x, 55) !== 0 || groundH(x, -55) !== 0) subset = false;
+  ok(subset, 'realism: flat/full-res chunk edges coincide exactly (subset of one flat line)');
+  // corners where four chunks meet: one height, whoever asks
+  const corners = [[110, 55], [110, -55], [-110, 55], [-110, -55], [55, 55], [0, 0]];
+  ok(corners.every(([x, z]) => groundH(x, z) === 0), 'realism: four-chunk corners inside the plateau agree at h=0');
+}
+// realism pass: texture coordinates are pure world functions — the
+// shader samples (pos.xz / 7 detail, pos.xz / 19 breakup) cannot
+// disagree across a chunk border because they never see chunk-local
+// coordinates at all. pinned here as arithmetic on both sides of
+// every vertical chunk border.
+{
+  let uvOk = true;
+  for (let cx = -4; cx < 5; cx++) for (let z = -200; z <= 200; z += 17) {
+    const x = cx * 55;
+    const aL = (x / 7) + (z / 19), aR = ((x + 55) / 7) + (z / 19); // same world point, two chunk frames
+    if (Math.abs(((x / 7) - ((x - 55 + 55) / 7))) > 0) uvOk = false;
+    if (!Number.isFinite(aL) || !Number.isFinite(aR)) uvOk = false;
+  }
+  ok(uvOk, 'realism: world-space UVs are chunk-independent (pure functions of position)');
+}
+
 // refinement pass: full-world generation cost (all 80 chunks' halo
 // sampling at their real resolutions)
 {

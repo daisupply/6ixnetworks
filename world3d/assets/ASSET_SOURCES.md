@@ -84,7 +84,7 @@ Source for all rows: https://quaternius.itch.io/stylized-nature-megakit
 | RockPath_Round_Thin | Quaternius — Stylized Nature MegaKit [Standard] | CC0 1.0 | 2026-11-22 | glTF | GLB, WebP textures, 200,076 B, 2254 tris | world3d/assets/nature/RockPath_Round_Thin.glb.b64 |
 | RockPath_Square_Wide | Quaternius — Stylized Nature MegaKit [Standard] | CC0 1.0 | 2026-11-22 | glTF | GLB, WebP textures, 206,296 B, 2256 tris | world3d/assets/nature/RockPath_Square_Wide.glb.b64 |
 | RockPath_Square_Thin | Quaternius — Stylized Nature MegaKit [Standard] | CC0 1.0 | 2026-11-22 | glTF | GLB, WebP textures, 171,744 B, 1793 tris | world3d/assets/nature/RockPath_Square_Thin.glb.b64 |
-| grass_diff/nor | Poly Haven — aerial_grass_rock | CC0 1.0 | 2026-11-22 | texture | WebP 1024, terrain pass ground layer | world3d/assets/terrain/grass_diff.webp.b64 |
+| grass_diff/nor | Poly Haven — grass_ground (realism-pass swap: aerial_grass_rock baked grey rock patches into the grass layer, which mip-averaged to grey domes at distance) | CC0 1.0 | 2026-11-22 | texture | WebP 1024, terrain ground layer | world3d/assets/terrain/grass_diff.webp.b64 |
 | forest_diff/nor | Poly Haven — forest_floor | CC0 1.0 | 2026-11-22 | texture | WebP 1024, terrain pass ground layer | world3d/assets/terrain/forest_diff.webp.b64 |
 | dirt_diff/nor | Poly Haven — brown_mud_dry | CC0 1.0 | 2026-11-22 | texture | WebP 1024, terrain pass ground layer | world3d/assets/terrain/dirt_diff.webp.b64 |
 | rock_diff/nor | Poly Haven — aerial_ground_rock | CC0 1.0 | 2026-11-22 | texture | WebP 1024, terrain pass ground layer | world3d/assets/terrain/rock_diff.webp.b64 |

@@ -158,6 +158,12 @@ function groundHBase(x, z) {
   // carry more surface variation, valley floors stay calm.
   det *= 0.72 + 0.5 * Math.min(1, Math.abs(h) / 5);
   h += det * m;
+  // realism pass: the legacy Gaussian hills were perfect smooth
+  // domes — at viewing distance their texture mip-averages away and
+  // only the bare dome silhouette remains (the grey-dome artifact).
+  // a ridged detail term gated to elevated ground breaks the domes
+  // into irregular hilltops; low ground, valleys and town untouched.
+  h += 0.85 * (ridge2(x * 0.021 + 7.3, z * 0.021 + 2.9, 3) - 0.55) * sstep(1.2, 3.0, h) * m;
   // refinement pass: drainage valleys — two meandering lowland bands
   // with defined paths, so low ground reads as carved valleys with
   // coherent shape instead of random noise dips. the pads still
@@ -179,7 +185,7 @@ function groundHBase(x, z) {
   const ex = Math.max(Math.abs(x) - 195, 0), ez = Math.max(Math.abs(z) - 118, 0);
   const dOut = Math.hypot(ex, ez);
   if (dOut > 0) {
-    const rg = ridge2(x * 0.0055 + 31.4, z * 0.0055 + 3.1, 4);
+    const rg = ridge2(x * 0.0085 + 31.4, z * 0.0085 + 3.1, 4);
     // sector gain: a continuous angular function, so some stretches
     // of the range tower and others dip into passes — the rim is a
     // mountain system, not a uniform wall.
@@ -187,6 +193,11 @@ function groundHBase(x, z) {
     const sector = 0.78 + 0.55 * (fbm2(Math.cos(ang) * 1.35 + 9.1, Math.sin(ang) * 1.35 + 4.4, 2) * 0.5 + 0.5);
     h += 3.2 * fbm2(x * 0.02, z * 0.02, 3) * sstep(0, 45, dOut);
     h += sstep(4, 85, dOut) * (7 + 30 * rg * rg) * sector;
+    // realism pass: the rim swells were as smooth as the old domes
+    // (the hilltop detail above is plateau-masked and never reaches
+    // them) — a ridged term that grows into the range breaks their
+    // silhouettes and gives their faces shading variation.
+    h += 1.15 * (ridge2(x * 0.013 + 3.9, z * 0.013 + 8.4, 3) - 0.5) * sstep(10, 40, dOut);
   }
   return h;
 }
@@ -226,6 +237,7 @@ export function terrainWeights(x, z, ny, h) {
   const s = 1 - ny;
   const wild = Math.max(sstep(126, 150, Math.abs(x)), sstep(98, 116, Math.abs(z)));
   let rock = Math.max(sstep(0.13, 0.34, s), sstep(9, 20, h) * sstep(0.04, 0.12, s));
+  rock = Math.max(rock, sstep(15, 27, h) * 0.62 * (0.45 + 0.55 * (fbm2(x * 0.03 + 9.7, z * 0.03 + 1.2, 2) * 0.5 + 0.5)));
   let forest = sstep(-118, -158, x) * (0.5 + 0.5 * (fbm2(x * 0.02 + 3.1, z * 0.02, 2) * 0.5 + 0.5));
   let dirt = sstep(0.30, 0.62, fbm2(x * 0.028 + 51.7, z * 0.028 + 9.4, 3)) * 0.72 * wild
     + sstep(0.045, 0.10, s) * (1 - sstep(0.10, 0.30, s)) * 0.35;

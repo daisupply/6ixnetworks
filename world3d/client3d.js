@@ -337,15 +337,15 @@ function terrainMaterial() {
     sh.uniforms.uTDn = { value: T.dirt.n }; sh.uniforms.uTRn = { value: T.rock.n };
     sh.uniforms.uTSn = { value: T.sand.n };
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute vec4 aW1; attribute float aSand; varying vec4 vW1; varying float vSand; varying vec3 vWPos;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvW1 = aW1; vSand = aSand; vWPos = position;');
+      .replace('#include <common>', '#include <common>\nattribute vec4 aW1; attribute float aSand; varying vec4 vW1; varying float vSand; varying vec3 vWPos; varying vec3 vNormO;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvW1 = aW1; vSand = aSand; vWPos = position; vNormO = normal;');
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform sampler2D uTG; uniform sampler2D uTF; uniform sampler2D uTD; uniform sampler2D uTR; uniform sampler2D uTS;\nuniform sampler2D uTGn; uniform sampler2D uTFn; uniform sampler2D uTDn; uniform sampler2D uTRn; uniform sampler2D uTSn;\nvarying vec4 vW1; varying float vSand; varying vec3 vWPos;\nvec3 terrMixD(sampler2D t, vec2 a, vec2 b) { return mix(texture2D(t, a), texture2D(t, b), 0.42).rgb; }\nvec3 terrPerturb(vec3 e, vec3 n, vec3 m, vec2 uv) { vec3 q0 = dFdx(e); vec3 q1 = dFdy(e); vec2 s0 = dFdx(uv); vec2 s1 = dFdy(uv); vec3 S = normalize(q0 * s1.t - q1 * s0.t); vec3 T2 = normalize(-q0 * s1.s + q1 * s0.s); return normalize(T2 * m.x + S * m.y + n * m.z); }')
-      .replace('#include <map_fragment>', 'vec2 tUvA = vWPos.xz * 0.142857; vec2 tUvB = vWPos.zy * 0.043478;\nfloat tSum = max(vW1.x + vW1.y + vW1.z + vW1.w + vSand, 1e-4);\nvec3 tAlb = (terrMixD(uTG, tUvA, tUvB) * vW1.x + terrMixD(uTF, tUvA, tUvB) * vW1.y + terrMixD(uTD, tUvA, tUvB) * vW1.z + terrMixD(uTR, tUvA, tUvB) * vW1.w + terrMixD(uTS, tUvA, tUvB) * vSand) / tSum;\ndiffuseColor.rgb = tAlb;')
+      .replace('#include <common>', '#include <common>\nuniform sampler2D uTG; uniform sampler2D uTF; uniform sampler2D uTD; uniform sampler2D uTR; uniform sampler2D uTS;\nuniform sampler2D uTGn; uniform sampler2D uTFn; uniform sampler2D uTDn; uniform sampler2D uTRn; uniform sampler2D uTSn;\nvarying vec4 vW1; varying float vSand; varying vec3 vWPos; varying vec3 vNormO;\nvec3 terrMixD(sampler2D t, vec2 a, vec2 b, float m) { return mix(texture2D(t, a), texture2D(t, b), m).rgb; }\nvec2 terrRot(vec2 uv, float c, float s) { return vec2(uv.x * c - uv.y * s, uv.x * s + uv.y * c); }\nfloat terrHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }\nfloat terrNoise(vec2 p) { vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(terrHash(i), terrHash(i + vec2(1, 0)), f.x), mix(terrHash(i + vec2(0, 1)), terrHash(i + vec2(1, 1)), f.x), f.y); }\nvec3 terrPerturb(vec3 e, vec3 n, vec3 m, vec2 uv) { vec3 q0 = dFdx(e); vec3 q1 = dFdy(e); vec2 s0 = dFdx(uv); vec2 s1 = dFdy(uv); vec3 S = normalize(q0 * s1.t - q1 * s0.t); vec3 T2 = normalize(-q0 * s1.s + q1 * s0.s); return normalize(T2 * m.x + S * m.y + n * m.z); }')
+      .replace('#include <map_fragment>', 'vec2 tUvA = vWPos.xz * 0.142857; vec2 tB = vWPos.xz * 0.052632;\nfloat tSum = max(vW1.x + vW1.y + vW1.z + vW1.w + vSand, 1e-4);\nvec3 cG = terrMixD(uTG, tUvA, terrRot(tB, 0.906, 0.423), 0.30);\nvec3 cF = terrMixD(uTF, tUvA, terrRot(tB, 0.799, 0.602), 0.42);\nvec3 cD = terrMixD(uTD, tUvA, terrRot(tB, 0.326, 0.946), 0.40);\nvec3 cS = terrMixD(uTS, tUvA, terrRot(tB, 0.602, 0.799), 0.30);\nfloat tSideW = (1.0 - smoothstep(0.60, 0.88, abs(normalize(vNormO).y))) * step(0.001, vW1.w);\nvec2 tUvSide = (abs(vNormO.z) >= abs(vNormO.x) ? vWPos.xy : vWPos.zy) * 0.142857;\nvec3 rockTop = texture2D(uTR, tUvA).rgb;\nvec3 rockSide = texture2D(uTR, tUvSide).rgb;\nvec3 cR = mix(mix(rockTop, texture2D(uTR, terrRot(tB, 0.966, 0.259)).rgb, 0.38), rockSide, tSideW * 0.85);\nfloat tMicro = 0.94 + 0.12 * (0.6 * terrNoise(vWPos.xz * 0.59) + 0.4 * terrNoise(vWPos.xz * 1.7));\nvec3 tAlb = (cG * vW1.x + cF * vW1.y + cD * vW1.z + cR * vW1.w + cS * vSand) / tSum * tMicro;\ndiffuseColor.rgb = tAlb;')
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = clamp(0.93 * vW1.x + 0.97 * vW1.y + 0.88 * vW1.z + 0.96 * vW1.w + 0.85 * vSand, 0.8, 1.0);')
       .replace('#include <normal_fragment_maps>', 'vec3 nG = texture2D(uTGn, tUvA).rgb * 2.0 - 1.0; nG.xy *= 0.55;\nvec3 nF = texture2D(uTFn, tUvA).rgb * 2.0 - 1.0; nF.xy *= 0.70;\nvec3 nD = texture2D(uTDn, tUvA).rgb * 2.0 - 1.0; nD.xy *= 0.60;\nvec3 nR = texture2D(uTRn, tUvA).rgb * 2.0 - 1.0; nR.xy *= 0.95;\nvec3 nS = texture2D(uTSn, tUvA).rgb * 2.0 - 1.0; nS.xy *= 0.35;\nvec3 tN = nG * vW1.x + nF * vW1.y + nD * vW1.z + nR * vW1.w + nS * vSand;\ntN = normalize(tN / tSum + vec3(0.0, 0.0, 0.02));\ntN.xy *= mix(0.22, 1.0, exp(-length(vViewPosition) / 130.0));\nnormal = terrPerturb(-vViewPosition, normal, tN, tUvA);');
   };
-  mat.customProgramCacheKey = () => 'terrain-pass-2';
+  mat.customProgramCacheKey = () => 'terrain-pass-3';
   return mat;
 }
 let TERR_INDEX_FLAT = null;
@@ -2427,15 +2427,13 @@ function natInstChunked(name, list, cx, cz) {
 }
 function buildHorizon() {
   const rnd = mulberry32(60606);
-  const hillM = new THREE.MeshStandardMaterial({ color: 0x74917c, roughness: 1 });
-  const hillM2 = new THREE.MeshStandardMaterial({ color: 0x87a0a8, roughness: 1 });
-  for (let i = 0; i < 10; i++) {
-    const a = (i / 10) * TAU + rnd() * 0.3;
-    const hill = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), i % 2 ? hillM : hillM2);
-    hill.position.set(Math.cos(a) * 258, -5, Math.sin(a) * 192);
-    hill.scale.set(40 + rnd() * 34, 17 + rnd() * 17, 32 + rnd() * 24);
-    scene.add(hill);
-  }
+  // realism pass: the ring of ten flattened backdrop spheres is
+  // GONE. they predated the real terrain rim (v573) and the layered
+  // ridgeline rings (v574) and read as smooth untextured grey domes
+  // floating in front of the actual mountains — the single most
+  // artificial shape in the landscape. the terrain rim + rings now
+  // carry the horizon on their own; the silhouette tree band below
+  // stays (it sits on the rim apron and reads as distant forest).
   const band = (geo, mat, n, fn) => {
     const im = new THREE.InstancedMesh(geo, mat, n);
     const d = new THREE.Object3D();
