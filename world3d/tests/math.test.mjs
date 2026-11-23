@@ -1,7 +1,7 @@
 // math.test.mjs — pure movement/camera math for the 3D world.
 // tests the EXACT functions client3d.js imports from ../math3d.js.
 // run: node world3d/tests/math.test.mjs   (no server, no deps)
-import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH, noise2, fbm2, ridge2, terrainNormal, terrainWeights, TERR_DETAIL_SCALE, TERR_BREAK_SCALE, TERR_LAYERS, terrainProjA, terrainProjB, rot2, blendTerrainNormal, terrainSideW, terrainSideUV } from '../math3d.js';
+import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH, noise2, fbm2, ridge2, terrainNormal, terrainWeights, TERR_DETAIL_SCALE, TERR_BREAK_SCALE, TERR_LAYERS, terrainProjA, terrainProjB, rot2, blendTerrainNormal, terrainSideW, terrainSideUV, terrainSideNormal, terrainChunkGrid, terrainChunkFlat, terrainChunkIndex } from '../math3d.js';
 import { readFileSync } from 'node:fs';
 
 let pass = 0, fail = 0;
@@ -372,7 +372,7 @@ ok(near(groundH(34, 64), 0), 'groundH v2: south park still plateau');
   if (rotCalls.length !== 5 || !rotCalls.every((r, i) => near(r[0], wantRot[i][0]) && near(r[1], wantRot[i][1]))) specOk = false;
   const nrmCalls = [...glsl.matchAll(/terrNrm\(uT\w+n, tUvA, b\w, ([\d.]+), ([\d.]+), ([\d.]+), ([\d.]+)\)/g)]
     .map((mm) => [+mm[1], +mm[2], +mm[3], +mm[4]]);
-  if (nrmCalls.length !== 4 || !nrmCalls.every((r, i) => near(r[0], TERR_LAYERS[i][0]) && near(r[1], TERR_LAYERS[i][1]) && near(r[2], TERR_LAYERS[i][2]) && near(r[3], TERR_LAYERS[i][3]))) specOk = false;
+  if (nrmCalls.length !== 5 || !nrmCalls.every((r, i) => near(r[0], TERR_LAYERS[i][0]) && near(r[1], TERR_LAYERS[i][1]) && near(r[2], TERR_LAYERS[i][2]) && near(r[3], TERR_LAYERS[i][3]))) specOk = false;
   const mixCalls = [...glsl.matchAll(/terrMixD\(uT\w, tUvA, b\w, ([\d.]+)\)/g)].map((mm) => +mm[1]);
   const wantMix = [TERR_LAYERS[0][2], TERR_LAYERS[1][2], TERR_LAYERS[2][2], TERR_LAYERS[4][2]];
   if (mixCalls.length !== 4 || !mixCalls.every((v, i) => near(v, wantMix[i]))) specOk = false;
@@ -383,6 +383,75 @@ ok(near(groundH(34, 64), 0), 'groundH v2: south park still plateau');
   // to compile and the terrain rendered unshaded white).
   const iRot = glsl.indexOf('vec2 terrRot('), iNrm = glsl.indexOf('vec3 terrNrm(');
   ok(iRot > 0 && iNrm > iRot, 'proj: terrNrm is declared after terrRot (GLSL declaration order)');
+  ok(/texture2D\(uTRn, tUvSide\)/.test(glsl)
+    && glsl.includes('nSd.z * sign(vNormO.z)') && glsl.includes('nSd.z * sign(vNormO.x)')
+    && glsl.includes('nR = mix(nR, nRs, tSideW)'),
+    'proj: GLSL rock side normal mirrors terrainSideNormal (sample, remap, side-weight blend)');
+}
+// terrainSideNormal: the remap itself, against known vectors
+{
+  const eq3 = (a, b) => Math.abs(a[0] - b[0]) < 1e-9 && Math.abs(a[1] - b[1]) < 1e-9 && Math.abs(a[2] - b[2]) < 1e-9;
+  ok(eq3(terrainSideNormal(0, 1, 0, 0, 1), [0, 1, 0]), 'siden: XY facing +Z — out-of-face sample maps to north');
+  ok(eq3(terrainSideNormal(0, -1, 0, 0, 1), [0, -1, 0]), 'siden: XY facing -Z — out-of-face sample maps to south');
+  ok(eq3(terrainSideNormal(0, 1, 1, 0, 0), [1, 0, 0]) && eq3(terrainSideNormal(0, 1, 0, 1, 0), [0, 0, 1]), 'siden: XY — east stays east, up stays up');
+  ok(eq3(terrainSideNormal(1, 0, 0, 0, 1), [1, 0, 0]), 'siden: ZY facing +X — out-of-face sample maps to east');
+  ok(eq3(terrainSideNormal(-1, 0, 0, 0, 1), [-1, 0, 0]), 'siden: ZY facing -X — out-of-face sample maps to west');
+  ok(eq3(terrainSideNormal(1, 0, 1, 0, 0), [0, 1, 0]) && eq3(terrainSideNormal(1, 0, 0, 1, 0), [0, 0, 1]), 'siden: ZY — u axis maps to north, up stays up');
+  ok(eq3(terrainSideNormal(0.7071, 0.7071, 0, 0, 1), terrainSideNormal(0, 1, 0, 0, 1)), 'siden: axis tie picks XY, same as terrainSideUV and the GLSL >=');
+}
+// REAL chunk geometry: terrainChunkGrid is the code the browser
+// renders (client3d.js wraps it) — edges are read from the actual
+// generated vertex arrays, not hand-built coordinates.
+{
+  const V = (g, i, j) => { const N = g.seg + 1, vi = j * N + i; return {
+    pos: [g.pos[vi * 3], g.pos[vi * 3 + 1], g.pos[vi * 3 + 2]],
+    nor: [g.nor[vi * 3], g.nor[vi * 3 + 1], g.nor[vi * 3 + 2]],
+    w: [g.w1[vi * 4], g.w1[vi * 4 + 1], g.w1[vi * 4 + 2], g.w1[vi * 4 + 3], g.wS[vi]],
+    uv: [g.uv[vi * 2], g.uv[vi * 2 + 1]] }; };
+  const flat9 = (v) => [...v.pos, ...v.nor, ...v.w, ...v.uv];
+  const sameV = (a, b) => flat9(a).every((v, k) => Math.abs(v - flat9(b)[k]) <= 1e-6);
+  const edgeEq = (A, B, axis) => {
+    for (let j = 0; j <= A.seg; j++) {
+      const a = axis === 'x' ? V(A, A.seg, j) : V(A, j, A.seg);
+      const b = axis === 'x' ? V(B, 0, j) : V(B, j, 0);
+      if (!sameV(a, b)) return false;
+    }
+    return true;
+  };
+  ok(edgeEq(terrainChunkGrid(2, 0), terrainChunkGrid(3, 0), 'x'), 'grid: real east edge (2,0)|(3,0) — pos/normal/weights/uv identical from both chunks');
+  ok(edgeEq(terrainChunkGrid(0, -3), terrainChunkGrid(0, -2), 'z'), 'grid: real north edge (0,-3)|(0,-2) — pos/normal/weights/uv identical from both chunks');
+  ok(edgeEq(terrainChunkGrid(-4, 2), terrainChunkGrid(-3, 2), 'x'), 'grid: real west-rim edge (-4,2)|(-3,2) — identical from both chunks');
+  const fA = terrainChunkGrid(1, 0), fB = terrainChunkGrid(2, 0);
+  let subset = fA.flat && !fB.flat;
+  for (let j = 0; j <= fA.seg && subset; j++) {
+    const a = V(fA, fA.seg, j); let found = false;
+    for (let jj = 0; jj <= fB.seg; jj++) if (sameV(a, V(fB, 0, jj))) { found = true; break; }
+    if (!found) subset = false;
+  }
+  ok(subset, 'grid: flat/full-res boundary — flat edge vertices match full-res edge exactly (real grids)');
+  const c1 = V(terrainChunkGrid(1, 1), 22, 22), c2 = V(terrainChunkGrid(2, 1), 0, 22), c3 = V(terrainChunkGrid(1, 2), 22, 0), c4 = V(terrainChunkGrid(2, 2), 0, 0);
+  ok(sameV(c1, c2) && sameV(c1, c3) && sameV(c1, c4) && Math.abs(c1.pos[0] - 110) < 1e-9 && Math.abs(c1.pos[2] - 110) < 1e-9,
+    'grid: four-chunk corner (110,110) identical from all four real chunks');
+  let honest = true;
+  for (const [cx, cz] of [[2, 0], [-4, 2], [0, 0], [3, -3]]) {
+    const g = terrainChunkGrid(cx, cz), N = g.seg + 1;
+    for (let vi = 0; vi < N * N && honest; vi += 37) {
+      const x = g.pos[vi * 3], y = g.pos[vi * 3 + 1], z = g.pos[vi * 3 + 2];
+      const ny = g.nor[vi * 3 + 1];
+      if (Math.abs(y - groundH(x, z)) > 1e-6) honest = false;
+      if (Math.abs(Math.hypot(g.nor[vi * 3], ny, g.nor[vi * 3 + 2]) - 1) > 1e-5) honest = false;
+      const w = terrainWeights(x, z, ny, y);
+      const gw = [g.w1[vi * 4], g.w1[vi * 4 + 1], g.w1[vi * 4 + 2], g.w1[vi * 4 + 3], g.wS[vi]];
+      if (!gw.every((v, k) => Math.abs(v - w[k]) < 1e-6)) honest = false;
+      if (Math.abs(gw.reduce((a2, b2) => a2 + b2, 0) - 1) > 1e-4) honest = false;
+    }
+  }
+  ok(honest, 'grid: heights equal groundH, normals unit, weights equal terrainWeights and sum to 1 (real grids)');
+  let flats = 0;
+  for (let cx = -5; cx < 5; cx++) for (let cz = -4; cz < 4; cz++) if (terrainChunkFlat(cx, cz)) flats++;
+  const idx = terrainChunkIndex(22);
+  ok(flats === 8 && idx.length === 22 * 22 * 6 && Math.max(...idx) < 529 && terrainChunkIndex(2).length === 24,
+    'grid: exactly 8 flat chunks; chunk index arrays sized and in range');
 }
 
 // refinement pass: full-world generation cost (all 80 chunks' halo

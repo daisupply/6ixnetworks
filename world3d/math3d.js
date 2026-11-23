@@ -272,6 +272,81 @@ export function terrainSideUV(x, y, z, nx, nz) {
     : [z * TERR_DETAIL_SCALE, y * TERR_DETAIL_SCALE];
 }
 
+// remap a tangent-space normal sampled on the SIDE projection
+// into the top-projection tangent frame (east, north, up) that
+// the terrain shader blends in. XY projection (face points
+// mostly +-Z): the sample's axes are (worldX, worldY, worldZ)
+// -> (a, c*sign(nz), b). ZY projection: axes are (worldZ,
+// worldY, worldX) -> (c*sign(nx), a, b). The sign keeps the
+// out-of-face component pointing away from the surface on both
+// facings. The GLSL in client3d.js mirrors this exactly and the
+// test suite checks both.
+export function terrainSideNormal(nx, nz, sx, sy, sz) {
+  if (Math.abs(nz) >= Math.abs(nx)) return [sx, sz * (nz < 0 ? -1 : 1), sy];
+  return [sz * (nx < 0 ? -1 : 1), sx, sy];
+}
+
+// ---- chunk grid generation (shared by client + tests) ----
+// The terrain chunk builder's pure grid logic lives here so the
+// Node test suite exercises the SAME code the browser renders —
+// no test-only reimplementation. Vertex layout: row-major
+// (j = z rows, i = x cols), positions from groundH, normals
+// from a one-ring halo of groundH samples via central
+// differences (so border normals match the neighbour chunk's),
+// weights from terrainWeights, moisture/patch vertex tint, and
+// detail UVs at TERR_DETAIL_SCALE.
+export const TERR_CHUNK = 55, TERR_SEG = 22;
+export function terrainChunkFlat(cx, cz) {
+  // chunks whose whole rect sits inside the guaranteed-flat
+  // plateau build at 2 segments; every sample is provably h=0
+  return Math.max(Math.abs(cx * TERR_CHUNK), Math.abs((cx + 1) * TERR_CHUNK)) <= 124
+    && Math.max(Math.abs(cz * TERR_CHUNK), Math.abs((cz + 1) * TERR_CHUNK)) <= 96;
+}
+export function terrainChunkGrid(cx, cz) {
+  const flat = terrainChunkFlat(cx, cz);
+  const seg = flat ? 2 : TERR_SEG;
+  const step = TERR_CHUNK / seg, N = seg + 1, H = seg + 3;
+  const gx = cx * TERR_CHUNK, gz = cz * TERR_CHUNK;
+  const hs = new Float32Array(H * H);
+  for (let j = 0; j < H; j++) for (let i = 0; i < H; i++) {
+    hs[j * H + i] = groundH(gx + (i - 1) * step, gz + (j - 1) * step);
+  }
+  const nv = N * N;
+  const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), col = new Float32Array(nv * 3);
+  const w1 = new Float32Array(nv * 4), wS = new Float32Array(nv), uv = new Float32Array(nv * 2);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const vi = j * N + i, hi = (j + 1) * H + (i + 1);
+    const x = gx + i * step, z = gz + j * step, h = hs[hi];
+    const dhx = (hs[hi + 1] - hs[hi - 1]) / (2 * step), dhz = (hs[hi + H] - hs[hi - H]) / (2 * step);
+    let nx = -dhx, nz = -dhz; const il = 1 / Math.hypot(nx, 1, nz);
+    nx *= il; nz *= il; let ny = il;
+    if (flat) { nx = 0; nz = 0; ny = 1; }
+    pos[vi * 3] = x; pos[vi * 3 + 1] = h; pos[vi * 3 + 2] = z;
+    nor[vi * 3] = nx; nor[vi * 3 + 1] = ny; nor[vi * 3 + 2] = nz;
+    const w = terrainWeights(x, z, ny, h);
+    w1[vi * 4] = w[0]; w1[vi * 4 + 1] = w[1]; w1[vi * 4 + 2] = w[2]; w1[vi * 4 + 3] = w[3]; wS[vi] = w[4];
+    const moist = fbm2(x * 0.013 + 77.3, z * 0.013, 2) * 0.5 + 0.5;
+    const patch = 0.92 + 0.16 * (fbm2(x * 0.008 + 3.3, z * 0.008 + 8.8, 2) * 0.5 + 0.5);
+    const tint = (0.95 + 0.08 * moist) * (h < 1 ? 0.985 : 1) * patch;
+    const gw = w[0];
+    col[vi * 3] = tint * (1 - gw + gw * 0.80);
+    col[vi * 3 + 1] = tint * (1 - gw + gw * 1.07);
+    col[vi * 3 + 2] = tint * (1 - gw + gw * 0.68);
+    uv[vi * 2] = x / 7; uv[vi * 2 + 1] = z / 7;
+  }
+  return { flat, seg, pos, nor, col, w1, wS, uv };
+}
+export function terrainChunkIndex(seg) {
+  const N = seg + 1;
+  const idx = new Uint32Array(seg * seg * 6);
+  let k = 0;
+  for (let j = 0; j < seg; j++) for (let i = 0; i < seg; i++) {
+    const a = j * N + i, b = a + 1, c = a + N, d = c + 1;
+    idx[k++] = a; idx[k++] = c; idx[k++] = b; idx[k++] = b; idx[k++] = c; idx[k++] = d;
+  }
+  return idx;
+}
+
 export function terrainWeights(x, z, ny, h) {
   const s = 1 - ny;
   const wild = Math.max(sstep(126, 150, Math.abs(x)), sstep(98, 116, Math.abs(z)));

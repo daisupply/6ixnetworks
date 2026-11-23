@@ -27,7 +27,7 @@
  * player data, WebGL context-loss overlay. Three.js r160 vendored.
  */
 import * as THREE from 'three';
-import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH, fbm2, ridge2, terrainWeights } from './math3d.js';
+import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH, fbm2, ridge2, terrainWeights, terrainChunkGrid, terrainChunkIndex } from './math3d.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as skelClone } from 'three/addons/utils/SkeletonUtils.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -298,7 +298,6 @@ function canvasTex(w, h, draw, rx, ry) {
  * (7u detail + 23u breakup) so tiling never reads as a grid, with a
  * weighted normal-map blend for surface relief. ==================== */
 const TERRAIN_CHUNKS = new Map();
-const TCHUNK = 55, TSEG = 22;
 let TERR_INDEX = null, terrainTex = null, terrainTexState = null;
 function terrainPlaceholder(rgb, srgb) {
   const c = document.createElement('canvas'); c.width = c.height = 2;
@@ -353,74 +352,30 @@ function terrainMaterial() {
       .replace('#include <common>', '#include <common>\nuniform sampler2D uTG; uniform sampler2D uTF; uniform sampler2D uTD; uniform sampler2D uTR; uniform sampler2D uTS;\nuniform sampler2D uTGn; uniform sampler2D uTFn; uniform sampler2D uTDn; uniform sampler2D uTRn; uniform sampler2D uTSn;\nvarying vec4 vW1; varying float vSand; varying vec3 vWPos; varying vec3 vNormO;\nvec3 terrMixD(sampler2D t, vec2 a, vec2 b, float m) { return mix(texture2D(t, a), texture2D(t, b), m).rgb; }\nvec2 terrRot(vec2 uv, float c, float s) { return vec2(uv.x * c - uv.y * s, uv.x * s + uv.y * c); }\nfloat terrHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }\nfloat terrNoise(vec2 p) { vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(terrHash(i), terrHash(i + vec2(1, 0)), f.x), mix(terrHash(i + vec2(0, 1)), terrHash(i + vec2(1, 1)), f.x), f.y); }\nvec3 terrPerturb(vec3 e, vec3 n, vec3 m, vec2 uv) { vec3 q0 = dFdx(e); vec3 q1 = dFdy(e); vec2 s0 = dFdx(uv); vec2 s1 = dFdy(uv); vec3 S = normalize(q0 * s1.t - q1 * s0.t); vec3 T2 = normalize(-q0 * s1.s + q1 * s0.s); return normalize(T2 * m.x + S * m.y + n * m.z); }\nvec3 terrNrm(sampler2D t, vec2 a, vec2 b, float c, float s, float m, float str) { vec3 na = texture2D(t, a).rgb * 2.0 - 1.0; vec3 nb = texture2D(t, b).rgb * 2.0 - 1.0; nb.xy = terrRot(nb.xy, c, -s); vec3 n = mix(na, nb, m); n.xy *= str; return n; }')
       .replace('#include <map_fragment>', 'vec2 tUvA = vWPos.xz * 0.142857; vec2 tB = vWPos.xz * 0.052632;\nvec2 bG = terrRot(tB, 0.906, 0.423); vec2 bF = terrRot(tB, 0.799, 0.602); vec2 bD = terrRot(tB, 0.326, 0.946); vec2 bR = terrRot(tB, 0.966, 0.259); vec2 bS = terrRot(tB, 0.602, 0.799);\nfloat tSum = max(vW1.x + vW1.y + vW1.z + vW1.w + vSand, 1e-4);\nvec3 cG = terrMixD(uTG, tUvA, bG, 0.30);\nvec3 cF = terrMixD(uTF, tUvA, bF, 0.42);\nvec3 cD = terrMixD(uTD, tUvA, bD, 0.40);\nvec3 cS = terrMixD(uTS, tUvA, bS, 0.30);\nfloat tSideW = (1.0 - smoothstep(0.60, 0.88, abs(normalize(vNormO).y))) * step(0.001, vW1.w);\nvec2 tUvSide = (abs(vNormO.z) >= abs(vNormO.x) ? vWPos.xy : vWPos.zy) * 0.142857;\nvec3 rockTop = texture2D(uTR, tUvA).rgb;\nvec3 rockSide = texture2D(uTR, tUvSide).rgb;\nvec3 cR = mix(mix(rockTop, texture2D(uTR, bR).rgb, 0.38), rockSide, tSideW * 0.85);\nfloat tMicro = 0.94 + 0.12 * (0.6 * terrNoise(vWPos.xz * 0.59) + 0.4 * terrNoise(vWPos.xz * 1.7));\nvec3 tAlb = (cG * vW1.x + cF * vW1.y + cD * vW1.z + cR * vW1.w + cS * vSand) / tSum * tMicro;\ndiffuseColor.rgb = tAlb;')
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = clamp(0.93 * vW1.x + 0.97 * vW1.y + 0.88 * vW1.z + 0.96 * vW1.w + 0.85 * vSand, 0.8, 1.0);')
-      .replace('#include <normal_fragment_maps>', 'vec3 nG = terrNrm(uTGn, tUvA, bG, 0.906, 0.423, 0.30, 0.55);\nvec3 nF = terrNrm(uTFn, tUvA, bF, 0.799, 0.602, 0.42, 0.70);\nvec3 nD = terrNrm(uTDn, tUvA, bD, 0.326, 0.946, 0.40, 0.60);\nvec3 nR = terrNrm(uTRn, tUvA, bR, 0.966, 0.259, 0.38, 0.95);\nnR.xy *= 1.0 - tSideW * 0.75;\nvec3 nS = texture2D(uTSn, tUvA).rgb * 2.0 - 1.0; nS.xy *= 0.35;\nvec3 tN = nG * vW1.x + nF * vW1.y + nD * vW1.z + nR * vW1.w + nS * vSand;\ntN = normalize(tN / tSum + vec3(0.0, 0.0, 0.02));\ntN.xy *= mix(0.22, 1.0, exp(-length(vViewPosition) / 130.0));\nnormal = terrPerturb(-vViewPosition, normal, tN, tUvA);');
+      .replace('#include <normal_fragment_maps>', 'vec3 nG = terrNrm(uTGn, tUvA, bG, 0.906, 0.423, 0.30, 0.55);\nvec3 nF = terrNrm(uTFn, tUvA, bF, 0.799, 0.602, 0.42, 0.70);\nvec3 nD = terrNrm(uTDn, tUvA, bD, 0.326, 0.946, 0.40, 0.60);\nvec3 nR = terrNrm(uTRn, tUvA, bR, 0.966, 0.259, 0.38, 0.95);\nvec3 nSd = texture2D(uTRn, tUvSide).rgb * 2.0 - 1.0;\nvec3 nRs = (abs(vNormO.z) >= abs(vNormO.x)) ? vec3(nSd.x, nSd.z * sign(vNormO.z), nSd.y) : vec3(nSd.z * sign(vNormO.x), nSd.x, nSd.y);\nnRs.xy *= 0.95;\nnR = mix(nR, nRs, tSideW);\nvec3 nS = terrNrm(uTSn, tUvA, bS, 0.602, 0.799, 0.30, 0.35);\nvec3 tN = nG * vW1.x + nF * vW1.y + nD * vW1.z + nR * vW1.w + nS * vSand;\ntN = normalize(tN / tSum + vec3(0.0, 0.0, 0.02));\ntN.xy *= mix(0.22, 1.0, exp(-length(vViewPosition) / 130.0));\nnormal = terrPerturb(-vViewPosition, normal, tN, tUvA);');
   };
-  mat.customProgramCacheKey = () => 'terrain-pass-4';
+  mat.customProgramCacheKey = () => 'terrain-pass-5';
   return mat;
 }
 let TERR_INDEX_FLAT = null;
 function buildTerrainChunk(cx, cz) {
   const key = cx + ',' + cz;
   if (TERRAIN_CHUNKS.has(key)) return TERRAIN_CHUNKS.get(key);
-  // chunks whose whole rect sits inside the guaranteed-flat plateau
-  // (|x| <= 126, |z| <= 98 is exactly h=0 by the terrain mask) build
-  // at 2 segments instead of 22: every rect sample is provably 0 and
-  // normals are forced up — which is exactly what the neighbour
-  // chunks compute for the shared edge too (their edge samples sit
-  // at |x| <= 112.5 / |z| <= 57.5, also inside the flat zone), so
-  // borders stay seamless while ~4k waste vertices disappear.
-  const flat = Math.max(Math.abs(cx * TCHUNK), Math.abs((cx + 1) * TCHUNK)) <= 124
-    && Math.max(Math.abs(cz * TCHUNK), Math.abs((cz + 1) * TCHUNK)) <= 96;
-  const seg = flat ? 2 : TSEG;
-  const step = TCHUNK / seg, N = seg + 1, H = seg + 3;
-  const gx = cx * TCHUNK, gz = cz * TCHUNK;
-  // halo grid: one ring beyond the chunk on every side, so border
-  // normals use the same central differences as the neighbour chunk.
-  const hs = new Float32Array(H * H);
-  for (let j = 0; j < H; j++) for (let i = 0; i < H; i++) {
-    hs[j * H + i] = groundH(gx + (i - 1) * step, gz + (j - 1) * step);
-  }
-  const nv = N * N;
-  const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), col = new Float32Array(nv * 3);
-  const w1 = new Float32Array(nv * 4), wS = new Float32Array(nv), uv = new Float32Array(nv * 2);
-  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
-    const vi = j * N + i, hi = (j + 1) * H + (i + 1);
-    const x = gx + i * step, z = gz + j * step, h = hs[hi];
-    const dhx = (hs[hi + 1] - hs[hi - 1]) / (2 * step), dhz = (hs[hi + H] - hs[hi - H]) / (2 * step);
-    let nx = -dhx, nz = -dhz; const il = 1 / Math.hypot(nx, 1, nz);
-    nx *= il; nz *= il; let ny = il;
-    if (flat) { nx = 0; nz = 0; ny = 1; }
-    pos[vi * 3] = x; pos[vi * 3 + 1] = h; pos[vi * 3 + 2] = z;
-    nor[vi * 3] = nx; nor[vi * 3 + 1] = ny; nor[vi * 3 + 2] = nz;
-    const w = terrainWeights(x, z, ny, h);
-    w1[vi * 4] = w[0]; w1[vi * 4 + 1] = w[1]; w1[vi * 4 + 2] = w[2]; w1[vi * 4 + 3] = w[3]; wS[vi] = w[4];
-    const moist = fbm2(x * 0.013 + 77.3, z * 0.013, 2) * 0.5 + 0.5;
-    const patch = 0.92 + 0.16 * (fbm2(x * 0.008 + 3.3, z * 0.008 + 8.8, 2) * 0.5 + 0.5);
-    const tint = (0.95 + 0.08 * moist) * (h < 1 ? 0.985 : 1) * patch;
-    const gw = w[0];
-    col[vi * 3] = tint * (1 - gw + gw * 0.80);
-    col[vi * 3 + 1] = tint * (1 - gw + gw * 1.07);
-    col[vi * 3 + 2] = tint * (1 - gw + gw * 0.68);
-    uv[vi * 2] = x / 7; uv[vi * 2 + 1] = z / 7;
-  }
-  let index = flat ? TERR_INDEX_FLAT : TERR_INDEX;
+  // grid generation lives in math3d.js (terrainChunkGrid) so the
+  // Node test suite exercises the exact code the browser renders.
+  const gr = terrainChunkGrid(cx, cz);
+  let index = gr.flat ? TERR_INDEX_FLAT : TERR_INDEX;
   if (!index) {
-    const idx = new Uint32Array(seg * seg * 6);
-    let k = 0;
-    for (let j = 0; j < seg; j++) for (let i = 0; i < seg; i++) {
-      const a = j * N + i, b = a + 1, c = a + N, d = c + 1;
-      idx[k++] = a; idx[k++] = c; idx[k++] = b; idx[k++] = b; idx[k++] = c; idx[k++] = d;
-    }
-    if (flat) TERR_INDEX_FLAT = idx; else TERR_INDEX = idx;
-    index = idx;
+    index = terrainChunkIndex(gr.seg);
+    if (gr.flat) TERR_INDEX_FLAT = index; else TERR_INDEX = index;
   }
   const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
-  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  g.setAttribute('aW1', new THREE.BufferAttribute(w1, 4));
-  g.setAttribute('aSand', new THREE.BufferAttribute(wS, 1));
-  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  g.setAttribute('position', new THREE.BufferAttribute(gr.pos, 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(gr.nor, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(gr.col, 3));
+  g.setAttribute('aW1', new THREE.BufferAttribute(gr.w1, 4));
+  g.setAttribute('aSand', new THREE.BufferAttribute(gr.wS, 1));
+  g.setAttribute('uv', new THREE.BufferAttribute(gr.uv, 2));
   g.setIndex(new THREE.BufferAttribute(index, 1));
   g.computeBoundingSphere();
   TERRAIN_CHUNKS.set(key, g);
