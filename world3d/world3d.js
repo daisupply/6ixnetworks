@@ -143,9 +143,25 @@ function createWorld3D(ctx) {
   // into the recipient's next ping), scoped to 3d presence.
   const SIG3 = new Map();
   const SIG_WIN3 = new Map();
+  // voice eligibility is decided HERE, from server presence only —
+  // never from anything the client claims. both players must be
+  // present, voice-enabled, in the same zone (apartments are solo
+  // instances and never eligible), and within the voice radius of
+  // each other. checked when a signal is queued AND again when it
+  // is delivered, so a queued message can never outlive the
+  // eligibility it was queued under.
+  const VOICE_R3 = 36;
+  const SIG_TTL_MS = 20000;
+  function vcEligible3(a, b) {
+    const pa = P.get(a), pb = P.get(b);
+    if (!pa || !pb || !pa.vc || !pb.vc) return false;
+    const za = zoneOf(pa.x, pa.z) || 'town', zb = zoneOf(pb.x, pb.z) || 'town';
+    if (za !== zb || za === 'apt') return false;
+    return Math.hypot(pa.x - pb.x, pa.z - pb.z) <= VOICE_R3;
+  }
 
   function prune(now) {
-    for (const [u, p] of P) if (now - p.at > STALE_MS) P.delete(u);
+    for (const [u, p] of P) if (now - p.at > STALE_MS) { P.delete(u); SIG3.delete(u); SIG_WIN3.delete(u); }
   }
 
   function roster(me) {
@@ -193,7 +209,7 @@ function createWorld3D(ctx) {
         if (sid !== p.sid) p.sid = sid; // takeover only when not moving
       }
       if (b.sit != null) p.sit = b.sit ? 1 : 0;
-      if (b.vc != null) p.vc = b.vc ? 1 : 0;
+      if (b.vc != null) { const wasVc = p.vc; p.vc = b.vc ? 1 : 0; if (wasVc && !p.vc) SIG3.delete(me); }
       if (b.emote != null) { if (b.emote === 'wave' || b.emote === 'celebrate') { p.emote = b.emote; p.emoteAt = now; } else p.emote = null; }
       const prevAt = p.at;
       if (b.x != null || b.z != null) {
@@ -236,8 +252,9 @@ function createWorld3D(ctx) {
       p.wear = cosOf(ctx, me).wear;
       let bal = null;
       try { bal = ctx.getCents(me); } catch (e) { }
-      const sig3 = SIG3.get(me) || [];
-      if (sig3.length) SIG3.delete(me);
+      const sigRaw = SIG3.get(me) || [];
+      if (sigRaw.length) SIG3.delete(me);
+      const sig3 = p.vc ? sigRaw.filter((m) => (now - m.at) <= SIG_TTL_MS && vcEligible3(m.from, me)) : [];
       J({ ok: true, me, bal, x: p.x, z: p.z, zone: zoneOf(p.x, p.z), portal: PORTAL_POS, roster: roster(me), cos: cosOf(ctx, me), sig: sig3 });
       return true;
     }
@@ -354,20 +371,41 @@ function createWorld3D(ctx) {
       let b = {};
       try { b = await ctx.readJsonBody(req) || {}; } catch (e) { b = {}; }
       const to = String(b.to || '').toLowerCase();
-      if (!to || to === me || !P.has(to) || b.data == null) { J({ ok: false }); return true; }
-      // WebRTC payloads only: a plain object with a known type, small
-      // enough to ride a ping payload (same rules as the 2d world).
+      if (!to || to === me || b.data == null) { J({ ok: false }); return true; }
+      // the sender must hold a live 3d presence entry (a user who
+      // left, expired, or never entered cannot signal at all), and
+      // the pair must be voice-eligible RIGHT NOW: both voice-on,
+      // same zone, within the voice radius — all from server state.
+      // the sender identity is the authenticated session (me); any
+      // 'from' in the body is ignored, so spoofing is impossible.
+      if (!P.has(me) || !vcEligible3(me, to)) { J({ ok: false }); return true; }
+      // WebRTC payloads only, strictly shaped: an offer/answer must
+      // carry a matching SDP object with a bounded string body; an
+      // ICE message must carry a real candidate object with a
+      // bounded candidate string. anything else is malformed.
       const sdata = b.data;
       if (!sdata || typeof sdata !== 'object' || Array.isArray(sdata) || (sdata.t !== 'offer' && sdata.t !== 'answer' && sdata.t !== 'ice')) { J({ ok: false }); return true; }
+      if (sdata.t === 'ice') {
+        const c = sdata.c;
+        if (!c || typeof c !== 'object' || typeof c.candidate !== 'string' || !c.candidate || c.candidate.length > 512) { J({ ok: false }); return true; }
+      } else {
+        const s = sdata.sdp;
+        if (!s || typeof s !== 'object' || s.type !== sdata.t || typeof s.sdp !== 'string' || !s.sdp || s.sdp.length > 12288) { J({ ok: false }); return true; }
+      }
       let sdLen = 0;
       try { sdLen = JSON.stringify(sdata).length; } catch { J({ ok: false }); return true; }
       if (sdLen > 16384) { J({ ok: false }); return true; }
       const sigWin = (SIG_WIN3.get(me) || []).filter((t) => now - t < 2000);
-      if (sigWin.length >= 40) { J({ ok: true }); return true; }
+      if (sigWin.length >= 40) { J({ ok: false, err: 'rate' }); return true; }
       sigWin.push(now); SIG_WIN3.set(me, sigWin);
       let arr = SIG3.get(to);
       if (!arr) { arr = []; SIG3.set(to, arr); }
-      arr.push({ from: me, data: b.data, at: now });
+      // per-sender sub-cap: one sender cannot churn another user's
+      // mailbox and evict legitimate signaling from everyone else.
+      let mine = 0;
+      for (const m of arr) if (m.from === me) mine++;
+      if (mine >= 24) { J({ ok: false, err: 'mailbox full' }); return true; }
+      arr.push({ from: me, data: sdata, at: now });
       if (arr.length > 60) arr.splice(0, arr.length - 60);
       J({ ok: true });
       return true;
@@ -376,6 +414,7 @@ function createWorld3D(ctx) {
     if (u.pathname === '/api/world3d/leave' && req.method === 'POST') {
       P.delete(me);
       SIG3.delete(me);
+      SIG_WIN3.delete(me);
       J({ ok: true });
       return true;
     }

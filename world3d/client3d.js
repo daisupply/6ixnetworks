@@ -3432,6 +3432,11 @@ const VOICE_R = 36;
 let vcOn3 = false, vcMuted = false, vcStream = null, vcCtx3 = null, vcAn3 = null, vcTalk3 = false;
 const vcPeers = {};
 const vcRetry3 = {};
+const vcFails3 = {};
+function vcNoteFail3(u) {
+  vcFails3[u] = (vcFails3[u] || 0) + 1;
+  vcRetry3[u] = Date.now() + Math.min(30000, 5000 * vcFails3[u]);
+}
 const RTC_CFG3 = {
   iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
@@ -3444,7 +3449,10 @@ function vcSend3(to, data) {
 function vcClosePeer(u) {
   const p = vcPeers[u];
   if (!p) return;
+  if (p.discT) { clearTimeout(p.discT); p.discT = 0; }
   try { p.pc.close(); } catch (e) { }
+  try { if (p.src) p.src.disconnect(); } catch (e) { }
+  try { if (p.an) p.an.disconnect(); } catch (e) { }
   try { if (p.gain) p.gain.disconnect(); } catch (e) { }
   delete vcPeers[u];
   const rm = remotes.get(u);
@@ -3459,7 +3467,7 @@ function vcEnsurePeer(u, initiator) {
   try { pc = new RTCPeerConnection(RTC_CFG3); } catch (e) { return; }
   let gain = null;
   if (vcCtx3) { gain = vcCtx3.createGain(); gain.gain.value = 0; gain.connect(vcCtx3.destination); }
-  const p = { pc, gain, iceQ: [], remoteSet: false, an: null, speaking: false };
+  const p = { pc, gain, iceQ: [], remoteSet: false, an: null, speaking: false, src: null, discT: 0 };
   vcPeers[u] = p;
   if (vcStream) vcStream.getTracks().forEach((t) => { try { pc.addTrack(t, vcStream); } catch (e) { } });
   else { try { pc.addTransceiver('audio', { direction: 'recvonly' }); } catch (e) { } }
@@ -3467,16 +3475,27 @@ function vcEnsurePeer(u, initiator) {
   pc.ontrack = (e) => {
     if (!vcCtx3 || !vcPeers[u]) return;
     try {
+      if (p.src) { try { p.src.disconnect(); } catch (err) { } }
+      if (p.an) { try { p.an.disconnect(); } catch (err) { } p.an = null; }
       const ms = (e.streams && e.streams[0]) || new MediaStream([e.track]);
       const src = vcCtx3.createMediaStreamSource(ms);
+      p.src = src;
       src.connect(p.gain);
       p.an = vcCtx3.createAnalyser(); p.an.fftSize = 512; src.connect(p.an);
     } catch (err) { }
   };
   pc.onconnectionstatechange = () => {
-    if (pc.connectionState === 'failed') { vcRetry3[u] = Date.now() + 6000; vcClosePeer(u); }
+    if (pc.connectionState === 'failed') { vcNoteFail3(u); vcClosePeer(u); }
     else if (pc.connectionState === 'closed') vcClosePeer(u);
-    else if (pc.connectionState === 'connected') delete vcRetry3[u];
+    else if (pc.connectionState === 'connected') {
+      delete vcRetry3[u]; vcFails3[u] = 0;
+      if (p.discT) { clearTimeout(p.discT); p.discT = 0; }
+    } else if (pc.connectionState === 'disconnected') {
+      if (p.discT) clearTimeout(p.discT);
+      p.discT = setTimeout(() => {
+        if (vcPeers[u] === p && pc.connectionState !== 'connected' && pc.connectionState !== 'closed') { vcNoteFail3(u); vcClosePeer(u); }
+      }, 2600);
+    }
   };
   if (initiator) {
     pc.onnegotiationneeded = () => {
@@ -3548,13 +3567,15 @@ function vcSetBtn3() {
   const b = document.getElementById('w3micbtn');
   const mb = document.getElementById('w3mutebtn');
   if (b) {
-    b.innerHTML = icon((vcOn3 && !vcMuted) ? 'mic' : 'micoff', 20);
+    const listenOnly = vcOn3 && !vcStream;
+    b.innerHTML = icon((vcOn3 && !vcMuted && !listenOnly) ? 'mic' : 'micoff', 20);
     b.classList.toggle('on', vcOn3);
-    b.title = !vcOn3 ? 'voice chat' : (vcMuted ? 'voice on — mic muted' : 'voice on — tap to turn off');
+    b.title = !vcOn3 ? 'voice chat' : listenOnly ? 'voice on — listen only (no mic)' : (vcMuted ? 'voice on — mic muted' : 'voice on — tap to turn off');
   }
   if (mb) { mb.hidden = !vcOn3; mb.classList.toggle('on', vcMuted); mb.innerHTML = icon(vcMuted ? 'micoff' : 'mic', 18); }
 }
 function vcStopAll3() {
+  vcGen3++;
   vcOn3 = false; vcTalk3 = false;
   if (vcStream) { vcStream.getTracks().forEach((t) => { try { t.stop(); } catch (e) { } }); vcStream = null; }
   vcAn3 = null;
@@ -3565,11 +3586,20 @@ function vcApplyMute() {
   if (vcStream) vcStream.getAudioTracks().forEach((t) => { t.enabled = !vcMuted; });
   vcSetBtn3();
 }
+let vcPending3 = false, vcGen3 = 0;
 async function vcToggle3() {
   if (vcOn3) { vcStopAll3(); toast('voice off'); return; }
+  if (vcPending3) return;
+  vcPending3 = true;
+  const gen = vcGen3;
   let stream = null;
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
     try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { stream = null; }
+  }
+  vcPending3 = false;
+  if (gen !== vcGen3) {
+    if (stream) stream.getTracks().forEach((t) => { try { t.stop(); } catch (e) { } });
+    return;
   }
   vcStream = stream;
   if (!vcCtx3) { try { vcCtx3 = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { } }
@@ -3585,9 +3615,9 @@ async function vcToggle3() {
 }
 setInterval(() => {
   if (!vcOn3 || !vcAn3) { if (vcTalk3) { vcTalk3 = false; const b = document.getElementById('w3micbtn'); if (b) b.classList.remove('live'); } return; }
-  vcTalk3 = vcRms(vcAn3) > 0.045;
+  vcTalk3 = !vcMuted && vcRms(vcAn3) > 0.045;
   const b = document.getElementById('w3micbtn');
-  if (b) b.classList.toggle('live', vcTalk3 && !vcMuted);
+  if (b) b.classList.toggle('live', vcTalk3);
 }, 180);
 document.addEventListener('visibilitychange', () => { if (!document.hidden && vcCtx3 && vcCtx3.state === 'suspended') vcCtx3.resume(); });
 if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
