@@ -621,7 +621,11 @@ function buildWorld() {
     addCollider(fx, fz, 1.25);
   }
 
-  // trees: path rows + designed groves (instanced, two-tier pines)
+  // trees: path rows + designed groves. ECO (ecosystem phase):
+  // the instanced two-tier cone pines are GONE — these designed
+  // spots now grow approved library trees through natPlace with
+  // real LODs. A failed load omits the tree; nothing primitive
+  // ever stands here.
   const treeSpots = [];
   for (let d = 20; d <= 62; d += 13) { treeSpots.push([-d, -8.5], [-d, 8.5], [d + 6, -8.5], [d + 6, 8.5]); }
   for (let d = 26; d <= 66; d += 13) { treeSpots.push([-8.5, -d], [8.5, -d], [-8.5, d], [8.5, d]); }
@@ -629,19 +633,12 @@ function buildWorld() {
     const n = 5 + (rnd() * 3 | 0);
     for (let i = 0; i < n; i++) treeSpots.push([c[0] + (rnd() - 0.5) * 22, c[1] + (rnd() - 0.5) * 18]);
   });
-  const trunkIM = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.22, 0.32, 1.7, 8), new THREE.MeshStandardMaterial({ color: 0x5f4630, roughness: 1 }), treeSpots.length);
-  const coneIM1 = new THREE.InstancedMesh(new THREE.ConeGeometry(1.85, 3.6, 8), new THREE.MeshStandardMaterial({ color: 0x476b38, roughness: 1 }), treeSpots.length);
-  const coneIM2 = new THREE.InstancedMesh(new THREE.ConeGeometry(1.3, 2.8, 8), new THREE.MeshStandardMaterial({ color: 0x5d8148, roughness: 1 }), treeSpots.length);
-  treeSpots.forEach((s2, i) => {
-    const sc = 0.85 + rnd() * 0.5;
-    dummy.rotation.set(0, rnd() * TAU, 0); dummy.scale.setScalar(sc);
-    dummy.position.set(s2[0], 0.85 * sc, s2[1]); dummy.updateMatrix(); trunkIM.setMatrixAt(i, dummy.matrix);
-    dummy.position.y = 3.3 * sc; dummy.updateMatrix(); coneIM1.setMatrixAt(i, dummy.matrix);
-    dummy.position.y = 5.3 * sc; dummy.updateMatrix(); coneIM2.setMatrixAt(i, dummy.matrix);
+  const AVE_TREES = ['CommonTree_2', 'CommonTree_4', 'Pine_2', 'Pine_4', 'CommonTree_1', 'Pine_1', 'CommonTree_3', 'Pine_3'];
+  treeSpots.forEach((s2) => {
+    const sc = 0.8 + rnd() * 0.45;
+    natPlace(AVE_TREES[(rnd() * AVE_TREES.length) | 0], s2[0], s2[1], sc, rnd() * TAU, 0);
     addCollider(s2[0], s2[1], 0.85); camSpheres.push({ x: s2[0], y: 3.4, z: s2[1], r: 2.1 });
   });
-  trunkIM.castShadow = coneIM1.castShadow = coneIM2.castShadow = true;
-  scene.add(trunkIM); scene.add(coneIM1); scene.add(coneIM2);
 
   // rocks near the groves (instanced)
   const rockIM = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(0.8, 0), new THREE.MeshStandardMaterial({ color: 0x8d8272, roughness: 0.95 }), 16);
@@ -742,28 +739,13 @@ function buildTown() {
     for (let i = 0; i < 110; i++) { const a = rnd() * TAU, r = 10.7 + rnd() * 1.3; flowerSpots.push([Math.cos(a) * r, Math.sin(a) * r]); }
   }
 
-  /* ----- sakura: heroes sway, grove trees are instanced ----- */
-  const petalMats = [M(0xf9a8d4, { flatShading: true, roughness: 0.9 }), M(0xf472b6, { flatShading: true, roughness: 0.9 }), M(0xfbcfe8, { flatShading: true, roughness: 0.9 })];
+  /* ----- sakura: ECO — the procedural blob sakuras are removed.
+   * Every sakura is the textured SakuraTree model (derived from
+   * the approved CC0 CommonTree_2 with a blossom-pink leaf atlas)
+   * planted via natPlace; a failed load leaves the spot empty. */
   function sakura(x, z, s, hero) {
-    const g = new THREE.Group(); g.position.set(x, 0, z);
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16 * s, 0.3 * s, 2.6 * s, 7), M(0x4a2f28, { roughness: 1 }));
-    trunk.position.y = 1.3 * s; trunk.rotation.z = 0.09; trunk.castShadow = true; g.add(trunk);
-    const fol = new THREE.Group(); fol.position.y = 3.1 * s;
-    const blobs = [[0, 0.5, 0, 1.7], [1.1, 0.1, 0.4, 1.25], [-1.05, 0.15, -0.35, 1.2], [0.2, 0.2, -1.0, 1.1]];
-    blobs.forEach((b, i) => {
-      const m = new THREE.Mesh(new THREE.IcosahedronGeometry(b[3] * s, 1), petalMats[i % 3]);
-      m.position.set(b[0] * s, b[1] * s, b[2] * s); m.castShadow = true; fol.add(m);
-    });
-    g.add(fol); scene.add(g);
-    if (hero) {
-      swayers.push({ g: fol, ph: rnd() * 6 });
-      const holder = new THREE.Group(); g.add(holder);
-      const fb2 = new THREE.Group(); fb2.add(trunk); fb2.add(fol); g.add(fb2);
-      holder.userData.onSwap = () => { swayers.push({ g: holder, ph: rnd() * 6 }); };
-      swapModel('/world3d/assets/environment/tree_sakura.glb', holder, fb2, s * 1.3);
-    }
-    addCollider(x, z, 0.55); camSpheres.push({ x, y: 3.2 * s, z, r: 2.3 * s });
-    return g;
+    natPlace('SakuraTree', x, z, s * 0.78, (x * 1.7 + z) % TAU, 0.55);
+    camSpheres.push({ x, y: 3.2 * s, z, r: 2.3 * s });
   }
   [[26, 40], [27, 100], [26, 160], [27, 205], [26, 262], [27, 322]].forEach(([r, deg]) => {
     const a = deg * Math.PI / 180; sakura(Math.cos(a) * r, Math.sin(a) * r, 0.95 + rnd() * 0.25, true);
@@ -1064,7 +1046,7 @@ function buildTown() {
   buildTownDoors545();
   buildShards();
   buildStrollers();
-  buildDressing(); buildForest(); buildWildlife(); buildEntrances(); buildTestGrove(); buildNature(); buildGroundCover(); buildSpawnGarden();
+  buildDressing(); buildForest(); buildWildlife(); buildEntrances(); buildTestGrove(); buildNature(); buildEcoZones(); buildGroundCover(); buildSpawnGarden();
   cozyInteriors();
 }
 
@@ -2094,14 +2076,14 @@ const NAT = '/world3d/assets/nature/';
 function natPlace(name, x, z, s, ry, colliderR) {
   const lod = registerLOD(name, x, z, s, ry);
   loadAsset(NAT + name + '.glb', prioOf(x, z)).then((proto) => {
-    if (!proto) return; // impostor (if any) stays as the permanent fallback
+    if (!proto) return; // ECO: the real-model LOD (if any) stays visible; never a primitive
     const m = proto.clone(true);
     m.position.set(x, groundH(x, z) - 0.05, z);
     m.rotation.y = ry || 0;
     m.scale.setScalar(s);
     m.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     scene.add(m);
-    if (lod) { lod.model = m; m.visible = lod.near; }
+    if (lod) { lod.model = m; m.visible = lod.near; setImpMatrix(lod); }
   });
   if (colliderR) addCollider(x, z, colliderR);
 }
@@ -2272,58 +2254,77 @@ function buildNature() {
  * a gentle emissive lift, terrain via groundH, golden-hour lighting.
  * This stage extends those exact systems world-wide and adds the
  * streaming layer: chunked lawn grass with distance visibility, tree
- * LOD (full model near / instanced impostor far, hysteresis both ways,
- * impostor is also the loading + failure fallback), and a horizon ring
+ * LOD (full model near / instanced decimated real model far,
+ * hysteresis both ways; the LOD is also the loading + failure
+ * fallback — ECO replaced the old cone/icosahedron impostors), and a horizon ring
  * so the world never ends at a hard edge. Buildings and terrain are
  * single persistent systems — they never unload, so there are no holes.
  * ================================================================== */
 const LODREG = [];
-let lodImp = null;
 let COVER = { lawn: 0, chunks: 0, chunksOn: 0, lodNear: 0, lodFar: 0 };
 const GRASS_CHUNKS = [];
 function registerLOD(name, x, z, s, ry) {
-  if (!/^(CommonTree_|Pine_|TwistedTree_|DeadTree_)/.test(name)) return null;
-  const e = { x, z, s, ry: ry || 0, pine: name.indexOf('Pine_') === 0, model: null, slot: -1, near: Math.hypot(x, z - 18) < 95 };
+  if (!/^(CommonTree_|Pine_|TwistedTree_|DeadTree_|SakuraTree)/.test(name)) return null;
+  const e = { name, x, z, s, ry: ry || 0, model: null, slot: -1, near: Math.hypot(x, z - 18) < 95 };
   LODREG.push(e);
   return e;
 }
-function impostorGeo(pine) {
+/* ECO: the old cone/icosahedron impostors are deleted. Distance
+ * LOD is now the APPROVED MODEL ITSELF, decimated in Blender to
+ * ~20% tris with its real textures (assets/nature/<name>_LOD.glb),
+ * instanced per type. If the full model fails to load, the LOD
+ * stays visible at every distance; if the LOD also fails, the
+ * tree is simply absent. Nothing primitive ever renders. */
+const LODTYPES = new Map();
+function lodParts(proto) {
   const parts = [];
-  const paint = (g, hex) => {
-    const c = new THREE.Color(hex), n = g.attributes.position.count, arr = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) { arr[i * 3] = c.r; arr[i * 3 + 1] = c.g; arr[i * 3 + 2] = c.b; }
-    g.setAttribute('color', new THREE.BufferAttribute(arr, 3));
-    return g.index ? g.toNonIndexed() : g;
-  };
-  if (pine) {
-    parts.push(paint(new THREE.CylinderGeometry(0.16, 0.24, 2.8, 6).translate(0, 1.4, 0), 0x5f4630));
-    parts.push(paint(new THREE.ConeGeometry(1.9, 3.6, 8).translate(0, 4.6, 0), 0x3d6030));
-    parts.push(paint(new THREE.ConeGeometry(1.3, 2.8, 8).translate(0, 7.0, 0), 0x476b38));
-  } else {
-    parts.push(paint(new THREE.CylinderGeometry(0.2, 0.3, 2.4, 6).translate(0, 1.2, 0), 0x6b4a2e));
-    parts.push(paint(new THREE.IcosahedronGeometry(2.7, 0).scale(1, 0.82, 1).translate(0, 5.6, 0), 0x5d8148));
-    parts.push(paint(new THREE.IcosahedronGeometry(1.8, 0).translate(0.9, 7.0, 0.3), 0x6f9a52));
-  }
-  return mergeGeometries(parts, false);
+  proto.traverse((o) => {
+    if (!o.isMesh) return;
+    const mats = Array.isArray(o.material) ? o.material : null;
+    if (mats && o.geometry.groups && o.geometry.groups.length) {
+      for (const g of o.geometry.groups) {
+        const geo = new THREE.BufferGeometry();
+        for (const k in o.geometry.attributes) geo.setAttribute(k, o.geometry.attributes[k]);
+        const idx = o.geometry.index;
+        if (idx) {
+          const sub = idx.array.subarray(g.start, g.start + g.count);
+          geo.setIndex(new THREE.BufferAttribute(sub.slice(), 1));
+        }
+        parts.push({ geometry: geo, material: mats[g.materialIndex || 0] });
+      }
+    } else {
+      parts.push({ geometry: o.geometry, material: o.material });
+    }
+  });
+  return parts;
 }
 function setImpMatrix(e) {
-  if (!lodImp || e.slot < 0) return;
-  const inst = e.pine ? lodImp.pine : lodImp.leaf;
+  const rec = LODTYPES.get(e.name);
+  if (!rec || e.slot < 0) return;
   const d = new THREE.Object3D();
   d.position.set(e.x, groundH(e.x, e.z) - 0.05, e.z);
   d.rotation.y = e.ry;
-  d.scale.setScalar(e.near ? 0.0001 : e.s);
+  d.scale.setScalar(e.near && e.model ? 0.0001 : e.s);
   d.updateMatrix();
-  inst.setMatrixAt(e.slot, d.matrix);
-  inst.instanceMatrix.needsUpdate = true;
+  for (const im of rec.ims) { im.setMatrixAt(e.slot, d.matrix); im.instanceMatrix.needsUpdate = true; }
 }
-function buildImpostors() {
-  const leafN = LODREG.filter((e) => !e.pine).length, pineN = LODREG.length - leafN;
-  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, flatShading: true });
-  const mk = (geo, n) => { const im = new THREE.InstancedMesh(geo, mat, Math.max(1, n)); im.frustumCulled = false; scene.add(im); return im; };
-  lodImp = { leaf: mk(impostorGeo(false), leafN), pine: mk(impostorGeo(true), pineN) };
-  let li = 0, pi = 0;
-  for (const e of LODREG) { e.slot = e.pine ? pi++ : li++; setImpMatrix(e); if (e.model) e.model.visible = e.near; }
+function buildLodMeshes() {
+  const byType = new Map();
+  for (const e of LODREG) { if (!byType.has(e.name)) byType.set(e.name, []); byType.get(e.name).push(e); }
+  for (const [name, entries] of byType) {
+    entries.forEach((e, i) => { e.slot = i; });
+    loadAsset(NAT + name + '_LOD.glb', 40).then((proto) => {
+      if (!proto) return;
+      const ims = lodParts(proto).map((p) => {
+        const im = new THREE.InstancedMesh(p.geometry, p.material, entries.length);
+        im.frustumCulled = false; im.receiveShadow = true;
+        scene.add(im); return im;
+      });
+      LODTYPES.set(name, { ims, entries });
+      for (const e of entries) setImpMatrix(e);
+      COVER.lodFar = LODREG.length;
+    });
+  }
   COVER.lodFar = LODREG.length;
 }
 let lodTickN = 0;
@@ -2399,25 +2400,30 @@ function buildHorizon() {
   // artificial shape in the landscape. the terrain rim + rings now
   // carry the horizon on their own; the silhouette tree band below
   // stays (it sits on the rim apron and reads as distant forest).
-  const band = (geo, mat, n, fn) => {
-    const im = new THREE.InstancedMesh(geo, mat, n);
-    const d = new THREE.Object3D();
-    for (let i = 0; i < n; i++) { fn(d, i); d.updateMatrix(); im.setMatrixAt(i, d.matrix); }
-    im.frustumCulled = false;
-    scene.add(im);
-  };
-  band(new THREE.ConeGeometry(1.7, 6.5, 6), new THREE.MeshStandardMaterial({ color: 0x33502f, roughness: 1, flatShading: true }), 90, (d, i) => {
-    const a = (i / 90) * TAU + rnd() * 0.05;
-    d.position.set(Math.cos(a) * 234, 1.6, Math.sin(a) * 174);
-    d.rotation.set(0, rnd() * TAU, 0);
-    d.scale.setScalar(0.9 + rnd() * 0.9);
-  });
-  band(new THREE.IcosahedronGeometry(3.1, 0), new THREE.MeshStandardMaterial({ color: 0x3f6038, roughness: 1, flatShading: true }), 26, (d, i) => {
-    const a = (i / 26) * TAU + 0.12 + rnd() * 0.06;
-    d.position.set(Math.cos(a) * 228, 3.4, Math.sin(a) * 170);
-    d.rotation.set(0, rnd() * TAU, 0);
-    d.scale.set(1, 0.8, 1).multiplyScalar(0.9 + rnd() * 0.8);
-  });
+  // ECO: the flat cone/blob silhouette band is replaced by real
+  // (decimated, textured) library trees ringing the rim.
+  const hSpots = [];
+  for (let i = 0; i < 110; i++) {
+    const a = (i / 110) * TAU + rnd() * 0.05;
+    hSpots.push({ x: Math.cos(a) * (230 + rnd() * 16), z: Math.sin(a) * (174 + rnd() * 13), pine: rnd() < 0.45, s: 1.6 + rnd() * 1.4, ry: rnd() * TAU });
+  }
+  for (const [hName, list] of [['CommonTree_2', hSpots.filter((q) => !q.pine)], ['Pine_3', hSpots.filter((q) => q.pine)]]) {
+    if (!list.length) continue;
+    loadAsset(NAT + hName + '_LOD.glb', 90).then((proto) => {
+      if (!proto) return;
+      const d = new THREE.Object3D();
+      for (const p of lodParts(proto)) {
+        const im = new THREE.InstancedMesh(p.geometry, p.material, list.length);
+        list.forEach((q, i) => {
+          d.position.set(q.x, groundH(q.x, q.z) - 0.15, q.z);
+          d.rotation.set(0, q.ry, 0); d.scale.setScalar(q.s); d.updateMatrix();
+          im.setMatrixAt(i, d.matrix);
+        });
+        im.frustumCulled = false;
+        scene.add(im);
+      }
+    });
+  }
 }
 function buildGroundCover() {
   const rnd = mulberry32(777333);
@@ -2496,10 +2502,90 @@ function buildGroundCover() {
   const BUSHES = [[-47, -36.5], [-25, -36.5], [-14, -41], [14, -41], [25, -36.5], [47, -36.5], [-74, -43], [-50, -43], [46, -45], [70, -45], [-74, 39], [-54, 39], [52, 41], [72, 41], [-13, -72], [13, -72], [-101, -22], [-110, 12], [-98, 34]];
   for (const [x, z] of BUSHES) natPlace('Bush_Common_Flowers', x, z, 1.1 + rnd() * 0.35, rnd() * TAU, 0);
   DOORS.forEach(([dx, dz], i) => natPlace('Plant_1_Big', dx + (i % 2 ? 2.1 : -2.1), dz + 0.4, 1.0 + rnd() * 0.3, rnd() * TAU, 0));
-  buildImpostors();
+  buildLodMeshes();
   buildHorizon();
 }
 
+
+
+/* ================= ECO: zoned vegetation extension =================
+ * Deterministic (seed 112358) plantings that complete the zone
+ * system buildNature started: a forest-edge gradient, residential
+ * garden trees, meadow groves and spawn-park shrubs. Every spot
+ * passes slope + terrain-material gates and a minimum-spacing
+ * ledger; every plant is an approved library model via natPlace
+ * (omit-on-failure, real LOD). Same seed -> same world, on every
+ * client, with zero network traffic. */
+function buildEcoZones() {
+  const rnd = mulberry32(112358);
+  const placed = [[118, 12, 17]]; // pond + radius
+  const clearOf = (x, z, r) => placed.every((p) => Math.hypot(p[0] - x, p[1] - z) > r + (p[2] || 0));
+  const gate = (x, z) => {
+    if (Math.abs(x) > 193 || Math.abs(z) > 114) return false;
+    const e = 1.3, h = groundH(x, z);
+    const gx = (groundH(x + e, z) - groundH(x - e, z)) / (2 * e), gz = (groundH(x, z + e) - groundH(x, z - e)) / (2 * e);
+    if (Math.hypot(gx, gz) > 0.55) return false; // too steep
+    const ny = 1 / Math.sqrt(1 + gx * gx + gz * gz);
+    const w = terrainWeights(x, z, ny, h);
+    return w[0] + w[1] > 0.5 && w[4] < 0.2 && w[3] < 0.35; // grass/forest ground, not sand/rock
+  };
+  const plant = (name, x, z, s, r) => { natPlace(name, x, z, s, rnd() * TAU, r || 0); placed.push([x, z, 0]); NATURE.trees++; };
+  // ---- forest edge gradient: smaller trees + bushes stepping
+  // down from the west forest into the open (x -131..-114)
+  const EDGE_T = ['CommonTree_5', 'CommonTree_1', 'Pine_5', 'Pine_2'];
+  let tries = 0, plantedEdge = 0;
+  while (plantedEdge < 15 && tries++ < 90) {
+    const x = -131 + rnd() * 17, z = -104 + rnd() * 208;
+    if (!gate(x, z) || !clearOf(x, z, 4.5)) continue;
+    plant(EDGE_T[(rnd() * EDGE_T.length) | 0], x, z, 0.5 + rnd() * 0.3, 0.7);
+    plantedEdge++;
+  }
+  let bushTries = 0, bushes = 0;
+  while (bushes < 16 && bushTries++ < 80) {
+    const inForest = rnd() < 0.5;
+    const x = inForest ? -136 + rnd() * 26 : -128 + rnd() * 14, z = -104 + rnd() * 208;
+    if (!gate(x, z) || !clearOf(x, z, 2.2)) continue;
+    natPlace(rnd() < 0.5 ? 'Bush_Common' : 'Bush_Common_Flowers', x, z, 0.9 + rnd() * 0.5, rnd() * TAU, 0);
+    placed.push([x, z, 0]); bushes++;
+  }
+  // ---- residential: garden trees in the houses' side/back yards
+  // (local offsets rotated by each house's yaw; the front door
+  // side stays clear)
+  for (const [hx, hz, ry] of [[-108, -28, 0.5], [-116, 6, 0.9], [-104, 40, 0.25]]) {
+    const cs = Math.cos(ry), sn = Math.sin(ry);
+    const offs = [[8.6, -3.5], [-8.6, -4.2], [7.8, 5.8]];
+    offs.forEach(([lx, lz], i) => {
+      const x = hx + lx * cs + lz * sn, z = hz - lx * sn + lz * cs;
+      if (!gate(x, z)) return;
+      plant(['CommonTree_5', 'SakuraTree', 'CommonTree_1'][(i + (hx % 3 + 3) % 3) % 3], x, z, 0.68 + rnd() * 0.25, 0.7);
+    });
+    natPlace('Bush_Common_Flowers', hx + 6.4 * cs - 5.4 * sn, hz - 6.4 * sn - 5.4 * cs, 1.0, ry, 0);
+  }
+  // ---- east meadow groves: three small clusters + lone trees
+  const MEADOW_T = ['CommonTree_1', 'CommonTree_2', 'CommonTree_3', 'CommonTree_4', 'CommonTree_5'];
+  for (const [cx, cz] of [[150, -58], [128, 64], [176, 84]]) {
+    const n = 3 + (rnd() * 2 | 0);
+    for (let i = 0; i < n; i++) {
+      const x = cx + (rnd() - 0.5) * 13, z = cz + (rnd() - 0.5) * 13;
+      if (!gate(x, z) || !clearOf(x, z, 4)) continue;
+      plant(MEADOW_T[(rnd() * MEADOW_T.length) | 0], x, z, 0.85 + rnd() * 0.4, 0.8);
+    }
+  }
+  let lone = 0; tries = 0;
+  while (lone < 6 && tries++ < 60) {
+    const x = 130 + rnd() * 60, z = -100 + rnd() * 205;
+    if (!gate(x, z) || !clearOf(x, z, 9)) continue;
+    plant(MEADOW_T[(rnd() * MEADOW_T.length) | 0], x, z, 0.95 + rnd() * 0.35, 0.85);
+    lone++;
+  }
+  // ---- spawn park shrubs: layered planting around the plaza rim
+  for (let i = 0; i < 8; i++) {
+    const a = rnd() * TAU, r = 21 + rnd() * 9;
+    const x = Math.cos(a) * r, z = 18 + Math.sin(a) * r;
+    if (Math.abs(x) < 10.5 || Math.abs(z - 18) < 10.5) continue; // keep the avenue cross clear
+    natPlace(i % 2 ? 'Bush_Common_Flowers' : 'Fern_1', x, z, 0.95 + rnd() * 0.4, rnd() * TAU, 0);
+  }
+}
 
 /* ============ CP3 TEST GROVE (stage 02 rebuild): curated Quaternius
  * MegaKit models composed on the east meadow to lock the art direction
@@ -2590,7 +2676,7 @@ function buildEntrances() {
  * network traffic. Fleeing is a local additive offset that decays
  * back to the true path. Distance-culled past ~95 units.
  * Animal models face +X; yaw to a travel dir is atan2(-dz, dx). */
-let WILD = { bfly: [], rabbits: [], deer: [] };
+let WILD = { bfly: [], rabbits: [], deer: [], fox: [] };
 function wildWander(wps, period, t) {
   const n = wps.length;
   const ph = ((t % period) / period) * n;
@@ -2601,84 +2687,47 @@ function wildWander(wps, period, t) {
   return { x: a[0] + (b[0] - a[0]) * s, z: a[1] + (b[1] - a[1]) * s, moving: u > 0.02 && u < 0.98, dirx: b[0] - a[0], dirz: b[1] - a[1], dwell: false };
 }
 function buildWildlife() {
+  // ECO: the primitive placeholder animals (sphere rabbits, cone
+  // birds, plane butterflies, sphere-and-cylinder deer) are GONE.
+  // Wildlife is rigged, animated, license-verified product models:
+  // Quaternius Ultimate Animated Animals (CC0) deer + fox, served
+  // from assets/animals/. Behavior stays clock-deterministic —
+  // every client computes the same animal in the same place with
+  // zero network traffic; only the flee offset is local.
   const wrnd = mulberry32(90210);
-  const bcols = [0xf9a8d4, 0xc4b5fd, 0xfde68a, 0xffffff, 0x93c5fd];
-  const anchors = [[150, 20], [160, -30], [112, 30], [140, 70], [-176, -34], [146, -62], [120, -6], [168, 30], [100, 44], [-150, 20]];
-  anchors.forEach(([ax, az], i) => {
+  const mkAnimal = (kind, url, hx, hz, spread, period) => {
     const g = new THREE.Group(); scene.add(g);
-    const wm = new THREE.MeshBasicMaterial({ color: bcols[i % bcols.length], side: THREE.DoubleSide });
-    const wgeo = new THREE.PlaneGeometry(0.36, 0.26);
-    const mkWing = (sgn) => {
-      const holder = new THREE.Group();
-      const w = new THREE.Mesh(wgeo, wm);
-      w.rotation.x = -Math.PI / 2;
-      w.position.x = sgn * 0.18;
-      holder.add(w); g.add(holder);
-      return holder;
-    };
-    const hl = mkWing(-1), hr = mkWing(1);
-    const bd = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.24), new THREE.MeshBasicMaterial({ color: 0x2c2434 }));
-    g.add(bd);
-    WILD.bfly.push({ g, hl, hr, ax, az, ph: wrnd() * TAU, r: 2.5 + wrnd() * 4, sp: 0.14 + wrnd() * 0.1 });
-  });
-  const rabM = new THREE.MeshStandardMaterial({ color: 0xb8a89a, roughness: 1 });
-  const rabM2 = new THREE.MeshStandardMaterial({ color: 0x8f8074, roughness: 1 });
-  const rabHomes = [[150, -20], [160, 40], [122, 42], [145, 82], [-138, 62]];
-  rabHomes.forEach(([hx, hz], i) => {
-    const g = new THREE.Group(); scene.add(g);
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.30, 10, 8), i % 2 ? rabM2 : rabM);
-    body.scale.set(1.25, 0.95, 0.95); body.position.y = 0.34; body.castShadow = true; g.add(body);
-    const head = new THREE.Group(); head.position.set(0.34, 0.52, 0); g.add(head);
-    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.17, 9, 7), body.material); head.add(skull);
-    for (const sgn of [-1, 1]) {
-      const ear = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.30, 0.09), body.material);
-      ear.position.set(-0.03, 0.24, sgn * 0.07); ear.rotation.x = sgn * 0.15; head.add(ear);
-    }
-    const tail = new THREE.Mesh(new THREE.SphereGeometry(0.10, 7, 6), new THREE.MeshStandardMaterial({ color: 0xf5efe4, roughness: 1 }));
-    tail.position.set(-0.36, 0.4, 0); g.add(tail);
-    const wps = [];
-    for (let k = 0; k < 4; k++) wps.push([hx + (wrnd() - 0.5) * 15, hz + (wrnd() - 0.5) * 15]);
-    WILD.rabbits.push({ g, head, wps, period: 24 + wrnd() * 10, off: new THREE.Vector2(0, 0) });
-  });
-  const deerM = new THREE.MeshStandardMaterial({ color: 0xa9805c, roughness: 1 });
-  const deerM2 = new THREE.MeshStandardMaterial({ color: 0x8a6a48, roughness: 1 });
+    const entry = { g, kind, wps: [], period, off: new THREE.Vector2(0, 0), mixer: null, acts: {}, cur: '', yawOff: -Math.PI / 2 }; // Quaternius animals face -Z in model space (bind-pose eye centroid + armature -90deg X); the stage-11 yaw convention assumed +X, hence the -90deg offset
+    for (let k = 0; k < 4; k++) entry.wps.push([hx + (wrnd() - 0.5) * spread, hz + (wrnd() - 0.5) * spread]);
+    loadGltf(url, 30).then((gltf) => {
+      if (!gltf || disposed || !gltf.animations || !gltf.animations.length) return;
+      const model = skelClone(gltf.scene);
+      model.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+      g.add(model);
+      const mixer = new THREE.AnimationMixer(model);
+      const acts = {};
+      for (const clip of gltf.animations) {
+        const nm = clip.name.split('|').pop();
+        if (!acts[nm]) { const a = mixer.clipAction(clip); a.setLoop(THREE.LoopRepeat); acts[nm] = a; }
+      }
+      entry.mixer = mixer; entry.acts = acts; entry.model = model;
+      if (acts.Idle) { acts.Idle.play(); entry.cur = 'Idle'; }
+    });
+    return entry;
+  };
+  // deer herds at the three clearings / meadow homes (pairs)
   const deerHomes = [[-152, -12], [166, -32], [-160, 72]];
-  deerHomes.forEach(([hx, hz], i) => {
-    const g = new THREE.Group(); scene.add(g);
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.62, 11, 9), i % 2 ? deerM2 : deerM);
-    body.scale.set(1.45, 1.0, 0.78); body.position.y = 1.12; body.castShadow = true; g.add(body);
-    const legs = [];
-    for (const [lx, lz] of [[0.55, 0.24], [0.55, -0.24], [-0.55, 0.24], [-0.55, -0.24]]) {
-      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.045, 1.0, 6), deerM2);
-      leg.position.set(lx, 0.5, lz); g.add(leg); legs.push(leg);
-    }
-    const neck = new THREE.Group(); neck.position.set(0.82, 1.42, 0); g.add(neck);
-    const nk = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.17, 0.62, 7), body.material);
-    nk.rotation.z = -0.6; nk.position.set(0.12, 0.22, 0); neck.add(nk);
-    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.19, 9, 7), body.material);
-    skull.scale.set(1.35, 0.9, 0.8); skull.position.set(0.38, 0.5, 0); neck.add(skull);
-    if (i === 0) for (const sgn of [-1, 1]) {
-      const ant = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.5, 5), deerM2);
-      ant.position.set(0.3, 0.78, sgn * 0.12); ant.rotation.x = sgn * 0.35; neck.add(ant);
-    }
-    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.3, 6), new THREE.MeshStandardMaterial({ color: 0xf5efe4, roughness: 1 }));
-    tail.position.set(-0.92, 1.25, 0); tail.rotation.z = 2.6; g.add(tail);
-    const wps = [];
-    for (let k = 0; k < 4; k++) wps.push([hx + (wrnd() - 0.5) * 22, hz + (wrnd() - 0.5) * 22]);
-    WILD.deer.push({ g, neck, legs, wps, period: 38 + wrnd() * 12, off: new THREE.Vector2(0, 0) });
+  deerHomes.forEach(([hx, hz]) => {
+    for (let j = 0; j < 2; j++) WILD.deer.push(mkAnimal('deer', '/world3d/assets/animals/deer.glb', hx + j * 3.5, hz + j * 2.5, 22, 38 + wrnd() * 12));
+  });
+  // foxes: solitary, deep quiet forest
+  [[-168, -58], [-146, 30]].forEach(([hx, hz]) => {
+    WILD.fox.push(mkAnimal('fox', '/world3d/assets/animals/fox.glb', hx, hz, 26, 44 + wrnd() * 10));
   });
 }
 function tickWildlife(now, dt) {
   const t = now / 1000;
   const inTown = zoneNow() === 'town';
-  for (const b of WILD.bfly) {
-    const x = b.ax + Math.sin(t * b.sp * TAU + b.ph) * b.r, z = b.az + Math.cos(t * b.sp * 0.83 * TAU + b.ph * 1.7) * b.r;
-    if (!inTown || Math.hypot(x - px, z - pz) > 95) { b.g.visible = false; continue; }
-    b.g.visible = true;
-    b.g.position.set(x, groundH(x, z) + 1.05 + Math.sin(t * 1.7 + b.ph) * 0.3, z);
-    const flap = Math.sin(t * 11 + b.ph) * 0.85;
-    b.hl.rotation.z = flap; b.hr.rotation.z = -flap;
-  }
   const herd = (a, fleeR, fleeSp) => {
     const w = wildWander(a.wps, a.period, t + a.period * 0.37);
     let fx = w.x + a.off.x, fz = w.z + a.off.y;
@@ -2696,23 +2745,31 @@ function tickWildlife(now, dt) {
     if (!a.g.visible) return null;
     return { w, fx, fz, fleeing };
   };
-  for (const r of WILD.rabbits) {
-    const s = herd(r, 6, 7); if (!s) continue;
-    const hop = (s.w.moving || s.fleeing) ? Math.abs(Math.sin(t * 9)) * 0.30 : 0;
-    r.g.position.set(s.fx, groundH(s.fx, s.fz) + hop, s.fz);
-    if (s.w.moving || s.fleeing) r.g.rotation.y = Math.atan2(-s.w.dirz, s.w.dirx);
-    r.head.rotation.z = s.w.dwell ? Math.sin(t * 2.1) * 0.18 - 0.1 : 0;
-  }
-  for (const d of WILD.deer) {
-    const s = herd(d, 9.5, 5.5); if (!s) continue;
-    d.g.position.set(s.fx, groundH(s.fx, s.fz), s.fz);
-    if (s.w.moving || s.fleeing) d.g.rotation.y = Math.atan2(-s.w.dirz, s.w.dirx);
-    const graze = s.w.dwell && Math.sin(t * 0.55 + d.period) > 0.25;
-    d.neck.rotation.z += ((graze ? -0.85 : 0) - d.neck.rotation.z) * 0.04;
-    const lp = s.w.moving ? Math.sin(t * 5.2) * 0.3 : 0;
-    d.legs[0].rotation.z = lp; d.legs[3].rotation.z = lp;
-    d.legs[1].rotation.z = -lp; d.legs[2].rotation.z = -lp;
-  }
+  const runAnimal = (a, fleeR, fleeSp) => {
+    const s = herd(a, fleeR, fleeSp); if (!s) return;
+    a.g.position.set(s.fx, groundH(s.fx, s.fz), s.fz);
+    if (s.w.moving || s.fleeing) a.g.rotation.y = Math.atan2(-s.w.dirz, s.w.dirx) + a.yawOff;
+    if (!a.mixer) return;
+    // behavior state -> animation clip: flee gallops, travel
+    // walks, dwell cycles graze / look-around / idle by a slow
+    // seeded phase so animals do not repeat in lockstep.
+    let want = 'Idle';
+    if (s.fleeing) want = a.acts.Gallop ? 'Gallop' : 'Walk';
+    else if (s.w.moving) want = 'Walk';
+    else if (s.w.dwell) {
+      const ph = Math.sin(t * 0.45 + a.period * 1.7);
+      want = ph > 0.35 ? 'Eating' : ph < -0.45 ? (a.acts.Idle_Headlow ? 'Idle_Headlow' : 'Idle_2_HeadLow') : 'Idle_2';
+    }
+    if (!a.acts[want]) want = 'Idle';
+    if (want !== a.cur && a.acts[want]) {
+      a.acts[want].reset().fadeIn(0.3).play();
+      if (a.acts[a.cur]) a.acts[a.cur].fadeOut(0.3);
+      a.cur = want;
+    }
+    a.mixer.update(dt);
+  };
+  for (const d of WILD.deer) runAnimal(d, 9.5, 5.5);
+  for (const f of WILD.fox) runAnimal(f, 8, 6.5);
 }
 
 /* ================= stage 10: the west forest =================
@@ -2911,22 +2968,7 @@ function buildSpawnGarden() {
   T('Pine_2', 12, 37, 1.15, 0.9);
   T('TwistedTree_3', -21, 42, 0.5, 1.6); // the one autumn accent
   T('CommonTree_2', 24, 33, 0.95, 2.2);  // toward the grove
-  // a flowering sakura on the west rim (v553 hero asset)
-  {
-    const holder = new THREE.Group();
-    holder.position.set(-28, 0, 22);
-    scene.add(holder);
-    loadAsset('/world3d/assets/environment/tree_sakura.glb', 5).then((proto) => {
-      if (!proto || disposed) return;
-      const m = proto.clone(true);
-      m.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-      holder.add(m);
-      assetSwaps++;
-      swayers.push({ g: holder, ph: 1.7 });
-    });
-    addCollider(-28, 22, 1.0);
-    SPAWNG.trees++;
-  }
+  T('SakuraTree', -28, 22, 0.85, 1.7); // ECO: textured sakura (was the untextured tree_sakura.glb hero)
   // hedge arcs of flowering bushes flanking the plaza rim
   for (const [x, z] of [[-33, 6], [-33, 12], [-33, 18], [-33, 24], [33, 4], [33, 10], [33, 16]]) {
     natPlace('Bush_Common_Flowers', x, z, 1.25, x * 1.7 + z);
@@ -2997,26 +3039,16 @@ function buildDressing() {
   const terra = new THREE.MeshStandardMaterial({ color: 0xa35a3c, roughness: 0.9 });
   const soil = new THREE.MeshStandardMaterial({ color: 0x4a3421, roughness: 1 });
   const trunkM = new THREE.MeshStandardMaterial({ color: 0x5f4630, roughness: 1 });
-  const leafA = new THREE.MeshStandardMaterial({ color: 0x5d8148, roughness: 1, flatShading: true });
-  const leafB = new THREE.MeshStandardMaterial({ color: 0x74945a, roughness: 1, flatShading: true });
   const bx = (w, h, d, m, x, y, z, ry) => { const q = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); q.position.set(x, y, z); if (ry) q.rotation.y = ry; q.castShadow = true; q.receiveShadow = true; scene.add(q); return q; };
 
-  // leafy round trees — variety next to the two-tier pines
+  // leafy trees — ECO: the primitive round-tree fallbacks and the
+  // untextured tree_round.glb are gone; these spots grow approved
+  // library trees (omit-on-failure, real LOD).
   const leafSpots = [[86, -18], [98, 44], [132, -6], [70, 66], [-88, 74], [-132, -8], [44, 96], [-40, 104], [150, 40], [-150, 52]];
-  for (const [x, z] of leafSpots) {
-    const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
-    const fb = new THREE.Group(); g.add(fb);
-    const holder = new THREE.Group(); g.add(holder);
-    holder.userData.onSwap = () => { swayers.push({ g: holder, ph: x * 0.7 + z }); };
-    swapModel('/world3d/assets/environment/tree_round.glb', holder, fb, 1.25);
-    const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.36, 2.6, 7), trunkM); tr.position.y = 1.3; tr.castShadow = true; fb.add(tr);
-    const fol = new THREE.Group(); fol.position.y = 3.4; fb.add(fol);
-    const main = new THREE.Mesh(new THREE.IcosahedronGeometry(2.1, 0), Math.random() > 0.5 ? leafA : leafB); main.castShadow = true; fol.add(main);
-    const off = new THREE.Mesh(new THREE.IcosahedronGeometry(1.4, 0), leafB); off.position.set(1.2, 0.7, 0.5); fol.add(off);
-    const off2 = new THREE.Mesh(new THREE.IcosahedronGeometry(1.1, 0), leafA); off2.position.set(-1.1, 0.5, -0.6); fol.add(off2);
-    swayers.push({ g: fol, ph: x * 0.7 + z });
-    addCollider(x, z, 0.95);
-  }
+  const LEAF_TREES = ['CommonTree_1', 'CommonTree_3', 'CommonTree_5', 'CommonTree_2'];
+  leafSpots.forEach(([x, z], i) => {
+    natPlace(LEAF_TREES[i % LEAF_TREES.length], x, z, 1.05 + (i % 3) * 0.15, x * 0.7 + z, 0.95);
+  });
 
   // park garden beds: soil + their own instanced flowers
   const beds = [[104, 26, 0.3], [128, 30, -0.4], [112, -12, 0.9]];
@@ -3080,18 +3112,8 @@ function buildDressing() {
     addCollider(96, 34, 0.5);
   }
 
-  // birds over the park: bodies + flapping wings, clock-driven orbits
-  const birdM = new THREE.MeshStandardMaterial({ color: 0x3a4a63, roughness: 0.8, flatShading: true });
-  const wingM = new THREE.MeshStandardMaterial({ color: 0x54677f, roughness: 0.8, side: THREE.DoubleSide });
-  for (let i = 0; i < 5; i++) {
-    const b = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.85, 5), birdM); body.rotation.x = Math.PI / 2; b.add(body);
-    const wl = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.3), wingM); wl.position.x = -0.5; b.add(wl);
-    const wr = wl.clone(); wr.position.x = 0.5; b.add(wr);
-    b.userData = { wl, wr, r: 17 + i * 3.5, h: 14 + (i % 3) * 2.5, sp: 0.05 + i * 0.008, ph: i * 1.7 };
-    scene.add(b); BIRDS.push(b);
-  }
-
+  // ECO: the cone-and-plane placeholder birds are removed — no
+  // primitive animals. (Petals below are particles, not animals.)
   // drifting petals / pollen over the plaza + park
   const pN = 150, pPos = new Float32Array(pN * 3); petalDat = [];
   for (let i = 0; i < pN; i++) { pPos[i * 3] = -70 + Math.random() * 200; pPos[i * 3 + 1] = 0.3 + Math.random() * 6.5; pPos[i * 3 + 2] = -60 + Math.random() * 110; petalDat.push({ ph: Math.random() * 6.28, sp: 0.4 + Math.random() * 0.7 }); }
@@ -3101,13 +3123,6 @@ function buildDressing() {
 }
 function tickDressing(now) {
   const t = now / 1000;
-  for (const b of BIRDS) {
-    const u = b.userData, a = t * u.sp + u.ph;
-    b.position.set(118 + Math.cos(a) * u.r, u.h + Math.sin(t * 0.7 + u.ph) * 0.8, 12 + Math.sin(a) * u.r);
-    b.rotation.y = -a;
-    const flap = Math.sin(t * 9 + u.ph) * 0.65;
-    u.wl.rotation.z = flap; u.wr.rotation.z = -flap;
-  }
   if (petals) {
     const arr = petals.geometry.attributes.position.array;
     for (let i = 0; i < petalDat.length; i++) {
