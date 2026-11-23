@@ -153,8 +153,25 @@ function groundHBase(x, z) {
   let det = 2.3 * fbm2(wx * 0.016, wz * 0.016, 4);
   det += 0.30 * fbm2(x * 0.085, z * 0.085, 2);
   if (x < -130) det += 0.55 * fbm2(x * 0.045 + 7.7, z * 0.045, 3) * sstep(-130, -168, x);
+  // refinement pass: the detail layers follow the large landforms
+  // instead of operating independently — slopes and high ground
+  // carry more surface variation, valley floors stay calm.
+  det *= 0.72 + 0.5 * Math.min(1, Math.abs(h) / 5);
   h += det * m;
-  h = Math.max(-2, h); // shallow natural depressions are allowed in the wild bands
+  // refinement pass: drainage valleys — two meandering lowland bands
+  // with defined paths, so low ground reads as carved valleys with
+  // coherent shape instead of random noise dips. the pads still
+  // flatten their landmarks on top of this (the overlook terrace
+  // now sits above its valley, which is the natural arrangement).
+  // east: the low ground sits BETWEEN the hill masses — two saddle
+  // valleys carved into the gaps north and south of the overlook
+  // massif, draining the meadow bowl on its west flank.
+  const dGN = Math.hypot(x - 170, z - 42), dGS = Math.hypot(x - 168, z + 34);
+  h -= 1.1 * Math.exp(-(dGN * dGN) / 225) * m + 1.1 * Math.exp(-(dGS * dGS) / 225) * m;
+  const vW = -160 + 20 * Math.sin(z * 0.019 + 2.6) + 8 * fbm2(z * 0.012 + 9.9, 3.3, 2);
+  const dVW = x - vW;
+  h -= 1.3 * Math.exp(-(dVW * dVW) / 196) * m * (1 - sstep(96, 116, Math.abs(z)));
+  h = Math.max(-2.6, h); // valley floors are the deepest playable ground
   // beyond the playable bounds the land keeps rising: rolling
   // foothills first, then ridged mountain ranges (visual only —
   // players are clamped inside the bounds, but the same function
@@ -163,8 +180,13 @@ function groundHBase(x, z) {
   const dOut = Math.hypot(ex, ez);
   if (dOut > 0) {
     const rg = ridge2(x * 0.0055 + 31.4, z * 0.0055 + 3.1, 4);
+    // sector gain: a continuous angular function, so some stretches
+    // of the range tower and others dip into passes — the rim is a
+    // mountain system, not a uniform wall.
+    const ang = Math.atan2(z, x);
+    const sector = 0.78 + 0.55 * (fbm2(Math.cos(ang) * 1.35 + 9.1, Math.sin(ang) * 1.35 + 4.4, 2) * 0.5 + 0.5);
     h += 3.2 * fbm2(x * 0.02, z * 0.02, 3) * sstep(0, 45, dOut);
-    h += sstep(4, 85, dOut) * (7 + 30 * rg * rg);
+    h += sstep(4, 85, dOut) * (7 + 30 * rg * rg) * sector;
   }
   return h;
 }
@@ -184,4 +206,32 @@ export function groundH(x, z) {
   h = flatPad(h, x, z, -179, -38, 11, PAD_CLEAR_H);
   h = flatPad(h, x, z, 174, 8, 9, PAD_OVER_H);
   return h;
+}
+// analytic terrain normal from the same central differences the
+// chunk builder's halo grid computes (eps = the 2.5u mesh step), so
+// mesh normals and this function agree by construction.
+export function terrainNormal(x, z) {
+  const e = 2.5;
+  const gx = (groundH(x + e, z) - groundH(x - e, z)) / (2 * e);
+  const gz = (groundH(x, z + e) - groundH(x, z - e)) / (2 * e);
+  const il = 1 / Math.hypot(gx, 1, gz);
+  return [-gx * il, il, -gz * il];
+}
+// per-vertex material weights from the terrain's own data: biome
+// (west forest / east meadow), slope (rock on steeps, dirt on
+// shoulders), moisture noise (dirt patches, wild bands only), height
+// (exposed rock up high) and the pond shoreline (sand). returns
+// [grass, forest, dirt, rock, sand], always summing to 1.
+export function terrainWeights(x, z, ny, h) {
+  const s = 1 - ny;
+  const wild = Math.max(sstep(126, 150, Math.abs(x)), sstep(98, 116, Math.abs(z)));
+  let rock = Math.max(sstep(0.13, 0.34, s), sstep(9, 20, h) * sstep(0.04, 0.12, s));
+  let forest = sstep(-118, -158, x) * (0.5 + 0.5 * (fbm2(x * 0.02 + 3.1, z * 0.02, 2) * 0.5 + 0.5));
+  let dirt = sstep(0.30, 0.62, fbm2(x * 0.028 + 51.7, z * 0.028 + 9.4, 3)) * 0.72 * wild
+    + sstep(0.045, 0.10, s) * (1 - sstep(0.10, 0.30, s)) * 0.35;
+  const dPond = Math.hypot(x - 118, z - 12);
+  let sand = (1 - sstep(12.5, 17, dPond)) * (1 - sstep(0.1, 0.45, h));
+  let grass = Math.max(0, 1 - forest - dirt - rock - sand);
+  const sum = grass + forest + dirt + rock + sand || 1;
+  return [grass / sum, forest / sum, dirt / sum, rock / sum, sand / sum];
 }

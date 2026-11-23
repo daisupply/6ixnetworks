@@ -1,7 +1,7 @@
 // math.test.mjs — pure movement/camera math for the 3D world.
 // tests the EXACT functions client3d.js imports from ../math3d.js.
 // run: node world3d/tests/math.test.mjs   (no server, no deps)
-import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH, noise2, fbm2, ridge2 } from '../math3d.js';
+import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH, noise2, fbm2, ridge2, terrainNormal, terrainWeights } from '../math3d.js';
 
 let pass = 0, fail = 0;
 const ok = (c, label, extra) => { if (c) { pass++; console.log('PASS', label); } else { fail++; console.log('FAIL', label, extra !== undefined ? JSON.stringify(extra) : ''); } };
@@ -156,6 +156,97 @@ ok(near(groundH(34, 64), 0), 'groundH v2: south park still plateau');
   const lo = Math.min(...rim), hi = Math.max(...rim);
   ok(lo > 4 && hi - lo > 4, 'terrain: mountain rim rises and varies (rim ' + rim.map((v) => v.toFixed(1)).join('/') + ')');
 }
+// refinement pass: shared terrain normal — unit, up-facing, and
+// tilted against the uphill direction (mesh halo math agrees by
+// construction; this pins the function itself down)
+{
+  let okN = true;
+  for (let i = 0; i < 120; i++) {
+    const x = -190 + (i * 37) % 380, z = -110 + (i * 53) % 220;
+    const n = terrainNormal(x, z);
+    const len = Math.hypot(n[0], n[1], n[2]);
+    if (Math.abs(len - 1) > 1e-9 || n[1] <= 0) okN = false;
+    const e = 1.5;
+    const gx = (groundH(x + e, z) - groundH(x - e, z)) / (2 * e);
+    if (gx > 0.05 && n[0] >= 0) okN = false; // uphill east -> normal leans west
+    if (gx < -0.05 && n[0] <= 0) okN = false;
+  }
+  ok(okN, 'refine: terrainNormal is unit, up-facing, and leans against the slope');
+}
+// refinement pass: flat-chunk eligibility — the 8 low-res chunks and
+// their neighbours' shared-edge strips are all exactly h=0
+{
+  let flatOk = true;
+  const isFlatChunk = (cx, cz) => Math.max(Math.abs(cx * 55), Math.abs((cx + 1) * 55)) <= 124
+    && Math.max(Math.abs(cz * 55), Math.abs((cz + 1) * 55)) <= 96;
+  let nFlat = 0;
+  for (let cx = -5; cx < 5; cx++) for (let cz = -4; cz < 4; cz++) if (isFlatChunk(cx, cz)) {
+    nFlat++;
+    for (let x = cx * 55; x <= (cx + 1) * 55; x += 5.5) for (let z = cz * 55; z <= (cz + 1) * 55; z += 5.5) {
+      if (groundH(x, z) !== 0) flatOk = false;
+    }
+  }
+  // neighbour edge strips just outside the flat rects
+  for (let z = -55; z <= 55; z += 5) if (groundH(112.4, z) !== 0 || groundH(-112.4, z) !== 0) flatOk = false;
+  for (let x = -110; x <= 110; x += 5) if (groundH(x, 57.4) !== 0 || groundH(x, -57.4) !== 0) flatOk = false;
+  ok(flatOk && nFlat === 8, 'refine: 8 flat chunks + shared-edge strips are exactly h=0');
+}
+// refinement pass: material weights are a valid blend everywhere,
+// and each layer stays in its place
+{
+  let valid = true;
+  for (let x = -260; x <= 260 && valid; x += 13) for (let z = -200; z <= 200; z += 13) {
+    const h = groundH(x, z), n = terrainNormal(x, z);
+    const w = terrainWeights(x, z, n[1], h);
+    const sum = w.reduce((a, b) => a + b, 0);
+    if (Math.abs(sum - 1) > 1e-6 || w.some((v) => !(v >= 0 && v <= 1))) valid = false;
+  }
+  ok(valid, 'refine: terrainWeights sum to 1 and stay in [0,1] across the world');
+  const nPond = terrainNormal(0, 100), wFar = terrainWeights(0, 100, nPond[1], 0);
+  ok(wFar[4] === 0, 'refine: no sand away from the pond');
+  const nF = terrainNormal(-175, 0), wF = terrainWeights(-175, 0, nF[1], groundH(-175, 0));
+  ok(wF[1] > 0.4, 'refine: forest floor dominates deep in the west woods (' + wF[1].toFixed(2) + ')');
+  const nM = terrainNormal(150, 20), wM = terrainWeights(150, 20, nM[1], groundH(150, 20));
+  ok(wM[0] > wM[1] && wM[0] > 0.3, 'refine: grass leads in the east meadow (' + wM[0].toFixed(2) + ')');
+  const wT = terrainWeights(0, 0, 1, 0);
+  ok(wT[3] === 0 && wT[0] > 0.9, 'refine: town centre is grass, never rock');
+}
+// refinement pass: valleys are real — the west drainage line runs
+// below its banks, and the north saddle dips between the hill masses
+{
+  const pathW = (z) => -160 + 20 * Math.sin(z * 0.019 + 2.6) + 8 * fbm2(z * 0.012 + 9.9, 3.3, 2);
+  let westOk = true;
+  for (const z of [-30, 0, 30]) {
+    const px = pathW(z);
+    if (!(groundH(px, z) < groundH(px - 20, z) - 0.3)) westOk = false;
+  }
+  ok(westOk, 'refine: west drainage valley runs below its west bank');
+  ok(groundH(170, 42) < groundH(152, 40) - 0.3 && groundH(170, 42) < groundH(186, 44) - 0.3,
+    'refine: north saddle valley dips between the east hill masses');
+}
+// refinement pass: generation order cannot change the result
+{
+  const pts = [];
+  for (let i = 0; i < 200; i++) pts.push([-260 + (i * 41) % 520, -200 + (i * 67) % 400]);
+  const fwd = pts.map(([x, z]) => groundH(x, z));
+  const rev = pts.slice().reverse().map(([x, z]) => groundH(x, z)).reverse();
+  ok(fwd.every((v, i) => v === rev[i] && Number.isFinite(v)), 'refine: generation order does not change terrain (and no NaN)');
+}
+// refinement pass: full-world generation cost (all 80 chunks' halo
+// sampling at their real resolutions)
+{
+  const t0 = Date.now();
+  let acc = 0;
+  for (let cx = -5; cx < 5; cx++) for (let cz = -4; cz < 4; cz++) {
+    const flat = Math.max(Math.abs(cx * 55), Math.abs((cx + 1) * 55)) <= 124
+      && Math.max(Math.abs(cz * 55), Math.abs((cz + 1) * 55)) <= 96;
+    const seg = flat ? 2 : 22, H = seg + 3, step = 55 / seg;
+    for (let j = 0; j < H; j++) for (let i = 0; i < H; i++) acc += groundH(cx * 55 + (i - 1) * step, cz * 55 + (j - 1) * step);
+  }
+  const ms = Date.now() - t0;
+  ok(ms < 2500 && acc !== 0, 'refine: full 80-chunk terrain generation in ' + ms + 'ms');
+}
+
 // generation performance: a full chunk is 625 halo samples
 {
   const t0 = Date.now();

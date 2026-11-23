@@ -27,7 +27,7 @@
  * player data, WebGL context-loss overlay. Three.js r160 vendored.
  */
 import * as THREE from 'three';
-import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH, fbm2, ridge2 } from './math3d.js';
+import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH, fbm2, ridge2, terrainWeights } from './math3d.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as skelClone } from 'three/addons/utils/SkeletonUtils.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -300,7 +300,6 @@ function canvasTex(w, h, draw, rx, ry) {
 const TERRAIN_CHUNKS = new Map();
 const TCHUNK = 55, TSEG = 22;
 let TERR_INDEX = null, terrainTex = null;
-function tss(a, b, v) { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); }
 function terrainPlaceholder(rgb, srgb) {
   const c = document.createElement('canvas'); c.width = c.height = 2;
   const g = c.getContext('2d'); g.fillStyle = rgb; g.fillRect(0, 0, 2, 2);
@@ -342,32 +341,28 @@ function terrainMaterial() {
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvW1 = aW1; vSand = aSand; vWPos = position;');
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', '#include <common>\nuniform sampler2D uTG; uniform sampler2D uTF; uniform sampler2D uTD; uniform sampler2D uTR; uniform sampler2D uTS;\nuniform sampler2D uTGn; uniform sampler2D uTFn; uniform sampler2D uTDn; uniform sampler2D uTRn; uniform sampler2D uTSn;\nvarying vec4 vW1; varying float vSand; varying vec3 vWPos;\nvec3 terrMixD(sampler2D t, vec2 a, vec2 b) { return mix(texture2D(t, a), texture2D(t, b), 0.42).rgb; }\nvec3 terrPerturb(vec3 e, vec3 n, vec3 m, vec2 uv) { vec3 q0 = dFdx(e); vec3 q1 = dFdy(e); vec2 s0 = dFdx(uv); vec2 s1 = dFdy(uv); vec3 S = normalize(q0 * s1.t - q1 * s0.t); vec3 T2 = normalize(-q0 * s1.s + q1 * s0.s); return normalize(T2 * m.x + S * m.y + n * m.z); }')
-      .replace('#include <map_fragment>', 'vec2 tUvA = vWPos.xz * 0.142857; vec2 tUvB = vWPos.xz * 0.043478;\nfloat tSum = max(vW1.x + vW1.y + vW1.z + vW1.w + vSand, 1e-4);\nvec3 tAlb = (terrMixD(uTG, tUvA, tUvB) * vW1.x + terrMixD(uTF, tUvA, tUvB) * vW1.y + terrMixD(uTD, tUvA, tUvB) * vW1.z + terrMixD(uTR, tUvA, tUvB) * vW1.w + terrMixD(uTS, tUvA, tUvB) * vSand) / tSum;\ndiffuseColor.rgb = tAlb;')
-      .replace('#include <normal_fragment_maps>', 'vec3 tN = (texture2D(uTGn, tUvA).rgb * 2.0 - 1.0) * vW1.x + (texture2D(uTFn, tUvA).rgb * 2.0 - 1.0) * vW1.y + (texture2D(uTDn, tUvA).rgb * 2.0 - 1.0) * vW1.z + (texture2D(uTRn, tUvA).rgb * 2.0 - 1.0) * vW1.w + (texture2D(uTSn, tUvA).rgb * 2.0 - 1.0) * vSand;\ntN = normalize(tN / tSum + vec3(0.0, 0.0, 0.02));\nnormal = terrPerturb(-vViewPosition, normal, tN * vec3(0.8, 0.8, 1.0), tUvA);');
+      .replace('#include <map_fragment>', 'vec2 tUvA = vWPos.xz * 0.142857; vec2 tUvB = vWPos.zy * 0.043478;\nfloat tSum = max(vW1.x + vW1.y + vW1.z + vW1.w + vSand, 1e-4);\nvec3 tAlb = (terrMixD(uTG, tUvA, tUvB) * vW1.x + terrMixD(uTF, tUvA, tUvB) * vW1.y + terrMixD(uTD, tUvA, tUvB) * vW1.z + terrMixD(uTR, tUvA, tUvB) * vW1.w + terrMixD(uTS, tUvA, tUvB) * vSand) / tSum;\ndiffuseColor.rgb = tAlb;')
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = clamp(0.93 * vW1.x + 0.97 * vW1.y + 0.88 * vW1.z + 0.96 * vW1.w + 0.85 * vSand, 0.8, 1.0);')
+      .replace('#include <normal_fragment_maps>', 'vec3 nG = texture2D(uTGn, tUvA).rgb * 2.0 - 1.0; nG.xy *= 0.55;\nvec3 nF = texture2D(uTFn, tUvA).rgb * 2.0 - 1.0; nF.xy *= 0.70;\nvec3 nD = texture2D(uTDn, tUvA).rgb * 2.0 - 1.0; nD.xy *= 0.60;\nvec3 nR = texture2D(uTRn, tUvA).rgb * 2.0 - 1.0; nR.xy *= 0.95;\nvec3 nS = texture2D(uTSn, tUvA).rgb * 2.0 - 1.0; nS.xy *= 0.35;\nvec3 tN = nG * vW1.x + nF * vW1.y + nD * vW1.z + nR * vW1.w + nS * vSand;\ntN = normalize(tN / tSum + vec3(0.0, 0.0, 0.02));\ntN.xy *= mix(0.22, 1.0, exp(-length(vViewPosition) / 130.0));\nnormal = terrPerturb(-vViewPosition, normal, tN, tUvA);');
   };
-  mat.customProgramCacheKey = () => 'terrain-pass-1';
+  mat.customProgramCacheKey = () => 'terrain-pass-2';
   return mat;
 }
-// per-vertex material weights from the terrain's own data: biome
-// (west forest / east meadow), slope (rock on steeps, dirt on
-// shoulders), moisture noise (dirt patches), and the pond shoreline.
-function terrainWeights(x, z, ny, h) {
-  const s = 1 - ny;
-  const wild = Math.max(tss(126, 150, Math.abs(x)), tss(98, 116, Math.abs(z)));
-  let rock = Math.max(tss(0.13, 0.34, s), tss(9, 20, h) * tss(0.04, 0.12, s));
-  let forest = tss(-118, -158, x) * (0.5 + 0.5 * (fbm2(x * 0.02 + 3.1, z * 0.02, 2) * 0.5 + 0.5));
-  let dirt = tss(0.30, 0.62, fbm2(x * 0.028 + 51.7, z * 0.028 + 9.4, 3)) * 0.72 * wild
-    + tss(0.045, 0.10, s) * (1 - tss(0.10, 0.30, s)) * 0.35;
-  const dPond = Math.hypot(x - 118, z - 12);
-  let sand = (1 - tss(12.5, 17, dPond)) * (1 - tss(0.1, 0.45, h));
-  let grass = Math.max(0, 1 - forest - dirt - rock - sand);
-  const sum = grass + forest + dirt + rock + sand || 1;
-  return [grass / sum, forest / sum, dirt / sum, rock / sum, sand / sum];
-}
+let TERR_INDEX_FLAT = null;
 function buildTerrainChunk(cx, cz) {
   const key = cx + ',' + cz;
   if (TERRAIN_CHUNKS.has(key)) return TERRAIN_CHUNKS.get(key);
-  const step = TCHUNK / TSEG, N = TSEG + 1, H = TSEG + 3;
+  // chunks whose whole rect sits inside the guaranteed-flat plateau
+  // (|x| <= 126, |z| <= 98 is exactly h=0 by the terrain mask) build
+  // at 2 segments instead of 22: every rect sample is provably 0 and
+  // normals are forced up — which is exactly what the neighbour
+  // chunks compute for the shared edge too (their edge samples sit
+  // at |x| <= 112.5 / |z| <= 57.5, also inside the flat zone), so
+  // borders stay seamless while ~4k waste vertices disappear.
+  const flat = Math.max(Math.abs(cx * TCHUNK), Math.abs((cx + 1) * TCHUNK)) <= 124
+    && Math.max(Math.abs(cz * TCHUNK), Math.abs((cz + 1) * TCHUNK)) <= 96;
+  const seg = flat ? 2 : TSEG;
+  const step = TCHUNK / seg, N = seg + 1, H = seg + 3;
   const gx = cx * TCHUNK, gz = cz * TCHUNK;
   // halo grid: one ring beyond the chunk on every side, so border
   // normals use the same central differences as the neighbour chunk.
@@ -383,27 +378,31 @@ function buildTerrainChunk(cx, cz) {
     const x = gx + i * step, z = gz + j * step, h = hs[hi];
     const dhx = (hs[hi + 1] - hs[hi - 1]) / (2 * step), dhz = (hs[hi + H] - hs[hi - H]) / (2 * step);
     let nx = -dhx, nz = -dhz; const il = 1 / Math.hypot(nx, 1, nz);
-    nx *= il; nz *= il; const ny = il;
+    nx *= il; nz *= il; let ny = il;
+    if (flat) { nx = 0; nz = 0; ny = 1; }
     pos[vi * 3] = x; pos[vi * 3 + 1] = h; pos[vi * 3 + 2] = z;
     nor[vi * 3] = nx; nor[vi * 3 + 1] = ny; nor[vi * 3 + 2] = nz;
     const w = terrainWeights(x, z, ny, h);
     w1[vi * 4] = w[0]; w1[vi * 4 + 1] = w[1]; w1[vi * 4 + 2] = w[2]; w1[vi * 4 + 3] = w[3]; wS[vi] = w[4];
     const moist = fbm2(x * 0.013 + 77.3, z * 0.013, 2) * 0.5 + 0.5;
-    const tint = (0.95 + 0.08 * moist) * (h < 1 ? 0.985 : 1);
+    const patch = 0.92 + 0.16 * (fbm2(x * 0.008 + 3.3, z * 0.008 + 8.8, 2) * 0.5 + 0.5);
+    const tint = (0.95 + 0.08 * moist) * (h < 1 ? 0.985 : 1) * patch;
     const gw = w[0];
     col[vi * 3] = tint * (1 - gw + gw * 0.80);
     col[vi * 3 + 1] = tint * (1 - gw + gw * 1.07);
     col[vi * 3 + 2] = tint * (1 - gw + gw * 0.68);
     uv[vi * 2] = x / 7; uv[vi * 2 + 1] = z / 7;
   }
-  if (!TERR_INDEX) {
-    const idx = new Uint32Array(TSEG * TSEG * 6);
+  let index = flat ? TERR_INDEX_FLAT : TERR_INDEX;
+  if (!index) {
+    const idx = new Uint32Array(seg * seg * 6);
     let k = 0;
-    for (let j = 0; j < TSEG; j++) for (let i = 0; i < TSEG; i++) {
+    for (let j = 0; j < seg; j++) for (let i = 0; i < seg; i++) {
       const a = j * N + i, b = a + 1, c = a + N, d = c + 1;
       idx[k++] = a; idx[k++] = c; idx[k++] = b; idx[k++] = b; idx[k++] = c; idx[k++] = d;
     }
-    TERR_INDEX = idx;
+    if (flat) TERR_INDEX_FLAT = idx; else TERR_INDEX = idx;
+    index = idx;
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
@@ -412,7 +411,7 @@ function buildTerrainChunk(cx, cz) {
   g.setAttribute('aW1', new THREE.BufferAttribute(w1, 4));
   g.setAttribute('aSand', new THREE.BufferAttribute(wS, 1));
   g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-  g.setIndex(new THREE.BufferAttribute(TERR_INDEX, 1));
+  g.setIndex(new THREE.BufferAttribute(index, 1));
   g.computeBoundingSphere();
   TERRAIN_CHUNKS.set(key, g);
   return g;
@@ -541,20 +540,31 @@ function buildWorld() {
   // noise as the terrain rim, so the far range reads as a real
   // mountain chain instead of repeated cones (terrain pass).
   {
-    const ring = new THREE.CylinderGeometry(338, 338, 1, 160, 1, true);
-    const rp = ring.attributes.position, rcol = new Float32Array(rp.count * 3);
-    const cTop = new THREE.Color(0x8a6f83), cBot = new THREE.Color(0xc7a68e);
-    for (let i = 0; i < rp.count; i++) {
-      const x = rp.getX(i), z = rp.getZ(i), a = Math.atan2(z, x);
-      const ca = Math.cos(a), sa = Math.sin(a);
-      const crest = 16 + 40 * Math.pow(ridge2(ca * 3.1 + 31.4, sa * 3.1 + 3.1, 4), 1.4) + 6 * fbm2(ca * 6.0 + 9.2, sa * 6.0, 2);
-      const isTop = rp.getY(i) > 0;
-      rp.setY(i, isTop ? crest : -6);
-      const c = isTop ? cTop : cBot;
-      rcol[i * 3] = c.r; rcol[i * 3 + 1] = c.g; rcol[i * 3 + 2] = c.b;
-    }
-    ring.setAttribute('color', new THREE.BufferAttribute(rcol, 3));
-    scene.add(new THREE.Mesh(ring, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, fog: true })));
+    // each ring's radius wanders with angle (fbm over the circle, so
+    // it closes seamlessly), the crest is notched by a second ridge
+    // octave, and a farther, taller, paler range sits behind the
+    // first — layered depth instead of one circular wall.
+    const mkRing = (rBase, rVar, hBase, hVar, seed, cTop, cBot) => {
+      const geo = new THREE.CylinderGeometry(1, 1, 1, 180, 1, true);
+      const rp = geo.attributes.position, rcol = new Float32Array(rp.count * 3);
+      for (let i = 0; i < rp.count; i++) {
+        const x = rp.getX(i), z = rp.getZ(i), a = Math.atan2(z, x);
+        const ca = Math.cos(a), sa = Math.sin(a);
+        const R = rBase + rVar * fbm2(ca * 1.8 + seed, sa * 1.8 + seed * 0.3, 2);
+        rp.setX(i, ca * R); rp.setZ(i, sa * R);
+        const notch = 0.70 + 0.55 * ridge2(ca * 2.3 + seed * 2.1, sa * 2.3 + 3.7, 3);
+        const crest = (hBase + hVar * Math.pow(ridge2(ca * 3.1 + 31.4, sa * 3.1 + 3.1, 4), 1.4)) * notch
+          + 6 * fbm2(ca * 6.0 + 9.2, sa * 6.0, 2);
+        const isTop = rp.getY(i) > 0;
+        rp.setY(i, isTop ? crest : -8);
+        const c = isTop ? cTop : cBot;
+        rcol[i * 3] = c.r; rcol[i * 3 + 1] = c.g; rcol[i * 3 + 2] = c.b;
+      }
+      geo.setAttribute('color', new THREE.BufferAttribute(rcol, 3));
+      return new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, fog: true }));
+    };
+    scene.add(mkRing(338, 55, 16, 40, 21.0, new THREE.Color(0x8a6f83), new THREE.Color(0xc7a68e)));
+    scene.add(mkRing(478, 70, 30, 58, 47.0, new THREE.Color(0x9b7f92), new THREE.Color(0xcbb098)));
   }
 
   // THE FOUNTAIN (the wishing well, in 3d) — basin, rim, animated water,
@@ -4183,7 +4193,12 @@ function loop() {
   const zb = zoneNow();
   if (zb === 'town' || !ZONE_BOXES[zb]) { px = clamp(px, -BOUND_X, BOUND_X); pz = clamp(pz, -BOUND_Z, BOUND_Z); }
   else { const B = ZONE_BOXES[zb]; px = clamp(px, B.minX + 0.6, B.maxX - 0.6); pz = clamp(pz, B.minZ + 0.6, B.maxZ - 0.6); }
-  groundY = (zb === 'town') ? groundH(px, pz) : 0;
+  // ground from the CLAMPED position's zone, not the pre-clamp one:
+  // pushing against the town boundary overshoots past 195/118 for a
+  // frame, read as 'void', and pinned groundY to 0 — the player sank
+  // into the hillside for as long as they held the key (found by the
+  // terrain refinement verification at the west edge).
+  groundY = (zoneNow() === 'town') ? groundH(px, pz) : 0;
   for (const c of colliders) {
     const dx = px - c.x, dz = pz - c.z, d = Math.hypot(dx, dz), min = c.r + 0.55;
     if (d > 0.001 && d < min) { px = c.x + dx / d * min; pz = c.z + dz / d * min; }
