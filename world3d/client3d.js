@@ -1114,7 +1114,18 @@ const MENU3 = [
   { id: 'mocha', name: 'mocha', price: 40, desc: 'the classic — chocolate + moonroast' },
   { id: 'nebula', name: 'nebula latte', price: 65, desc: 'purple, sweet, the house favorite' },
 ];
+// v582 a11y: focus management for the modal panels. noteOpener() runs
+// at the top of every panel open, restoreOpener() at the end of every
+// close — so the X button, Escape, save and cancel all return focus
+// to whatever opened the panel. focusFirst() moves focus inside on
+// open; the Tab trap lives in the existing keydown listener (init).
+let w3Opener = null;
+function noteOpener() { const a = document.activeElement; w3Opener = (a && a !== document.body) ? a : null; }
+function restoreOpener() { const el = w3Opener; w3Opener = null; if (el && document.contains(el)) { try { el.focus({ preventScroll: true }); } catch (e) { } } }
+function focusFirst(panel) { if (!panel) return; const f = panel.querySelector('button, a[href], input, select'); if (f) { try { f.focus({ preventScroll: true }); } catch (e) { } } }
+function topPanel() { if (R.set && !R.set.hidden) return R.set; if (mapOpen) return R.map; if (quizOpen) return R.quiz; if (gamesOpen) return R.games; if (wardOpen) return R.ward; if (menuOpen) return R.menu; return null; }
 function openMenu() {
+  noteOpener();
   menuOpen = true; R.menu.hidden = false; R.menures.textContent = '';
   R.menubal.textContent = 'ur balance: ' + R.bal.textContent;
   R.menulist.innerHTML = '';
@@ -1128,9 +1139,9 @@ function openMenu() {
     btn.addEventListener('click', () => buyItem(m.id, btn));
     row.appendChild(btn); R.menulist.appendChild(row);
   }
-  clearInput(); setPrompt(null);
+  clearInput(); setPrompt(null); focusFirst(R.menu);
 }
-function closeMenu() { menuOpen = false; R.menu.hidden = true; }
+function closeMenu() { menuOpen = false; R.menu.hidden = true; restoreOpener(); }
 async function buyItem(id, btn) {
   btn.disabled = true;
   try {
@@ -1627,17 +1638,18 @@ function applyWear(g, wear, hue) {
 
 /* ----- wardrobe panel ----- */
 function openWardrobe() {
+  noteOpener();
   wardOpen = true;
   draftWear = { ...myCos.wear }; draftHue = (typeof myCos.hue === 'number') ? myCos.hue : 265;
   R.ward.hidden = false; R.wardres.textContent = '';
   R.hue.value = draftHue; R.hueval.textContent = '— ' + draftHue + '°';
-  renderWard(); clearInput(); setPrompt(null);
+  renderWard(); clearInput(); setPrompt(null); focusFirst(R.ward);
 }
 function closeWardrobe(save) {
   wardOpen = false; R.ward.hidden = true;
   const g = scene.userData.meGroup;
   if (!save && g) applyWear(g, myCos.wear, myCos.hue); // revert the preview
-  draftWear = null;
+  draftWear = null; restoreOpener();
 }
 function renderWard() {
   for (const slot of ['hat', 'hair', 'acc']) {
@@ -1798,8 +1810,8 @@ function buildArcade() {
 
 /* ----- games overlay (real, already-integrated games only) ----- */
 let gamesOpen = false;
-function openGames() { gamesOpen = true; R.games.hidden = false; clearInput(); setPrompt(null); }
-function closeGames() { gamesOpen = false; R.games.hidden = true; }
+function openGames() { noteOpener(); gamesOpen = true; R.games.hidden = false; clearInput(); setPrompt(null); focusFirst(R.games); }
+function closeGames() { gamesOpen = false; R.games.hidden = true; restoreOpener(); }
 
 /* ----- the clothing store (world x 2069..2091) ----- */
 function buildClothing() {
@@ -3327,8 +3339,9 @@ function buildRec() {
 /* ----- trivia quiz panel ----- */
 let quizQid = null;
 async function openQuiz() {
+  noteOpener();
   quizOpen = true; R.quiz.hidden = false; R.quizres.textContent = 'loading a question…'; R.quizq.textContent = ''; R.quizchoices.innerHTML = '';
-  clearInput(); setPrompt(null);
+  clearInput(); setPrompt(null); focusFirst(R.quiz);
   try {
     const r = await (await fetch('/api/world3d/trivia', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'get' }) })).json();
     if (!r.ok) { R.quizres.textContent = r.err || 'terminal is down'; return; }
@@ -3352,7 +3365,7 @@ async function answerQuiz(i) {
     setTimeout(() => { if (quizOpen) openQuiz(); }, 1600);
   } catch (e) { R.quizres.textContent = 'network hiccup — try again'; }
 }
-function closeQuiz() { quizOpen = false; R.quiz.hidden = true; }
+function closeQuiz() { quizOpen = false; R.quiz.hidden = true; restoreOpener(); }
 
 /* ----- ur apartment (world x 2189..2211) — a solo instance ----- */
 function posterTex(kind) {
@@ -3469,12 +3482,14 @@ function checkDistrict() {
   districtNow = name;
 }
 function openMap() {
+  noteOpener();
   mapOpen = true; R.map.hidden = false; const mb = document.getElementById('w3mapbtn'); if (mb) mb.classList.add('on'); clearInput(); setPrompt(null);
   drawMap();
   const seen = [...seenSet()];
   R.mapseen.textContent = seen.length ? 'discovered: ' + seen.join(' · ') : 'walk around to discover the town’s districts';
+  focusFirst(R.map);
 }
-function closeMap() { mapOpen = false; R.map.hidden = true; const mb = document.getElementById('w3mapbtn'); if (mb) mb.classList.remove('on'); }
+function closeMap() { mapOpen = false; R.map.hidden = true; const mb = document.getElementById('w3mapbtn'); if (mb) mb.classList.remove('on'); restoreOpener(); }
 function drawMap() {
   const cv = R.mapcv; if (!cv) return;
   const g = cv.getContext('2d'); if (!g) return;
@@ -4354,8 +4369,8 @@ function bindSettings() {
   if (R.viewsel) { R.viewsel.value = SET.view; R.fov.value = SET.fov; R.bob.checked = SET.bob; }
   R.shadow.checked = SET.shadows; R.snd.checked = SET.snd; R.vol.value = SET.vol; if (R.sfx) R.sfx.value = SET.sfx;
   badges();
-  R.setbtn.addEventListener('click', () => { R.set.hidden = !R.set.hidden; R.setbtn.classList.toggle('on', !R.set.hidden); if (!R.set.hidden) badges(); });
-  R.setclose.addEventListener('click', () => { R.set.hidden = true; R.setbtn.classList.remove('on'); });
+  R.setbtn.addEventListener('click', () => { R.set.hidden = !R.set.hidden; R.setbtn.classList.toggle('on', !R.set.hidden); if (!R.set.hidden) { badges(); focusFirst(R.set); } });
+  R.setclose.addEventListener('click', () => { R.set.hidden = true; R.setbtn.classList.remove('on'); R.setbtn.focus(); });
   R.sens.addEventListener('input', () => { SET.sens = parseFloat(R.sens.value) || 1; saveSet(); badges(); });
   R.camd.addEventListener('input', () => { SET.camDist = parseFloat(R.camd.value) || 13; saveSet(); badges(); });
   R.camh.addEventListener('input', () => { SET.camH = parseFloat(R.camh.value) || 1.7; saveSet(); badges(); });
@@ -4426,6 +4441,18 @@ function init() {
   // focus to the control that opened it. Close paths are the same
   // functions the X buttons already call — no new state.
   window.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+      // v582 a11y: trap Tab inside the topmost open panel (same
+      // priority order as Escape below). No panel open = no trap.
+      const p = topPanel(); if (!p) return;
+      const f = [...p.querySelectorAll('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled])')].filter((el) => el.getClientRects().length);
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1], a = document.activeElement;
+      if (!p.contains(a)) { e.preventDefault(); (e.shiftKey ? last : first).focus(); }
+      else if (e.shiftKey && a === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && a === last) { e.preventDefault(); first.focus(); }
+      return;
+    }
     if (e.key !== 'Escape') return;
     if (R.set && !R.set.hidden) { R.set.hidden = true; R.setbtn.classList.remove('on'); R.setbtn.focus(); return; }
     if (mapOpen) { closeMap(); const mb2 = document.getElementById('w3mapbtn'); if (mb2) mb2.focus(); return; }
