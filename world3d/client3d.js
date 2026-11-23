@@ -652,11 +652,11 @@ function buildWorld() {
 
   // district buildings: window-lit facades + neon signs (the 2d pads, in 3d)
   const districts = [
-    { x: -62, z: -52, w: 26, d: 16, h: 13, name: 'ARCADE', col: '#a78bfa', seed: 7 },
+    { x: -62, z: -52, w: 26, d: 16, h: 13, name: 'ARCADE', col: '#d9b380', seed: 7 },
     { x: 58, z: -54, w: 26, d: 16, h: 13, name: 'LIBRARY', col: '#ffb36b', seed: 21 },
-    { x: -64, z: 46, w: 22, d: 13, h: 10, name: 'APARTMENTS', col: '#f9a8d4', seed: 33 },
+    { x: -64, z: 46, w: 22, d: 13, h: 10, name: 'APARTMENTS', col: '#f2a7c3', seed: 33 },
     { x: 62, z: 48, w: 22, d: 13, h: 10, name: 'REC CENTER', col: '#4ade80', seed: 48 },
-    { x: 0, z: -80, w: 30, d: 14, h: 9, name: '6IX MUSIC', col: '#ffd257', seed: 59 },
+    { x: 0, z: -80, w: 30, d: 14, h: 9, name: '6IX MUSIC', col: '#ffc95e', seed: 59 },
   ];
   const districtParts = [];
   districts.forEach((b) => {
@@ -901,7 +901,7 @@ function buildTown() {
     const holder = new THREE.Group(); coffeeG.add(holder);
     swapModel('/world3d/assets/architecture/coffee_shop.glb', holder, fb);
   }
-  const hallG = storefront({ x: 0, z: -50, w: 30, d: 16, h: 16, name: '6IXNETWORKS', glyph: 'crown', col: '#ffd257', kind: 'hall', warm: '#7a5c14', awn: '#7a5c14', seed: 97 });
+  const hallG = storefront({ x: 0, z: -50, w: 30, d: 16, h: 16, name: '6IXNETWORKS', glyph: 'crown', col: '#ffc95e', kind: 'hall', warm: '#7a5c14', awn: '#7a5c14', seed: 97 });
   { // stage 05: the modeled grand hall swaps over the shell
     const fb = new THREE.Group(); hallG.add(fb);
     const keepers = hallG.userData.keepers.filter((k) => !k.userData.signPart);
@@ -1301,10 +1301,25 @@ function promptIconFor(label) {
 }
 
 let promptIcoEl = null, promptLblEl = null, useIcoEl = null, useLblEl = null;
+// v580: the prompt DOM is only rewritten when the label actually changes
+// (scanPrompts runs every frame — rewriting innerHTML per frame caused
+// visible flicker), and hiding is delayed 140ms so crossing an
+// interaction boundary does not strobe the prompt. Distances/actions
+// are untouched; curPrompt still updates immediately.
+let promptShownLbl = null, promptHideT = 0;
 function setPrompt(it) {
   curPrompt = it;
-  if (!it) { R.prompt.hidden = true; R.use.hidden = true; return; }
+  if (!it) {
+    if (promptShownLbl && !promptHideT) {
+      promptHideT = setTimeout(() => { promptHideT = 0; promptShownLbl = null; if (!curPrompt) { R.prompt.hidden = true; R.use.hidden = true; } }, 140);
+    }
+    if (!promptShownLbl) { R.prompt.hidden = true; R.use.hidden = true; }
+    return;
+  }
+  if (promptHideT) { clearTimeout(promptHideT); promptHideT = 0; }
   const lbl = typeof it.label === 'function' ? it.label() : it.label;
+  if (lbl === promptShownLbl && !R.prompt.hidden) return;
+  promptShownLbl = lbl;
   const touch = document.body.classList.contains('touch');
   if (!promptIcoEl) { promptIcoEl = R.prompt.querySelector('.w3p-ico'); promptLblEl = R.prompt.querySelector('.w3p-lbl'); useIcoEl = R.use.querySelector('.w3p-ico'); useLblEl = document.getElementById('w3uselbl'); }
   const ic = icon(promptIconFor(lbl), touch ? 22 : 17);
@@ -1712,7 +1727,7 @@ function buildArcade() {
   const CX = 2040;
   const carpetTex = canvasTex(128, 128, (g, w, h) => {
     g.fillStyle = '#120a24'; g.fillRect(0, 0, w, h);
-    const cols = ['#a78bfa', '#f472b6', '#67e8f9', '#ffd257'];
+    const cols = ['#d9b380', '#f472b6', '#67e8f9', '#ffc95e'];
     const r2 = mulberry32(9);
     for (let i = 0; i < 22; i++) {
       g.strokeStyle = cols[i % 4]; g.lineWidth = 2; g.globalAlpha = 0.5;
@@ -3343,9 +3358,9 @@ function closeQuiz() { quizOpen = false; R.quiz.hidden = true; }
 function posterTex(kind) {
   return canvasTex(96, 128, (g, w, h) => {
     const grad = g.createLinearGradient(0, 0, 0, h);
-    if (kind === 'moon') { grad.addColorStop(0, '#1b1040'); grad.addColorStop(1, '#3b2a7a'); g.fillStyle = grad; g.fillRect(0, 0, w, h); g.fillStyle = '#e9e4ff'; g.beginPath(); g.arc(w / 2, 44, 20, 0, 7); g.fill(); g.fillStyle = '#1b1040'; g.beginPath(); g.arc(w / 2 + 9, 38, 17, 0, 7); g.fill(); g.fillStyle = '#ffd257'; g.font = 'bold 13px sans-serif'; g.textAlign = 'center'; g.fillText('MOONFALL', w / 2, 104); }
-    else if (kind === 'sakura') { grad.addColorStop(0, '#2c1836'); grad.addColorStop(1, '#59304e'); g.fillStyle = grad; g.fillRect(0, 0, w, h); g.strokeStyle = '#241222'; g.lineWidth = 6; g.beginPath(); g.moveTo(10, 128); g.quadraticCurveTo(40, 70, 84, 30); g.stroke(); g.fillStyle = '#f9a8d4'; for (let i = 0; i < 14; i++) { g.beginPath(); g.arc(20 + (i * 37) % 60, 18 + (i * 23) % 60, 5, 0, 7); g.fill(); } g.fillStyle = '#ffe3f1'; g.font = 'bold 13px sans-serif'; g.textAlign = 'center'; g.fillText('SAKURA', w / 2, 112); }
-    else { grad.addColorStop(0, '#241335'); grad.addColorStop(1, '#57420a'); g.fillStyle = grad; g.fillRect(0, 0, w, h); g.fillStyle = '#ffd257'; g.beginPath(); g.moveTo(w / 2, 26); g.lineTo(w / 2 + 20, 62); g.lineTo(w / 2 + 8, 62); g.lineTo(w / 2 + 8, 76); g.lineTo(w / 2 - 8, 76); g.lineTo(w / 2 - 8, 62); g.lineTo(w / 2 - 20, 62); g.closePath(); g.fill(); g.font = 'bold 12px sans-serif'; g.textAlign = 'center'; g.fillText('STAY GOLD', w / 2, 104); }
+    if (kind === 'moon') { grad.addColorStop(0, '#1b1040'); grad.addColorStop(1, '#3b2a7a'); g.fillStyle = grad; g.fillRect(0, 0, w, h); g.fillStyle = '#f7ecd9'; g.beginPath(); g.arc(w / 2, 44, 20, 0, 7); g.fill(); g.fillStyle = '#1b1040'; g.beginPath(); g.arc(w / 2 + 9, 38, 17, 0, 7); g.fill(); g.fillStyle = '#ffc95e'; g.font = 'bold 13px sans-serif'; g.textAlign = 'center'; g.fillText('MOONFALL', w / 2, 104); }
+    else if (kind === 'sakura') { grad.addColorStop(0, '#2c1836'); grad.addColorStop(1, '#59304e'); g.fillStyle = grad; g.fillRect(0, 0, w, h); g.strokeStyle = '#241222'; g.lineWidth = 6; g.beginPath(); g.moveTo(10, 128); g.quadraticCurveTo(40, 70, 84, 30); g.stroke(); g.fillStyle = '#f2a7c3'; for (let i = 0; i < 14; i++) { g.beginPath(); g.arc(20 + (i * 37) % 60, 18 + (i * 23) % 60, 5, 0, 7); g.fill(); } g.fillStyle = '#ffe3f1'; g.font = 'bold 13px sans-serif'; g.textAlign = 'center'; g.fillText('SAKURA', w / 2, 112); }
+    else { grad.addColorStop(0, '#241335'); grad.addColorStop(1, '#57420a'); g.fillStyle = grad; g.fillRect(0, 0, w, h); g.fillStyle = '#ffc95e'; g.beginPath(); g.moveTo(w / 2, 26); g.lineTo(w / 2 + 20, 62); g.lineTo(w / 2 + 8, 62); g.lineTo(w / 2 + 8, 76); g.lineTo(w / 2 - 8, 76); g.lineTo(w / 2 - 8, 62); g.lineTo(w / 2 - 20, 62); g.closePath(); g.fill(); g.font = 'bold 12px sans-serif'; g.textAlign = 'center'; g.fillText('STAY GOLD', w / 2, 104); }
   });
 }
 function applyAptDecor() {
@@ -3465,32 +3480,32 @@ function drawMap() {
   const g = cv.getContext('2d'); if (!g) return;
   const W = cv.width, H = cv.height;
   const sx = (x) => (x + 200) / 400 * W, sz = (z) => (z + 125) / 250 * H;
-  g.fillStyle = '#14102e'; g.fillRect(0, 0, W, H);
-  g.fillStyle = '#1d3a5f'; g.beginPath(); g.ellipse(sx(150), sz(30), 52, 40, 0, 0, 7); g.fill(); // moonfall lake east
-  g.fillStyle = '#274d33'; g.fillRect(sx(82), sz(-70), sx(190) - sx(82), sz(70) - sz(-70)); // park
-  g.fillStyle = '#2c2350'; g.fillRect(sx(-195), sz(-118), sx(195) - sx(-195), sz(118) - sz(-118)); // ground tint under roads
-  g.fillStyle = '#14102e'; g.fillRect(0, 0, W, H); // reset bg (kept simple: redraw in order)
-  g.fillStyle = '#241b4d'; g.fillRect(sx(-195), sz(-118), sx(195) - sx(-195), sz(118) - sz(-118));
-  g.fillStyle = '#1d3a5f'; g.beginPath(); g.ellipse(sx(150), sz(30), 52, 40, 0, 0, 7); g.fill();
-  g.fillStyle = '#274d33'; g.fillRect(sx(82), sz(-70), sx(190) - sx(82), sz(70) - sz(-70));
-  g.strokeStyle = '#4a4470'; g.lineWidth = 7;
+  g.fillStyle = '#1a1226'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#5b84ad'; g.beginPath(); g.ellipse(sx(150), sz(30), 52, 40, 0, 0, 7); g.fill(); // moonfall lake east
+  g.fillStyle = '#7d9b6a'; g.fillRect(sx(82), sz(-70), sx(190) - sx(82), sz(70) - sz(-70)); // park
+  g.fillStyle = '#2a1f33'; g.fillRect(sx(-195), sz(-118), sx(195) - sx(-195), sz(118) - sz(-118)); // ground tint under roads
+  g.fillStyle = '#1a1226'; g.fillRect(0, 0, W, H); // reset bg (kept simple: redraw in order)
+  g.fillStyle = '#2a1f33'; g.fillRect(sx(-195), sz(-118), sx(195) - sx(-195), sz(118) - sz(-118));
+  g.fillStyle = '#7d9b6a'; g.fillRect(sx(82), sz(-70), sx(190) - sx(82), sz(70) - sz(-70));
+  g.fillStyle = '#5b84ad'; g.beginPath(); g.ellipse(sx(150), sz(30), 52, 40, 0, 0, 7); g.fill(); // lake AFTER the park: the park rect covers the lake's shore, the water must paint on top (v580 fix — same geometry/data)
+  g.strokeStyle = '#8a7461'; g.lineWidth = 7;
   g.beginPath(); g.moveTo(sx(-190), sz(0)); g.lineTo(sx(190), sz(0)); g.moveTo(sx(0), sz(-115)); g.lineTo(sx(0), sz(115)); g.stroke();
-  g.fillStyle = '#ffd257'; g.beginPath(); g.arc(sx(0), sz(0), 5, 0, 7); g.fill(); // the well
+  g.fillStyle = '#ffc95e'; g.beginPath(); g.arc(sx(0), sz(0), 5, 0, 7); g.fill(); // the well
   const B = [
     ['coffee shop', -36, -44], ['6ixnetworks', 0, -50], ['clothing co.', 36, -44], ['arcade', -62, -52],
     ['library', 58, -54], ['6ix music', 0, -80], ['apartments', -64, 46], ['rec center', 62, 48],
   ];
   g.font = '600 10px Inter, sans-serif'; g.textAlign = 'center';
   for (const [name, x, z] of B) {
-    g.fillStyle = '#a78bfa'; g.fillRect(sx(x) - 8, sz(z) - 5, 16, 10);
-    g.fillStyle = '#e9e4ff'; g.fillText(name, sx(x), sz(z) - 9);
+    g.fillStyle = '#d9b380'; g.fillRect(sx(x) - 8, sz(z) - 5, 16, 10);
+    g.fillStyle = '#f7ecd9'; g.fillText(name, sx(x), sz(z) - 9);
   }
-  g.fillStyle = '#f9a8d4';
+  g.fillStyle = '#f2a7c3';
   for (const [x, z] of [[-120, 20], [-128, -6], [96, -30], [120, 44], [-40, 70], [44, 84]]) { g.beginPath(); g.arc(sx(x), sz(z), 3, 0, 7); g.fill(); }
   const z = zoneNow();
   if (z === 'town') {
     g.fillStyle = '#fff'; g.beginPath(); g.arc(sx(px), sz(pz), 5, 0, 7); g.fill();
-    g.strokeStyle = '#ffd257'; g.lineWidth = 2; g.beginPath(); g.arc(sx(px), sz(pz), 8.5, 0, 7); g.stroke();
+    g.strokeStyle = '#ffc95e'; g.lineWidth = 2; g.beginPath(); g.arc(sx(px), sz(pz), 8.5, 0, 7); g.stroke();
     g.fillStyle = '#fff'; g.fillText('u are here', sx(px), sz(pz) + 22);
   } else {
     g.fillStyle = '#ffd9a0'; g.font = '700 13px Inter, sans-serif';
@@ -3696,6 +3711,20 @@ function vcSetBtn3() {
     b.title = !vcOn3 ? 'voice chat' : listenOnly ? 'voice on — listen only (no mic)' : (vcMuted ? 'voice on — mic muted' : 'voice on — tap to turn off');
   }
   if (mb) { mb.hidden = !vcOn3; mb.classList.toggle('on', vcMuted); mb.innerHTML = icon(vcMuted ? 'micoff' : 'mic', 18); }
+  // v580: voice status pill (presentation only — states come straight
+  // from the existing voice flags; no signaling/WebRTC changes)
+  const pill = document.getElementById('w3vcstat'), ptx = document.getElementById('w3vcstattx');
+  if (pill && ptx) {
+    let st = '', tx = '';
+    if (vcPending3) { st = 'st-connecting'; tx = 'connecting…'; }
+    else if (vcOn3) {
+      if (!vcStream) { st = 'st-listen'; tx = 'listen only — no mic'; }
+      else if (vcMuted) { st = 'st-muted'; tx = 'mic muted'; }
+      else { st = 'st-live'; tx = 'voice live'; }
+    }
+    pill.className = st ? ('show ' + st + (vcTalk3 ? ' talking' : '')) : '';
+    if (tx) ptx.textContent = tx;
+  }
 }
 function vcStopAll3() {
   vcGen3++;
@@ -3714,12 +3743,14 @@ async function vcToggle3() {
   if (vcOn3) { vcStopAll3(); toast('voice off'); return; }
   if (vcPending3) return;
   vcPending3 = true;
+  vcSetBtn3();
   const gen = vcGen3;
   let stream = null;
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
     try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { stream = null; }
   }
   vcPending3 = false;
+  vcSetBtn3();
   if (gen !== vcGen3) {
     if (stream) stream.getTracks().forEach((t) => { try { t.stop(); } catch (e) { } });
     return;
@@ -3741,6 +3772,8 @@ setInterval(() => {
   vcTalk3 = !vcMuted && vcRms(vcAn3) > 0.045;
   const b = document.getElementById('w3micbtn');
   if (b) b.classList.toggle('live', vcTalk3);
+  const pill = document.getElementById('w3vcstat');
+  if (pill) pill.classList.toggle('talking', vcTalk3);
 }, 180);
 document.addEventListener('visibilitychange', () => { if (!document.hidden && vcCtx3 && vcCtx3.state === 'suspended') vcCtx3.resume(); });
 if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
@@ -4305,25 +4338,37 @@ function goBack() {
 }
 
 /* ---------- settings UI ---------- */
+function paintRange(el) { if (!el) return; const min = parseFloat(el.min) || 0, max = parseFloat(el.max) || 1, v = parseFloat(el.value) || 0; el.style.setProperty('--fill', ((v - min) / (max - min) * 100) + '%'); }
 function bindSettings() {
+  const bv = (id) => document.getElementById(id);
+  const badges = () => {
+    const s = bv('w3sensv'); if (s) s.textContent = SET.sens.toFixed(2) + '×';
+    const d = bv('w3camdv'); if (d) d.textContent = SET.camDist + ' u';
+    const h = bv('w3camhv'); if (h) h.textContent = SET.camH.toFixed(1);
+    const f = bv('w3fovv'); if (f) f.textContent = SET.fov + '°';
+    const v = bv('w3volv'); if (v) v.textContent = Math.round(SET.vol * 100) + '%';
+    const x = bv('w3sfxv'); if (x) x.textContent = Math.round(SET.sfx * 100) + '%';
+    [R.sens, R.camd, R.camh, R.fov, R.vol, R.sfx].forEach(paintRange);
+  };
   R.sens.value = SET.sens; R.camd.value = SET.camDist; R.camh.value = SET.camH; R.gfxsel.value = SET.gfx;
   if (R.viewsel) { R.viewsel.value = SET.view; R.fov.value = SET.fov; R.bob.checked = SET.bob; }
   R.shadow.checked = SET.shadows; R.snd.checked = SET.snd; R.vol.value = SET.vol; if (R.sfx) R.sfx.value = SET.sfx;
-  R.setbtn.addEventListener('click', () => { R.set.hidden = !R.set.hidden; R.setbtn.classList.toggle('on', !R.set.hidden); });
-  R.setclose.addEventListener('click', () => { R.set.hidden = true; });
-  R.sens.addEventListener('input', () => { SET.sens = parseFloat(R.sens.value) || 1; saveSet(); });
-  R.camd.addEventListener('input', () => { SET.camDist = parseFloat(R.camd.value) || 13; saveSet(); });
-  R.camh.addEventListener('input', () => { SET.camH = parseFloat(R.camh.value) || 1.7; saveSet(); });
+  badges();
+  R.setbtn.addEventListener('click', () => { R.set.hidden = !R.set.hidden; R.setbtn.classList.toggle('on', !R.set.hidden); if (!R.set.hidden) badges(); });
+  R.setclose.addEventListener('click', () => { R.set.hidden = true; R.setbtn.classList.remove('on'); });
+  R.sens.addEventListener('input', () => { SET.sens = parseFloat(R.sens.value) || 1; saveSet(); badges(); });
+  R.camd.addEventListener('input', () => { SET.camDist = parseFloat(R.camd.value) || 13; saveSet(); badges(); });
+  R.camh.addEventListener('input', () => { SET.camH = parseFloat(R.camh.value) || 1.7; saveSet(); badges(); });
   R.gfxsel.addEventListener('change', () => { SET.gfx = R.gfxsel.value; autoCap = 2; saveSet(); applyGfx(); toast('graphics: ' + SET.gfx); });
   if (R.viewsel) {
     R.viewsel.addEventListener('change', () => { if (R.viewsel.value !== SET.view) toggleView(); });
-    R.fov.addEventListener('input', () => { SET.fov = parseInt(R.fov.value, 10) || 72; saveSet(); });
+    R.fov.addEventListener('input', () => { SET.fov = parseInt(R.fov.value, 10) || 72; saveSet(); badges(); });
     R.bob.addEventListener('change', () => { SET.bob = R.bob.checked; saveSet(); });
   }
   R.shadow.addEventListener('change', () => { SET.shadows = R.shadow.checked; saveSet(); applyGfx(); });
   R.snd.addEventListener('change', () => { SET.snd = R.snd.checked; saveSet(); applyAudio(); });
-  R.vol.addEventListener('input', () => { SET.vol = parseFloat(R.vol.value) || 0; saveSet(); applyAudio(); });
-  if (R.sfx) R.sfx.addEventListener('input', () => { SET.sfx = parseFloat(R.sfx.value) || 0; saveSet(); });
+  R.vol.addEventListener('input', () => { SET.vol = parseFloat(R.vol.value) || 0; saveSet(); applyAudio(); badges(); });
+  if (R.sfx) R.sfx.addEventListener('input', () => { SET.sfx = parseFloat(R.sfx.value) || 0; saveSet(); badges(); });
 }
 
 /* ---------- boot: checkpoints are real events, not fake numbers ---------- */
@@ -4377,6 +4422,19 @@ function init() {
   window.addEventListener('pagehide', () => { if (!sessionConflict) { try { navigator.sendBeacon && navigator.sendBeacon('/api/world3d/leave', new Blob(['{}'], { type: 'application/json' })); } catch (e) { } } cleanup(); });
   bindInput();
   bindSettings();
+  // v580 a11y: Escape closes the topmost open surface and returns
+  // focus to the control that opened it. Close paths are the same
+  // functions the X buttons already call — no new state.
+  window.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (R.set && !R.set.hidden) { R.set.hidden = true; R.setbtn.classList.remove('on'); R.setbtn.focus(); return; }
+    if (mapOpen) { closeMap(); const mb2 = document.getElementById('w3mapbtn'); if (mb2) mb2.focus(); return; }
+    if (quizOpen) { closeQuiz(); return; }
+    if (gamesOpen) { closeGames(); return; }
+    if (wardOpen) { closeWardrobe(false); return; }
+    if (menuOpen) { closeMenu(); return; }
+    if (dlgOpen) { dlgOpen = false; R.dlg.hidden = true; }
+  });
   R.act.addEventListener('click', goBack);
 
   setLoad(72, 'INITIALIZING_CONTROLS'); // checkpoint: input + settings bound
