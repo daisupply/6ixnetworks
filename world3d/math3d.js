@@ -199,6 +199,18 @@ function groundHBase(x, z) {
     // silhouettes and gives their faces shading variation.
     h += 1.15 * (ridge2(x * 0.013 + 3.9, z * 0.013 + 8.4, 3) - 0.5) * sstep(10, 40, dOut);
   }
+  // worldgen handover (terrain v2): the rim term above saturates at
+  // dOut 85 — left alone it rings the world in full-strength
+  // mountains forever. past dOut 60 the heightfield crossfades to
+  // wildH, the procedural countryside, reaching it fully at dOut
+  // 200. both surfaces are continuous, so the blend is seamless by
+  // construction; inside dOut 60 nothing changes at all (the apron
+  // regression pins in worldgen.test.mjs cover dOut <= 30).
+  const dOutB = Math.hypot(Math.max(Math.abs(x) - 195, 0), Math.max(Math.abs(z) - 118, 0));
+  if (dOutB > 60) {
+    const w = sstep(60, 200, dOutB);
+    h = h * (1 - w) + wildH(x, z) * w;
+  }
   return h;
 }
 // v2: designed flat pads — the forest clearing and the overlook terrace
@@ -213,10 +225,46 @@ function flatPad(h, x, z, cx, cz, r, ch) {
 }
 export function groundH(x, z) {
   let h = groundHBase(x, z);
-  if (h <= 0) return h;
-  h = flatPad(h, x, z, -179, -38, 11, PAD_CLEAR_H);
-  h = flatPad(h, x, z, 174, 8, 9, PAD_OVER_H);
+  if (h > 0) {
+    h = flatPad(h, x, z, -179, -38, 11, PAD_CLEAR_H);
+    h = flatPad(h, x, z, 174, 8, 9, PAD_OVER_H);
+  }
+  // settlement pads (worldgen Stage 6) apply even where the base
+  // height is <= 0 — a hamlet can sit in a shallow dip.
+  if (padProvider) h = padProvider(x, z, h);
   return h;
+}
+
+// ---- worldgen: biome fields + countryside (terrain v2) ----
+// Continuous world-scale fields, pure functions of (x, z) over the
+// same integer-hash noise as the authored terrain, so every client
+// derives identical biomes from coordinates alone. Discrete
+// generation (seeds, per-chunk rng) lives in worldgen.js.
+export const WATER_Y = -1.15;
+export function biomeFields(x, z) {
+  return {
+    moist: fbm2(x * 0.004 + 171.3, z * 0.004 + 58.9, 3) * 0.5 + 0.5,
+    forest: fbm2(x * 0.0035 + 233.7, z * 0.0035 + 96.2, 3) * 0.5 + 0.5,
+    high: fbm2(x * 0.0028 + 311.1, z * 0.0028 + 144.4, 3) * 0.5 + 0.5,
+    lake: fbm2(x * 0.005 + 421.9, z * 0.005 + 267.3, 3) * 0.5 + 0.5,
+  };
+}
+// the procedural countryside the terrain v2 handover fades to:
+// rolling plains everywhere, ridged highlands where the high field
+// peaks, and lake basins where the lake field peaks on low ground —
+// basin floors are pulled toward -2.3 so they sit below WATER_Y and
+// hold water (water meshes arrive in Stage 7; the heightfield
+// carries the basins from here on). floored at -2.6 like the
+// authored valleys, so no ground anywhere is deeper than that.
+function wildH(x, z) {
+  const f = biomeFields(x, z);
+  let h = 5.2 * fbm2(x * 0.008 + 511.7, z * 0.008 + 388.1, 4);
+  h += 1.1 * fbm2(x * 0.03 + 77.7, z * 0.03 + 55.5, 2);
+  const hm = sstep(0.52, 0.68, f.high);
+  if (hm > 0) { const r = ridge2(x * 0.006 + 611.3, z * 0.006 + 477.9, 4); h += hm * (5 + 24 * r * r); }
+  const lm = sstep(0.70, 0.85, f.lake) * (1 - hm) * (1 - sstep(3, 7, h));
+  if (lm > 0) h += (-2.3 - h) * lm * 0.85;
+  return Math.max(-2.6, h);
 }
 // analytic terrain normal from the same central differences the
 // chunk builder's halo grid computes (eps = the 2.5u mesh step), so
@@ -347,6 +395,21 @@ export function terrainChunkIndex(seg) {
   return idx;
 }
 
+// worldgen Stage 5: the dirt-path provider slot. the path network
+// lives in worldgen.js (which imports this module — a direct
+// import back would be a cycle), so worldgen registers its
+// pathDist here at load; terrainWeights consults it when present.
+// no provider (e.g. math.test.mjs imports math3d alone) = no
+// paths in weights, exactly the pre-Stage-5 behaviour.
+let pathProvider = null;
+export function setPathProvider(fn) { pathProvider = fn; }
+
+// worldgen Stage 6: the settlement-pad provider slot, same
+// pattern — worldgen registers a function (x, z, h) -> h that
+// blends ground height toward each hamlet's pad height.
+let padProvider = null;
+export function setPadProvider(fn) { padProvider = fn; }
+
 export function terrainWeights(x, z, ny, h) {
   const s = 1 - ny;
   const wild = Math.max(sstep(126, 150, Math.abs(x)), sstep(98, 116, Math.abs(z)));
@@ -357,6 +420,25 @@ export function terrainWeights(x, z, ny, h) {
     + sstep(0.045, 0.10, s) * (1 - sstep(0.10, 0.30, s)) * 0.35;
   const dPond = Math.hypot(x - 118, z - 12);
   let sand = (1 - sstep(12.5, 17, dPond)) * (1 - sstep(0.1, 0.45, h));
+  // worldgen: field-driven forest and lakeshore sand beyond the
+  // apron, faded in by distance past the bounds — the guard keeps
+  // every apron weight bit-identical to the authored terrain
+  // (regression pins in worldgen.test.mjs cover dOut <= 30).
+  const dOutW = Math.hypot(Math.max(Math.abs(x) - 195, 0), Math.max(Math.abs(z) - 118, 0));
+  if (dOutW > 30) {
+    const fade = sstep(30, 90, dOutW);
+    const bf = biomeFields(x, z);
+    forest = Math.max(forest, sstep(0.55, 0.72, bf.forest) * (0.45 + 0.55 * bf.moist) * fade);
+    sand = Math.max(sand, (1 - sstep(0.45, 1.1, Math.abs(h - WATER_Y))) * fade);
+    // dirt paths (worldgen Stage 5): worn dirt along the path
+    // network, registered by worldgen.js. inside this same
+    // dOut > 30 guard, so apron weights stay pinned; Stage 8
+    // joins the paths to the town gates deliberately.
+    if (pathProvider) {
+      const pd = pathProvider(x, z);
+      if (pd < 7) dirt = Math.max(dirt, (1 - sstep(2.2, 7, pd)) * 0.85 * fade);
+    }
+  }
   let grass = Math.max(0, 1 - forest - dirt - rock - sand);
   const sum = grass + forest + dirt + rock + sand || 1;
   return [grass / sum, forest / sum, dirt / sum, rock / sum, sand / sum];

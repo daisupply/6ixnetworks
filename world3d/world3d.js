@@ -131,6 +131,7 @@ function createWorld3D(ctx) {
   const CSS = fs.readFileSync(path.join(__dirname, 'world3d.css'), 'utf8');
   const CLIENT = fs.readFileSync(path.join(__dirname, 'client3d.js'), 'utf8');
   const MATH = fs.readFileSync(path.join(__dirname, 'math3d.js'), 'utf8');
+  const GEN = fs.readFileSync(path.join(__dirname, 'worldgen.js'), 'utf8');
   const THREE_MIN = fs.readFileSync(path.join(__dirname, 'vendor', 'three.module.min.js'), 'utf8');
   const GLTF_LOADER = fs.readFileSync(path.join(__dirname, 'vendor', 'addons', 'loaders', 'GLTFLoader.js'), 'utf8');
   const BG_UTILS = fs.readFileSync(path.join(__dirname, 'vendor', 'addons', 'utils', 'BufferGeometryUtils.js'), 'utf8');
@@ -436,6 +437,7 @@ function createWorld3D(ctx) {
     if (pathname === '/world3d/world3d.css') return { type: 'text/css; charset=utf-8', body: CSS };
     if (pathname === '/world3d/client3d.js') return { type: 'text/javascript; charset=utf-8', body: CLIENT };
     if (pathname === '/world3d/math3d.js') return { type: 'text/javascript; charset=utf-8', body: MATH };
+    if (pathname === '/world3d/worldgen.js') return { type: 'text/javascript; charset=utf-8', body: GEN };
     if (pathname === '/world3d/vendor/three.module.min.js') return { type: 'text/javascript; charset=utf-8', body: THREE_MIN };
     if (pathname === '/world3d/vendor/addons/loaders/GLTFLoader.js') return { type: 'text/javascript; charset=utf-8', body: GLTF_LOADER };
     if (pathname === '/world3d/vendor/addons/utils/BufferGeometryUtils.js') return { type: 'text/javascript; charset=utf-8', body: BG_UTILS };

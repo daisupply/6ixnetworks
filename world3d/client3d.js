@@ -27,7 +27,8 @@
  * player data, WebGL context-loss overlay. Three.js r160 vendored.
  */
 import * as THREE from 'three';
-import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH, fbm2, ridge2, terrainWeights, terrainChunkGrid, terrainChunkIndex } from './math3d.js';
+import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH, fbm2, ridge2, terrainWeights, terrainChunkGrid, terrainChunkIndex, TERR_CHUNK } from './math3d.js';
+import { planChunks, genChunkVeg, isApronChunk, VEG_TREES, settlements } from './worldgen.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as skelClone } from 'three/addons/utils/SkeletonUtils.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -288,9 +289,10 @@ function canvasTex(w, h, draw, rx, ry) {
  * sampled at identical world coordinates by both neighbours, and
  * normals come from a 1-vertex halo grid sampled from the same pure
  * function, so adjacent chunks agree on heights AND normals exactly
- * — no seams, no cracks. This is the structure future chunk
- * streaming will load/unload; for now every chunk is built once at
- * boot and stays (buildings and terrain never unload).
+ * — no seams, no cracks. Since worldgen Stage 3 the apron grid
+ * below is the pinned core of a streaming manager: chunks beyond
+ * it build and evict around the player (plan in worldgen.js);
+ * buildings never unload, terrain streams.
  * Materials: five CC0 Poly Haven ground layers (grass / forest floor
  * / dry dirt / rocky ground / shore sand) blended per-vertex by
  * biome, slope, height and moisture weights computed from the same
@@ -381,15 +383,135 @@ function buildTerrainChunk(cx, cz) {
   TERRAIN_CHUNKS.set(key, g);
   return g;
 }
+let terrMat = null, terrGroup = null;
+const TERRAIN_MESHES = new Map();
+let terrBuildQ = [], terrCellCx = null, terrCellCz = null;
+function ensureChunkMesh(cx, cz) {
+  const key = cx + ',' + cz;
+  if (TERRAIN_MESHES.has(key)) return;
+  const mesh = new THREE.Mesh(buildTerrainChunk(cx, cz), terrMat);
+  mesh.receiveShadow = true;
+  terrGroup.add(mesh);
+  TERRAIN_MESHES.set(key, mesh);
+}
+function evictChunk(key) {
+  const mesh = TERRAIN_MESHES.get(key);
+  if (!mesh) return;
+  terrGroup.remove(mesh);
+  TERRAIN_MESHES.delete(key);
+  evictVeg(key);
+  // drop the cached geometry too, or the cache grows forever on a
+  // long trek. the shared index arrays (TERR_INDEX*) and the shared
+  // material/textures are NOT disposed — other chunks use them.
+  const g = TERRAIN_CHUNKS.get(key);
+  if (g) { g.dispose(); TERRAIN_CHUNKS.delete(key); }
+}
 function buildTerrain() {
-  const group = new THREE.Group();
-  const mat = terrainMaterial();
-  for (let cx = -5; cx < 5; cx++) for (let cz = -4; cz < 4; cz++) {
-    const mesh = new THREE.Mesh(buildTerrainChunk(cx, cz), mat);
-    mesh.receiveShadow = true;
-    group.add(mesh);
+  terrGroup = new THREE.Group();
+  terrMat = terrainMaterial();
+  for (let cx = -5; cx < 5; cx++) for (let cz = -4; cz < 4; cz++) ensureChunkMesh(cx, cz);
+  return terrGroup;
+}
+/* terrain streaming (worldgen Stage 3): the apron above is pinned;
+ * beyond it, chunks build/evict around the player per the pure
+ * plan in worldgen.js (STREAM_R build / EVICT_R evict). town zone
+ * only — interiors sit at x~2000 where no terrain may ever
+ * generate. the plan recomputes on chunk-boundary crossings;
+ * builds drain at <=2 per frame, nearest first. */
+function tickTerrainStreaming() {
+  if (!terrGroup || zoneNow() !== 'town') { terrBuildQ.length = 0; terrCellCx = null; return; }
+  const ccx = Math.floor(px / TERR_CHUNK), ccz = Math.floor(pz / TERR_CHUNK);
+  if (ccx !== terrCellCx || ccz !== terrCellCz) {
+    terrCellCx = ccx; terrCellCz = ccz;
+    const plan = planChunks(new Set(TERRAIN_MESHES.keys()), px, pz);
+    for (const key of plan.evict) evictChunk(key);
+    terrBuildQ = plan.build.map(w => [w.cx, w.cz]);
   }
-  return group;
+  let n = 0;
+  while (terrBuildQ.length && n < 2) {
+    const q = terrBuildQ.shift(); ensureChunkMesh(q[0], q[1]);
+    if (!isApronChunk(q[0], q[1])) terrVegQ.push(q[0] + ',' + q[1]);
+    n++;
+  }
+  let vn = 0;
+  while (terrVegQ.length && vn < 2) { const key = terrVegQ.shift(); const i = key.indexOf(','); ensureVegChunk(+key.slice(0, i), +key.slice(i + 1)); vn++; }
+  tickSettlements();
+}
+
+/* wild vegetation (worldgen Stage 4): per-chunk instanced meshes
+ * from genChunkVeg descriptors — pure, cell-seeded, identical on
+ * every client. trees render through their decimated _LOD parts
+ * (the same approved models town trees use at distance); shrubs,
+ * rocks and grass through their full parts. parts are cached per
+ * species and SHARED across chunks: eviction disposes only each
+ * InstancedMesh's own instance buffers, never the shared
+ * geometry/materials. no colliders for wild vegetation — the
+ * per-frame collider sweep stays town-sized on purpose. */
+const VEG_MESHES = new Map();
+const WILD_PARTS = new Map();
+const WILD_WAITERS = new Map();
+let terrVegQ = [];
+const VEG_LOD = new Set([...VEG_TREES.broad, ...VEG_TREES.pine, ...VEG_TREES.twisted, ...VEG_TREES.dead, ...VEG_TREES.sakura]);
+function wildParts(name, cb) {
+  const got = WILD_PARTS.get(name);
+  if (got && got !== 'pending') { cb(got); return; }
+  if (got === 'pending') { const w = WILD_WAITERS.get(name) || []; w.push(cb); WILD_WAITERS.set(name, w); return; }
+  WILD_PARTS.set(name, 'pending');
+  WILD_WAITERS.set(name, [cb]);
+  loadAsset(NAT + name + (VEG_LOD.has(name) ? '_LOD' : '') + '.glb', 60).then((proto) => {
+    let parts = null;
+    if (proto) {
+      parts = lodParts(proto);
+      if (name.indexOf('Grass_') === 0) parts = parts.map((p) => { const m = p.material.clone(); m.emissive = new THREE.Color(0x1c2a0e); m.emissiveIntensity = 0.38; return { geometry: p.geometry, material: m }; });
+    }
+    WILD_PARTS.set(name, parts); // null = failed: species omitted, never a primitive (ECO rule)
+    const cbs = WILD_WAITERS.get(name) || []; WILD_WAITERS.delete(name);
+    for (const f of cbs) f(parts);
+  });
+}
+function ensureVegChunk(cx, cz) {
+  const key = cx + ',' + cz;
+  if (VEG_MESHES.has(key) || !TERRAIN_MESHES.has(key)) return;
+  const veg = genChunkVeg(cx, cz);
+  const group = new THREE.Group();
+  const entry = { group };
+  VEG_MESHES.set(key, entry);
+  scene.add(group);
+  const byName = new Map();
+  for (const layer of ['trees', 'shrubs', 'rocks', 'grass']) for (const d of veg[layer]) {
+    if (!byName.has(d.n)) byName.set(d.n, []);
+    byName.get(d.n).push(d);
+  }
+  for (const [name, list] of byName) {
+    wildParts(name, (parts) => {
+      if (!parts || VEG_MESHES.get(key) !== entry) return; // evicted (or failed) meanwhile
+      for (const p of parts) {
+        const im = new THREE.InstancedMesh(p.geometry, p.material, list.length);
+        const d = new THREE.Object3D();
+        let bcx = 0, bcz = 0;
+        list.forEach((q, i) => {
+          d.position.set(q.x, groundH(q.x, q.z) - 0.04, q.z);
+          d.rotation.set(0, q.ry, 0); d.scale.setScalar(q.s); d.updateMatrix();
+          im.setMatrixAt(i, d.matrix);
+          bcx += q.x; bcz += q.z;
+        });
+        bcx /= list.length; bcz /= list.length;
+        let brad = 0;
+        for (const q of list) { const dd = Math.hypot(q.x - bcx, q.z - bcz) + 4; if (dd > brad) brad = dd; }
+        im.boundingSphere = new THREE.Sphere(new THREE.Vector3(bcx, groundH(bcx, bcz), bcz), brad);
+        im.castShadow = /Tree|Pine/.test(name);
+        im.receiveShadow = true;
+        group.add(im);
+      }
+    });
+  }
+}
+function evictVeg(key) {
+  const entry = VEG_MESHES.get(key);
+  if (!entry) return;
+  VEG_MESHES.delete(key);
+  scene.remove(entry.group);
+  entry.group.traverse((o) => { if (o.isInstancedMesh) o.dispose(); });
 }
 
 function plazaTexture() {
@@ -2452,6 +2574,66 @@ function buildHorizon() {
     });
   }
 }
+/* settlements (worldgen Stage 6): whole-hamlet streaming around
+ * the ring-1 waypoints. structures are clones of the kitbashed
+ * GLBs (assets-src/hamlet.py); fences are one InstancedMesh per
+ * hamlet. colliders are registered synchronously from the layout
+ * data (so a hamlet is solid before its models land) and spliced
+ * out on eviction. hysteresis: build < 370u, evict > 430u. */
+const SETTLE_MESHES = new Map();
+const SETTLE_URLS = { cottage: '/world3d/assets/architecture/cottage.glb', shed: '/world3d/assets/architecture/shed.glb', watchtower: '/world3d/assets/architecture/watchtower.glb', well: '/world3d/assets/environment/well.glb', fence: '/world3d/assets/environment/fence.glb', crate: '/world3d/assets/environment/crate.glb' };
+const SETTLE_COL = { cottage: 3.6, shed: 3.2, watchtower: 3.0, well: 1.3, crate: 0.8, fence: 0.9 };
+function ensureSettlement(s) {
+  if (SETTLE_MESHES.has(s.i)) return;
+  const entry = { group: new THREE.Group(), colliders: [] };
+  SETTLE_MESHES.set(s.i, entry);
+  scene.add(entry.group);
+  const byKind = {};
+  for (const it of s.items) {
+    (byKind[it.n] = byKind[it.n] || []).push(it);
+    const c = { x: it.x, z: it.z, r: SETTLE_COL[it.n] || 1 };
+    colliders.push(c); entry.colliders.push(c);
+  }
+  for (const kind of Object.keys(byKind)) {
+    loadAsset(SETTLE_URLS[kind], 40).then((proto) => {
+      if (!proto || SETTLE_MESHES.get(s.i) !== entry) return;
+      const list = byKind[kind];
+      if (kind === 'fence') {
+        let mesh = null; proto.traverse((o) => { if (!mesh && o.isMesh) mesh = o; });
+        if (!mesh) return;
+        const im = new THREE.InstancedMesh(mesh.geometry, mesh.material, list.length);
+        const d = new THREE.Object3D();
+        list.forEach((it, k) => { d.position.set(it.x, groundH(it.x, it.z) - 0.04, it.z); d.rotation.set(0, it.ry, 0); d.updateMatrix(); im.setMatrixAt(k, d.matrix); });
+        im.castShadow = true; im.receiveShadow = true;
+        entry.group.add(im);
+      } else {
+        for (const it of list) {
+          const m = proto.clone(true);
+          m.position.set(it.x, groundH(it.x, it.z) - 0.04, it.z);
+          m.rotation.y = it.ry;
+          m.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+          entry.group.add(m);
+        }
+      }
+    });
+  }
+}
+function evictSettlement(i) {
+  const entry = SETTLE_MESHES.get(i);
+  if (!entry) return;
+  SETTLE_MESHES.delete(i);
+  scene.remove(entry.group);
+  entry.group.traverse((o) => { if (o.isInstancedMesh) o.dispose(); });
+  for (const c of entry.colliders) { const k = colliders.indexOf(c); if (k >= 0) colliders.splice(k, 1); }
+}
+function tickSettlements() {
+  for (const s of settlements()) {
+    const d = Math.hypot(px - s.x, pz - s.z);
+    if (d < 370 && !SETTLE_MESHES.has(s.i)) ensureSettlement(s);
+    else if (d > 430 && SETTLE_MESHES.has(s.i)) evictSettlement(s.i);
+  }
+}
+
 function buildGroundCover() {
   const rnd = mulberry32(777333);
   const BRECTS = [
@@ -4265,7 +4447,7 @@ function loop() {
     else { if (rm.rig) setRigShown(rm, false); animateAvatar(g, rm.st, dt, now); }
   }
   // npcs idle in place; prompt scan + seat snap (v543)
-  tickStrollers(dt, now); tickShards(now); tickDressing(now); tickAudio(); tickWildlife(now, dt); tickLOD();
+  tickStrollers(dt, now); tickShards(now); tickDressing(now); tickAudio(); tickWildlife(now, dt); tickLOD(); tickTerrainStreaming();
   tickNPCRoutines(now);
   for (const n of NPCS) { if (n.zone && zoneNow() !== n.zone) continue; if (n.rig) updateRig(n, dt); else animateAvatar(n.g, n.st, dt, now); }
   if (sitting) { px = sitting.x; pz = sitting.z; if (joyVec.x || joyVec.y) standUp(); }
@@ -4315,7 +4497,7 @@ function loop() {
     window.__w3scene = scene; // diagnostic handle (mesh census in tests)
     window.__w3state = function () {
       const miraN = NPCS.find((n) => n.zone === 'coffee');
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, groveN: GROVE.n, coverN: COVER.lawn, chunksOn: COVER.chunksOn, chunks: COVER.chunks, lodNear: COVER.lodNear, lodFar: COVER.lodFar, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, perfQ: loadQ.length + loadActive, tChunks: TERRAIN_CHUNKS.size, terrTex: terrainTexState ? { loaded: terrainTexState.loaded, failed: terrainTexState.failed.slice() } : null, garden: SPAWNG, vc: { on: vcOn3, muted: vcMuted, peers: Object.keys(vcPeers).length, states: Object.fromEntries(Object.entries(vcPeers).map(([u, p]) => [u, p.pc.connectionState])), talk: vcTalk3 }, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, groveN: GROVE.n, coverN: COVER.lawn, chunksOn: COVER.chunksOn, chunks: COVER.chunks, lodNear: COVER.lodNear, lodFar: COVER.lodFar, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, perfQ: loadQ.length + loadActive, tChunks: TERRAIN_CHUNKS.size, tMesh: TERRAIN_MESHES.size, vegC: VEG_MESHES.size, settleC: SETTLE_MESHES.size, terrTex: terrainTexState ? { loaded: terrainTexState.loaded, failed: terrainTexState.failed.slice() } : null, garden: SPAWNG, vc: { on: vcOn3, muted: vcMuted, peers: Object.keys(vcPeers).length, states: Object.fromEntries(Object.entries(vcPeers).map(([u, p]) => [u, p.pc.connectionState])), talk: vcTalk3 }, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }
