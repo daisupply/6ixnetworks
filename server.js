@@ -1929,14 +1929,15 @@ const GX2_CSS = `
    ================================================================ */
 :root{
 --background:#0D0E13;--sidebar:#11121A;--surface:#181923;--surface-raised:#20212D;--surface-hover:#282936;
---violet:#8B78FF;--violet-hover:#A092FF;--violet-soft:rgba(139,120,255,.13);--violet-border:rgba(139,120,255,.30);
+--surface-2:#1B1C26;--surface-3:#23242F;
+--violet:#8B78FF;--violet-hover:#A092FF;--violet-soft:rgba(139,120,255,.13);--violet-border:rgba(139,120,255,.30);--violet-300:#B3A6FF;
 --text:#F5F4FA;--text-secondary:#9695A5;--text-muted:#707080;
 --border:rgba(255,255,255,.075);--border-strong:rgba(255,255,255,.12);
 --success:#45C98A;--warning:#E9B65B;--danger:#E66F78;--info:#70A9F5;
 --radius-s:8px;--radius-m:12px;--radius-l:16px;--radius-xl:22px;
 --space:8px;
 --fs-display:28px;--fs-head:22px;--fs-title:17px;--fs-body:14px;--fs-sm:12.5px;--fs-micro:10.5px;--lh-body:1.55;
---font-ui:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;--font-display:'Space Grotesk','Inter',system-ui,sans-serif;
+--font-ui:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;--font-display:'Space Grotesk','Inter',system-ui,sans-serif;--font-sans:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
 --shadow-pop:0 18px 50px rgba(0,0,0,.5);
 --z-chrome:60;--z-drawer:70;--z-modal:90;--z-toast:120;--z-veil:200;
 --bg-primary:var(--background);--bg-sidebar:var(--sidebar);--bg-surface:var(--surface);--bg-elevated:var(--surface-raised);--bg-hover:var(--surface-hover);
@@ -1958,13 +1959,14 @@ body[data-acc],body[data-sky="amber"],body[data-sky="violet"],body[data-sky="ice
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 body[data-motion="off"] .gx2-skel{animation:none}
 /* icons (sprite: GX2_ICONS; usage: <svg class="ic"><use href="#ic-home"/></svg>) */
-.ic{width:20px;height:20px;flex:none}
+.ic{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .ic-sm{width:16px;height:16px}
 .ic-lg{width:24px;height:24px}
 /* page container + header */
 .gx2-page{max-width:1200px;margin:0 auto;padding:24px 20px 96px}
 .gx2-pg-head{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:0 0 20px}
 .gx2-pg-title{font-family:var(--font-display);font-size:var(--fs-head);font-weight:600;line-height:1.2;color:var(--text);margin:0}
+.gx2-pg-head h1.gx2-pg-title{background-image:none;color:var(--text);-webkit-text-fill-color:var(--text);text-align:left}
 .gx2-pg-sub{color:var(--text-secondary);font-size:13.5px;margin:4px 0 0}
 .gx2-pg-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
 /* nav (shell, stage 3) */
@@ -2004,7 +2006,7 @@ body[data-motion="off"] .gx2-skel{animation:none}
 .gx2-acard{display:flex;align-items:center;gap:12px;padding:12px;border-radius:var(--radius-m);background:var(--surface);border:1px solid var(--border);text-decoration:none;color:var(--text);transition:background-color .16s ease}
 .gx2-acard:hover{background:var(--surface-hover)}
 .gx2-acard img{width:44px;height:44px;border-radius:10px;object-fit:cover;flex:none;background:var(--surface-raised)}
-.gx2-acard-main{min-width:0}
+.gx2-acard-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;justify-content:center}
 .gx2-acard-name{font-size:14px;font-weight:600}
 .gx2-acard-desc{color:var(--text-secondary);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gx2-acard .gx2-btn{margin-left:auto;flex:none}
@@ -2096,7 +2098,7 @@ body[data-motion="off"] .gx2-skel{animation:none}
 .gx2-seg button{height:30px;padding:0 12px;border:0;border-radius:var(--radius-s);background:none;color:var(--text-secondary);font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer}
 .gx2-seg button.on{background:var(--violet-soft);color:var(--violet)}
 /* featured banner / hero */
-.gx2-hero{position:relative;border-radius:var(--radius-xl);overflow:hidden;background:var(--surface);border:1px solid var(--border);min-height:240px;max-height:340px;display:flex;align-items:flex-end;color:var(--text)}
+.gx2-hero{position:relative;text-decoration:none;border-radius:var(--radius-xl);overflow:hidden;background:var(--surface);border:1px solid var(--border);min-height:240px;max-height:340px;display:flex;align-items:flex-end;color:var(--text)}
 .gx2-hero-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .gx2-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(6,6,10,.78) 0%,rgba(6,6,10,.28) 55%,transparent 80%)}
 .gx2-hero-body{position:relative;z-index:1;padding:22px;max-width:560px}
@@ -2540,7 +2542,6 @@ input:hover{border-color:rgba(255,255,255,.22)}
 .sec-h{font-size:12.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:rgba(var(--star),.78)}
 .popc{transition:transform .25s cubic-bezier(.22,.9,.28,1),box-shadow .25s ease}
 .popc:hover{transform:translateY(-3px)}
-body #feat{background:radial-gradient(120% 160% at 15% -20%,rgba(var(--acc),.3),transparent 55%),radial-gradient(100% 140% at 95% 0%,rgba(var(--acc2),.22),transparent 55%),linear-gradient(180deg,#141318,#0a0a0c)}
 body .mvcard{transition:transform .25s cubic-bezier(.22,.9,.28,1)}
 body .mvcard:hover{transform:translateY(-3px)}
 body .mvcard img{box-shadow:0 10px 26px rgba(0,0,0,.45)}
@@ -2723,68 +2724,26 @@ body #tabbar{background:linear-gradient(180deg,var(--bg-elevated),var(--bg-sideb
    row art keeps its existing absolute cover fill, logo tiles keep
    contain, app icons keep contain - no image URL touched.
    ================================================================ */
-/* ---- games + apps bars: search + selects ---- */
-body .gbar{background:linear-gradient(180deg,rgba(24,25,35,.88),rgba(17,18,26,.88))!important;border-bottom-color:var(--border-subtle)}
-body #gq{background:var(--bg-surface);border-color:var(--border-default)}
-body #gq:focus{border-color:var(--accent-border);box-shadow:0 0 0 3px var(--accent-muted)}
-body #gc{background:var(--bg-surface);border-color:var(--border-default);border-radius:var(--radius-md)}
-/* ---- filter / utility chips (games gbar + chips row, apps bar, pager) ---- */
-.bar .chip,.gbar .chip,#gchips .chip,#pager .chip{background:var(--bg-elevated)!important;border-color:var(--border-default)!important;color:var(--text-secondary);-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:none!important}
-.bar .chip:hover,.gbar .chip:hover,#gchips .chip:hover,#pager .chip:hover{color:var(--text-primary);border-color:var(--accent-border)!important}
-.bar .chip.on,.gbar .chip.on,#gchips .chip.on{background:var(--accent-muted)!important;border-color:var(--accent-border)!important;color:var(--text-primary)}
-/* ---- games: featured hero (six pick) ---- */
-body #feat{border-color:var(--accent-border);border-radius:var(--radius-2xl);background:var(--bg-primary)}
-body #feat .feat-tag{background:var(--accent-primary);color:#fff}
-body #feat .feat-c{color:var(--text-secondary)}
-body #feat .feat-b{color:var(--accent-bright)}
-body #feat .feat-dots i.on{background:var(--accent-bright)}
-/* ---- games: section heads ---- */
-#dailyWrap .sec-h,#popWrap .sec-h,#newWrap .sec-h,#jumpWrap .sec-h,#jumpWrap + .sec-h{color:var(--text-muted)}
-/* ---- game + app cards (grid, pop/new rows, jump row, app rows) ---- */
-#grid.grid .card,#popRow .card,#newRow .card,#jumpRow .card{background:linear-gradient(180deg,var(--bg-elevated),var(--bg-surface))!important;border-color:var(--border-default)!important;border-radius:var(--radius-xl)}
-#grid.grid .card:hover,#popRow .card:hover,#newRow .card:hover,#jumpRow .card:hover{border-color:var(--accent-border)!important}
-#grid.grid .card img:not(.appLogo){background:var(--bg-surface)}
-#grid.grid .noimg{background:var(--bg-surface);color:var(--text-muted)}
-#grid.grid .lgwrap{background:radial-gradient(120% 120% at 30% 18%,var(--bg-hover),var(--bg-primary))}
-#grid.grid .gt{color:var(--text-primary)}
-#grid.grid .gc{color:var(--text-secondary)}
-#grid.grid .fav.on{color:var(--warning)}
-#popRow .popc,#newRow .popc{color:var(--text-secondary)}
+/* ---- filter / utility chips (shared .bar/.chip consumers on other pages) ---- */
+.bar .chip{background:var(--bg-elevated)!important;border-color:var(--border-default)!important;color:var(--text-secondary);-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:none!important}
+.bar .chip:hover{color:var(--text-primary);border-color:var(--accent-border)!important}
+.bar .chip.on{background:var(--accent-muted)!important;border-color:var(--accent-border)!important;color:var(--text-primary)}
 .pgdots{color:var(--text-muted)}
-/* ---- apps: row internals (52px icon tile keeps its light paint for favicon legibility; radius tokenized) ---- */
-.card.appRow .appIcon{border-radius:var(--radius-lg)}
-.card.appRow .appMeta b{color:var(--text-primary)}
-.card.appRow .appMeta i{color:var(--text-secondary);opacity:1}
-/* ---- requests board ---- */
+/* ---- shared .sub (other pages) ---- */
 body .sub{color:var(--text-secondary)}
-body .rqcard{background:linear-gradient(180deg,var(--bg-elevated),var(--bg-surface));border-color:var(--border-default);border-radius:var(--radius-xl)}
-body .rqcard input{background:var(--bg-primary);border-color:var(--border-default);border-radius:var(--radius-md)}
-body .rqcard input:focus{border-color:var(--accent-border);box-shadow:0 0 0 3px var(--accent-muted);outline:none}
-body .rqcard button{background:var(--accent-primary);color:#fff;border-radius:var(--radius-md)}
-body .rqcard button:hover{background:var(--accent-hover)}
-body .rqmsg{color:var(--accent-bright)}
-body #rqList .rq{background:linear-gradient(180deg,var(--bg-elevated),var(--bg-surface));border-color:var(--border-subtle);border-radius:var(--radius-xl)}
-body .rq .rank{color:var(--text-muted)}
-body .rq.top .rank{color:var(--accent-bright)}
-body .rq .meta{color:var(--text-secondary)}
-body .rq .vlink{color:var(--accent-bright)}
-body .rq .onsite{color:var(--success);background:rgba(69,201,138,.13);border-color:rgba(69,201,138,.38)}
-body .rq .vote{background:var(--bg-elevated);border-color:var(--border-default);color:var(--text-secondary);border-radius:var(--radius-md)}
-body .rq .vote.on{background:var(--accent-muted);border-color:var(--accent-border);color:var(--text-primary)}
-body .rqdel{border-color:rgba(230,111,120,.45);color:var(--danger);border-radius:var(--radius-md)}
-body #rqList .empty{color:var(--text-muted)}
-body #rqAdm{background:var(--accent-muted);border-color:var(--accent-border)}
-body #rqAdm .admt{color:var(--accent-bright)}
-body #rqClearAll{border-color:rgba(230,111,120,.55);color:var(--danger)}
-/* ---- player chrome: top bar + controls (direct children only, so the ENG_HTML engine toggle keeps its own ENG_CSS paint) ---- */
-body.playbody .top{background:linear-gradient(180deg,var(--bg-elevated),var(--bg-sidebar));border-bottom-color:var(--border-subtle)}
-body.playbody .top .title{color:var(--text-primary);font-size:var(--text-base)}
-body.playbody .top>a,body.playbody .top>button{background:var(--bg-elevated);border-color:var(--border-default);border-radius:var(--radius-md);color:var(--text-primary)}
-body.playbody .top>a:hover,body.playbody .top>button:hover{background:var(--bg-hover);border-color:var(--accent-border)}
-body.playbody .top>button.on{background:var(--accent-muted);border-color:var(--accent-border);color:var(--text-primary)}
-body.playbody #dead{background:var(--bg-surface)!important;border-color:var(--accent-border)!important}
-body.playbody #escBar{background:var(--bg-surface)!important;border-color:var(--accent-border)!important}
-body.playbody #escBar button{background:var(--accent-primary)!important;color:#fff!important}
+
+/* ---- player chrome (STAGE 4, visual reconstruction): top bar + controls on
+   canonical GX2 tokens. Direct children only, so the ENG_HTML engine toggle
+   keeps its own ENG_CSS paint. Iframe / COEP / engine contracts untouched. ---- */
+body.playbody .top{background:linear-gradient(180deg,var(--surface-3),var(--surface));border-bottom-color:var(--border)}
+body.playbody .top .title{color:var(--text);font-size:var(--fs-body);font-weight:600}
+body.playbody .top #st{background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:3px 10px;font-size:12px;color:var(--text-secondary);opacity:1}
+body.playbody .top>a,body.playbody .top>button{background:var(--surface-3);border-color:var(--border);border-radius:var(--radius-s);color:var(--text)}
+body.playbody .top>a:hover,body.playbody .top>button:hover{background:var(--surface-hover);border-color:var(--violet-border)}
+body.playbody .top>button.on{background:var(--violet-soft);border-color:var(--violet-border);color:var(--text)}
+body.playbody #dead{background:var(--surface)!important;border-color:var(--violet-border)!important;color:var(--text)}
+body.playbody #escBar{background:var(--surface)!important;border-color:var(--violet-border)!important}
+body.playbody #escBar button{background:var(--violet)!important;color:#0D0E13!important}
 /* ============ end GX DESIGN SYSTEM - STAGE 5 (games + apps) ============ */
 /* ================================================================
    GX DESIGN SYSTEM - STAGE 6: SOCIAL + COMMUNICATION (platform redesign, 2026-11-23)
@@ -3613,36 +3572,50 @@ const APPS = [
 function appHue(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360; return (h >= 18 && h <= 58) ? h + 205 : h; }
 function appsPage() {
   const cats = [...new Set(APPS.map(a => a.c))].sort();
-  const APK_CARD = '<a class="card appRow" href="/apks" data-s="apk vault android f-droid app files tools" data-c="Tools"><span class="appIcon"><span class="appLetter" style="background:hsl(152,42%,32%)">A</span><img class="appLogo" loading="lazy" alt="" src="' + proxied('https://www.google.com/s2/favicons?domain=f-droid.org&sz=128') + '" data-brand=""></span><span class="appMeta"><b>APK Vault</b><i>Tools · android app files</i></span></a>';
+  const APK_CARD = '<a class="gx2-acard" href="/apks" data-s="apk vault android f-droid app files tools" data-c="Tools"><span class="ap-ic"><span class="appLetter" style="background:hsl(152,42%,32%)">A</span><img class="appLogo" loading="lazy" alt="" src="' + proxied('https://www.google.com/s2/favicons?domain=f-droid.org&sz=128') + '" data-brand=""></span><span class="gx2-acard-main"><span class="gx2-acard-name">APK Vault</span><span class="gx2-acard-desc">Tools · android app files</span></span><span class="gx2-btn gx2-btn-soft gx2-btn-sm ap-launch">open</span></a>';
   const cards = APK_CARD + APPS.map((a, ai) => {
     const dom = (() => { try { return new URL(a.u).hostname.replace(/^www\./, ''); } catch (err) { return a.u; } })();
     const iconDom = a.t === 'WhatsApp' ? 'whatsapp.com' : a.t === 'VS Code' ? 'code.visualstudio.com' : dom;
     const fav = proxied('https://www.google.com/s2/favicons?domain=' + iconDom + '&sz=128');
     const brand = a.lg ? proxied('https://cdn.simpleicons.org/' + a.lg) : '';
     const letter = '<span class="appLetter" style="background:hsl(' + appHue(a.t) + ',42%,32%)">' + escHtml(a.t.slice(0, 1).toUpperCase()) + '</span>';
-    return `<a class="card appRow" href="/appplay?u=${encodeURIComponent(a.u)}&t=${encodeURIComponent(a.t)}" data-s="${escHtml((a.t + ' ' + a.c).toLowerCase())}" data-c="${escHtml(a.c)}" data-u="${escHtml(a.u)}" data-i="${ai}">
-      <span class="appIcon">${letter}<img class="appLogo" loading="lazy" alt="" src="${fav}" data-brand="${brand}"></span>
-      <span class="appMeta"><b>${escHtml(a.t)}</b><i>${escHtml(a.c)} · ${escHtml(dom)}</i></span>
-      <span class="fav" data-f="${escHtml(a.u)}">☆</span></a>`;
+    return `<a class="gx2-acard" href="/appplay?u=${encodeURIComponent(a.u)}&t=${encodeURIComponent(a.t)}" data-s="${escHtml((a.t + ' ' + a.c).toLowerCase())}" data-c="${escHtml(a.c)}" data-u="${escHtml(a.u)}" data-i="${ai}">
+      <span class="ap-ic">${letter}<img class="appLogo" loading="lazy" alt="" src="${fav}" data-brand="${brand}"></span>
+      <span class="gx2-acard-main"><span class="gx2-acard-name">${escHtml(a.t)}</span><span class="gx2-acard-desc">${escHtml(a.c)} · ${escHtml(dom)}</span></span>
+      <span class="fav" data-f="${escHtml(a.u)}">☆</span><span class="gx2-btn gx2-btn-soft gx2-btn-sm ap-launch">launch</span></a>`;
   }).join('');
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style><style>.card{position:relative}.fav{position:absolute;top:6px;right:8px;z-index:2;font-size:19px;line-height:1;color:rgba(255,255,255,.85);text-shadow:0 1px 6px rgba(0,0,0,.85);cursor:pointer;padding:3px 5px}.fav.on{color:#fbbf24}.chip{background:rgba(13,11,26,.55);color:#f4f4f5;border:1px solid rgba(var(--star),.25);border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:700;font-family:inherit}.chip.on{background:rgba(var(--acc),.32)}#grid{display:flex;flex-direction:column;gap:10px;max-width:880px;margin:16px auto}
-.card.appRow{display:flex;align-items:center;gap:14px;background:#101012;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:12px 14px;text-decoration:none;aspect-ratio:auto;height:auto;min-height:0}
-.card.appRow:hover{border-color:rgba(255,255,255,.32)}
-.appIcon{position:relative;width:52px;height:52px;flex:none;border-radius:14px;overflow:hidden;background:#f4f4f5;display:flex;align-items:center;justify-content:center}
-.appLetter{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff}
-.card img.appLogo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:7px;box-sizing:border-box;background:#f4f4f5}
-.appMeta{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;text-align:left}
-.appMeta b{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.appMeta i{font-style:normal;opacity:.6;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.card.appRow .fav{position:static;flex:none;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:19px;padding:0}
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style><style>/* STAGE 4 (visual reconstruction): /apps composes on GX2 - pg-head +
+   launcher bar + gx2-acard list on the full 1120px column (was an 880px
+   centered strip inside it). Real brand icons keep their light tile for
+   favicon legibility; the letter sits behind as the error fallback.
+   Every id / data-* / JS contract from the pre-rebuild page is unchanged. */
+.ap-bar{display:flex;gap:9px;flex-wrap:wrap;align-items:stretch;margin-bottom:16px}
+.ap-search{flex:1 1 260px;display:flex;align-items:center;gap:9px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-m);padding:0 13px;color:var(--text-muted);transition:border-color .15s,box-shadow .15s}
+.ap-search:focus-within{border-color:var(--violet-border);box-shadow:0 0 0 3px var(--violet-soft)}
+.ap-search .ic{flex:none}
+.ap-search input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--text);font:inherit;font-size:16px;padding:11px 0}
+.ap-search input::placeholder{color:var(--text-muted)}
+.ap-bar #gc{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-m);color:var(--text);font:inherit;font-size:14px;padding:0 12px;min-height:44px}
+.ap-bar .chip{display:inline-flex;align-items:center;background:var(--surface-2);color:var(--text-secondary);border:1px solid var(--border);border-radius:999px;padding:8px 13px;cursor:pointer;font-weight:600;font-size:13.5px;font-family:inherit;text-decoration:none;transition:border-color .15s,color .15s,background .15s}
+.ap-bar .chip:hover{color:var(--text);border-color:var(--violet-border)}
+.ap-bar .chip.on{background:var(--violet-soft);border-color:var(--violet-border);color:var(--text)}
+#grid{display:grid;grid-template-columns:1fr;gap:10px;width:100%;margin:0}
+#grid .gx2-acard{min-width:0}
+@media(min-width:1024px){#grid{grid-template-columns:1fr 1fr}}
+.ap-ic{position:relative;width:44px;height:44px;flex:none;border-radius:10px;overflow:hidden;background:#F4F4F5;display:flex;align-items:center;justify-content:center}
+.appLetter{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff}
+.ap-ic .appLogo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:6px;box-sizing:border-box;background:#F4F4F5}
+.gx2-acard .fav{margin-left:auto;flex:none;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:19px;line-height:1;color:var(--text-muted);cursor:pointer;padding:0}
+.gx2-acard .fav.on{color:#FFC94D}
+.gx2-acard .fav:hover{color:var(--text)}
+.ap-launch{pointer-events:none;flex:none}
+@media(max-width:640px){.ap-search{flex-basis:100%}}
 </style></head><body>${STAR_CANVAS}<div class="wrap">
-<a class="back" href="/home">← 6ixNetworks</a>
-<h1>6ix<span>Networks</span> apps</h1>
-
-<div class="bar"><input id="gq" type="text" placeholder="search apps..." autocomplete="off">
+<header class="gx2-pg-head"><div><h1 class="gx2-pg-title">apps</h1><p class="gx2-pg-sub">${APPS.length + 1} apps — one tap launches through the network</p></div></header>
+<div class="ap-bar"><label class="ap-search"><svg class="ic" aria-hidden="true"><use href="#ic-search"/></svg><input id="gq" type="text" placeholder="search apps..." autocomplete="off"></label>
 <select id="gc"><option value="">all categories</option>${cats.map(c => `<option>${escHtml(c)}</option>`).join('')}</select><button class="chip" id="gfav" type="button">★ favorites</button><button class="chip" id="grec" type="button">recent</button><button class="chip" id="grand" type="button">random</button><a class="chip" href="/gs" style="text-decoration:none">games</a>${ENG_HTML}</div>
 <div class="grid" id="grid">${cards}</div>
 ${SIDEBAR_HTML}
@@ -3658,22 +3631,22 @@ function favs(){ return ls('gx_afavs', []); }
 function recents(){ return ls('gx_arecent', []); }
 function paintFavs(){ var f=favs(); document.querySelectorAll('.fav').forEach(function(el){ var on=f.indexOf(el.dataset.f)>=0; el.classList.toggle('on', on); el.textContent = on ? '★' : '☆'; }); }
 function filt(){ var q=gq.value.toLowerCase(), c=gc.value, f=favs(), r=recents();
-  document.querySelectorAll('.card').forEach(function(el){
+  document.querySelectorAll('.gx2-acard').forEach(function(el){
     var ok = (!q || el.dataset.s.includes(q)) && (!c || el.dataset.c===c);
     if(favOnly) ok = ok && f.indexOf(el.dataset.u)>=0;
     if(recOnly) ok = ok && r.indexOf(el.dataset.u)>=0;
     el.style.display = ok ? '' : 'none';
   });
 }
-function orderRecent(on){ var cards=[].slice.call(grid.querySelectorAll('.card')); if(on){ var r=recents(); cards.sort(function(a,b){ var ia=r.indexOf(a.dataset.u), ib=r.indexOf(b.dataset.u); ia = ia<0 ? 999 : ia; ib = ib<0 ? 999 : ib; return ia-ib; }); } else { cards.sort(function(a,b){ return (+a.dataset.i)-(+b.dataset.i); }); } cards.forEach(function(el){ grid.appendChild(el); }); }
+function orderRecent(on){ var cards=[].slice.call(grid.querySelectorAll('.gx2-acard')); if(on){ var r=recents(); cards.sort(function(a,b){ var ia=r.indexOf(a.dataset.u), ib=r.indexOf(b.dataset.u); ia = ia<0 ? 999 : ia; ib = ib<0 ? 999 : ib; return ia-ib; }); } else { cards.sort(function(a,b){ return (+a.dataset.i)-(+b.dataset.i); }); } cards.forEach(function(el){ grid.appendChild(el); }); }
 gq.addEventListener('input', filt); gc.addEventListener('change', filt);
 document.getElementById('gfav').addEventListener('click', function(){ favOnly=!favOnly; this.classList.toggle('on', favOnly); filt(); });
 document.getElementById('grec').addEventListener('click', function(){ recOnly=!recOnly; this.classList.toggle('on', recOnly); orderRecent(recOnly); filt(); });
-document.getElementById('grand').addEventListener('click', function(){ var vis=[].slice.call(grid.querySelectorAll('.card')).filter(function(el){ return el.style.display!=='none'; }); if(vis.length) location.href = vis[Math.floor(Math.random()*vis.length)].href; });
+document.getElementById('grand').addEventListener('click', function(){ var vis=[].slice.call(grid.querySelectorAll('.gx2-acard')).filter(function(el){ return el.style.display!=='none'; }); if(vis.length) location.href = vis[Math.floor(Math.random()*vis.length)].href; });
 grid.addEventListener('click', function(e){
   var f=e.target.closest ? e.target.closest('.fav') : null;
   if(f){ e.preventDefault(); e.stopPropagation(); var u=f.dataset.f, a=favs(), i=a.indexOf(u); if(i>=0) a.splice(i,1); else a.push(u); try{ localStorage.setItem('gx_afavs', JSON.stringify(a)); }catch(err){} paintFavs(); if(favOnly) filt(); return; }
-  var card=e.target.closest ? e.target.closest('.card') : null;
+  var card=e.target.closest ? e.target.closest('.gx2-acard') : null;
   if(card && card.dataset.u){ var r=recents().filter(function(x){ return x!==card.dataset.u; }); r.unshift(card.dataset.u); try{ localStorage.setItem('gx_arecent', JSON.stringify(r.slice(0,12))); }catch(err){} }
 });
 paintFavs();
@@ -3692,57 +3665,69 @@ function gamesPage() {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style><style>.card{position:relative}.fav{position:absolute;top:6px;right:8px;z-index:2;font-size:19px;line-height:1;color:rgba(255,255,255,.85);text-shadow:0 1px 6px rgba(0,0,0,.85);cursor:pointer;padding:3px 5px}.fav.on{color:#fbbf24}.chip{background:#0d0b1a;color:#f4f4f5;border:1px solid rgba(var(--star),.22);border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:700;font-family:inherit}.chip.on{background:rgba(var(--acc),.3);border-color:rgba(var(--star),.55)}
-#feat{position:relative;display:block;border-radius:20px;overflow:hidden;margin:4px 0 18px;border:1px solid rgba(var(--star),.16);text-decoration:none;color:#fff;background:#0d0b08;width:100%;max-width:1120px}
-#feat img{width:100%;height:230px;object-fit:cover;display:block;opacity:1}
-#feat .feat-cap{position:absolute;left:0;right:0;bottom:0;padding:38px 18px 14px;background:linear-gradient(180deg,transparent,rgba(0,0,0,.82));display:flex;align-items:flex-end;gap:10px}
-#feat .feat-tag{font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#0a0a0b;background:#e4e4e7;border-radius:999px;padding:4px 9px;flex:none;margin-bottom:3px}
-#feat .feat-t{font-size:21px;font-weight:800;letter-spacing:-.01em}
-#feat .feat-c{font-size:12.5px;color:#c9c2b4}
-#feat .feat-b{font-size:13.5px;color:#e9e2ff;margin-top:5px;font-style:italic;max-width:540px}
-#feat .feat-dots{position:absolute;top:12px;right:14px;display:flex;gap:6px}
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>${ENG_CSS}</style><style>/* STAGE 4 (visual reconstruction): /gs composes on GX2 - header panel,
+   gx2 hero, gx2-gcard grid + rails, one 1120px column (the .wrap).
+   Every id / JS contract from the pre-rebuild page is unchanged. */
+.gx2-gcard .fav{position:absolute;top:8px;right:8px;z-index:3;font-size:17px;line-height:1;color:rgba(255,255,255,.9);text-shadow:0 1px 6px rgba(0,0,0,.85);cursor:pointer;padding:5px 7px;background:rgba(13,14,19,.5);border-radius:99px}
+.gx2-gcard .fav.on{color:#FFC94D}
+#feat{margin:0 0 20px;width:100%}
+#feat[hidden]{display:none}
+#feat .gx2-hero-art.zoom{transform:scale(1.55)}
+#feat .gs-blurb{font-size:13.5px;color:#CFC6FF;font-style:italic;margin-top:5px;max-width:540px}
+#feat .feat-dots{position:absolute;top:12px;right:14px;display:flex;gap:6px;z-index:3}
 #feat .feat-dots i{width:7px;height:7px;border-radius:99px;background:rgba(255,255,255,.35);display:block}
-#feat .feat-dots i.on{background:#e4e4e7}
+#feat .feat-dots i.on{background:#fff}
 #feat.fade{animation:featfade .5s ease}
 @keyframes featfade{from{opacity:.35}to{opacity:1}}
-.gbar{position:relative;z-index:40;background:rgba(9,9,13,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);margin:0 -8px;padding:10px 8px 9px;border-bottom:1px solid rgba(255,255,255,.07)}#gbar{position:static;margin:0}
-#gq{background:#0d0b1a;border-color:rgba(var(--star),.18);font-size:16px}
-#gchips{display:flex;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;padding:10px 2px 1px;scrollbar-width:none;justify-content:safe center}
+#gbarWrap{width:100%}
+#gbar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-l);padding:18px 20px 14px;margin:0 0 18px}
+.gs-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.gs-title{font-family:var(--font-display);font-size:27px;font-weight:700;letter-spacing:-.01em;color:var(--text);line-height:1.1}
+.gs-title #gcount{display:block;font-family:var(--font-sans);font-size:13px;font-weight:500;color:var(--text-secondary);margin-top:3px;letter-spacing:0}
+.gs-utils{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+#gbar .chip,#pager .chip{display:inline-flex;align-items:center;background:var(--surface-2);color:var(--text-secondary);border:1px solid var(--border);border-radius:999px;padding:8px 13px;cursor:pointer;font-weight:600;font-size:13.5px;font-family:inherit;text-decoration:none;transition:border-color .15s,color .15s,background .15s}
+#gbar .chip:hover,#pager .chip:hover{color:var(--text);border-color:var(--violet-border)}
+#gbar .chip.on,#pager .chip.on{background:var(--violet-soft);border-color:var(--violet-border);color:var(--text)}
+.gs-utils .chip{padding:6px 11px;font-size:12.5px}
+.gs-bar{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px;align-items:stretch}
+.gs-search{flex:1 1 280px;display:flex;align-items:center;gap:9px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-m);padding:0 13px;color:var(--text-muted);transition:border-color .15s,box-shadow .15s}
+.gs-search:focus-within{border-color:var(--violet-border);box-shadow:0 0 0 3px var(--violet-soft)}
+.gs-search .ic{flex:none}
+.gs-search input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--text);font:inherit;font-size:16px;padding:11px 0}
+.gs-search input::placeholder{color:var(--text-muted)}
+#gchips{display:flex;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;padding:12px 2px 2px;scrollbar-width:none}
 #gchips::-webkit-scrollbar{display:none}
-#gchips .chip{flex:none;padding:7px 13px;font-size:13.5px}\n.gtop{display:flex;flex-direction:column;align-items:center;gap:8px;flex-wrap:wrap;margin:1px 2px 10px;text-align:center}\n.gname{font-size:19px;font-weight:800;letter-spacing:-.01em;color:#f4f4f5}\n.gname #gcount{font-size:13px;font-weight:500;color:#9c9ca5;margin-left:9px}\n.gutils{margin:0 auto;display:flex;gap:7px;flex-wrap:wrap;justify-content:center}\n.gutils .chip{padding:6px 11px;font-size:12.5px}
-.sec-h{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8a7a5c;margin:0 2px 9px}
-#popWrap,#newWrap,#dailyWrap{width:100%;max-width:1120px;margin:0 0 18px}
-#popRow,#newRow{display:flex;gap:12px;overflow-x:auto;padding:2px 2px 10px;scroll-snap-type:x mandatory;scrollbar-width:none}
-#popRow::-webkit-scrollbar,#newRow::-webkit-scrollbar{display:none}
-.pop{flex:0 0 252px;aspect-ratio:16/10;scroll-snap-align:start;border-radius:16px}
-.pop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;aspect-ratio:auto}
-.pop .gicon,.pop .ltile,.pop .lgwrap{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto}
-.pop .rank{position:absolute;left:9px;bottom:0;font-size:52px;font-weight:900;line-height:.95;color:rgba(10,10,11,.25);-webkit-text-stroke:2px rgba(255,255,255,.9);z-index:2;font-style:italic}
-.pop .popcap{position:absolute;left:0;right:0;bottom:0;padding:26px 12px 9px 58px;background:linear-gradient(180deg,transparent,rgba(0,0,0,.85));z-index:1}
-.pop .popcap .gt{padding:0;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pop .popcap .popc{font-size:11.5px;color:#a1a1aa}
-#jumpWrap{width:100%;max-width:1120px;margin:2px 0 16px}
-#jumpRow{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
-#jumpRow::-webkit-scrollbar{display:none}
-#jumpRow .card{flex:0 0 168px}
-.lgwrap{width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 120% at 30% 18%,#1e1e28,#0b0b0f);overflow:hidden}.lgwrap img{width:74%;height:74%;object-fit:contain;aspect-ratio:auto;background:transparent;border-radius:14%;filter:drop-shadow(0 8px 16px rgba(0,0,0,.5))}.ltile{font-size:46px;font-weight:900;color:rgba(255,255,255,.94);letter-spacing:-.02em;text-shadow:0 2px 14px rgba(0,0,0,.4)}
-#grid{gap:16px}
-#pager{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;margin:22px 0 130px;width:100%;max-width:1120px}
-.pgbtn{flex:none;min-width:42px}
+#gchips .chip{flex:none;padding:7px 13px;font-size:13.5px}
+.gs-sec-h{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin:0 2px 10px}
+#popWrap,#newWrap,#dailyWrap,#jumpWrap{width:100%;margin:0 0 20px}
+#popRow,#newRow,#jumpRow{display:flex;gap:12px;overflow-x:auto;padding:2px 2px 10px;scrollbar-width:none}
+#popRow,#newRow{scroll-snap-type:x mandatory}
+#popRow::-webkit-scrollbar,#newRow::-webkit-scrollbar,#jumpRow::-webkit-scrollbar{display:none}
+#popRow .gx2-gcard,#newRow .gx2-gcard{flex:0 0 252px;scroll-snap-align:start}
+#jumpRow .gx2-gcard{flex:0 0 176px}
+.gs-artwrap{position:relative;display:block}
+img.gx2-gcard-art{display:block}
+.gs-rank{position:absolute;left:10px;bottom:5px;font-family:var(--font-display);font-size:46px;font-weight:700;line-height:.9;color:rgba(13,14,19,.3);-webkit-text-stroke:2px rgba(255,255,255,.92);z-index:2;font-style:italic;pointer-events:none}
+.gs-artwrap ~ .gx2-gcard-foot{padding-left:54px}
+.gs-art-logo{display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 120% at 30% 18%,var(--surface-3),var(--background))}
+.gs-art-logo img{width:74%;height:74%;object-fit:contain;background:transparent;border-radius:14%;filter:drop-shadow(0 8px 16px rgba(0,0,0,.5))}
+.gs-art-icon{display:flex;align-items:center;justify-content:center;font-size:52px;background:var(--surface-2)}
+.gs-art-icon svg{width:100%;height:100%;display:block}
+.gs-art-letter{display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:52px;font-weight:700;color:rgba(255,255,255,.94);text-shadow:0 2px 14px rgba(0,0,0,.4)}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;width:100%}
+#pager{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;margin:22px 0 40px;width:100%}
+.pgbtn{flex:none;min-width:42px;justify-content:center}
 .pgbtn[disabled]{opacity:.35;cursor:default}
-.pgdots{color:#8a7a5c;padding:0 2px}
-
-#grid .card{border-radius:16px}
-@media(hover:hover){ #grid .card{transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease} #grid .card:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(0,0,0,.45)} }
-@media(max-width:640px){ #feat img{height:160px} #feat .feat-t{font-size:18px} .pop{flex-basis:206px} .pop .rank{font-size:42px} #grid{grid-template-columns:repeat(2,1fr);gap:10px} #grid .gt{font-size:13px;padding:8px 10px 1px} #grid .gc{padding:0 10px 9px;font-size:11px} .gbar{padding:8px 6px 7px} .gbar .bar{gap:7px} #gq{padding:11px 14px} .gbar .chip{padding:8px 13px;font-size:13.5px} .pop .rank{font-size:36px} .pop .popcap{padding:24px 12px 9px 50px} #gq{flex:1 1 100%;width:100%} #gchips{padding-top:8px} #feat img{height:168px} #feat .feat-b{display:none} #feat .feat-t{font-size:17px} }
+.pgdots{color:var(--text-muted);padding:0 2px}
+@media(max-width:640px){ #gbar{padding:14px 14px 11px;border-radius:var(--radius-m)} .gs-title{font-size:23px} #feat{min-height:190px} #feat .gs-blurb{display:none} #popRow .gx2-gcard,#newRow .gx2-gcard{flex-basis:206px} #jumpRow .gx2-gcard{flex-basis:150px} .gs-rank{font-size:36px} .gs-artwrap ~ .gx2-gcard-foot{padding-left:46px} #grid{grid-template-columns:repeat(2,1fr);gap:10px} #gchips{padding-top:9px} .gs-search{flex-basis:100%} }
 </style></head><body>${STAR_CANVAS}<div class="wrap">
-<div id="gbarWrap"><div class="gbar" id="gbar"><div class="gtop"><div class="gname">games<span id="gcount">loading games…</span></div><div class="gutils">${ENG_HTML}<a class="chip" href="/blox" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg> 6ixblox</a><a class="chip" href="/emu" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59C2.62 9.42 2 14.46 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.62-6.584-.685-7.258A4 4 0 0 0 17.32 5z"/></svg> emulator</a><a class="chip" href="/chat" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> chat</a><a class="chip" href="/ai" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> ai</a><a class="chip" href="/requests" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><path d="m3 17 6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg> requests</a><a class="chip" href="/forge" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='currentColor' aria-hidden='true'><path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z"/></svg> game forge</a></div></div>\n<div class="bar" style="margin:0"><input id="gq" type="text" placeholder="search 15,000+ games..." autocomplete="off">
+<div id="gbarWrap"><div id="gbar"><div class="gs-head"><div class="gs-title">games<span id="gcount">loading games…</span></div><div class="gs-utils">${ENG_HTML}<a class="chip" href="/blox" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg> 6ixblox</a><a class="chip" href="/emu" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59C2.62 9.42 2 14.46 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.62-6.584-.685-7.258A4 4 0 0 0 17.32 5z"/></svg> emulator</a><a class="chip" href="/chat" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> chat</a><a class="chip" href="/ai" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> ai</a><a class="chip" href="/requests" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><path d="m3 17 6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg> requests</a><a class="chip" href="/forge" style="text-decoration:none"><svg width='14' height='14' viewBox='0 0 24 24' fill='currentColor' aria-hidden='true'><path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z"/></svg> game forge</a></div></div>\n<div class="gs-bar"><label class="gs-search"><svg class="ic" aria-hidden="true"><use href="#ic-search"/></svg><input id="gq" type="text" placeholder="search 15,000+ games..." autocomplete="off"></label>
 <button class="chip" id="gfav" type="button">★ favorites</button><button class="chip" id="grec" type="button">recent</button><button class="chip" id="grand" type="button"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg> random</button></div>
 <div id="gchips"></div></div></div>
 
 
-<a id="feat" hidden></a>
-<div id="dailyWrap" hidden><div class="sec-h">daily challenge</div><div id="dailyRow"></div></div>
+<a id="feat" class="gx2-hero" hidden></a>
+<div id="dailyWrap" hidden><div class="gs-sec-h">daily challenge</div><div id="dailyRow"></div></div>
 <script>
 fetch('/api/daily').then(function(r){return r.json()}).then(function(d){
   if(!d||!d.ok)return;
@@ -3755,10 +3740,10 @@ fetch('/api/daily').then(function(r){return r.json()}).then(function(d){
   w.hidden=false;
 }).catch(function(){});
 </script>
-<div id="popWrap" hidden><div class="sec-h">popular rn</div><div id="popRow"></div></div>
-<div id="newWrap" hidden><div class="sec-h">recently added</div><div id="newRow"></div></div>
-<div id="jumpWrap" hidden><div class="sec-h">jump back in</div><div id="jumpRow"></div></div>
-<div class="sec-h" style="margin-top:4px">all games</div>
+<div id="popWrap" hidden><div class="gs-sec-h">popular rn</div><div id="popRow"></div></div>
+<div id="newWrap" hidden><div class="gs-sec-h">recently added</div><div id="newRow"></div></div>
+<div id="jumpWrap" hidden><div class="gs-sec-h">jump back in</div><div id="jumpRow"></div></div>
+<div class="gs-sec-h" style="margin-top:4px">all games</div>
 <div class="grid" id="grid"></div><div id="pager"></div>
 ${SIDEBAR_HTML}
 <script>${ENG_JS}</script>
@@ -3775,13 +3760,27 @@ function recents(){ return ls('gx_recent', []); }
 function escA(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
 function playHref(g){ if (g.loc) return g.u; return '/play?u='+encodeURIComponent(g.u)+'&t='+encodeURIComponent(g.t); }
 function hueFor(t){ var h=0; for(var i=0;i<t.length;i++){ h=(h*31 + t.charCodeAt(i))%360; } return h; }
-function tileFor(g){ if(g.img && g.lg) return '<div class="lgwrap"><img loading="lazy" src="'+escA(g.img)+'" alt=""></div>'; if(g.img) return '<img loading="lazy" src="'+escA(g.img)+'" alt="">'; if(g.icon) return '<div class="noimg gicon">'+g.icon+'</div>'; var h=hueFor(g.t); var L=(g.t.replace(/[^a-z0-9]/gi,'').charAt(0) || '?').toUpperCase(); return '<div class="noimg ltile" style="background:linear-gradient(135deg,hsl('+h+',48%,30%),hsl('+((h+50)%360)+',55%,15%))">'+L+'</div>'; }
-function mkCard(g, i){ var a=document.createElement('a'); a.className='card'; a.href=playHref(g); a.dataset.s=(g.t+' '+g.c).toLowerCase(); a.dataset.c=g.c; a.dataset.u=g.u; a.dataset.i=i;
-  a.innerHTML=tileFor(g)+'<span class="fav" data-f="'+escA(g.u)+'">☆</span><div class="gt"></div><div class="gc"></div>';
-  a.querySelector('.gt').textContent=g.t; a.querySelector('.gc').textContent=g.c||''; return a; }
-function mkPop(g, rank){ var a=document.createElement('a'); a.className='card pop'; a.href=playHref(g); a.dataset.u=g.u;
-  a.innerHTML=tileFor(g)+'<span class="rank">'+rank+'</span><div class="popcap"><div class="gt"></div><div class="popc"></div></div>';
-  a.querySelector('.gt').textContent=g.t; a.querySelector('.popc').textContent=g.c||''; return a; }
+function tileNode(g){
+  if (g.img && g.lg) { var w = document.createElement('span'); w.className = 'gx2-gcard-art gs-art-logo'; var im = document.createElement('img'); im.loading = 'lazy'; im.src = g.img; im.alt = ''; w.appendChild(im); return w; }
+  if (g.img) { var i2 = document.createElement('img'); i2.className = 'gx2-gcard-art'; i2.loading = 'lazy'; i2.src = g.img; i2.alt = ''; return i2; }
+  if (g.icon) { var s = document.createElement('span'); s.className = 'gx2-gcard-art gs-art-icon'; s.innerHTML = g.icon; return s; }
+  var h = hueFor(g.t); var L = (g.t.replace(/[^a-z0-9]/gi,'').charAt(0) || '?').toUpperCase();
+  var t = document.createElement('span'); t.className = 'gx2-gcard-art gs-art-letter'; t.style.background = 'linear-gradient(135deg,hsl(' + h + ',48%,30%),hsl(' + ((h + 50) % 360) + ',55%,15%))'; t.textContent = L; return t;
+}
+function cardFoot(g) {
+  var f = document.createElement('span'); f.className = 'gx2-gcard-foot';
+  f.innerHTML = '<span><span class="gx2-gcard-title"></span><br><span class="gx2-gcard-cat"></span></span><span class="gx2-gcard-play"><svg class="ic ic-sm" aria-hidden="true"><use href="#ic-play"></use></svg></span>';
+  f.querySelector('.gx2-gcard-title').textContent = g.t; f.querySelector('.gx2-gcard-cat').textContent = g.c || '';
+  return f;
+}
+function mkCard(g, i){ var a=document.createElement('a'); a.className='gx2-gcard'; a.href=playHref(g); a.dataset.s=(g.t+' '+g.c).toLowerCase(); a.dataset.c=g.c; a.dataset.u=g.u; a.dataset.i=i;
+  a.appendChild(tileNode(g));
+  var fv=document.createElement('span'); fv.className='fav'; fv.setAttribute('data-f', g.u); fv.textContent='☆'; a.appendChild(fv);
+  a.appendChild(cardFoot(g)); return a; }
+function mkPop(g, rank){ var a=document.createElement('a'); a.className='gx2-gcard'; a.href=playHref(g); a.dataset.u=g.u;
+  var w=document.createElement('span'); w.className='gs-artwrap'; w.appendChild(tileNode(g));
+  var r=document.createElement('span'); r.className='gs-rank'; r.textContent=rank; w.appendChild(r);
+  a.appendChild(w); a.appendChild(cardFoot(g)); return a; }
 function paintFavs(){ var f=favs(); document.querySelectorAll('.fav').forEach(function(el){ var on=f.indexOf(el.dataset.f)>=0; el.classList.toggle('on', on); el.textContent = on ? '★' : '☆'; }); }
 function renderPage(){
   var pages = Math.max(1, Math.ceil(view.length / PS));
@@ -3826,7 +3825,7 @@ document.getElementById('grand').addEventListener('click', function(){ var pool 
 function cardTap(e){
   var f=e.target.closest ? e.target.closest('.fav') : null;
   if(f){ e.preventDefault(); e.stopPropagation(); var u=f.dataset.f, a=favs(), i=a.indexOf(u); if(i>=0) a.splice(i,1); else a.push(u); try{ localStorage.setItem('gx_favs', JSON.stringify(a)); }catch(err){} paintFavs(); if(favOnly) applyView(); return; }
-  var card=e.target.closest ? e.target.closest('.card') : null;
+  var card=e.target.closest ? e.target.closest('.gx2-gcard') : null;
   if(card && card.dataset.u){ var r=recents().filter(function(x){ return x!==card.dataset.u; }); r.unshift(card.dataset.u); try{ localStorage.setItem('gx_recent', JSON.stringify(r.slice(0,12))); }catch(err){} }
 }
 grid.addEventListener('click', cardTap);
@@ -3869,16 +3868,15 @@ function heroStart(){
     feat.hidden = false;
     feat.href = p.href;
     feat.innerHTML = '';
-    var im = document.createElement('img'); im.src = p.img; im.alt = '';
-    var cap = document.createElement('div'); cap.className = 'feat-cap';
-    var tag = document.createElement('span'); tag.className = 'feat-tag'; tag.textContent = "✦ six's pick of the day";
-    var tw = document.createElement('div');
-    var tt = document.createElement('div'); tt.className = 'feat-t'; tt.textContent = p.t;
-    var tc = document.createElement('div'); tc.className = 'feat-c'; tc.textContent = p.c || '';
-    tw.appendChild(tt); tw.appendChild(tc);
-    if (p.blurb) { var tb = document.createElement('div'); tb.className = 'feat-b'; tb.textContent = p.blurb; tw.appendChild(tb); }
-    cap.appendChild(tag); cap.appendChild(tw);
-    feat.appendChild(im); feat.appendChild(cap);
+    var im = document.createElement('img'); im.className = 'gx2-hero-art zoom'; im.src = p.img; im.alt = '';
+    var cap = document.createElement('div'); cap.className = 'gx2-hero-body';
+    var tag = document.createElement('span'); tag.className = 'gx2-badge'; tag.textContent = "✦ six's pick of the day";
+    var tt = document.createElement('div'); tt.className = 'gx2-hero-title'; tt.textContent = p.t;
+    var tc = document.createElement('div'); tc.className = 'gx2-hero-sub'; tc.textContent = p.c || '';
+    cap.appendChild(tag); cap.appendChild(tt); cap.appendChild(tc);
+    if (p.blurb) { var tb = document.createElement('div'); tb.className = 'gs-blurb'; tb.textContent = p.blurb; cap.appendChild(tb); }
+    var play = document.createElement('span'); play.className = 'gx2-hero-play'; play.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#ic-play"></use></svg>';
+    feat.appendChild(im); feat.appendChild(cap); feat.appendChild(play);
     feat.classList.remove('fade'); void feat.offsetWidth; feat.classList.add('fade');
   }
   if (feat) { fetch('/api/six-pick').then(function(r){ return r.json(); }).then(function(p){ if (p && p.ok && p.t) showSixPick(p); }).catch(function(){}); }
@@ -3890,16 +3888,16 @@ function heroStart(){
       var it = pool[n];
       feat.href = it.href;
       feat.innerHTML = '';
-      var im = document.createElement('img'); im.src = it.img; im.alt = '';
-      var cap = document.createElement('div'); cap.className = 'feat-cap';
-      var tag = document.createElement('span'); tag.className = 'feat-tag'; tag.textContent = 'featured';
-      var tw = document.createElement('div');
-      var tt = document.createElement('div'); tt.className = 'feat-t'; tt.textContent = it.t;
-      var tc = document.createElement('div'); tc.className = 'feat-c'; tc.textContent = it.c || '';
-      tw.appendChild(tt); tw.appendChild(tc); cap.appendChild(tag); cap.appendChild(tw);
+      var im = document.createElement('img'); im.className = 'gx2-hero-art'; im.src = it.img; im.alt = '';
+      var cap = document.createElement('div'); cap.className = 'gx2-hero-body';
+      var tag = document.createElement('span'); tag.className = 'gx2-badge'; tag.textContent = 'featured';
+      var tt = document.createElement('div'); tt.className = 'gx2-hero-title'; tt.textContent = it.t;
+      var tc = document.createElement('div'); tc.className = 'gx2-hero-sub'; tc.textContent = it.c || '';
+      cap.appendChild(tag); cap.appendChild(tt); cap.appendChild(tc);
+      var play = document.createElement('span'); play.className = 'gx2-hero-play'; play.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#ic-play"></use></svg>';
       var dots = document.createElement('div'); dots.className = 'feat-dots';
       pool.forEach(function(_, di){ var d = document.createElement('i'); if (di === n) d.className = 'on'; dots.appendChild(d); });
-      feat.appendChild(im); feat.appendChild(cap); feat.appendChild(dots);
+      feat.appendChild(im); feat.appendChild(cap); feat.appendChild(play); feat.appendChild(dots);
       feat.classList.remove('fade'); void feat.offsetWidth; feat.classList.add('fade');
     }
     function cycle(){ fi = (fi + 1) % pool.length; showFeat(fi); }
@@ -3998,10 +3996,20 @@ function uvWarmPage(target) {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body><div class="wrap" style="text-align:center;padding-top:16vh">
-<div class="brand6">6ix<span>networks</span></div>
-<p class="sub">loading…</p>
-<p id="slow" class="sub" style="display:none">taking long — <a href="${escHtml(classic)}">open it the classic way</a></p>
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+.warm{min-height:70vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px;width:100%}
+.warm-spin{width:38px;height:38px;border-radius:50%;border:3px solid var(--surface-3);border-top-color:var(--violet);animation:warmspin .8s linear infinite}
+@keyframes warmspin{to{transform:rotate(360deg)}}
+.warm-mark{font-family:var(--font-display);font-size:30px;font-weight:700;color:var(--text);letter-spacing:-.01em}
+.warm-mark b{color:var(--violet);font-weight:700}
+.warm-sub{color:var(--text-secondary);font-size:14px;margin:0}
+.warm-slow{color:var(--text-muted);font-size:13px;margin:0}
+.warm-slow a{color:var(--violet-300)}
+</style></head><body><div class="warm">
+<div class="warm-spin" aria-hidden="true"></div>
+<div class="warm-mark">6ix<b>networks</b></div>
+<p class="warm-sub">loading…</p>
+<p id="slow" class="warm-slow" style="display:none">taking long — <a href="${escHtml(classic)}">open it the classic way</a></p>
 </div>
 <script src="/uv-assets/baremux/index.js?e=68"></script>
 <script>
@@ -4053,8 +4061,9 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .bxrow{display:flex;gap:9px}
 .bxrow input{flex:1;min-width:0;background:var(--bg-primary);border:1px solid var(--accent-border);border-radius:var(--radius-lg);padding:13px 15px;color:var(--text-primary);font-family:inherit;font-size:16px}
 .bxrow input:focus{outline:none;border-color:var(--accent-primary)}
-.bxrow button{flex:none;background:var(--accent-primary);color:#fff;border:0;border-radius:var(--radius-lg);padding:13px 22px;font-weight:800;font-family:inherit;font-size:15px;cursor:pointer}
-.bxmsg{font-size:13.5px;color:#F6C6CA;min-height:18px;margin-top:9px}
+.bxrow button{flex:none;background:var(--violet);color:#0D0E13;border:0;border-radius:var(--radius-lg);padding:13px 22px;font-weight:800;font-family:inherit;font-size:15px;cursor:pointer}
+.bxrow button:hover{background:var(--violet-hover)}
+.bxmsg{font-size:13.5px;color:var(--danger);min-height:18px;margin-top:9px}
 @media(min-width:821px){body[data-nav="bar"] .wrap{padding-top:66px}}
 .bxhub{display:flex;align-items:center;gap:14px;width:100%;max-width:760px;box-sizing:border-box;margin-top:14px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-2xl);padding:16px 18px;text-decoration:none;color:var(--text-primary);transition:transform .15s,border-color .15s}
 .bxhub:hover{transform:translateY(-2px);border-color:var(--accent-border)}
@@ -4291,10 +4300,20 @@ function sjWarmPage(target) {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
-${FONT_LINKS}<style>${GALAXY_CSS}</style></head><body><div class="wrap" style="text-align:center;padding-top:16vh">
-<div class="brand6">6ix<span>networks</span></div>
-<p class="sub">loading…</p>
-<p id="slow" class="sub" style="display:none">taking long — <a href="${escHtml(classic)}">open it the classic way</a></p>
+${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+.warm{min-height:70vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px;width:100%}
+.warm-spin{width:38px;height:38px;border-radius:50%;border:3px solid var(--surface-3);border-top-color:var(--violet);animation:warmspin .8s linear infinite}
+@keyframes warmspin{to{transform:rotate(360deg)}}
+.warm-mark{font-family:var(--font-display);font-size:30px;font-weight:700;color:var(--text);letter-spacing:-.01em}
+.warm-mark b{color:var(--violet);font-weight:700}
+.warm-sub{color:var(--text-secondary);font-size:14px;margin:0}
+.warm-slow{color:var(--text-muted);font-size:13px;margin:0}
+.warm-slow a{color:var(--violet-300)}
+</style></head><body><div class="warm">
+<div class="warm-spin" aria-hidden="true"></div>
+<div class="warm-mark">6ix<b>networks</b></div>
+<p class="warm-sub">loading…</p>
+<p id="slow" class="warm-slow" style="display:none">taking long — <a href="${escHtml(classic)}">open it the classic way</a></p>
 </div>
 <script src="/uv-assets/baremux/index.js?e=68"></script>
 <script src="/sj-assets/scramjet.all.js?v=289"></script>
@@ -4674,7 +4693,8 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .panel{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius-xl);padding:16px;margin-top:16px}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
 .row input[type=text]{flex:1;min-width:200px;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border-default);border-radius:var(--radius-md);padding:11px;font-family:inherit;font-size:16px}
-button.play{background:var(--accent-primary);color:#fff;border:1px solid var(--accent-primary);border-radius:999px;padding:11px 26px;font-weight:800;cursor:pointer;font-family:inherit;font-size:15px}
+button.play{background:var(--violet);color:#0D0E13;border:1px solid var(--violet);border-radius:999px;padding:11px 26px;font-weight:800;cursor:pointer;font-family:inherit;font-size:15px}
+button.play:hover{background:var(--violet-hover)}
 </style></head><body>${STAR_CANVAS}<div class="wrap">
 <a class="back" href="/tools">← tools</a>
 <h1>6ix<span>Networks</span> download</h1>
@@ -4715,10 +4735,11 @@ function emuPage() {
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .panel{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius-xl);padding:16px;margin-top:16px}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
-.row select,.row input[type=text]{background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border-default);border-radius:var(--radius-md);padding:10px;font-family:inherit}
+.row select,.row input[type=text]{background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border-default);border-radius:var(--radius-md);padding:10px;font-family:inherit;font-size:16px}
 .row input[type=text]{flex:1;min-width:200px}
 #game{width:100%;aspect-ratio:4/3;background:#000;border-radius:var(--radius-lg);overflow:hidden}
-button.play{background:var(--accent-primary);color:#fff;border:1px solid var(--accent-primary);border-radius:999px;padding:11px 26px;font-weight:800;cursor:pointer;font-family:inherit;font-size:15px}
+button.play{background:var(--violet);color:#0D0E13;border:1px solid var(--violet);border-radius:999px;padding:11px 26px;font-weight:800;cursor:pointer;font-family:inherit;font-size:15px}
+button.play:hover{background:var(--violet-hover)}
 .libchips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 2px}.libchip{background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border-default);border-radius:999px;padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}.libchip.on{background:var(--accent-muted);border-color:var(--accent-border);color:#fff}
 .libgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:12px}
 .libcard{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;background:var(--bg-primary);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:12px;color:var(--text-primary);cursor:pointer;font-family:inherit}
@@ -4726,8 +4747,7 @@ button.play{background:var(--accent-primary);color:#fff;border:1px solid var(--a
 .libcard b{font-size:14px;line-height:1.3}
 .libcard span{font-size:11px;opacity:.65;letter-spacing:.04em}
 </style></head><body>${STAR_CANVAS}<div class="wrap">
-<a class="back" href="/gs">← games</a>
-<h1>6ix<span>Networks</span> emulator</h1>
+<header class="gx2-pg-head"><div><h1 class="gx2-pg-title">emulator</h1><p class="gx2-pg-sub">retro consoles in the browser — your rom, your game</p></div><div class="gx2-pg-actions"><a class="gx2-btn gx2-btn-ghost gx2-btn-sm" href="/gs">games</a></div></header>
 <div class="panel">
 <div class="row">
 <select id="sys">
@@ -6937,19 +6957,20 @@ function forgePage() {
 .fg2title{font-size:32px;font-weight:800;margin:14px 0 4px;letter-spacing:-.02em}
 .fg2title span{background:linear-gradient(94deg,#f0abfc,#a78bfa 25%,#38bdf8 48%,#34d399 68%,#facc15 85%,#fb7185);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
 .fg2sub{color:var(--text-secondary);margin:0 0 18px;font-size:15px;line-height:1.55;max-width:640px}
-.fg2card{position:relative;background:rgba(24,25,35,.72);border:1px solid var(--border-subtle);border-radius:var(--radius-2xl);padding:18px;backdrop-filter:blur(10px);animation:gxUp .5s ease both}
-.fg2card::before{content:"";position:absolute;top:0;left:18px;right:18px;height:1px;background:linear-gradient(90deg,transparent,rgba(167,139,250,.55),rgba(56,189,248,.55),transparent)}
-#idea{width:100%;box-sizing:border-box;background:var(--bg-primary);border:1px solid var(--border-default);color:var(--text-primary);border-radius:var(--radius-lg);padding:13px 14px;font:inherit;font-size:16px;resize:vertical;min-height:64px}
-#idea:focus{outline:none;border-color:var(--accent-primary)}
+.fg2card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-l);padding:18px;animation:gxUp .5s ease both}
+.fg2card::before{content:"";position:absolute;top:0;left:18px;right:18px;height:1px;background:linear-gradient(90deg,transparent,var(--violet-border),transparent)}
+#idea{width:100%;box-sizing:border-box;background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-m);padding:13px 14px;font:inherit;font-size:16px;resize:vertical;min-height:64px}
+#idea:focus{outline:none;border-color:var(--violet-border);box-shadow:0 0 0 3px var(--violet-soft)}
 .fg2chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 14px}
 .fg2chips button{background:var(--bg-elevated);border:1px solid var(--border-subtle);color:var(--text-primary);border-radius:999px;padding:7px 13px;font:inherit;font-size:13.5px;cursor:pointer;transition:transform .15s ease,border-color .15s ease}
 .fg2chips button:hover{border-color:var(--accent-border);transform:translateY(-1px)}
 .fg2chips button:disabled{opacity:.5;cursor:wait;transform:none}
 .fg2row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 #instantBtn{display:inline-flex;align-items:center;gap:7px;background:var(--bg-elevated);border:1px solid var(--border-default);color:var(--text-primary);border-radius:999px;padding:10px 15px;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
-#instantBtn[aria-pressed="true"]{background:var(--accent-muted);border-color:var(--accent-border);color:var(--accent-bright)}
+#instantBtn[aria-pressed="true"]{background:var(--violet-soft);border-color:var(--violet-border);color:var(--violet-300)}
 #instantBtn:disabled{opacity:.5;cursor:wait}
-.makebtn{display:inline-flex;align-items:center;gap:8px;background:var(--accent-primary);color:#fff;border:0;border-radius:999px;padding:12px 24px;font:inherit;font-weight:800;font-size:15.5px;cursor:pointer;margin-left:auto}
+.makebtn{display:inline-flex;align-items:center;gap:8px;background:var(--violet);color:#0D0E13;border:0;border-radius:999px;padding:12px 24px;font:inherit;font-weight:800;font-size:15.5px;cursor:pointer;margin-left:auto}
+.makebtn:hover{background:var(--violet-hover)}
 .makebtn:disabled{opacity:.55;cursor:wait}
 #hintTxt{width:100%;font-size:12.5px;color:var(--text-muted);margin-top:2px}
 .fg2sec{margin-top:16px}
@@ -6968,17 +6989,17 @@ function forgePage() {
 .sp-k{font-size:11.5px;letter-spacing:.09em;color:var(--text-muted);text-transform:uppercase;padding-top:3px}
 .sp-v{font-size:14.5px;line-height:1.55;color:var(--text-primary)}
 .sp-raw{white-space:pre-wrap;font-size:14.5px;line-height:1.6;color:var(--text-primary)}
-.fg2screen{background:var(--bg-primary);border:1px solid var(--border-default);border-radius:var(--radius-2xl);overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.5);animation:gxUp .5s ease both}
-.fg2bar{display:flex;align-items:center;gap:7px;padding:10px 14px;background:var(--bg-surface);border-bottom:1px solid var(--border-subtle)}
+.fg2screen{background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-l);overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.5);animation:gxUp .5s ease both}
+.fg2bar{display:flex;align-items:center;gap:7px;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--border)}
 .fg2bar i{width:10px;height:10px;border-radius:99px;background:var(--bg-hover);flex:none}
 .fg2bar i:first-child{background:linear-gradient(135deg,#f0abfc,#38bdf8)}
 #gTitle{font-weight:700;font-size:14px;color:#f4f4f5;margin-left:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #gstatus{margin-left:auto;font-size:12.5px;color:var(--text-muted);text-align:right;flex:none;padding-left:10px}
 #gameFrame{width:100%;aspect-ratio:4/3;max-height:72vh;border:0;background:#000;display:block}
 .fg2edit{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-#editTxt{flex:1;min-width:200px;background:var(--bg-primary);border:1px solid var(--border-default);color:var(--text-primary);border-radius:999px;padding:11px 16px;font:inherit;font-size:16px}
-#editTxt:focus{outline:none;border-color:var(--accent-primary)}
-.fg2btn{background:var(--accent-muted);border:1px solid var(--border-default);color:#fff;border-radius:999px;padding:11px 18px;font:inherit;font-weight:700;cursor:pointer}
+#editTxt{flex:1;min-width:200px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:999px;padding:11px 16px;font:inherit;font-size:16px}
+#editTxt:focus{outline:none;border-color:var(--violet-border);box-shadow:0 0 0 3px var(--violet-soft)}
+.fg2btn{background:var(--violet-soft);border:1px solid var(--violet-border);color:var(--text);border-radius:999px;padding:11px 18px;font:inherit;font-weight:700;cursor:pointer}
 .fg2btn:disabled{opacity:.55;cursor:wait}
 .fg2btn.ghost{background:var(--bg-elevated)}
 .fg2note{color:var(--text-secondary);font-size:13px;margin-top:10px}
@@ -8242,20 +8263,25 @@ function apkPage() {
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b">
 <title>apk vault ✦ 6ixnetworks</title><link rel="icon" href="/icon-192.png">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
+/* STAGE 4 polish: apk vault on canonical GX2 tokens + pg-head. ids and the
+   /api/apks flow unchanged. */
 .agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:12px;width:100%}
-.apkcard{display:flex;gap:12px;align-items:flex-start;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:13px 14px;text-decoration:none;color:var(--text-primary);text-align:left}
-.apkcard:hover{border-color:var(--accent-border)}
-.apkic{width:46px;height:46px;flex:none;border-radius:var(--radius-md);background:var(--bg-elevated);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.apkcard{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-l);padding:13px 14px;text-decoration:none;color:var(--text);text-align:left;transition:background-color .16s ease,border-color .16s ease}
+.apkcard:hover{border-color:var(--violet-border);background:var(--surface-hover)}
+.apkic{width:46px;height:46px;flex:none;border-radius:var(--radius-m);background:var(--surface-3);display:flex;align-items:center;justify-content:center;overflow:hidden}
 .apkic img{width:100%;height:100%;object-fit:cover}
 .apkmeta{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .apkmeta b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.apkmeta i{font-style:normal;opacity:.55;font-size:12px}
-.apkmeta span{opacity:.75;font-size:12.5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.apkgo{flex:none;align-self:center;background:var(--accent-muted);border:1px solid var(--accent-border);color:#fff;font-size:12px;font-weight:700;border-radius:999px;padding:6px 12px}
+.apkmeta i{font-style:normal;color:var(--text-muted);font-size:12px}
+.apkmeta span{color:var(--text-secondary);font-size:12.5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.apkgo{flex:none;align-self:center;background:var(--violet-soft);border:1px solid var(--violet-border);color:var(--text);font-size:12px;font-weight:700;border-radius:999px;padding:6px 12px}
+#mq{display:flex;gap:9px;margin:0 0 18px;max-width:none;width:100%}
+#mq input{flex:1;min-width:0;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-m);padding:11px 14px;color:var(--text);font:inherit;font-size:16px}
+#mq input:focus{border-color:var(--violet-border);box-shadow:0 0 0 3px var(--violet-soft);outline:none}
+#mq .gobtn{background:var(--violet);color:#0D0E13;border:0;border-radius:var(--radius-m);padding:0 20px;font:inherit;font-weight:700;cursor:pointer}
+#mq .gobtn:hover{background:var(--violet-hover)}
 </style></head><body>${STAR_CANVAS}<div class="wrap">
-<a class="back" href="/apps">← apps</a>
-<h1>apk <span class="blend">vault</span></h1>
-<p class="sub" id="acount">open-source android apps — real .apk files, straight from the f-droid repo thru the network</p>
+<header class="gx2-pg-head"><div><h1 class="gx2-pg-title">apk vault</h1><p class="gx2-pg-sub" id="acount">open-source android apps — real .apk files, straight from the f-droid repo thru the network</p></div><div class="gx2-pg-actions"><a class="gx2-btn gx2-btn-ghost gx2-btn-sm" href="/apps">apps</a></div></header>
 <form id="mq" autocomplete="off"><input id="mqv" type="text" placeholder="search 4,900+ android apps..."><button class="gobtn" type="submit">go</button></form>
 <div id="picksec"><h2 class="sech">&#10022; hand-picked</h2><div class="agrid" id="pickgrid"><p class="sub">loading…</p></div></div>
 <h2 class="sech" id="browset">browse all</h2>
@@ -8871,7 +8897,8 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .g2048score{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:10px 16px;flex:1;text-align:center}
 .g2048score b{display:block;font-size:21px}
 .g2048score span{color:var(--text-secondary);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
-.g2048btn{background:var(--accent-primary);border:0;color:#fff;font-weight:800;border-radius:var(--radius-lg);padding:0 20px;font-family:inherit;font-size:15px;cursor:pointer}
+.g2048btn{background:var(--violet);border:0;color:#0D0E13;font-weight:800;border-radius:var(--radius-lg);padding:0 20px;font-family:inherit;font-size:15px;cursor:pointer}
+.g2048btn:hover{background:var(--violet-hover)}
 #bd2048{position:relative;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;touch-action:none;user-select:none;-webkit-user-select:none}
 #bd2048 .cell{aspect-ratio:1;border-radius:var(--radius-md);background:var(--bg-primary);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:clamp(20px,7vw,34px);color:var(--text-primary)}
 #bd2048 .v2{background:#3d3654}#bd2048 .v4{background:#4a3f6b}#bd2048 .v8{background:#7a5c2e}#bd2048 .v16{background:#96690f}
@@ -8885,9 +8912,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 </style></head>
 <body>${STAR_CANVAS}
 <div class="wrap">
-<a class="back" href="/gs">&larr; games</a>
-<h1>2048</h1>
-<p class="sub">runs right here on the site - no proxy, no loading somebody elses page. arrow keys, WASD, or swipe.</p>
+<header class="gx2-pg-head"><div><h1 class="gx2-pg-title">2048</h1><p class="gx2-pg-sub">runs right here on the site - no proxy, no loading somebody elses page. arrow keys, WASD, or swipe.</p></div><div class="gx2-pg-actions"><a class="gx2-btn gx2-btn-ghost gx2-btn-sm" href="/gs">games</a></div></header>
 <div class="g2048wrap">
 <div class="g2048top">
 <div class="g2048score"><span>score</span><b id="sc2048">0</b></div>
@@ -8991,8 +9016,8 @@ function cookiePage() {
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 .cklayout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.15fr);gap:18px;width:100%;max-width:1180px;align-items:start}
 @media(max-width:900px){.cklayout{grid-template-columns:minmax(0,1fr)}}
-.ckcol{background:rgba(24,25,35,.66);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:16px;position:relative}
-.ckcol h3{margin:2px 0 12px;font-size:15px;letter-spacing:.04em;text-transform:uppercase;color:var(--accent-bright)}
+.ckcol{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-l);padding:16px;position:relative}
+.ckcol h3{margin:2px 0 12px;font-size:15px;letter-spacing:.04em;text-transform:uppercase;color:var(--violet-300)}
 #ckCount{font-size:27px;font-weight:800;line-height:1.15}
 #ckCps{color:var(--text-secondary);font-size:14px;margin:4px 0 14px}
 #ckBig{display:block;margin:6px auto;background:none;border:0;cursor:pointer;padding:0;transition:transform .06s;border-radius:50%}
@@ -9016,9 +9041,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 </style></head>
 <body>${STAR_CANVAS}
 <div class="wrap">
-<a class="back" href="/gs">&larr; games</a>
-<h1>cookie clicker</h1>
-<p class="sub">built into the site - no proxy, it just runs. ur bakery saves in this browser.</p>
+<header class="gx2-pg-head"><div><h1 class="gx2-pg-title">cookie clicker</h1><p class="gx2-pg-sub">built into the site - no proxy, it just runs. ur bakery saves in this browser.</p></div><div class="gx2-pg-actions"><a class="gx2-btn gx2-btn-ghost gx2-btn-sm" href="/gs">games</a></div></header>
 <div class="cklayout">
 <div class="ckcol" id="ckLeft">
 <div id="ckCount">0 cookies</div>
@@ -9763,33 +9786,37 @@ function requestsPage() {
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0a0b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="6ixNetworks"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script><title>Google</title><link rel="icon" href="https://www.google.com/favicon.ico">
 ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
-.sub{color:var(--text-secondary);margin:2px 0 16px;max-width:720px}
-.rqcard{background:#0d0b1a;border:1px solid rgba(var(--star),.16);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px;width:100%;max-width:720px;box-sizing:border-box}
-.rqcard input{background:#0a0918;border:1px solid rgba(var(--star),.18);border-radius:12px;padding:12px 14px;color:#f4f4f5;font-family:inherit;font-size:16px;width:100%;box-sizing:border-box}
-.rqcard button{background:linear-gradient(120deg,rgb(var(--star)),rgb(var(--acc3)));color:#0d0a18;border:0;border-radius:12px;padding:12px;font-weight:800;font-family:inherit;font-size:15px;cursor:pointer}
-.rqmsg{font-size:13.5px;color:rgb(var(--star));min-height:18px}
-#rqList{width:100%;max-width:720px;margin-top:18px;display:flex;flex-direction:column;gap:10px}
-.rq{display:flex;gap:12px;align-items:center;background:#0d0b1a;border:1px solid rgba(var(--star),.13);border-radius:16px;padding:13px 14px}
-.rq .rank{font-weight:800;color:#8a7a5c;width:26px;text-align:center;flex:none;font-size:16px}
-.rq.top .rank{color:#e4e4e7}
+/* STAGE 4 (visual reconstruction): /requests on GX2 tokens - pg-head +
+   one centered 720px column shared by form, admin bar and list.
+   ids + render() classes + endpoints unchanged. */
+.rq-col{width:100%;max-width:720px;margin:0 auto}
+.rqcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-l);padding:16px;display:flex;flex-direction:column;gap:10px;width:100%;max-width:none;box-sizing:border-box}
+.rqcard input{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-m);padding:12px 14px;color:var(--text);font-family:inherit;font-size:16px;width:100%;box-sizing:border-box}
+.rqcard input:focus{border-color:var(--violet-border);box-shadow:0 0 0 3px var(--violet-soft);outline:none}
+.rqcard button{background:var(--violet);color:#0D0E13;border:0;border-radius:var(--radius-m);padding:12px;font-weight:700;font-family:inherit;font-size:15px;cursor:pointer}
+.rqcard button:hover{background:var(--violet-hover)}
+.rqmsg{font-size:13.5px;color:var(--violet-300);min-height:18px}
+#rqList{width:100%;margin-top:18px;display:flex;flex-direction:column;gap:10px}
+.rq{display:flex;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-l);padding:13px 14px}
+.rq .rank{font-weight:800;color:var(--text-muted);width:26px;text-align:center;flex:none;font-size:16px}
+.rq.top .rank{color:#FFC94D}
 .rq .mid{flex:1;min-width:0}
-.rq .nm{font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rq .meta{font-size:12.5px;color:#9d99ad;margin-top:2px}
-.rq .vlink{color:#8a7a5c}
+.rq .nm{font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.rq .meta{font-size:12.5px;color:var(--text-secondary);margin-top:2px}
+.rq .vlink{color:var(--violet-300)}
 .rq .byav{width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:-4px;margin-right:5px}
-.rq .onsite{display:inline-block;margin-top:6px;font-size:12.5px;font-weight:800;color:#4ade80;background:rgba(74,222,128,.13);border:1px solid rgba(74,222,128,.38);border-radius:999px;padding:4px 11px;text-decoration:none}
-.rq .vote{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;background:#100e1d;border:1px solid rgba(var(--star),.2);color:#d6d2e4;border-radius:12px;padding:7px 12px;cursor:pointer;font-family:inherit}
-.rq .vote.on{background:rgba(var(--acc),.35);color:#fff;border-color:rgba(var(--star),.5)}
+.rq .onsite{display:inline-block;margin-top:6px;font-size:12.5px;font-weight:700;color:var(--success);background:rgba(69,201,138,.13);border:1px solid rgba(69,201,138,.38);border-radius:999px;padding:4px 11px;text-decoration:none}
+.rq .vote{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-secondary);border-radius:var(--radius-m);padding:7px 12px;cursor:pointer;font-family:inherit}
+.rq .vote.on{background:var(--violet-soft);color:var(--text);border-color:var(--violet-border)}
 .rq .vote b{font-size:15px}
-.empty{color:#9d99ad;text-align:center;padding:26px 0}
-.rqdel{flex:none;background:transparent;border:1px solid rgba(248,113,113,.45);color:#fca5a5;border-radius:12px;padding:7px 12px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
-#rqAdm{width:100%;max-width:720px;margin-top:18px;display:flex;gap:8px;align-items:center;background:rgba(240,171,252,.07);border:1px solid rgba(240,171,252,.35);border-radius:14px;padding:10px 12px;box-sizing:border-box}
-#rqAdm .admt{font-size:12px;font-weight:800;letter-spacing:.05em;color:#f0abfc}
-#rqClearAll{background:rgba(255,255,255,.06);border:1px solid rgba(248,113,113,.55);color:#fca5a5;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.empty{color:var(--text-muted);text-align:center;padding:26px 0}
+.rqdel{flex:none;background:transparent;border:1px solid rgba(230,111,120,.45);color:var(--danger);border-radius:var(--radius-m);padding:7px 12px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
+#rqAdm{width:100%;margin-top:18px;display:flex;gap:8px;align-items:center;background:var(--violet-soft);border:1px solid var(--violet-border);border-radius:var(--radius-m);padding:10px 12px;box-sizing:border-box}
+#rqAdm .admt{font-size:12px;font-weight:800;letter-spacing:.05em;color:var(--violet-300)}
+#rqClearAll{background:var(--surface-2);border:1px solid rgba(230,111,120,.55);color:var(--danger);border-radius:999px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
 </style></head><body>${STAR_CANVAS}<div class="wrap">
-<a class="back" href="/gs">← games</a>
-<h1>game <span>requests</span></h1>
-<p class="sub">most voted gets added first</p>
+<div class="rq-col">
+<header class="gx2-pg-head"><div><h1 class="gx2-pg-title">game requests</h1><p class="gx2-pg-sub">most voted gets added first</p></div></header>
 <form id="rqForm" class="rqcard">
 <input id="rqName" type="text" maxlength="60" placeholder="game name — slope, buildnow gg, retro bowl..." autocomplete="off">
 <input id="rqLink" type="url" placeholder="link to the game (optional)" autocomplete="off">
@@ -9798,6 +9825,7 @@ ${FONT_LINKS}<style>${GALAXY_CSS}</style><style>
 </form>
 <div id="rqAdm" hidden><span class="admt">✦ ADMIN</span><button type="button" id="rqClearAll">clear all requests</button></div>
 <div id="rqList"></div>
+</div>
 ${SIDEBAR_HTML}
 </div>
 <script src="/ui.js"></script>
