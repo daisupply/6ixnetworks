@@ -467,7 +467,13 @@ pitch = math.atan2(roof_h, 4.5 + 0.9)
 slope_len = math.hypot(4.5 + 0.9, roof_h) + 0.4
 for sgn in (-1, 1):
     r = box("roof_slab", 12.4, slope_len, 0.24, 0, sgn * 2.7, wall_top + roof_h / 2 + 0.05, roof_m)
-    r.rotation_euler = (sgn * pitch, 0, 0)
+    # V578: sign flipped vs the district gable pattern — these slabs
+    # slope across Y with an X rotation (z' = y*sin), where the
+    # Y-rotation form (z' = -x*sin) needs the opposite sign. The old
+    # (sgn * pitch) put both eaves at ridge height and both inner
+    # edges at wall top: a valley roof. Proven numerically + in the
+    # exported GLB (roof.test.mjs).
+    r.rotation_euler = (-sgn * pitch, 0, 0)
 box("ridge_cap", 12.6, 0.5, 0.28, 0, 0, wall_top + roof_h + 0.18, M["timber_d"], bevel=0.05)
 for gx in (-5.5, 5.5):
     verts = [(-0.15, -4.5, wall_top), (-0.15, 4.5, wall_top), (-0.15, 0, wall_top + roof_h),

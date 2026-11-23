@@ -136,3 +136,41 @@ face, hall prism base on the cornice). Smoke: ALL PASS.
 - Stage-12 house chimneys: center y 6.4, top ~7.2 vs roof slope ~7.76 at
   their z offset → buried inside the roof (fix: raise to emerge).
 - Interiors: furniture rest-height census runs with the CKPT8 pass.
+
+## V578 correction — residential house roof was inverted (2026-11-23)
+
+The Stage-04 re-measurement above ("houses y 3.5..8.7 ✓") is
+**superseded as roof evidence**: it checked height BOUNDS only,
+and a valley roof has the same bounds as a gable roof. The house
+main roof in the shipped house.glb was in fact inverted — both
+slabs formed a butterfly/valley roof. Measured on the exported
+GLB itself (roof_house vertices): inner edge (near ridge line)
+maxY 5.56, outer edge (eaves) maxY 8.65 — eaves at ridge height,
+ridge line at wall top, ridge cap floating ~2.9 above the valley.
+
+Root cause: districts.py house roof used
+`r.rotation_euler = (sgn * pitch, 0, 0)`, copying the sign pattern
+of the district/coffee gables. Those slope across X with a Y
+rotation (z' = -x*sin, far edge falls). The house slabs slope
+across Y with an X rotation (z' = +y*sin, far edge rises) — the
+same signed pattern inverts. Fix: one sign,
+`r.rotation_euler = (-sgn * pitch, 0, 0)`, dimensions unchanged.
+The porch roof (Y rotation) and the district, coffee and
+clothing gables (Y rotation) were simulated and are CORRECT as
+written; hall gable and all hip roofs are exact from_pydata
+geometry. Do not "unify" these signs.
+
+Corrected measurements (fixed asset): source simulation, GLB
+vertices, and in-game world-space vertices at all three houses
+(yaws 0.5 / 0.9 / 0.25) agree — inner 8.65, outer 5.56 on both
+halves of every house. Ridge cap (y 8.44..8.72, x ±6.3) now
+meets the slab tops at the ridge; gable apex 8.40 matches the
+roof profile; eaves at y 5.56 overhang the walls (face ±4.5) by
+~1.08. Client chimneys (local 2.6, -1.2, span y 6.6..8.4 + cap)
+verified against the corrected slope: roof surface there is
+7.99, so the base is embedded and the top emerges — the
+"buried chimney" note above was written against the inverted
+roof and no longer applies. Standing gate: world3d/tests/
+roof.test.mjs asserts slope DIRECTION from the source
+parameters, the exported GLB, and the porch — run it after any
+roof change; bounds checks alone do not count.
