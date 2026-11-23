@@ -27,7 +27,7 @@
  * player data, WebGL context-loss overlay. Three.js r160 vendored.
  */
 import * as THREE from 'three';
-import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH } from './math3d.js';
+import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH, fbm2, ridge2 } from './math3d.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as skelClone } from 'three/addons/utils/SkeletonUtils.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -279,16 +279,155 @@ function canvasTex(w, h, draw, rx, ry) {
   t.anisotropy = 4;
   return t;
 }
-function groundTexture() {
-  // v548 cozy: sage grass with warm speckle + soft darker patches
-  return canvasTex(512, 512, (g, w, h) => {
-    g.fillStyle = '#52663a'; g.fillRect(0, 0, w, h);
-    const rnd = mulberry32(42);
-    for (let i = 0; i < 5200; i++) { g.fillStyle = 'rgba(' + (150 + rnd() * 70 | 0) + ',' + (165 + rnd() * 55 | 0) + ',' + (95 + rnd() * 40 | 0) + ',' + (rnd() * 0.16) + ')'; g.fillRect(rnd() * w, rnd() * h, 2, 2); }
-    for (let i = 0; i < 26; i++) { g.fillStyle = 'rgba(52,66,38,' + (0.05 + rnd() * 0.09) + ')'; g.beginPath(); g.arc(rnd() * w, rnd() * h, 20 + rnd() * 60, 0, TAU); g.fill(); }
-    for (let i = 0; i < 12; i++) { g.fillStyle = 'rgba(214,186,130,' + (0.04 + rnd() * 0.05) + ')'; g.beginPath(); g.arc(rnd() * w, rnd() * h, 14 + rnd() * 34, 0, TAU); g.fill(); }
-  }, 10, 10);
+/* ============ TERRAIN PASS: chunked procedural heightfield =========
+ * The ground is built from fixed world-coordinate chunks (55u each,
+ * 22x22 segments, one shared material). Every chunk is independently
+ * reproducible from groundH alone: generation takes no player state,
+ * no Math.random, no build order into account, and the registry
+ * guarantees a chunk is generated at most once. Border vertices are
+ * sampled at identical world coordinates by both neighbours, and
+ * normals come from a 1-vertex halo grid sampled from the same pure
+ * function, so adjacent chunks agree on heights AND normals exactly
+ * — no seams, no cracks. This is the structure future chunk
+ * streaming will load/unload; for now every chunk is built once at
+ * boot and stays (buildings and terrain never unload).
+ * Materials: five CC0 Poly Haven ground layers (grass / forest floor
+ * / dry dirt / rocky ground / shore sand) blended per-vertex by
+ * biome, slope, height and moisture weights computed from the same
+ * terrain data, then mixed in the shader at two world-space scales
+ * (7u detail + 23u breakup) so tiling never reads as a grid, with a
+ * weighted normal-map blend for surface relief. ==================== */
+const TERRAIN_CHUNKS = new Map();
+const TCHUNK = 55, TSEG = 22;
+let TERR_INDEX = null, terrainTex = null;
+function tss(a, b, v) { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); }
+function terrainPlaceholder(rgb, srgb) {
+  const c = document.createElement('canvas'); c.width = c.height = 2;
+  const g = c.getContext('2d'); g.fillStyle = rgb; g.fillRect(0, 0, 2, 2);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
 }
+function terrainTextures() {
+  if (terrainTex) return terrainTex;
+  const layers = {
+    grass: ['#66793f', 'grass_diff', 'grass_nor'], forest: ['#4d4433', 'forest_diff', 'forest_nor'],
+    dirt: ['#77603f', 'dirt_diff', 'dirt_nor'], rock: ['#8a8478', 'rock_diff', 'rock_nor'],
+    sand: ['#c9b489', 'sand_diff', 'sand_nor'],
+  };
+  terrainTex = {};
+  const loader = new THREE.TextureLoader();
+  for (const k of Object.keys(layers)) {
+    const d = terrainPlaceholder(layers[k][0], true), n = terrainPlaceholder('rgb(128,128,255)', false);
+    terrainTex[k] = { d, n };
+    loader.load('/world3d/assets/terrain/' + layers[k][1] + '.webp', (lt) => { d.image = lt.image; d.needsUpdate = true; });
+    loader.load('/world3d/assets/terrain/' + layers[k][2] + '.webp', (lt) => { n.image = lt.image; n.needsUpdate = true; });
+  }
+  return terrainTex;
+}
+function terrainMaterial() {
+  const T = terrainTextures();
+  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.96, metalness: 0 });
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.uTG = { value: T.grass.d }; sh.uniforms.uTF = { value: T.forest.d };
+    sh.uniforms.uTD = { value: T.dirt.d }; sh.uniforms.uTR = { value: T.rock.d };
+    sh.uniforms.uTS = { value: T.sand.d };
+    sh.uniforms.uTGn = { value: T.grass.n }; sh.uniforms.uTFn = { value: T.forest.n };
+    sh.uniforms.uTDn = { value: T.dirt.n }; sh.uniforms.uTRn = { value: T.rock.n };
+    sh.uniforms.uTSn = { value: T.sand.n };
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute vec4 aW1; attribute float aSand; varying vec4 vW1; varying float vSand; varying vec3 vWPos;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvW1 = aW1; vSand = aSand; vWPos = position;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform sampler2D uTG; uniform sampler2D uTF; uniform sampler2D uTD; uniform sampler2D uTR; uniform sampler2D uTS;\nuniform sampler2D uTGn; uniform sampler2D uTFn; uniform sampler2D uTDn; uniform sampler2D uTRn; uniform sampler2D uTSn;\nvarying vec4 vW1; varying float vSand; varying vec3 vWPos;\nvec3 terrMixD(sampler2D t, vec2 a, vec2 b) { return mix(texture2D(t, a), texture2D(t, b), 0.42).rgb; }\nvec3 terrPerturb(vec3 e, vec3 n, vec3 m, vec2 uv) { vec3 q0 = dFdx(e); vec3 q1 = dFdy(e); vec2 s0 = dFdx(uv); vec2 s1 = dFdy(uv); vec3 S = normalize(q0 * s1.t - q1 * s0.t); vec3 T2 = normalize(-q0 * s1.s + q1 * s0.s); return normalize(T2 * m.x + S * m.y + n * m.z); }')
+      .replace('#include <map_fragment>', 'vec2 tUvA = vWPos.xz * 0.142857; vec2 tUvB = vWPos.xz * 0.043478;\nfloat tSum = max(vW1.x + vW1.y + vW1.z + vW1.w + vSand, 1e-4);\nvec3 tAlb = (terrMixD(uTG, tUvA, tUvB) * vW1.x + terrMixD(uTF, tUvA, tUvB) * vW1.y + terrMixD(uTD, tUvA, tUvB) * vW1.z + terrMixD(uTR, tUvA, tUvB) * vW1.w + terrMixD(uTS, tUvA, tUvB) * vSand) / tSum;\ndiffuseColor.rgb = tAlb;')
+      .replace('#include <normal_fragment_maps>', 'vec3 tN = (texture2D(uTGn, tUvA).rgb * 2.0 - 1.0) * vW1.x + (texture2D(uTFn, tUvA).rgb * 2.0 - 1.0) * vW1.y + (texture2D(uTDn, tUvA).rgb * 2.0 - 1.0) * vW1.z + (texture2D(uTRn, tUvA).rgb * 2.0 - 1.0) * vW1.w + (texture2D(uTSn, tUvA).rgb * 2.0 - 1.0) * vSand;\ntN = normalize(tN / tSum + vec3(0.0, 0.0, 0.02));\nnormal = terrPerturb(-vViewPosition, normal, tN * vec3(0.8, 0.8, 1.0), tUvA);');
+  };
+  mat.customProgramCacheKey = () => 'terrain-pass-1';
+  return mat;
+}
+// per-vertex material weights from the terrain's own data: biome
+// (west forest / east meadow), slope (rock on steeps, dirt on
+// shoulders), moisture noise (dirt patches), and the pond shoreline.
+function terrainWeights(x, z, ny, h) {
+  const s = 1 - ny;
+  const wild = Math.max(tss(126, 150, Math.abs(x)), tss(98, 116, Math.abs(z)));
+  let rock = Math.max(tss(0.13, 0.34, s), tss(9, 20, h) * tss(0.04, 0.12, s));
+  let forest = tss(-118, -158, x) * (0.5 + 0.5 * (fbm2(x * 0.02 + 3.1, z * 0.02, 2) * 0.5 + 0.5));
+  let dirt = tss(0.30, 0.62, fbm2(x * 0.028 + 51.7, z * 0.028 + 9.4, 3)) * 0.72 * wild
+    + tss(0.045, 0.10, s) * (1 - tss(0.10, 0.30, s)) * 0.35;
+  const dPond = Math.hypot(x - 118, z - 12);
+  let sand = (1 - tss(12.5, 17, dPond)) * (1 - tss(0.1, 0.45, h));
+  let grass = Math.max(0, 1 - forest - dirt - rock - sand);
+  const sum = grass + forest + dirt + rock + sand || 1;
+  return [grass / sum, forest / sum, dirt / sum, rock / sum, sand / sum];
+}
+function buildTerrainChunk(cx, cz) {
+  const key = cx + ',' + cz;
+  if (TERRAIN_CHUNKS.has(key)) return TERRAIN_CHUNKS.get(key);
+  const step = TCHUNK / TSEG, N = TSEG + 1, H = TSEG + 3;
+  const gx = cx * TCHUNK, gz = cz * TCHUNK;
+  // halo grid: one ring beyond the chunk on every side, so border
+  // normals use the same central differences as the neighbour chunk.
+  const hs = new Float32Array(H * H);
+  for (let j = 0; j < H; j++) for (let i = 0; i < H; i++) {
+    hs[j * H + i] = groundH(gx + (i - 1) * step, gz + (j - 1) * step);
+  }
+  const nv = N * N;
+  const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), col = new Float32Array(nv * 3);
+  const w1 = new Float32Array(nv * 4), wS = new Float32Array(nv), uv = new Float32Array(nv * 2);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const vi = j * N + i, hi = (j + 1) * H + (i + 1);
+    const x = gx + i * step, z = gz + j * step, h = hs[hi];
+    const dhx = (hs[hi + 1] - hs[hi - 1]) / (2 * step), dhz = (hs[hi + H] - hs[hi - H]) / (2 * step);
+    let nx = -dhx, nz = -dhz; const il = 1 / Math.hypot(nx, 1, nz);
+    nx *= il; nz *= il; const ny = il;
+    pos[vi * 3] = x; pos[vi * 3 + 1] = h; pos[vi * 3 + 2] = z;
+    nor[vi * 3] = nx; nor[vi * 3 + 1] = ny; nor[vi * 3 + 2] = nz;
+    const w = terrainWeights(x, z, ny, h);
+    w1[vi * 4] = w[0]; w1[vi * 4 + 1] = w[1]; w1[vi * 4 + 2] = w[2]; w1[vi * 4 + 3] = w[3]; wS[vi] = w[4];
+    const moist = fbm2(x * 0.013 + 77.3, z * 0.013, 2) * 0.5 + 0.5;
+    const tint = (0.95 + 0.08 * moist) * (h < 1 ? 0.985 : 1);
+    const gw = w[0];
+    col[vi * 3] = tint * (1 - gw + gw * 0.80);
+    col[vi * 3 + 1] = tint * (1 - gw + gw * 1.07);
+    col[vi * 3 + 2] = tint * (1 - gw + gw * 0.68);
+    uv[vi * 2] = x / 7; uv[vi * 2 + 1] = z / 7;
+  }
+  if (!TERR_INDEX) {
+    const idx = new Uint32Array(TSEG * TSEG * 6);
+    let k = 0;
+    for (let j = 0; j < TSEG; j++) for (let i = 0; i < TSEG; i++) {
+      const a = j * N + i, b = a + 1, c = a + N, d = c + 1;
+      idx[k++] = a; idx[k++] = c; idx[k++] = b; idx[k++] = b; idx[k++] = c; idx[k++] = d;
+    }
+    TERR_INDEX = idx;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  g.setAttribute('aW1', new THREE.BufferAttribute(w1, 4));
+  g.setAttribute('aSand', new THREE.BufferAttribute(wS, 1));
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  g.setIndex(new THREE.BufferAttribute(TERR_INDEX, 1));
+  g.computeBoundingSphere();
+  TERRAIN_CHUNKS.set(key, g);
+  return g;
+}
+function buildTerrain() {
+  const group = new THREE.Group();
+  const mat = terrainMaterial();
+  for (let cx = -5; cx < 5; cx++) for (let cz = -4; cz < 4; cz++) {
+    const mesh = new THREE.Mesh(buildTerrainChunk(cx, cz), mat);
+    mesh.receiveShadow = true;
+    group.add(mesh);
+  }
+  return group;
+}
+
 function plazaTexture() {
   return canvasTex(1024, 1024, (g, w, h) => {
     const c = w / 2;
@@ -388,24 +527,7 @@ function buildWorld() {
   });
 
   // ground + plaza + paths
-  const groundGeo = new THREE.PlaneGeometry(BOUND_X * 2 + 160, BOUND_Z * 2 + 160, 138, 100);
-  groundGeo.rotateX(-Math.PI / 2);
-  { // stage 08: displace by groundH + tint the wild bands (forest floor west, meadow east)
-    const pos = groundGeo.attributes.position, colors = new Float32Array(pos.count * 3);
-    for (let i = 0; i < pos.count; i++) {
-      const vx = pos.getX(i), vz = pos.getZ(i);
-      pos.setY(i, groundH(vx, vz));
-      let r = 1, g = 1, b = 1;
-      if (vx < -140) { r = 0.70; g = 0.66; b = 0.55; }
-      else if (vx > 145) { r = 1.07; g = 1.03; b = 0.84; }
-      const n = 1 + 0.05 * Math.sin(vx * 0.35) * Math.cos(vz * 0.31);
-      colors[i * 3] = r * n; colors[i * 3 + 1] = g * n; colors[i * 3 + 2] = b * n;
-    }
-    groundGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    groundGeo.computeVertexNormals();
-  }
-  const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ map: groundTexture(), roughness: 1, vertexColors: true }));
-  ground.receiveShadow = true; scene.add(ground);
+  scene.add(buildTerrain()); // terrain pass: chunked heightfield, one shared blended material
   const plaza = new THREE.Mesh(new THREE.CircleGeometry(30, 56), new THREE.MeshStandardMaterial({ map: plazaTexture(), roughness: 0.85 }));
   plaza.rotation.x = -Math.PI / 2; plaza.position.y = 0.02; plaza.receiveShadow = true; scene.add(plaza);
   const pathMat = new THREE.MeshStandardMaterial({ color: 0x9a8a72, roughness: 0.95 });
@@ -414,12 +536,25 @@ function buildWorld() {
     m.rotation.x = -Math.PI / 2; m.position.set(pp[0], 0.015, pp[1]); m.receiveShadow = true; scene.add(m);
   });
 
-  // distant mountain silhouettes (depth at the fog line)
-  const mtnMat = new THREE.MeshBasicMaterial({ color: 0x7a5f78 });
-  for (let i = 0; i < 11; i++) {
-    const a = i / 11 * TAU + rnd() * 0.3, Rr = 305 + rnd() * 55;
-    const m = new THREE.Mesh(new THREE.ConeGeometry(52 + rnd() * 46, 44 + rnd() * 42, 5), mtnMat);
-    m.position.set(Math.cos(a) * Rr, 12, Math.sin(a) * Rr); m.rotation.y = rnd() * TAU; scene.add(m);
+  // distant mountain silhouettes (depth at the fog line): one
+  // continuous ridgeline ring whose crest follows the same ridged
+  // noise as the terrain rim, so the far range reads as a real
+  // mountain chain instead of repeated cones (terrain pass).
+  {
+    const ring = new THREE.CylinderGeometry(338, 338, 1, 160, 1, true);
+    const rp = ring.attributes.position, rcol = new Float32Array(rp.count * 3);
+    const cTop = new THREE.Color(0x8a6f83), cBot = new THREE.Color(0xc7a68e);
+    for (let i = 0; i < rp.count; i++) {
+      const x = rp.getX(i), z = rp.getZ(i), a = Math.atan2(z, x);
+      const ca = Math.cos(a), sa = Math.sin(a);
+      const crest = 16 + 40 * Math.pow(ridge2(ca * 3.1 + 31.4, sa * 3.1 + 3.1, 4), 1.4) + 6 * fbm2(ca * 6.0 + 9.2, sa * 6.0, 2);
+      const isTop = rp.getY(i) > 0;
+      rp.setY(i, isTop ? crest : -6);
+      const c = isTop ? cTop : cBot;
+      rcol[i * 3] = c.r; rcol[i * 3 + 1] = c.g; rcol[i * 3 + 2] = c.b;
+    }
+    ring.setAttribute('color', new THREE.BufferAttribute(rcol, 3));
+    scene.add(new THREE.Mesh(ring, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, fog: true })));
   }
 
   // THE FOUNTAIN (the wishing well, in 3d) — basin, rim, animated water,
@@ -4139,7 +4274,7 @@ function loop() {
     window.__w3scene = scene; // diagnostic handle (mesh census in tests)
     window.__w3state = function () {
       const miraN = NPCS.find((n) => n.zone === 'coffee');
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, groveN: GROVE.n, coverN: COVER.lawn, chunksOn: COVER.chunksOn, chunks: COVER.chunks, lodNear: COVER.lodNear, lodFar: COVER.lodFar, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, perfQ: loadQ.length + loadActive, garden: SPAWNG, vc: { on: vcOn3, muted: vcMuted, peers: Object.keys(vcPeers).length, states: Object.fromEntries(Object.entries(vcPeers).map(([u, p]) => [u, p.pc.connectionState])), talk: vcTalk3 }, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, groveN: GROVE.n, coverN: COVER.lawn, chunksOn: COVER.chunksOn, chunks: COVER.chunks, lodNear: COVER.lodNear, lodFar: COVER.lodFar, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, perfQ: loadQ.length + loadActive, tChunks: TERRAIN_CHUNKS.size, garden: SPAWNG, vc: { on: vcOn3, muted: vcMuted, peers: Object.keys(vcPeers).length, states: Object.fromEntries(Object.entries(vcPeers).map(([u, p]) => [u, p.pc.connectionState])), talk: vcTalk3 }, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }

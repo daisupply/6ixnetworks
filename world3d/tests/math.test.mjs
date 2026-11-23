@@ -1,7 +1,7 @@
 // math.test.mjs — pure movement/camera math for the 3D world.
 // tests the EXACT functions client3d.js imports from ../math3d.js.
 // run: node world3d/tests/math.test.mjs   (no server, no deps)
-import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH } from '../math3d.js';
+import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH, noise2, fbm2, ridge2 } from '../math3d.js';
 
 let pass = 0, fail = 0;
 const ok = (c, label, extra) => { if (c) { pass++; console.log('PASS', label); } else { fail++; console.log('FAIL', label, extra !== undefined ? JSON.stringify(extra) : ''); } };
@@ -87,6 +87,83 @@ ok(Math.abs(groundH(-179, -38) - groundH(-174, -34)) < 0.05, 'groundH v2: cleari
 ok(groundH(-179, -38) > 2.0, 'groundH v2: clearing pad stays elevated (' + groundH(-179, -38).toFixed(1) + ')');
 ok(Math.abs(groundH(174, 8) - groundH(170, 5)) < 0.05, 'groundH v2: overlook pad is flat');
 ok(near(groundH(34, 64), 0), 'groundH v2: south park still plateau');
+
+// ---- terrain pass: procedural heightfield guarantees ----
+// noise primitives: bounded + deterministic
+{
+  let inRange = true, det = true;
+  for (let i = 0; i < 400; i++) {
+    const x = -97 + i * 0.61, z = 53 - i * 0.37;
+    const n = noise2(x, z), f = fbm2(x, z, 4), r = ridge2(x, z, 4);
+    if (!(n >= -1.45 && n <= 1.45 && f >= -1.01 && f <= 1.01 && r >= 0 && r <= 1.01)) inRange = false;
+    if (noise2(x, z) !== n || fbm2(x, z, 4) !== f || ridge2(x, z, 4) !== r) det = false;
+  }
+  ok(inRange, 'terrain: noise/fbm/ridge stay in their ranges');
+  ok(det, 'terrain: noise is deterministic (same input, same output, bit-exact)');
+}
+// the whole developed plateau is EXACTLY zero — spawn, plaza, roads,
+// pond, every building footprint and door front keep their old ground
+{
+  let flat = true, worst = '';
+  for (let x = -126; x <= 126; x += 6) for (let z = -98; z <= 98; z += 6) {
+    if (groundH(x, z) !== 0) { flat = false; worst = x + ',' + z + '=' + groundH(x, z); }
+  }
+  ok(flat, 'terrain: town plateau is exactly h=0 everywhere' + (worst ? ' (worst ' + worst + ')' : ''));
+  const doors = [[-28.6, -35.0], [-62, -42.8], [43.4, -35.0], [58, -44.8], [62, 40.3], [-64, 38.3]];
+  ok(doors.every(([x, z]) => groundH(x, z) === 0), 'terrain: every building door front is at h=0');
+}
+// chunk boundaries: the client builds 55u chunks, 22 segments (2.5u).
+// a border vertex sampled through either neighbour's parameterization
+// must produce the identical height, bit for bit — no seams, ever.
+{
+  const TCHUNK = 55, TSEG = 22, step = TCHUNK / TSEG;
+  let ident = true;
+  for (let cx = -5; cx < 4 && ident; cx++) for (let cz = -4; cz < 4 && ident; cz++) {
+    for (let j = 0; j <= TSEG; j++) {
+      const zA = cz * TCHUNK + j * step;
+      if (groundH(cx * TCHUNK + TSEG * step, zA) !== groundH((cx + 1) * TCHUNK, zA)) { ident = false; break; }
+      const xA = cx * TCHUNK + j * step;
+      if (groundH(xA, cz * TCHUNK + TSEG * step) !== groundH(xA, (cz + 1) * TCHUNK)) { ident = false; break; }
+    }
+  }
+  ok(ident, 'terrain: shared chunk-border heights are bit-identical');
+}
+// no spikes, no cliffs: bounded range everywhere, gentle slopes
+// inside the playable bounds, valid up-facing normals
+{
+  let maxH = -1e9, minH = 1e9, maxSlope = 0, normalsOk = true;
+  for (let x = -275; x <= 275; x += 2) for (let z = -220; z <= 220; z += 2) {
+    const h = groundH(x, z);
+    if (h > maxH) maxH = h; if (h < minH) minH = h;
+    if (Math.abs(x) <= 195 && Math.abs(z) <= 118) {
+      const e = 1.5;
+      const gx = (groundH(x + e, z) - groundH(x - e, z)) / (2 * e);
+      const gz = (groundH(x, z + e) - groundH(x, z - e)) / (2 * e);
+      const sl = Math.hypot(gx, gz);
+      if (sl > maxSlope) maxSlope = sl;
+      const ny = 1 / Math.hypot(gx, 1, gz);
+      if (!(ny > 0.55 && ny <= 1)) normalsOk = false;
+    }
+  }
+  ok(maxH <= 45 && minH >= -2.01, 'terrain: elevation bounded (min ' + minH.toFixed(2) + ', max ' + maxH.toFixed(2) + ')');
+  ok(maxSlope <= 0.6, 'terrain: steepest playable slope is walkable (' + maxSlope.toFixed(3) + ')');
+  ok(normalsOk, 'terrain: analytic normals are unit and up-facing inside the bounds');
+}
+// the horizon is real terrain, not a wall: edge heights are high
+// and VARY along the rim (ridged silhouettes, not a uniform ring)
+{
+  const rim = [groundH(-270, 0), groundH(270, 0), groundH(0, -212), groundH(0, 212), groundH(-270, -212), groundH(270, 212)];
+  const lo = Math.min(...rim), hi = Math.max(...rim);
+  ok(lo > 4 && hi - lo > 4, 'terrain: mountain rim rises and varies (rim ' + rim.map((v) => v.toFixed(1)).join('/') + ')');
+}
+// generation performance: a full chunk is 625 halo samples
+{
+  const t0 = Date.now();
+  let acc = 0;
+  for (let i = 0; i < 20000; i++) acc += groundH(-260 + (i % 520), -200 + (i % 400));
+  const ms = Date.now() - t0;
+  ok(ms < 500 && acc !== 0, 'terrain: 20k height samples in ' + ms + 'ms (chunk gen stays cheap)');
+}
 
 console.log('MATH RESULT: ' + pass + ' pass, ' + fail + ' fail');
 process.exit(fail ? 1 : 0);

@@ -64,13 +64,65 @@ export function segBoxT(ax, ay, az, bx, by, bz, b) {
   return t0;
 }
 
-// ---- stage 08: terrain heightfield ----
+// ---- terrain heightfield (stage 08, overhauled in the terrain pass) ----
+// The developed town sits on a flat plateau (h = 0 for |x| <= 126,
+// |z| <= 98, smooth mask beyond). Outside it the land is a layered
+// procedural heightfield: the original hand-placed hill masses, a
+// domain-warped multi-octave rolling layer, a fine surface layer, a
+// forest-floor micro layer in the west, and — beyond the playable
+// bounds only — ridged-noise foothills and mountain ranges that give
+// the horizon real silhouettes. EVERY layer is multiplied by the
+// plateau mask, so the town, plaza, roads, pond and every building
+// footprint stay at exactly h = 0, bit for bit.
+// Pure + deterministic: integer-hash gradient noise (Math.imul only,
+// no Math.random, no state), so the ground mesh, the player, remotes,
+// NPCs, wildlife and the tests all sample identical heights from the
+// same world coordinates on every client, forever.
+function sstep(a, b, v) { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); }
+// deterministic 2d gradient noise: integer lattice hash -> gradient,
+// smoothstep-interpolated. identical output for identical input on
+// every JS engine (imul + doubles only).
+function nhash(ix, iz) {
+  let h = Math.imul(ix, 374761393) + Math.imul(iz, 668265263);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+const NGRAD = [[1, 1], [-1, 1], [1, -1], [-1, -1], [1, 0], [-1, 0], [0, 1], [0, -1]];
+export function noise2(x, z) {
+  const ix = Math.floor(x), iz = Math.floor(z);
+  const fx = x - ix, fz = z - iz;
+  const ux = fx * fx * (3 - 2 * fx), uz = fz * fz * (3 - 2 * fz);
+  let v = 0;
+  for (let c = 0; c < 4; c++) {
+    const cx = ix + (c & 1), cz = iz + (c >> 1);
+    const g = NGRAD[(nhash(cx, cz) * 8) | 0];
+    const dx = fx - (c & 1), dz = fz - (c >> 1);
+    const d = g[0] * dx + g[1] * dz;
+    const wx = (c & 1) ? ux : 1 - ux, wz = (c >> 1) ? uz : 1 - uz;
+    v += d * wx * wz;
+  }
+  return v * 1.4142; // ~[-1, 1]
+}
+// fractal brownian motion over noise2: oct octaves, lacunarity 2,
+// gain 0.5. range roughly [-1, 1].
+export function fbm2(x, z, oct) {
+  let a = 0.5, f = 1, sum = 0, norm = 0;
+  for (let i = 0; i < oct; i++) { sum += a * noise2(x * f, z * f); norm += a; a *= 0.5; f *= 2.03; }
+  return sum / norm;
+}
+// ridged fbm for mountain crests: sharp 1-|n| folds, squared.
+// range [0, 1].
+export function ridge2(x, z, oct) {
+  let a = 0.5, f = 1, sum = 0, norm = 0;
+  for (let i = 0; i < oct; i++) { const n = 1 - Math.abs(noise2(x * f, z * f)); sum += a * n * n; norm += a; a *= 0.5; f *= 2.11; }
+  return sum / norm;
+}
+
 // The developed town sits on a flat plateau (h = 0 for |x| <= 126,
 // |z| <= 98, smooth mask beyond); gentle hills rise outside it: the
 // west forest floor, the east overlook, and thin north/south rims.
 // Pure + deterministic: the ground mesh, the player, remotes, NPCs and
 // wildlife all sample this one function, so every client agrees.
-function sstep(a, b, v) { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); }
 const HILLS = [
   [-168, -42, 3.4, 40], [-172, 48, 2.8, 36], [-158, 92, 2.2, 30],
   [174, 8, 7.6, 44], [162, -62, 3.2, 38], [166, 78, 2.6, 34],
@@ -89,7 +141,32 @@ function groundHBase(x, z) {
   h = Math.max(0, h) * m;
   // v2 (stage 02 rebuild): gentle forest-floor undulation, west band only
   if (x < -135) h += 0.35 * Math.sin(x * 0.11 + 1.7) * Math.cos(z * 0.09) * m;
-  return Math.max(0, h);
+  // terrain pass: layered procedural detail, all scaled by the same
+  // plateau mask so the town stays exactly flat. a domain-warped fbm
+  // rolling layer gives the outskirts believable hills and valleys
+  // (the warp keeps it from reading as evenly-spaced noise blobs), a
+  // fine layer breaks up the surface, and the west gets an extra
+  // forest-floor layer so the woods floor feels distinct from the
+  // softer meadow profile in the east.
+  const wx = x + 9 * fbm2(x * 0.011 + 13.7, z * 0.011 + 91.2, 3);
+  const wz = z + 9 * fbm2(x * 0.011 + 47.3, z * 0.011 + 5.9, 3);
+  let det = 2.3 * fbm2(wx * 0.016, wz * 0.016, 4);
+  det += 0.30 * fbm2(x * 0.085, z * 0.085, 2);
+  if (x < -130) det += 0.55 * fbm2(x * 0.045 + 7.7, z * 0.045, 3) * sstep(-130, -168, x);
+  h += det * m;
+  h = Math.max(-2, h); // shallow natural depressions are allowed in the wild bands
+  // beyond the playable bounds the land keeps rising: rolling
+  // foothills first, then ridged mountain ranges (visual only —
+  // players are clamped inside the bounds, but the same function
+  // shapes them, so the apron mesh and the horizon agree).
+  const ex = Math.max(Math.abs(x) - 195, 0), ez = Math.max(Math.abs(z) - 118, 0);
+  const dOut = Math.hypot(ex, ez);
+  if (dOut > 0) {
+    const rg = ridge2(x * 0.0055 + 31.4, z * 0.0055 + 3.1, 4);
+    h += 3.2 * fbm2(x * 0.02, z * 0.02, 3) * sstep(0, 45, dOut);
+    h += sstep(4, 85, dOut) * (7 + 30 * rg * rg);
+  }
+  return h;
 }
 // v2: designed flat pads — the forest clearing and the overlook terrace
 // blend to their center height so landmarks sit on level ground.

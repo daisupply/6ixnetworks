@@ -440,6 +440,17 @@ function createWorld3D(ctx) {
     if (pathname === '/world3d/vendor/addons/loaders/GLTFLoader.js') return { type: 'text/javascript; charset=utf-8', body: GLTF_LOADER };
     if (pathname === '/world3d/vendor/addons/utils/BufferGeometryUtils.js') return { type: 'text/javascript; charset=utf-8', body: BG_UTILS };
     if (pathname === '/world3d/vendor/addons/utils/SkeletonUtils.js') return { type: 'text/javascript; charset=utf-8', body: SKEL_UTILS };
+    if (pathname.startsWith('/world3d/assets/terrain/') && pathname.endsWith('.webp') && !pathname.includes('..')) {
+      // terrain-pass ground textures: same b64 ship + decode-on-serve
+      // pattern as the GLBs, cached after first read.
+      const rel = pathname.slice('/world3d/'.length);
+      try {
+        if (!assetBinCache.has(rel)) assetBinCache.set(rel, Buffer.from(fs.readFileSync(path.join(__dirname, rel + '.b64'), 'utf8').replace(/\s+/g, ''), 'base64'));
+        return { type: 'image/webp', body: assetBinCache.get(rel) };
+      } catch (e) {
+        try { return { type: 'image/webp', body: fs.readFileSync(path.join(__dirname, rel)) }; } catch (e2) { return null; }
+      }
+    }
     if (pathname.startsWith('/world3d/assets/') && pathname.endsWith('.glb') && !pathname.includes('..')) {
       // GLBs ship in the repo base64-wrapped (.glb.b64, the repo is
       // text-only through the push pipeline); decode on serve, cache.
