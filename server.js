@@ -4925,19 +4925,66 @@ body.frview .hcall{display:none}
 .hue-auto{border-radius:999px;padding:0 13px;height:32px;background:#22252D;border:1px solid var(--border);color:var(--text);font-weight:700;cursor:pointer;font-family:inherit;font-size:12.5px}
 .hue-auto.on{border-color:var(--violet);background:var(--violet-soft);color:var(--violet)}
 #pfsave{background:var(--violet);color:#0D0E13;border-color:transparent}
-/* ---------- mobile ---------- */
+/* ---------- mobile: dedicated screens model (<=820px) ----------
+   NOT the desktop panels compressed. One explicit state - data-mview on
+   .app6 (list | convo | friends | activity), owned by mGo() in the chat
+   script - shows exactly one full-screen screen. .chatrail becomes the
+   conversations screen (in-flow; the old transform drawer is gone),
+   .main6 hosts conversation / friends / activity, #mnav is the chat
+   bottom nav at the bottom of the .app6 region (which already ends
+   80px above the viewport bottom on mobile, above the platform
+   tabbar). Desktop >=821px: none of these rules apply. */
+#mnav{display:none}
+#mback{display:none}
 @media(max-width:820px){
+body{overscroll-behavior:none}
 .crail{display:none}
-.app6 .chatrail{position:fixed;left:0;top:0;bottom:0;height:100dvh;width:284px;z-index:120;transform:translateX(-106%);transition:transform .22s ease;box-shadow:0 0 44px rgba(0,0,0,.55);padding-top:max(14px,env(safe-area-inset-top));margin:0;border-radius:0;border-right:1px solid var(--border)}
-.app6 .chatrail.open{transform:none}
-#drawerbtn{display:flex!important}
+#drawerbtn{display:none!important}
+/* --- screens --- */
+.app6[data-mview="list"] .chatrail{display:flex;flex:1;width:100%;min-width:0;height:auto;padding-top:max(14px,env(safe-area-inset-top));padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+.app6[data-mview="list"] .brand6{padding-bottom:8px}
+.app6[data-mview="list"] .rail-search{padding-bottom:6px}
+.app6[data-mview="list"] .cr-sec{margin:10px 8px 4px}
+.app6[data-mview="list"] .cr-item{padding-top:5px;padding-bottom:5px}
+.app6[data-mview="list"] .cr-join{margin-top:6px}
+.app6[data-mview="list"] .chatrail .dme{display:none}
+.app6:not([data-mview="list"]) .chatrail{display:none}
+.app6[data-mview="list"] .main6{display:none}
+.app6[data-mview="list"] #infopanel{display:none!important}
+.app6[data-mview="friends"] .main6,.app6[data-mview="activity"] .main6{padding-bottom:calc(58px + env(safe-area-inset-bottom))}
+/* --- chat bottom nav --- */
+#mnav{position:absolute;left:0;right:0;bottom:0;z-index:65;background:#0B0C0F;border-top:1px solid var(--border);padding:6px 8px;padding-bottom:max(6px,env(safe-area-inset-bottom));box-sizing:border-box;gap:2px}
+.app6[data-mview="list"] #mnav,.app6[data-mview="friends"] #mnav,.app6[data-mview="activity"] #mnav{display:flex}
+.mnav-btn{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:52px;border:0;border-radius:12px;background:transparent;color:var(--text-secondary);font-family:inherit;font-size:10.5px;font-weight:650;cursor:pointer;padding:4px 2px}
+.mnav-btn.on{color:var(--violet)}
+.mnav-badge{position:absolute;top:2px;left:calc(50% + 2px);min-width:17px;height:17px;border-radius:999px;background:#dc2626;color:#fff;font-size:10px;font-weight:800;display:none;align-items:center;justify-content:center;padding:0 4px;box-sizing:border-box}
+.mnav-badge.show{display:flex}
+/* --- conversation screen --- */
+#mback{width:40px;height:40px;border-radius:8px;border:0;background:transparent;color:var(--text-secondary);align-items:center;justify-content:center;cursor:pointer;flex:none;padding:0;margin-left:-6px}
+.app6[data-mview="convo"] #mback{display:flex}
+.hbtn{width:40px;height:40px}
+.dme-btn{width:40px;height:40px}
 .main6 #msgs{padding:14px 10px 6px}
 .main6 .msg{gap:9px;padding:3px 6px}
 .main6 .mav{width:36px;height:36px;font-size:14px}
 .main6 .bar{width:calc(100% - 20px);margin:6px 10px 10px;margin-bottom:max(10px,env(safe-area-inset-bottom))}
 .head6{padding-left:10px;padding-right:10px}
 #frpage,#actpage{padding:16px 12px 24px!important}
-#infopanel{width:min(320px,92vw)}
+/* info panel becomes a full-screen sheet */
+#infopanel{position:absolute;inset:0;width:100%;z-index:70;box-shadow:none}
+.ip-x{width:40px;height:40px}
+.pf-x{width:40px;height:40px}
+/* --- touch targets + rows --- */
+.cr-item{min-height:44px}
+.dm-item{padding:8px 9px}
+.dm-time{font-size:11px;color:var(--text-muted);flex:none;margin-left:6px}
+.fr-tab{min-height:44px}
+.fr-btn{min-height:44px}
+.rbar button{min-width:40px;min-height:40px;padding:10px;display:flex;align-items:center;justify-content:center}
+.rbar{top:-24px}
+/* --- scroll discipline + perf --- */
+#msgs,.rail-scroll,#ipbody,.pf-card,.upop-card,#frpage,#actpage{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.upop{-webkit-backdrop-filter:none;backdrop-filter:none}
 }
 </style></head><body>${STAR_CANVAS}${SIDEBAR_HTML}<div class="app6"><nav class="crail" aria-label="chat sections"><button class="crail-btn on" id="cr-dms" type="button" data-tip="messages"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span class="crail-badge" id="crbadge"></span></button><button class="crail-btn" id="cr-friends" type="button" data-tip="friends"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></button><button class="crail-btn" id="cr-activity" type="button" data-tip="activity"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button><button class="crail-btn" id="cr-voice" type="button" data-tip="voice"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button><div class="crail-sp"></div><button class="crail-btn" id="cr-prof" type="button" data-tip="ur profile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></nav>
 
@@ -4966,7 +5013,7 @@ body.frview .hcall{display:none}
 </div><div class="dme"><div class="dme-av" id="myav">?</div><div class="dme-meta"><b id="mydisp">guest</b><span id="mysub"></span></div><button class="dme-btn" id="profbtn" type="button" title="ur profile" aria-label="ur profile"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
 </aside>
 <main class="main6">
-<div class="head6"><button id="drawerbtn" type="button" aria-label="rooms" style="display:none;width:36px;height:36px;border-radius:8px;background:transparent;border:0;color:#989DAA;align-items:center;justify-content:center;cursor:pointer;flex:none;padding:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><div class="head6-t"><span id="roomtitle">lobby</span><span class="head6-sub" id="pres">connecting…</span></div><div class="hcall"><button id="dmreport" class="hbtn" type="button" title="report this convo to deion" aria-label="report conversation" style="display:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></button><button id="vjoin" class="hbtn" type="button" title="voice call" aria-label="voice call"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button><button id="vjoinv" class="hbtn" type="button" title="video call" aria-label="video call"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></button><button id="infobtn" class="hbtn" type="button" title="details" aria-label="conversation details"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></button></div></div>
+<div class="head6"><button id="mback" type="button" aria-label="back to conversations"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><button id="drawerbtn" type="button" aria-label="rooms" style="display:none;width:36px;height:36px;border-radius:8px;background:transparent;border:0;color:#989DAA;align-items:center;justify-content:center;cursor:pointer;flex:none;padding:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><div class="head6-t"><span id="roomtitle">lobby</span><span class="head6-sub" id="pres">connecting…</span></div><div class="hcall"><button id="dmreport" class="hbtn" type="button" title="report this convo to deion" aria-label="report conversation" style="display:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></button><button id="vjoin" class="hbtn" type="button" title="voice call" aria-label="voice call"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button><button id="vjoinv" class="hbtn" type="button" title="video call" aria-label="video call"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></button><button id="infobtn" class="hbtn" type="button" title="details" aria-label="conversation details"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></button></div></div>
 <div id="privbar" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid rgba(255,255,255,.4);border-radius:12px;background:rgba(255,255,255,.08);font-size:14px;text-align:left"></div>
 
 
@@ -5007,9 +5054,7 @@ body.frview .hcall{display:none}
 <div id="songChip" style="display:none;margin:0 12px 8px;padding:10px 14px;border-radius:13px;border:1px solid rgba(255,210,87,.5);background:rgba(255,210,87,.10);color:#ffd257;font-weight:800;font-size:13.5px;cursor:pointer;align-items:center;gap:8px">♪ song round live - tap to listen, name it in chat for 40 coins</div><audio id="songAu" preload="none"></audio><script>(function(){var chip=document.getElementById('songChip'),au=document.getElementById('songAu'),cur='',playing=false;function poll(){fetch('/api/song').then(function(r){return r.json()}).then(function(d){if(d&&d.ok&&d.active&&d.id&&window.room==='trivia'){if(d.id!==cur){cur=d.id;chip.style.display='flex';playing=false;chip.textContent='♪ song round live - tap to listen, name it in chat for 40 coins';}}else{cur='';chip.style.display='none';if(playing){au.pause();playing=false;}}}).catch(function(){});}setInterval(poll,5000);poll();chip.addEventListener('click',function(){if(!cur)return;if(playing){au.pause();playing=false;chip.textContent='♪ paused - tap to listen again';return;}au.src='/yt/stream?v='+encodeURIComponent(cur)+'&kind=a';au.play().then(function(){playing=true;chip.textContent='♪ playing - name the song or artist in chat';}).catch(function(){chip.textContent='♪ tap again - the browser blocked autoplay';});});au.addEventListener('loadedmetadata',function(){try{if(au.duration>60)au.currentTime=25;}catch(e){}});})();</script><form class="bar" id="sendbar"><button type="button" id="attach" title="send an image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="vertical-align:-2px"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button><textarea id="text" rows="1" placeholder="message…" autocomplete="off" maxlength="500"></textarea><button type="submit" id="sendbtn" aria-label="send"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button></form>
 <input type="file" id="chatfile" accept="image/*" style="display:none">
 
-</div>
-
-</main><aside id="infopanel"><div class="ip-head"><span>details</span><button class="ip-x" id="ipclose" type="button" aria-label="close details"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div><div id="ipbody"></div></aside></div><div id="profmodal"><div class="pf-back" id="pfback"></div><div class="pf-card">
+</main><aside id="infopanel"><div class="ip-head"><span>details</span><button class="ip-x" id="ipclose" type="button" aria-label="close details"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div><div id="ipbody"></div></aside><nav id="mnav" aria-label="chat navigation"><button class="mnav-btn" type="button" data-mnav="list"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span>messages</span><span class="mnav-badge" id="mnb-msg"></span></button><button class="mnav-btn" type="button" data-mnav="friends"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>friends</span><span class="mnav-badge" id="mnb-fr"></span></button><button class="mnav-btn" type="button" data-mnav="activity"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span>activity</span><span class="mnav-badge" id="mnb-act"></span></button><button class="mnav-btn" type="button" data-mnav="call"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span>call</span></button><button class="mnav-btn" type="button" data-mnav="profile"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>profile</span></button></nav></div><div id="profmodal"><div class="pf-back" id="pfback"></div><div class="pf-card">
 <div class="pf-head"><b>ur profile</b><button class="pf-x" id="pfclose" type="button" aria-label="close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
 <div class="pf-top"><div class="dme-av big" id="pfav">?</div><div style="min-width:0"><div id="pfwho" style="font-weight:800;font-size:16px">guest</div><div id="pfstate" style="font-size:12.5px;opacity:.65;line-height:1.5"></div></div></div>
 <label class="pf-label">chat name</label>
@@ -5113,7 +5158,7 @@ function paintFriends(o) { FR_LAST = o;
   if (!(o.friends || []).length) { var h = document.createElement('div'); h.className = 'cr-hint'; h.textContent = 'no friends yet — send a request up top'; list.appendChild(h); }
   var out = document.getElementById('frout');
   if (out) { out.innerHTML = ''; (o.out || []).forEach(function (n) { var h2 = document.createElement('div'); h2.className = 'cr-hint'; h2.textContent = 'request sent to ' + n + ' — waiting on them'; out.appendChild(h2); }); }
-  applyFrFilters(); paintDmList();
+  applyFrFilters(); paintDmList(); mSyncBadges();
 }
 
 function frAct(kind, user) {
@@ -5136,10 +5181,11 @@ function showFr() {
   crailSet('cr-friends');
   var t = document.getElementById('roomtitle'); if (t) t.textContent = 'friends';
   var rail = document.querySelector('.chatrail'); if (rail) rail.classList.remove('open');
-  loadFriends();
+  loadFriends(); mGo('friends');
   fetch('/auth/notifs-read', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ type: 'friend_req' }) }).catch(function () {});
 }
 function showChat() {
+  mGo('convo');
   if (actView) { hideAct(); document.getElementById('msgs').style.display = ''; document.getElementById('sendbar').style.display = ''; document.body.classList.remove('frview'); crailSet('cr-dms'); }
   if (!frView) return;
   frView = false;
@@ -5191,7 +5237,7 @@ function showAct() {
   crailSet('cr-activity');
   var t = document.getElementById('roomtitle'); if (t) t.textContent = 'activity';
   var rail = document.querySelector('.chatrail'); if (rail) rail.classList.remove('open');
-  paintActivity();
+  paintActivity(); mGo('activity');
 }
 function hideAct() { if (!actView) return; actView = false; var ap = document.getElementById('actpage'); if (ap) ap.style.display = 'none'; var an = document.getElementById('actnav'); if (an) an.classList.remove('on'); }
 var actNavBtn = document.getElementById('actnav');
@@ -5219,6 +5265,7 @@ function paintDmList() {
     var nm = document.createElement('span'); nm.className = 'dm-name'; nm.textContent = p.disp || p.name; mn.appendChild(nm);
     var pv = document.createElement('span'); pv.className = 'dm-prev'; pv.textContent = hot ? (hot.text || 'sent u a message') : (p.status || (p.online ? 'online' : 'offline')); mn.appendChild(pv);
     it.appendChild(mn);
+    if (hot && hot.ts) { var tm = document.createElement('span'); tm.className = 'dm-time'; tm.textContent = msgTime(hot.ts); it.appendChild(tm); }
     if (hot) { var ud = document.createElement('span'); ud.className = 'dm-unread'; it.appendChild(ud); }
     it.addEventListener('click', function () { goDm(p.room, p.name, p.disp || p.name); });
     el.appendChild(it);
@@ -5290,7 +5337,7 @@ window.__sixChatNotifs = function (o) {
   dmHot = hot;
   var sig = Object.keys(hot).sort().map(function (k) { return k + ':' + hot[k].ts; }).join('|');
   if (sig !== dmHotSig) { dmHotSig = sig; if (FR_LAST) paintFriends(FR_LAST); }
-  ACT_LAST = o; actBadgeUpd(o); if (actView) paintActivity(); paintDmList();
+  ACT_LAST = o; actBadgeUpd(o); if (actView) paintActivity(); paintDmList(); mSyncBadges();
 };
 var frAddBtn = document.getElementById('fradd');
 if (frAddBtn) frAddBtn.addEventListener('click', function () { var inp = document.getElementById('frname'); var v = (inp.value || '').trim(); if (!v) { frMsg('type a username first twin'); return; } inp.value = ''; frAct('friend-add', v); });
@@ -5306,7 +5353,7 @@ function goRoom(r){
   msgsEl.innerHTML=''; lastTs=0; lastMsgKey=''; lastMsgTs=0; stopPoll();
   if(ws) try{ ws.close(); }catch(e){}
   try{ history.replaceState(null,'','/chat?room='+encodeURIComponent(r)); }catch(e){}
-  showPriv(); connect();
+  showPriv(); connect(); mGo('convo');
 }
 function curName(){ return (nameEl.value||'').trim()||myName; }
 var lastMsgKey = '', lastMsgTs = 0;
@@ -5599,6 +5646,47 @@ document.getElementById('profbtn').addEventListener('click', openProf);
 document.getElementById('pfclose').addEventListener('click', closeProf);
 document.getElementById('pfback').addEventListener('click', closeProf);
 var dbtn = document.getElementById('drawerbtn'); if (dbtn) dbtn.addEventListener('click', function(){ var r2 = document.querySelector('.chatrail'); if (r2) r2.classList.toggle('open'); });
+/* ===== 6IXCHAT MOBILE: one explicit screens state (visuals gated <=820px in the sheet) ===== */
+var MQ820 = window.matchMedia('(max-width:820px)');
+var mView = 'convo';
+function mGo(v) {
+  var vs = document.getElementById('vstage');
+  if (v === 'list' && vs && vs.style.display && vs.style.display !== 'none') v = 'convo';
+  mView = v;
+  var app = document.querySelector('.app6'); if (app) app.setAttribute('data-mview', v);
+  hideRbar();
+  if (v !== 'convo') { var ip = document.getElementById('infopanel'); if (ip) ip.classList.remove('open'); var ib = document.getElementById('infobtn'); if (ib) ib.classList.remove('on'); }
+  Array.prototype.forEach.call(document.querySelectorAll('.mnav-btn'), function (b) { b.classList.toggle('on', b.getAttribute('data-mnav') === v); });
+}
+function mSyncBadges() {
+  function set(id, n) { var b = document.getElementById(id); if (!b) return; b.textContent = n; b.classList.toggle('show', !!n); }
+  set('mnb-msg', Object.keys(dmHot).length);
+  set('mnb-fr', (FR_LAST && FR_LAST.in) ? FR_LAST.in.length : 0);
+  set('mnb-act', ACT_LAST ? ((ACT_LAST.reqs || 0) + ((ACT_LAST.dmFrom || []).length)) : 0);
+}
+Array.prototype.forEach.call(document.querySelectorAll('.mnav-btn'), function (b) {
+  b.addEventListener('click', function () {
+    var v = b.getAttribute('data-mnav');
+    if (v === 'list') mGo('list');
+    else if (v === 'friends') showFr();
+    else if (v === 'activity') showAct();
+    else if (v === 'call') { var j = document.getElementById('vjoin'); if (j) j.click(); }
+    else if (v === 'profile') { var p = document.getElementById('profbtn'); if (p) p.click(); }
+  });
+});
+var mbk = document.getElementById('mback'); if (mbk) mbk.addEventListener('click', function () { mGo('list'); });
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Escape') return;
+  if (uPopEl) { closeUPop(); return; }
+  var pm = document.getElementById('profmodal');
+  if (pm && pm.classList.contains('open')) { closeProf(); return; }
+  var ip = document.getElementById('infopanel');
+  if (ip && ip.classList.contains('open')) { ip.classList.remove('open'); var ib2 = document.getElementById('infobtn'); if (ib2) ib2.classList.remove('on'); return; }
+  hideRbar();
+});
+function mInit() { if (MQ820.matches) mGo(actView ? 'activity' : (frView ? 'friends' : mView)); }
+if (MQ820.addEventListener) MQ820.addEventListener('change', mInit); else if (MQ820.addListener) MQ820.addListener(mInit);
+mGo(MQ820.matches ? 'list' : 'convo');
 document.getElementById('pfsave').addEventListener('click', function () {
   var disp = document.getElementById('pfdisp').value.trim().slice(0, 24);
   var bio = document.getElementById('pfbio').value.trim().slice(0, 90);
@@ -5919,7 +6007,7 @@ showPriv();
 connect();
 </script>
 <script>(function(){ var t = document.getElementById("roomtitle"); var badge = document.getElementById("privbadge"); function setT(x){ if (t) t.textContent = x; if (badge) badge.style.display = (x === "private room") ? "inline-flex" : "none"; } document.querySelectorAll(".room").forEach(function(b){ b.addEventListener("click", function(){ setT(b.getAttribute("data-room")); }); }); var mk = document.getElementById("mkpriv"); if (mk) mk.addEventListener("click", function(){ setT("private room"); }); var jp = document.getElementById("joinpriv"); if (jp) jp.addEventListener("click", function(){ setT("private room"); }); var stage = document.getElementById("vstage"), timer = document.getElementById("vtimer"), iv = null; function fmt(ms){ var s = Math.floor(ms / 1000); var m = Math.floor(s / 60); var r = s % 60; return (m < 10 ? "0" : "") + m + ":" + (r < 10 ? "0" : "") + r; } if (stage && timer) { new MutationObserver(function(){ if (stage.style.display === "flex") { document.body.style.overflow = "hidden"; if (!iv) { var t0 = Date.now(); timer.textContent = "00:00"; iv = setInterval(function(){ timer.textContent = fmt(Date.now() - t0); }, 1000); } } else { document.body.style.overflow = ""; if (iv) { clearInterval(iv); iv = null; } timer.textContent = "00:00"; } }).observe(stage, { attributes: true, attributeFilter: ["style"] }); } })();</script>
-<script>(function(){ var app = document.querySelector(".app6"); if (!app || !window.visualViewport) return; function fit(){ var cs = window.getComputedStyle(app); var off = (parseInt(cs.top, 10) || 0) + (parseInt(cs.bottom, 10) || 0); app.style.height = Math.max(240, window.visualViewport.height - off) + "px"; } window.visualViewport.addEventListener("resize", fit); window.addEventListener("orientationchange", fit); window.addEventListener("resize", fit); document.addEventListener("click", function(e){ if (e.target && e.target.closest && e.target.closest("[data-navm]")) setTimeout(fit, 80); }); fit(); })();</script>
+<script>(function(){ var app = document.querySelector(".app6"); if (!app) return; var cs0 = window.getComputedStyle(app); var baseTop = parseInt(cs0.top, 10) || 0, baseBot = parseInt(cs0.bottom, 10) || 0; var raf = 0; function fit(){ raf = 0; var vv = window.visualViewport; var h = vv ? vv.height : window.innerHeight; var ot = vv ? (vv.offsetTop || 0) : 0; app.style.height = Math.max(200, h - baseTop - baseBot) + "px"; if (ot > 0) app.style.top = (baseTop + ot) + "px"; else app.style.top = ""; } function queue(){ if (!raf) raf = requestAnimationFrame(fit); } if (window.visualViewport){ window.visualViewport.addEventListener("resize", queue); window.visualViewport.addEventListener("scroll", queue); } window.addEventListener("orientationchange", queue); window.addEventListener("resize", queue); document.addEventListener("click", function(e){ if (e.target && e.target.closest && e.target.closest("[data-navm]")) setTimeout(fit, 80); }); document.addEventListener("focusin", function(){ setTimeout(fit, 60); setTimeout(fit, 320); }); document.addEventListener("focusout", function(){ setTimeout(fit, 60); setTimeout(fit, 320); }); fit(); })();</script>
 <script>(function(){ var b=document.getElementById('ptybadge'); if(!b) return; function tick(){ fetch('/api/party/list').then(function(r){ return r.json(); }).then(function(j){ var n=(j&&j.rooms)?j.rooms.length:0; if(n>0){ b.style.display='inline-flex'; b.textContent=String(n); } else { b.style.display='none'; } }).catch(function(){}); } tick(); setInterval(tick, 15000); })();</script>
 <script>${NOTIF_JS}</script>
 </body>
