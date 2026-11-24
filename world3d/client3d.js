@@ -29,6 +29,8 @@
 import * as THREE from 'three';
 import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH, fbm2, ridge2, terrainWeights, terrainChunkGrid, terrainChunkIndex, TERR_CHUNK, WATER_Y } from './math3d.js';
 import { planChunks, genChunkVeg, isApronChunk, VEG_TREES, settlements, chunkWater, landmarks, pathNetwork, gateNodes } from './worldgen.js';
+import { farRangeData } from './farrange.js';
+import { NearUpgrader } from './nearveg.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as skelClone } from 'three/addons/utils/SkeletonUtils.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -531,7 +533,36 @@ function ensureVegChunk(cx, cz) {
   if (VEG_MESHES.has(key) || !TERRAIN_MESHES.has(key)) return;
   const veg = genChunkVeg(cx, cz);
   const group = new THREE.Group();
-  const entry = { group, ccx: cx * 55 + 27.5, ccz: cz * 55 + 27.5, treeIMs: [], treeLists: new Map(), nearState: 'lod', nearGroup: null };
+  const entry = { group, ccx: cx * 55 + 27.5, ccz: cz * 55 + 27.5, treeIMsByName: new Map(), treeLists: new Map(), nearGroup: null, up: null };
+  entry.nearGroup = new THREE.Group();
+  entry.nearGroup.visible = false;
+  group.add(entry.nearGroup);
+  entry.up = new NearUpgrader({
+    load: (name) => new Promise((res) => fullParts(name, (p) => res(p))),
+    create: (name, parts) => {
+      if (VEG_MESHES.get(key) !== entry) return; // evicted between load and create
+      const list = entry.treeLists.get(name) || [];
+      for (const p of parts) {
+        const im = new THREE.InstancedMesh(p.geometry, p.material, list.length);
+        const d = new THREE.Object3D();
+        let bcx = 0, bcz = 0;
+        list.forEach((q, i) => {
+          d.position.set(q.x, groundH(q.x, q.z) - 0.04, q.z);
+          d.rotation.set(0, q.ry, 0); d.scale.setScalar(q.s); d.updateMatrix();
+          im.setMatrixAt(i, d.matrix);
+          bcx += q.x; bcz += q.z;
+        });
+        bcx /= list.length; bcz /= list.length;
+        let brad = 0;
+        for (const q of list) { const dd = Math.hypot(q.x - bcx, q.z - bcz) + 7; if (dd > brad) brad = dd; }
+        im.boundingSphere = new THREE.Sphere(new THREE.Vector3(bcx, groundH(bcx, bcz), bcz), brad);
+        im.castShadow = true; im.receiveShadow = true;
+        entry.nearGroup.add(im);
+      }
+    },
+    setLodVisible: (name, vis) => { for (const im of entry.treeIMsByName.get(name) || []) im.visible = vis; },
+    setGroupVisible: (vis) => { entry.nearGroup.visible = vis; },
+  });
   VEG_MESHES.set(key, entry);
   scene.add(group);
   const byName = new Map();
@@ -559,7 +590,11 @@ function ensureVegChunk(cx, cz) {
         im.boundingSphere = new THREE.Sphere(new THREE.Vector3(bcx, groundH(bcx, bcz), bcz), brad);
         im.castShadow = /Tree|Pine/.test(name);
         im.receiveShadow = true;
-        if (VEG_LOD.has(name)) entry.treeIMs.push(im);
+        if (VEG_LOD.has(name)) {
+          if (!entry.treeIMsByName.has(name)) entry.treeIMsByName.set(name, []);
+          entry.treeIMsByName.get(name).push(im);
+          if (entry.up && !entry.up.lodShouldShow(name)) im.visible = false; // LOD landed after its species already upgraded
+        }
         group.add(im);
       }
     });
@@ -568,6 +603,7 @@ function ensureVegChunk(cx, cz) {
 function evictVeg(key) {
   const entry = VEG_MESHES.get(key);
   if (!entry) return;
+  if (entry.up) entry.up.invalidate(); // in-flight near-upgrade loads abort; no stale meshes after eviction
   VEG_MESHES.delete(key);
   scene.remove(entry.group);
   entry.group.traverse((o) => { if (o.isInstancedMesh) o.dispose(); });
@@ -583,8 +619,16 @@ function evictVeg(key) {
  * checked on the LOD cadence. Only trees upgrade — shrubs,
  * rocks and grass are small enough that their LOD/full delta
  * is invisible. Full parts are cached per species exactly
- * like WILD_PARTS; a chunk's near build is entry-guarded, so
- * an eviction mid-load can never leave stale meshes. */
+ * like WILD_PARTS.
+ *
+ * The state machine lives in nearveg.js (NearUpgrader) and is
+ * per-species: the v593 buildNearVeg counted a species as
+ * done even when its full model FAILED to load, then hid
+ * every LOD tree in the chunk — a failed load left a chunk
+ * with no visible trees. Now a species' LOD hides only after
+ * its near meshes were actually created; failures keep their
+ * LOD, never block other species, and built species are
+ * remembered across threshold re-crossings (no duplicates). */
 const FULL_PARTS = new Map();
 const FULL_WAITERS = new Map();
 function fullParts(name, cb) {
@@ -600,41 +644,6 @@ function fullParts(name, cb) {
     for (const f of cbs) f(parts);
   });
 }
-function buildNearVeg(key, entry) {
-  entry.nearState = 'building';
-  if (!entry.nearGroup) { entry.nearGroup = new THREE.Group(); entry.nearGroup.visible = false; entry.group.add(entry.nearGroup); }
-  let pending = entry.treeLists.size;
-  if (!pending) { entry.nearState = 'lod'; return; }
-  for (const [name, list] of entry.treeLists) {
-    fullParts(name, (parts) => {
-      if (VEG_MESHES.get(key) !== entry || entry.nearState !== 'building') return;
-      if (parts) {
-        for (const p of parts) {
-          const im = new THREE.InstancedMesh(p.geometry, p.material, list.length);
-          const d = new THREE.Object3D();
-          let bcx = 0, bcz = 0;
-          list.forEach((q, i) => {
-            d.position.set(q.x, groundH(q.x, q.z) - 0.04, q.z);
-            d.rotation.set(0, q.ry, 0); d.scale.setScalar(q.s); d.updateMatrix();
-            im.setMatrixAt(i, d.matrix);
-            bcx += q.x; bcz += q.z;
-          });
-          bcx /= list.length; bcz /= list.length;
-          let brad = 0;
-          for (const q of list) { const dd = Math.hypot(q.x - bcx, q.z - bcz) + 7; if (dd > brad) brad = dd; }
-          im.boundingSphere = new THREE.Sphere(new THREE.Vector3(bcx, groundH(bcx, bcz), bcz), brad);
-          im.castShadow = true; im.receiveShadow = true;
-          entry.nearGroup.add(im);
-        }
-      }
-      if (--pending === 0 && VEG_MESHES.get(key) === entry && entry.nearState === 'building') {
-        entry.nearState = 'near';
-        entry.nearGroup.visible = true;
-        for (const im of entry.treeIMs) im.visible = false;
-      }
-    });
-  }
-}
 let vegNearLast = 0;
 function tickVegNear() {
   const tnow = performance.now();
@@ -642,15 +651,10 @@ function tickVegNear() {
   vegNearLast = tnow;
   if (ZONE_BOXES[zoneNow()]) return; // interiors: no wild chunks exist there
   for (const [key, entry] of VEG_MESHES) {
-    if (!entry.treeLists.size) continue;
+    if (!entry.treeLists.size || !entry.up) continue;
     const d = Math.hypot(px - entry.ccx, pz - entry.ccz);
-    const wantNear = entry.nearState === 'near' || entry.nearState === 'building' ? d < 150 : d < 110;
-    if (wantNear && entry.nearState === 'lod') buildNearVeg(key, entry);
-    else if (!wantNear && entry.nearState === 'near') {
-      entry.nearState = 'lod';
-      if (entry.nearGroup) entry.nearGroup.visible = false;
-      for (const im of entry.treeIMs) im.visible = true;
-    } else if (!wantNear && entry.nearState === 'building') entry.nearState = 'lod'; // callbacks will no-op on the state check
+    if (d < 110 && entry.up.state === 'lod') entry.up.upgrade([...entry.treeLists.keys()]);
+    else if (d >= 150 && entry.up.state !== 'lod') entry.up.downgrade([...entry.treeLists.keys()]);
   }
 }
 
@@ -784,35 +788,17 @@ function buildWorld() {
   // hazed silhouettes from town, solid detailed slopes when the
   // player stands at the world edge looking out.
   {
-    const NA = 288, NR = 18, R_IN = 1030, R_OUT = 1980;
-    const pos = [], col = [], idx = [];
+    // Geometry (positions + indices) comes from farrange.js —
+    // pure data, unit-tested. v593 built it inline with the
+    // index order (a0,c0,b0)/(b0,c0,d0), whose cross products
+    // point DOWN on every triangle: the FrontSide material
+    // culled the whole range from every playable viewpoint.
+    // farrange.js uses the corrected upward winding.
     const cLow = new THREE.Color(0x77804f), cRock = new THREE.Color(0x8d7d78), cHigh = new THREE.Color(0x9a8794), cCrest = new THREE.Color(0xd8cdc2);
-    const rangeH = (x, z) => {
-      const r = Math.hypot(x, z);
-      const rg = ridge2(x * 0.0085 + 31.4, z * 0.0085 + 3.1, 4);
-      const ang = Math.atan2(z, x);
-      const sector = 0.72 + 0.6 * (fbm2(Math.cos(ang) * 1.35 + 9.1, Math.sin(ang) * 1.35 + 4.4, 2) * 0.5 + 0.5);
-      const rise = sstep(R_IN, 1450, r);
-      const crest = (18 + 165 * Math.pow(rg, 1.7)) * sector;
-      const detail = 16 * (ridge2(x * 0.021 + 7.3, z * 0.021 + 2.9, 3) - 0.5) + 6 * fbm2(x * 0.05, z * 0.05, 2);
-      let h = -8 + rise * (crest + detail * (0.4 + 0.6 * rg));
-      h *= 1 - 0.35 * sstep(1750, R_OUT, r);
-      return h;
-    };
-    for (let j = 0; j <= NR; j++) {
-      const r = R_IN + (R_OUT - R_IN) * Math.pow(j / NR, 1.25);
-      for (let i = 0; i <= NA; i++) {
-        const a = (i / NA) * Math.PI * 2, x = Math.cos(a) * r, z = Math.sin(a) * r;
-        pos.push(x, rangeH(x, z), z);
-      }
-    }
-    for (let j = 0; j < NR; j++) for (let i = 0; i < NA; i++) {
-      const a0 = j * (NA + 1) + i, b0 = a0 + 1, c0 = a0 + NA + 1, d0 = c0 + 1;
-      idx.push(a0, c0, b0, b0, c0, d0);
-    }
+    const fd = farRangeData();
     const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3));
-    geo.setIndex(idx);
+    geo.setAttribute('position', new THREE.BufferAttribute(fd.positions, 3));
+    geo.setIndex(new THREE.BufferAttribute(fd.indices, 1));
     geo.computeVertexNormals();
     const pa = geo.attributes.position, na2 = geo.attributes.normal, carr = new Float32Array(pa.count * 3);
     const tmp = new THREE.Color();
@@ -4831,7 +4817,7 @@ function loop() {
     window.__w3scene = scene; // diagnostic handle (mesh census in tests)
     window.__w3state = function () {
       const miraN = NPCS.find((n) => n.zone === 'coffee');
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, groveN: GROVE.n, coverN: COVER.lawn, chunksOn: COVER.chunksOn, chunks: COVER.chunks, lodNear: COVER.lodNear, lodFar: COVER.lodFar, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, perfQ: loadQ.length + loadActive, tChunks: TERRAIN_CHUNKS.size, tMesh: TERRAIN_MESHES.size, vegC: VEG_MESHES.size, settleC: SETTLE_MESHES.size, waterC: WATER_MESHES.size, fallsOn: !!fallsMesh, skyAx: SKY_AX, skyAz: SKY_AZ, farRange: !!(scene && scene.userData.farRange), vegNear: [...VEG_MESHES.values()].filter((e) => e.nearState === 'near').length, streamR: terrStreamR, tris: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.triangles : -1, terrTex: terrainTexState ? { loaded: terrainTexState.loaded, failed: terrainTexState.failed.slice() } : null, garden: SPAWNG, vc: { on: vcOn3, muted: vcMuted, peers: Object.keys(vcPeers).length, states: Object.fromEntries(Object.entries(vcPeers).map(([u, p]) => [u, p.pc.connectionState])), talk: vcTalk3 }, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, groveN: GROVE.n, coverN: COVER.lawn, chunksOn: COVER.chunksOn, chunks: COVER.chunks, lodNear: COVER.lodNear, lodFar: COVER.lodFar, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, perfQ: loadQ.length + loadActive, tChunks: TERRAIN_CHUNKS.size, tMesh: TERRAIN_MESHES.size, vegC: VEG_MESHES.size, settleC: SETTLE_MESHES.size, waterC: WATER_MESHES.size, fallsOn: !!fallsMesh, skyAx: SKY_AX, skyAz: SKY_AZ, farRange: !!(scene && scene.userData.farRange), vegNear: [...VEG_MESHES.values()].filter((e) => e.up && e.up.state === 'near').length, streamR: terrStreamR, tris: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.triangles : -1, terrTex: terrainTexState ? { loaded: terrainTexState.loaded, failed: terrainTexState.failed.slice() } : null, garden: SPAWNG, vc: { on: vcOn3, muted: vcMuted, peers: Object.keys(vcPeers).length, states: Object.fromEntries(Object.entries(vcPeers).map(([u, p]) => [u, p.pc.connectionState])), talk: vcTalk3 }, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }

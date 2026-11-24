@@ -129,3 +129,90 @@ Fixed with the near-upgrade (below).
   countryside; it is not explorable terrain (the brief's
   "distant scenery" branch).
 - Rabbit/bird/squirrel wildlife remains unsourced (standing).
+
+## AUDIT PASS (2026-11-24) — winding + near-upgrade reliability
+
+An independent review flagged two suspected failure paths in
+v593. Both were real. This pass is surgical: no terrain, seed,
+asset, or gameplay changes.
+
+### P1 — the far range was wound DOWNWARD (invisible)
+
+v593 built the annulus indices inline as (a0,c0,b0)/(b0,c0,d0).
+Cross products computed on the actual vertex data: 504/504
+sampled triangles had NEGATIVE-Y normals — every face pointed
+down. The material is MeshStandardMaterial with default
+FrontSide rendering, so from any above-ground viewpoint the
+camera saw only back faces and the rasterizer culled the
+entire range. What read as "mountains" in the v593 screenshots
+was the terrain rim chunks, not the far range. DoubleSide was
+NOT used as a cover-up.
+
+Fix: the geometry moved to world3d/farrange.js (pure data,
+no THREE imports) with the corrected order (a0,b0,c0)/
+(b0,d0,c0) — 10,368/10,368 triangles now face up (exhaustive
+check in tests). computeVertexNormals therefore produces
+upward normals and flat-shaded slopes light correctly. The
+client consumes farRangeData() and keeps its colors/material.
+Seam: sin(2π) ≠ 0 in floating point (-2.4e-16), so each row's
+last vertex is overwritten with a bit-copy of its first —
+the ring is watertight by construction, and the seam test
+asserts bit equality. Radii asserted exact: 1030 / 1980.
+
+### P2 — near-upgrade could erase a chunk's trees
+
+v593's buildNearVeg decremented its pending counter on EVERY
+fullParts callback, including failures (parts === null), and
+on completion hid ALL of the chunk's LOD tree meshes. One
+failed species load therefore left that species with no
+visible trees at all (and the flat treeIMs list made
+per-species handling impossible).
+
+Fix: the state machine now lives in world3d/nearveg.js
+(NearUpgrader, pure, unit-tested); the client supplies hooks
+(load/create/setLodVisible/setGroupVisible) and registers LOD
+meshes per species (treeIMsByName). Rules:
+- a species' LOD hides ONLY after its near meshes were
+  actually created (membership in `built`);
+- a failed species keeps its LOD and never blocks others;
+  if all fail, the chunk stays fully LOD;
+- `built` persists across downgrade/upgrade cycles, so
+  re-crossing 110u/150u never re-creates or duplicates
+  meshes and re-shows instantly; failed species retry on
+  the next approach;
+- a sequence counter bumped by downgrade()/invalidate()
+  makes in-flight upgrades abort silently — an evicted
+  chunk can never receive stale meshes (evictVeg calls
+  invalidate() before disposal);
+- LOD meshes that finish loading after their species
+  upgraded start hidden (lodShouldShow).
+Hysteresis unchanged (upgrade < 110u, downgrade ≥ 150u,
+220ms cadence, interiors skipped).
+
+### Tests (world3d/tests/horizon.test.mjs) — 18/18
+
+Farrange: counts, finite positions/normals, EVERY triangle
+normal upward, seam bit-identical, radii exact, plus wiring
+guards (client imports + server routes for both new modules —
+the v588 failure class). Nearveg: success upgrade, failed
+species preserves LOD, one failure doesn't block others,
+all-fail stays LOD, re-crossing creates nothing twice,
+eviction mid-load applies nothing, downgrade mid-load
+aborts, revisit rebuilds, failed species retries.
+Full suites: math 106/106, roof 11/11, worldgen 86/86,
+server 74/74 (server run against the new client build).
+Pins unchanged.
+
+### Visual (sandbox, SwiftShader)
+
+Boot clean: farRange in scene, tMesh 102, zero page/shader
+errors. Spawn screenshot captured (shots-horizon2/01). The
+turned-view screenshot came back with spawn framing despite
+the client state reading ry = camYaw = π — a stale presented
+frame under extreme render throttling, NOT evidence of a
+turned view, and not claimed as one. The deep trek (gate →
+countryside → chunk eviction/regeneration views) remains
+beyond what this sandbox sustains (a prior attempt starved
+at ~4u/min); those views, like the range's look from the
+world edge, are real-screen verdicts. The winding fix itself
+is proven exhaustively on the exact data the client renders.
