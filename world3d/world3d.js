@@ -141,6 +141,8 @@ function createWorld3D(ctx) {
   const GEN = fs.readFileSync(path.join(__dirname, 'worldgen.js'), 'utf8');
   const FARRANGE = fs.readFileSync(path.join(__dirname, 'farrange.js'), 'utf8');
   const NEARVEG = fs.readFileSync(path.join(__dirname, 'nearveg.js'), 'utf8');
+  const WATERMESH = fs.readFileSync(path.join(__dirname, 'watermesh.js'), 'utf8');
+  const VOICEUTIL = fs.readFileSync(path.join(__dirname, 'voiceutil.js'), 'utf8');
   const THREE_MIN = fs.readFileSync(path.join(__dirname, 'vendor', 'three.module.min.js'), 'utf8');
   const GLTF_LOADER = fs.readFileSync(path.join(__dirname, 'vendor', 'addons', 'loaders', 'GLTFLoader.js'), 'utf8');
   const BG_UTILS = fs.readFileSync(path.join(__dirname, 'vendor', 'addons', 'utils', 'BufferGeometryUtils.js'), 'utf8');
@@ -456,6 +458,8 @@ function createWorld3D(ctx) {
     if (pathname === '/world3d/worldgen.js') return { type: 'text/javascript; charset=utf-8', body: GEN };
     if (pathname === '/world3d/farrange.js') return { type: 'text/javascript; charset=utf-8', body: FARRANGE };
     if (pathname === '/world3d/nearveg.js') return { type: 'text/javascript; charset=utf-8', body: NEARVEG };
+    if (pathname === '/world3d/watermesh.js') return { type: 'text/javascript; charset=utf-8', body: WATERMESH };
+    if (pathname === '/world3d/voiceutil.js') return { type: 'text/javascript; charset=utf-8', body: VOICEUTIL };
     if (pathname === '/world3d/vendor/three.module.min.js') return { type: 'text/javascript; charset=utf-8', body: THREE_MIN };
     if (pathname === '/world3d/vendor/addons/loaders/GLTFLoader.js') return { type: 'text/javascript; charset=utf-8', body: GLTF_LOADER };
     if (pathname === '/world3d/vendor/addons/utils/BufferGeometryUtils.js') return { type: 'text/javascript; charset=utf-8', body: BG_UTILS };

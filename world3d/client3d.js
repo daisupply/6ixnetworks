@@ -31,6 +31,8 @@ import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groun
 import { planChunks, genChunkVeg, isApronChunk, VEG_TREES, settlements, chunkWater, landmarks, pathNetwork, gateNodes } from './worldgen.js';
 import { farRangeData } from './farrange.js';
 import { NearUpgrader } from './nearveg.js';
+import { waterChunkData } from './watermesh.js';
+import { IceBuffer, nextRetryDelay, voiceUiState, ESTABLISH_TIMEOUT_MS } from './voiceutil.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as skelClone } from 'three/addons/utils/SkeletonUtils.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -389,18 +391,43 @@ function buildTerrainChunk(cx, cz) {
 let terrMat = null, terrGroup = null;
 const TERRAIN_MESHES = new Map();
 let terrBuildQ = [], terrCellCx = null, terrCellCz = null;
-/* wild water (worldgen Stage 7): one shared material at the
- * shared WATER_Y level; a quad rides its terrain chunk's
- * lifecycle iff chunkWater says the chunk dips below the level.
- * apron chunks never qualify — the town pond stays its own disc. */
+/* wild water: one shared material at the shared WATER_Y
+ * level; the geometry is watermesh.js's marching-squares
+ * surface clipped to the terrain's actual WATER_Y contour
+ * (the Stage 7 whole-chunk 55x55 plane drew square shorelines
+ * and water over dry land inside mixed chunks). A mesh rides
+ * its terrain chunk's lifecycle; apron chunks never qualify —
+ * the town pond stays its own disc. Vertex RGBA bakes depth
+ * (pale/translucent shoreline -> deep/opaque basin); a patched
+ * shader chunk adds a gentle moving shimmer. */
 const WATER_MESHES = new Map();
 let wildWaterMat = null;
 function ensureWaterQuad(cx, cz, key) {
-  if (!chunkWater(cx, cz).has) return;
-  if (!wildWaterMat) wildWaterMat = new THREE.MeshStandardMaterial({ map: waterTexture(), roughness: 0.15, metalness: 0.25, emissive: 0x0d3355, emissiveIntensity: 0.6, transparent: true, opacity: 0.94, polygonOffset: true, polygonOffsetFactor: -2 });
-  const q = new THREE.Mesh(new THREE.PlaneGeometry(TERR_CHUNK, TERR_CHUNK), wildWaterMat);
-  q.rotation.x = -Math.PI / 2;
-  q.position.set(cx * TERR_CHUNK + TERR_CHUNK / 2, WATER_Y + 0.02, cz * TERR_CHUNK + TERR_CHUNK / 2);
+  const cw = chunkWater(cx, cz);
+  if (!cw.has && cw.min === Infinity) return; // apron / interior band — excluded by design
+  // chunkWater's 5x5 gate can miss a narrow dip the 2.75u mesh
+  // grid catches, so the geometry builder is the authority
+  const wd = waterChunkData(cx, cz);
+  if (!wd) return;
+  if (!wildWaterMat) {
+    wildWaterMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.12, metalness: 0.05, emissive: 0x0a2c47, emissiveIntensity: 0.35, transparent: true, depthWrite: false });
+    wildWaterMat.onBeforeCompile = (sh) => {
+      sh.uniforms.uWTime = wildWaterMat.userData.uTime;
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;')
+        .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nuniform float uWTime;')
+        .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\nfloat wshim = pow(0.5 + 0.5 * sin(uWTime * 1.6 + vWPos.x * 0.33 + vWPos.z * 0.51), 6.0);\ntotalEmissiveRadiance += vec3(0.045, 0.06, 0.07) * wshim;');
+      wildWaterMat.userData.shader = sh;
+    };
+    wildWaterMat.userData.uTime = { value: 0 };
+    wildWaterMat.customProgramCacheKey = () => 'wildwater1';
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(wd.positions, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(wd.colors, 4));
+  geo.setIndex(new THREE.BufferAttribute(wd.indices, 1));
+  geo.computeVertexNormals();
+  const q = new THREE.Mesh(geo, wildWaterMat);
   q.receiveShadow = true;
   terrGroup.add(q);
   WATER_MESHES.set(key, q);
@@ -979,7 +1006,7 @@ function buildWorld() {
  * residential houses, the park. every solid registers its colliders;
  * repeated dressing is instanced. interiors arrive per-building in
  * later versions — storefronts here are glass + lit diorama shells. */
-let swayers = [], fallsTex = null;
+let swayers = [], fallsTex = null, parkFoam = null, fallsStripTex = null, fallsFoam = null;
 function buildTown() {
   const rnd = mulberry32(542);
   const M = (c, o) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.85, metalness: 0.02 }, o || {}));
@@ -1342,7 +1369,7 @@ function buildTown() {
   /* ----- the park (east): pond, waterfall, stepping stones, grove ----- */
   {
     const pondTex = waterTexture();
-    const pond = new THREE.Mesh(new THREE.CircleGeometry(13, 36), new THREE.MeshStandardMaterial({ map: pondTex, roughness: 0.15, metalness: 0.25, emissive: 0x0d3355, emissiveIntensity: 0.6 }));
+    const pond = new THREE.Mesh(new THREE.CircleGeometry(13, 36), new THREE.MeshStandardMaterial({ map: pondTex, roughness: 0.1, metalness: 0.1, emissive: 0x0d3355, emissiveIntensity: 0.3 }));
     pond.rotation.x = -Math.PI / 2; pond.position.set(118, 0.04, 12); pond.receiveShadow = true; scene.add(pond);
     addCollider(118, 12, 13.4);
     const rim = new THREE.Mesh(new THREE.RingGeometry(13, 14.6, 36), stone);
@@ -1359,6 +1386,10 @@ function buildTown() {
     }, 1, 2);
     const falls = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 5.2), new THREE.MeshBasicMaterial({ map: fallsTex, transparent: true, opacity: 0.85 }));
     falls.position.set(133.5, 2.6, 10.5); falls.rotation.y = -Math.PI / 2.4; falls.rotation.x = 0.12; scene.add(falls);
+    // foam where the park falls meets the pond — a soft white
+    // churn disc at the base, gently pulsing in the water tick
+    parkFoam = new THREE.Mesh(new THREE.CircleGeometry(1.7, 20), new THREE.MeshBasicMaterial({ color: 0xeaf7ff, transparent: true, opacity: 0.3, depthWrite: false }));
+    parkFoam.rotation.x = -Math.PI / 2; parkFoam.position.set(132.2, 0.07, 10.5); scene.add(parkFoam);
     // stepping stones from the avenue to the pond
     for (let i = 0; i < 6; i++) {
       const st = cyl(0.85, 0.95, 0.14, stone, 66 + i * 6.4, 0.07, 6 + Math.sin(i * 1.3) * 2.4, 9);
@@ -2902,21 +2933,42 @@ function ensureFalls() {
   const SEG = 10, W = 1.3;
   const dx = f.bx - f.x, dz = f.bz - f.z, len = Math.hypot(dx, dz) || 1;
   const nx = -dz / len, nz = dx / len; // strip perpendicular in XZ
-  const pos = [], idx = [];
+  const pos = [], uv = [], idx = [];
   for (let i = 0; i <= SEG; i++) {
     const t = i / SEG, cx = f.x + dx * t, cz = f.z + dz * t;
     const y = groundH(cx, cz) + 0.22;
     pos.push(cx - nx * W, y, cz - nz * W, cx + nx * W, y, cz + nz * W);
+    uv.push(0, t * 3, 1, t * 3);
     if (i < SEG) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   g.setIndex(idx);
   g.computeVertexNormals();
-  fallsMesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0xd6ecff, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide }));
+  // scrolling streak texture — the strip reads as MOVING water
+  // (the flat colour it shipped with read as a static ribbon);
+  // the tick scrolls fallsStripTex.offset.y. DoubleSide stays:
+  // a ribbon is legitimately visible from both banks.
+  if (!fallsStripTex) {
+    fallsStripTex = canvasTex(64, 128, (g2, w, h) => {
+      g2.fillStyle = '#a8d8f0'; g2.fillRect(0, 0, w, h);
+      g2.fillStyle = 'rgba(255,255,255,.8)';
+      for (let i = 0; i < 30; i++) g2.fillRect((i * 41) % w, (i * 67) % h, 3, 18);
+      g2.fillStyle = 'rgba(70,130,180,.35)';
+      for (let i = 0; i < 12; i++) g2.fillRect((i * 53) % w, (i * 31) % h, 5, 26);
+    }, 1, 1);
+  }
+  fallsMesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map: fallsStripTex, transparent: true, opacity: 0.6, depthWrite: false, side: THREE.DoubleSide }));
   scene.add(fallsMesh);
+  // foam churn where the falls meets the basin water
+  fallsFoam = new THREE.Mesh(new THREE.CircleGeometry(2.3, 20), new THREE.MeshBasicMaterial({ color: 0xeaf7ff, transparent: true, opacity: 0.34, depthWrite: false }));
+  fallsFoam.rotation.x = -Math.PI / 2;
+  fallsFoam.position.set(f.bx, Math.max(groundH(f.bx, f.bz), WATER_Y) + 0.06, f.bz);
+  scene.add(fallsFoam);
 }
 function evictFalls() {
+  if (fallsFoam) { scene.remove(fallsFoam); fallsFoam.geometry.dispose(); fallsFoam.material.dispose(); fallsFoam = null; }
   if (!fallsMesh) return;
   scene.remove(fallsMesh);
   fallsMesh.geometry.dispose();
@@ -4090,7 +4142,7 @@ const vcRetry3 = {};
 const vcFails3 = {};
 function vcNoteFail3(u) {
   vcFails3[u] = (vcFails3[u] || 0) + 1;
-  vcRetry3[u] = Date.now() + Math.min(30000, 5000 * vcFails3[u]);
+  vcRetry3[u] = Date.now() + nextRetryDelay(vcFails3[u]);
 }
 const RTC_CFG3 = {
   iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' },
@@ -4098,13 +4150,22 @@ const RTC_CFG3 = {
     { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
     { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }].concat(window.W3ICE || [])
 };
-function vcSend3(to, data) {
-  fetch('/api/world3d/signal', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ to, data }) }).catch(() => { });
+function vcSend3(to, data, isRetry) {
+  // a dropped offer/answer/candidate used to vanish silently —
+  // the peer then sat in 'new' forever. one retry, then a real
+  // console warning instead of a swallowed catch.
+  fetch('/api/world3d/signal', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ to, data }) })
+    .then((r) => { if (!r.ok) throw new Error('signal http ' + r.status); })
+    .catch((e) => {
+      if (!isRetry) setTimeout(() => vcSend3(to, data, true), 600);
+      else console.warn('[vc] signal send failed (' + data.t + ' -> ' + to + '):', e && e.message ? e.message : e);
+    });
 }
 function vcClosePeer(u) {
   const p = vcPeers[u];
   if (!p) return;
   if (p.discT) { clearTimeout(p.discT); p.discT = 0; }
+  if (p.ice) p.ice.close(); // buffered candidates can never apply to a dead peer
   try { p.pc.close(); } catch (e) { }
   try { if (p.src) p.src.disconnect(); } catch (e) { }
   try { if (p.an) p.an.disconnect(); } catch (e) { }
@@ -4122,22 +4183,25 @@ function vcEnsurePeer(u, initiator) {
   try { pc = new RTCPeerConnection(RTC_CFG3); } catch (e) { return; }
   let gain = null;
   if (vcCtx3) { gain = vcCtx3.createGain(); gain.gain.value = 0; gain.connect(vcCtx3.destination); }
-  const p = { pc, gain, iceQ: [], remoteSet: false, an: null, speaking: false, src: null, discT: 0 };
+  const p = { pc, gain, an: null, speaking: false, src: null, discT: 0, bornAt: Date.now(), via: null };
+  p.ice = new IceBuffer((c) => pc.addIceCandidate(new RTCIceCandidate(c)));
   vcPeers[u] = p;
   if (vcStream) vcStream.getTracks().forEach((t) => { try { pc.addTrack(t, vcStream); } catch (e) { } });
   else { try { pc.addTransceiver('audio', { direction: 'recvonly' }); } catch (e) { } }
   pc.onicecandidate = (e) => { if (e.candidate) vcSend3(u, { t: 'ice', c: e.candidate }); };
   pc.ontrack = (e) => {
-    if (!vcCtx3 || !vcPeers[u]) return;
+    if (!vcCtx3 || vcPeers[u] !== p) return; // a closed/replaced peer's late track is inert
+    if (vcCtx3.state === 'suspended') vcCtx3.resume();
     try {
       if (p.src) { try { p.src.disconnect(); } catch (err) { } }
       if (p.an) { try { p.an.disconnect(); } catch (err) { } p.an = null; }
+      if (!p.gain) { p.gain = vcCtx3.createGain(); p.gain.gain.value = 0; p.gain.connect(vcCtx3.destination); } // gain fallback — a track must never dead-end
       const ms = (e.streams && e.streams[0]) || new MediaStream([e.track]);
       const src = vcCtx3.createMediaStreamSource(ms);
       p.src = src;
       src.connect(p.gain);
       p.an = vcCtx3.createAnalyser(); p.an.fftSize = 512; src.connect(p.an);
-    } catch (err) { }
+    } catch (err) { console.warn('[vc] ontrack wiring failed for ' + u + ':', err && err.message ? err.message : err); }
   };
   pc.onconnectionstatechange = () => {
     if (pc.connectionState === 'failed') { vcNoteFail3(u); vcClosePeer(u); }
@@ -4145,6 +4209,19 @@ function vcEnsurePeer(u, initiator) {
     else if (pc.connectionState === 'connected') {
       delete vcRetry3[u]; vcFails3[u] = 0;
       if (p.discT) { clearTimeout(p.discT); p.discT = 0; }
+      // record HOW the pair connected (host/srflx/relay) once —
+      // this is what proves TURN actually carried a call when
+      // it had to; surfaced in __w3state as vc.via
+      if (!p.via && pc.getStats) {
+        pc.getStats().then((rep) => {
+          rep.forEach((r) => {
+            if (r.type === 'candidate-pair' && r.state === 'succeeded' && r.localCandidateId) {
+              const lc = rep.get(r.localCandidateId);
+              if (lc && lc.candidateType) p.via = lc.candidateType;
+            }
+          });
+        }).catch(() => { });
+      }
     } else if (pc.connectionState === 'disconnected') {
       if (p.discT) clearTimeout(p.discT);
       p.discT = setTimeout(() => {
@@ -4160,9 +4237,7 @@ function vcEnsurePeer(u, initiator) {
   }
 }
 function vcFlushIce(p) {
-  p.remoteSet = true;
-  const q = p.iceQ || []; p.iceQ = [];
-  q.forEach((c) => { try { const pr = p.pc.addIceCandidate(new RTCIceCandidate(c)); if (pr && pr.catch) pr.catch(() => { }); } catch (e) { } });
+  if (p.ice) p.ice.setReady();
 }
 function vcHandleSignal(from, data) {
   if (!data || !vcOn3) return;
@@ -4172,14 +4247,15 @@ function vcHandleSignal(from, data) {
     p.pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
       .then(() => { vcFlushIce(p); return p.pc.createAnswer(); })
       .then((an) => p.pc.setLocalDescription(an))
-      .then(() => vcSend3(from, { t: 'answer', sdp: p.pc.localDescription }))
-      .catch(() => { });
+      .then(() => { if (vcPeers[from] === p) vcSend3(from, { t: 'answer', sdp: p.pc.localDescription }); }) // never answer for a peer that was closed/replaced mid-chain
+      .catch((e) => console.warn('[vc] offer handling failed for ' + from + ':', e && e.message ? e.message : e));
   } else if (data.t === 'answer') {
     const p2 = vcPeers[from];
-    if (p2) p2.pc.setRemoteDescription(new RTCSessionDescription(data.sdp)).then(() => vcFlushIce(p2)).catch(() => { });
+    if (p2) p2.pc.setRemoteDescription(new RTCSessionDescription(data.sdp)).then(() => vcFlushIce(p2))
+      .catch((e) => console.warn('[vc] answer handling failed for ' + from + ':', e && e.message ? e.message : e));
   } else if (data.t === 'ice') {
     const p3 = vcPeers[from];
-    if (p3 && data.c) { if (p3.remoteSet) p3.pc.addIceCandidate(new RTCIceCandidate(data.c)).catch(() => { }); else p3.iceQ.push(data.c); }
+    if (p3 && data.c && p3.ice) p3.ice.add(data.c); // buffered until the remote description lands, deduped, inert after close
   }
 }
 function vcRms(an) {
@@ -4190,19 +4266,34 @@ function vcRms(an) {
   for (let i = 0; i < buf.length; i += 4) { const v = (buf[i] - 128) / 128; sum += v * v; }
   return Math.sqrt(sum / (buf.length / 4));
 }
+let vcUiSig = '';
 function vcTick3(roster) {
   if (!vcOn3) return;
   if (vcCtx3 && vcCtx3.state === 'suspended') vcCtx3.resume();
   const want = {};
+  const rosterUsers = new Set();
   for (const p of roster) {
-    if (!p || p.u === me || !p.vc) continue;
+    if (!p || p.u === me) continue;
+    rosterUsers.add(p.u);
+    if (!p.vc) continue;
     const d = Math.hypot(p.x - px, p.z - pz);
     if (d < VOICE_R) want[p.u] = d;
   }
+  // prune retry/fail bookkeeping for players who left entirely —
+  // those maps used to grow forever
+  for (const u of Object.keys(vcRetry3)) if (!rosterUsers.has(u) && !vcPeers[u]) delete vcRetry3[u];
+  for (const u of Object.keys(vcFails3)) if (!rosterUsers.has(u) && !vcPeers[u]) delete vcFails3[u];
   Object.keys(want).forEach((u) => vcEnsurePeer(u, me < u));
   Object.keys(vcPeers).forEach((u) => {
     if (want[u] == null) { vcClosePeer(u); return; }
     const pr = vcPeers[u];
+    // establishment watchdog: a peer stuck short of 'connected'
+    // (lost offer, dead TURN, silent network) used to sit there
+    // forever — fail it so the backoff retry can rebuild it
+    if (pr && pr.pc.connectionState !== 'connected' && pr.pc.connectionState !== 'closed' && Date.now() - pr.bornAt > ESTABLISH_TIMEOUT_MS) {
+      console.warn('[vc] peer ' + u + ' never established (' + pr.pc.connectionState + ') — retrying with backoff');
+      vcNoteFail3(u); vcClosePeer(u); return;
+    }
     if (pr && pr.gain && vcCtx3) {
       const g = Math.pow(Math.max(0, 1 - want[u] / VOICE_R), 1.4);
       pr.gain.gain.setTargetAtTime(g, vcCtx3.currentTime, 0.08);
@@ -4217,6 +4308,9 @@ function vcTick3(roster) {
       }
     }
   });
+  // keep the status pill honest as peer states change under it
+  const sig = voiceUiState({ on: vcOn3, pending: vcPending3, hasStream: !!vcStream, muted: vcMuted, peerStates: Object.values(vcPeers).map((p) => p.pc.connectionState), anyFail: Object.keys(vcFails3).length > 0 }) + ':' + Object.keys(vcPeers).length;
+  if (sig !== vcUiSig) { vcUiSig = sig; vcSetBtn3(); }
 }
 function vcSetBtn3() {
   const b = document.getElementById('w3micbtn');
@@ -4228,23 +4322,27 @@ function vcSetBtn3() {
     b.title = !vcOn3 ? 'voice chat' : listenOnly ? 'voice on — listen only (no mic)' : (vcMuted ? 'voice on — mic muted' : 'voice on — tap to turn off');
   }
   if (mb) { mb.hidden = !vcOn3; mb.classList.toggle('on', vcMuted); mb.innerHTML = icon(vcMuted ? 'micoff' : 'mic', 18); }
-  // v580: voice status pill (presentation only — states come straight
-  // from the existing voice flags; no signaling/WebRTC changes)
+  // voice status pill: the state is DERIVED from real system
+  // state by voiceutil.voiceUiState (mic presence, mute, and
+  // the live peers' connectionStates) — never from the button
+  // press alone. vcTick3 re-calls this when the derived state
+  // changes, so connecting/failed/reconnecting actually show.
   const pill = document.getElementById('w3vcstat'), ptx = document.getElementById('w3vcstattx');
   if (pill && ptx) {
-    let st = '', tx = '';
-    if (vcPending3) { st = 'st-connecting'; tx = 'connecting…'; }
-    else if (vcOn3) {
-      if (!vcStream) { st = 'st-listen'; tx = 'listen only — no mic'; }
-      else if (vcMuted) { st = 'st-muted'; tx = 'mic muted'; }
-      else { st = 'st-live'; tx = 'voice live'; }
-    }
+    const ui = voiceUiState({ on: vcOn3, pending: vcPending3, hasStream: !!vcStream, muted: vcMuted, peerStates: Object.values(vcPeers).map((p) => p.pc.connectionState), anyFail: Object.keys(vcFails3).length > 0 });
+    const MAP = {
+      off: ['', ''], requesting: ['st-connecting', 'requesting mic…'], listen: ['st-listen', 'listen only — no mic'],
+      muted: ['st-muted', 'mic muted'], live: ['st-live', 'voice live'], connecting: ['st-connecting', 'connecting…'],
+      reconnecting: ['st-connecting', 'reconnecting…'], failed: ['st-failed', 'connection failed — retrying'],
+    };
+    const [st, tx] = MAP[ui] || ['', ''];
     pill.className = st ? ('show ' + st + (vcTalk3 ? ' talking' : '')) : '';
     if (tx) ptx.textContent = tx;
   }
 }
 function vcStopAll3() {
   vcGen3++;
+  vcUiSig = '';
   vcOn3 = false; vcTalk3 = false;
   if (vcStream) { vcStream.getTracks().forEach((t) => { try { t.stop(); } catch (e) { } }); vcStream = null; }
   vcAn3 = null;
@@ -4297,11 +4395,30 @@ if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
   navigator.mediaDevices.addEventListener('devicechange', () => {
     if (vcOn3 && vcStream && vcStream.getAudioTracks().every((t) => t.readyState === 'ended')) {
       toast('mic device changed — reconnecting mic');
-      navigator.mediaDevices.getUserMedia({ audio: true }).then((s) => {
-        vcStream = s; vcMuted = false;
-        Object.keys(vcPeers).forEach((u) => { vcClosePeer(u); });
+      const gen = vcGen3;
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(async (s) => {
+        if (gen !== vcGen3 || !vcOn3) { s.getTracks().forEach((t) => { try { t.stop(); } catch (e) { } }); return; } // voice was turned off meanwhile
+        const old = vcStream;
+        vcStream = s;
+        if (old) old.getTracks().forEach((t) => { try { t.stop(); } catch (e) { } });
+        vcApplyMute(); // the new tracks inherit the current mute state
+        // rebuild the local speaking analyser on the NEW stream —
+        // it used to keep analysing the dead one forever
+        vcAn3 = null;
+        if (vcCtx3) {
+          try { const src = vcCtx3.createMediaStreamSource(s); vcAn3 = vcCtx3.createAnalyser(); vcAn3.fftSize = 512; src.connect(vcAn3); } catch (e) { }
+        }
+        // swap the mic track on live peers in place; only a peer
+        // whose sender refuses gets rebuilt by the tick
+        const newTrack = s.getAudioTracks()[0];
+        for (const u of Object.keys(vcPeers)) {
+          const p = vcPeers[u];
+          const sender = p && p.pc.getSenders ? p.pc.getSenders().find((sd) => sd.track && sd.track.kind === 'audio') : null;
+          if (sender && newTrack) { try { await sender.replaceTrack(newTrack); continue; } catch (e) { } }
+          vcClosePeer(u);
+        }
         vcSetBtn3();
-      }).catch(() => { vcStream = null; toast('mic unavailable — listen only'); });
+      }).catch(() => { vcStream = null; vcAn3 = null; toast('mic unavailable — listen only'); vcSetBtn3(); });
     }
   });
 }
@@ -4795,6 +4912,11 @@ function loop() {
   if (motes) { motes.rotation.y = now / 90000; motes.position.y = Math.sin(now / 3400) * 0.35; }
   for (const sw of swayers) { sw.g.rotation.z = Math.sin(now / 1600 + sw.ph) * 0.025; sw.g.rotation.x = Math.cos(now / 1900 + sw.ph) * 0.018; }
   if (fallsTex) fallsTex.offset.y = -((now / 1300) % 1);
+  if (fallsStripTex) fallsStripTex.offset.y = -((now / 700) % 1);
+  if (wildWaterMat && wildWaterMat.userData.uTime) wildWaterMat.userData.uTime.value = now / 1000;
+  const foamPulse = 0.26 + 0.1 * (0.5 + 0.5 * Math.sin(now / 480));
+  if (parkFoam) parkFoam.material.opacity = foamPulse;
+  if (fallsFoam) fallsFoam.material.opacity = foamPulse + 0.06;
 
   // return-portal proximity -> action button
   const nearPortal = Math.hypot(px - PORTAL.x, pz - PORTAL.z) < 5.2;
@@ -4817,7 +4939,7 @@ function loop() {
     window.__w3scene = scene; // diagnostic handle (mesh census in tests)
     window.__w3state = function () {
       const miraN = NPCS.find((n) => n.zone === 'coffee');
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, groveN: GROVE.n, coverN: COVER.lawn, chunksOn: COVER.chunksOn, chunks: COVER.chunks, lodNear: COVER.lodNear, lodFar: COVER.lodFar, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, perfQ: loadQ.length + loadActive, tChunks: TERRAIN_CHUNKS.size, tMesh: TERRAIN_MESHES.size, vegC: VEG_MESHES.size, settleC: SETTLE_MESHES.size, waterC: WATER_MESHES.size, fallsOn: !!fallsMesh, skyAx: SKY_AX, skyAz: SKY_AZ, farRange: !!(scene && scene.userData.farRange), vegNear: [...VEG_MESHES.values()].filter((e) => e.up && e.up.state === 'near').length, streamR: terrStreamR, tris: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.triangles : -1, terrTex: terrainTexState ? { loaded: terrainTexState.loaded, failed: terrainTexState.failed.slice() } : null, garden: SPAWNG, vc: { on: vcOn3, muted: vcMuted, peers: Object.keys(vcPeers).length, states: Object.fromEntries(Object.entries(vcPeers).map(([u, p]) => [u, p.pc.connectionState])), talk: vcTalk3 }, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, groveN: GROVE.n, coverN: COVER.lawn, chunksOn: COVER.chunksOn, chunks: COVER.chunks, lodNear: COVER.lodNear, lodFar: COVER.lodFar, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, perfQ: loadQ.length + loadActive, tChunks: TERRAIN_CHUNKS.size, tMesh: TERRAIN_MESHES.size, vegC: VEG_MESHES.size, settleC: SETTLE_MESHES.size, waterC: WATER_MESHES.size, fallsOn: !!fallsMesh, skyAx: SKY_AX, skyAz: SKY_AZ, farRange: !!(scene && scene.userData.farRange), vegNear: [...VEG_MESHES.values()].filter((e) => e.up && e.up.state === 'near').length, streamR: terrStreamR, tris: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.triangles : -1, terrTex: terrainTexState ? { loaded: terrainTexState.loaded, failed: terrainTexState.failed.slice() } : null, garden: SPAWNG, vc: { on: vcOn3, muted: vcMuted, peers: Object.keys(vcPeers).length, states: Object.fromEntries(Object.entries(vcPeers).map(([u, p]) => [u, p.pc.connectionState])), via: Object.fromEntries(Object.entries(vcPeers).map(([u, p]) => [u, p.via])), ui: voiceUiState({ on: vcOn3, pending: vcPending3, hasStream: !!vcStream, muted: vcMuted, peerStates: Object.values(vcPeers).map((p) => p.pc.connectionState), anyFail: Object.keys(vcFails3).length > 0 }), talk: vcTalk3 }, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }

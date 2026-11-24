@@ -123,6 +123,8 @@ body { margin: 0; overflow: hidden; background: #120b18; overscroll-behavior: no
 #w3vcstat.st-connecting .dot { background: var(--mf-warn); animation: mf-blink 1s ease-in-out infinite; }
 #w3vcstat.st-listen .dot { background: var(--mf-blossom); }
 #w3vcstat.st-listen { color: var(--mf-blossom); }
+#w3vcstat.st-failed .dot { background: var(--mf-err); animation: mf-blink 1s ease-in-out infinite; }
+#w3vcstat.st-failed { color: var(--mf-err); }
 #w3vcstat.talking { border-color: var(--mf-sage); box-shadow: 0 0 0 3px rgba(158,196,154,.22); }
 
 /* ---------- 5 · interaction prompt + touch use ---------- */
