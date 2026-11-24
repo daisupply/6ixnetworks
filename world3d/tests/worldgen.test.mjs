@@ -2,7 +2,7 @@
 // tests the EXACT functions client3d.js uses from ../math3d.js and
 // ../worldgen.js. run: node world3d/tests/worldgen.test.mjs
 import { groundH, terrainNormal, terrainWeights, terrainChunkGrid, biomeFields, WATER_Y } from '../math3d.js';
-import { WORLD_SEED, SALT, hash2i, chunkSeed, chunkRng, STREAM_R, EVICT_R, chunkKey, isApronChunk, chunkCenterD, wantedChunks, planChunks, genChunkVeg, VEG_TREES, pathNetwork, pathDist, settlements, settleDist, chunkMinH, chunkWater, landmarks, landmark } from '../worldgen.js';
+import { WORLD_SEED, SALT, hash2i, chunkSeed, chunkRng, STREAM_R, EVICT_R, chunkKey, isApronChunk, chunkCenterD, wantedChunks, planChunks, genChunkVeg, VEG_TREES, pathNetwork, pathDist, settlements, settleDist, chunkMinH, chunkWater, landmarks, landmark, gateNodes } from '../worldgen.js';
 
 let pass = 0, fail = 0;
 const ok = (c, label, extra) => { if (c) { pass++; console.log('PASS', label); } else { fail++; console.log('FAIL', label, extra !== undefined ? JSON.stringify(extra) : ''); } };
@@ -221,8 +221,8 @@ const hashStr = s => { let h1 = 5381, h2 = 52711; for (let i = 0; i < s.length; 
 /* ---- dirt path network (Stage 5) ---- */
 {
   const net = pathNetwork();
-  ok(hashStr(JSON.stringify(net.nodes) + JSON.stringify(net.edges)) === '617666b9:3f6c7615:1442', 'NET_PIN: path network bit-identical', hashStr(JSON.stringify(net.nodes) + JSON.stringify(net.edges)));
-  ok(net.nodes.length === 25 && net.segs.length === net.edges.length, 'network shape: 4 trailheads + 21 waypoints', [net.nodes.length, net.edges.length]);
+  ok(hashStr(JSON.stringify(net.nodes) + JSON.stringify(net.edges)) === 'b6a87f95:dd478b47:1576', 'NET_PIN: path network bit-identical (Stage 8 re-pin: +4 gate nodes/edges)', hashStr(JSON.stringify(net.nodes) + JSON.stringify(net.edges)));
+  ok(net.nodes.length === 29 && net.segs.length === net.edges.length, 'network shape: 4 trailheads + 21 waypoints + 4 gates', [net.nodes.length, net.edges.length]);
   const deg = new Array(net.nodes.length).fill(0);
   for (const [a, b] of net.edges) { deg[a]++; deg[b]++; }
   ok(deg.every(d => d >= 1), 'every node is connected');
@@ -322,6 +322,44 @@ const hashStr = s => { let h1 = 5381, h2 = 52711; for (let i = 0; i < s.length; 
   ok(ruin && biomeFields(ruin.x, ruin.z).forest >= 0.72 && pathDist(ruin.x, ruin.z) >= 25, 'ruin sits in deep forest off the paths');
   ok(falls.h > WATER_Y + 2.5 && falls.bh < WATER_Y + 0.4 && falls.h - falls.bh > 3, 'falls drops from a lip to water level', falls);
   ok(hashStr(JSON.stringify(L)) === 'dd9f307:6a083001:340', 'LAND_PIN: sites bit-identical', hashStr(JSON.stringify(L)));
+}
+
+/* ---- Stage 8: gates join town to the wild network ----
+ * four gate nodes sit ON the bounds lines, each edged to its
+ * trailhead; the tread (pathDist ~ 0) runs gate -> trailhead.
+ * gates were appended last, so settlement indices and every
+ * older pin (asserted above) survive. */
+{
+  const G = gateNodes();
+  ok(G.length === 4, 'four gates', G.length);
+  const onLine = G.every((g) => Math.abs(g.x) === 195 || Math.abs(g.z) === 118);
+  ok(onLine, 'every gate sits on a bounds line', G);
+  const joined = [[212, 0], [-212, 0], [0, -135], [0, 135]].every(([x, z]) => pathDist(x, z) < 0.01);
+  ok(joined, 'tread runs continuously through every gate join');
+  const net = pathNetwork();
+  const reach = G.every((g) => {
+    const gi = net.nodes.findIndex((n) => n.x === g.x && n.z === g.z);
+    const th = net.edges.find(([a, b]) => a === gi || b === gi);
+    const thIdx = th[0] === gi ? th[1] : th[0];
+    return net.edges.some(([a, b]) => (a === thIdx || b === thIdx) && net.nodes[a === thIdx ? b : a].ring >= 0);
+  });
+  ok(reach, 'every gate reaches a ring-1 waypoint in two hops');
+}
+
+/* ---- Stage 10: quality-tier stream radii ----
+ * planChunks takes a radius: a smaller tier radius wants fewer
+ * chunks and evicts at R + 55; the default stays STREAM_R /
+ * EVICT_R exactly. generation content never depends on R. */
+{
+  const empty = new Set();
+  const n330 = planChunks(empty, 0, 18).build.length;
+  const n200 = planChunks(empty, 0, 18, 200).build.length;
+  ok(n200 < n330 && n200 > 40, 'tier radius shrinks the wanted set', [n200, n330]);
+  const have = new Set(['5,0']); // centre (302.5, 27.5): ~303u out
+  ok(planChunks(have, 0, 18, 200).evict.includes('5,0'), 'low tier evicts beyond R + 55');
+  ok(!planChunks(have, 0, 18).evict.includes('5,0'), 'default radius keeps the same chunk (inside EVICT_R, just not wanted)');
+  const a = genChunkVeg(9, 2), b = genChunkVeg(9, 2);
+  ok(JSON.stringify(a) === JSON.stringify(b), 'chunk content is radius-independent and deterministic');
 }
 
 console.log('WORLDGEN RESULT: ' + pass + ' pass, ' + fail + ' fail');

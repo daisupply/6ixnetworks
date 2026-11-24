@@ -308,5 +308,50 @@ const S = await signup(user);
   ok(!!g3 && g3.emote === 'celebrate', 'emote: celebrate shows in the roster', g3);
 }
 
+/* ---- Stage 11: the wild is walkable, zones span chunks ---- */
+{
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const mk = async (tag) => {
+    const user = 'w3wild' + tag + Math.random().toString(36).slice(2, 6);
+    const S = await signup(user);
+    return { user, S, sid: { sid: 'w' + tag + Math.random().toString(36).slice(2, 10) } };
+  };
+  const walkTo = async (P, tx, tz) => {
+    let cur = (await ping(P.S, { ...P.sid })).j;
+    for (let i = 0; i < 60; i++) {
+      const dx = tx - cur.x, dz = tz - cur.z, d = Math.hypot(dx, dz);
+      if (d < 1) break;
+      const st = Math.min(9, d);
+      cur = (await ping(P.S, { x: Math.round((cur.x + dx / d * st) * 10) / 10, z: Math.round((cur.z + dz / d * st) * 10) / 10, ry: 0, ...P.sid })).j;
+      await sleep(230); // stay under the sustained-speed window
+    }
+    return cur;
+  };
+  const C = await mk('c'); // heads east into the wild
+  const E = await mk('e'); // heads west, ends >400u from C
+  const T = await mk('t'); // stays at the town edge
+  await ping(C.S, { x: 0, z: 18, ry: 0, ...C.sid });
+  await ping(E.S, { x: 0, z: 18, ry: 0, ...E.sid });
+  await ping(T.S, { x: 0, z: 18, ry: 0, ...T.sid });
+  // the walks take ~25s total; presence prunes at 7s, so everyone
+  // keepalive-pings (position-less, never moves them) throughout
+  const ka = setInterval(() => { ping(C.S, { ...C.sid }); ping(E.S, { ...E.sid }); ping(T.S, { ...T.sid }); }, 3000);
+  const cEnd = await walkTo(C, 250, 0);
+  ok(/^wild:/.test(cEnd.zone || '') && cEnd.x > 240, 'wild: walking east out of town is accepted, zone is wild:<cx>:<cz>', { x: cEnd.x, zone: cEnd.zone });
+  const cDeep = await walkTo(C, 400, 0);
+  ok(/^wild:/.test(cDeep.zone || '') && cDeep.x > 390, 'wild: deep-wild movement keeps working across chunk borders', { x: cDeep.x, zone: cDeep.zone });
+  await walkTo(E, -250, 0);
+  await walkTo(T, 190, 0);
+  clearInterval(ka);
+  const rc = await ping(C.S, { ...C.sid });
+  ok(rc.j && !rc.j.roster.some((e2) => e2.u === E.user), 'wild roster: players >400u apart do not see each other');
+  ok(rc.j && rc.j.roster.some((e2) => e2.u === T.user), 'wild roster: the town-edge player 210u away is visible across the town/wild border');
+  const rt = await ping(T.S, { ...T.sid });
+  ok(rt.j && rt.j.roster.some((e2) => e2.u === C.user), 'town roster: a wild player in range shows in town');
+  // walking into an interior without a door warp is still refused
+  const wIn = await ping(C.S, { x: 2000, z: 5.5, ry: 0, ...C.sid });
+  ok(wIn.j && wIn.j.x === cDeep.x, 'wild: teleport-walk into an interior is refused (position held)', wIn.j && wIn.j.x);
+}
+
 console.log('SERVER RESULT: ' + pass + ' pass, ' + fail + ' fail');
 process.exit(fail ? 1 : 0);

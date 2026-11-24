@@ -28,7 +28,7 @@
  */
 import * as THREE from 'three';
 import { angWrap, angLerp, dampK, normInput, moveVec, segSphereT, segBoxT, groundH, fbm2, ridge2, terrainWeights, terrainChunkGrid, terrainChunkIndex, TERR_CHUNK, WATER_Y } from './math3d.js';
-import { planChunks, genChunkVeg, isApronChunk, VEG_TREES, settlements, chunkWater, landmarks } from './worldgen.js';
+import { planChunks, genChunkVeg, isApronChunk, VEG_TREES, settlements, chunkWater, landmarks, pathNetwork, gateNodes } from './worldgen.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as skelClone } from 'three/addons/utils/SkeletonUtils.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -443,12 +443,42 @@ function buildTerrain() {
  * only — interiors sit at x~2000 where no terrain may ever
  * generate. the plan recomputes on chunk-boundary crossings;
  * builds drain at <=2 per frame, nearest first. */
+/* ---- Stage 9: travelling light + sky ----
+ * the sun's shadow camera, the sky dome and the celestial
+ * dressing follow the player (snapped to a 2u grid so shadows
+ * do not shimmer), so shadows and sky work anywhere in the
+ * wild, not just over town. interiors (|x| ~ 2000) keep the
+ * sun where town left it — their lighting is unchanged. */
+let SKY_AX = 0, SKY_AZ = 0;
+function tickSkyFollow(px, pz) {
+  if (Math.abs(px) > 1000 || Math.abs(pz) > 1000) return;
+  const ax = Math.round(px / 2) * 2, az = Math.round(pz / 2) * 2;
+  if (ax === SKY_AX && az === SKY_AZ) return;
+  SKY_AX = ax; SKY_AZ = az;
+  const moon = scene.userData.moon;
+  if (moon) {
+    moon.position.set(ax - 120, 52, az + 48);
+    moon.target.position.set(ax, 0, az);
+    moon.target.updateMatrixWorld();
+  }
+  if (scene.userData.skyDome) scene.userData.skyDome.position.set(ax, 0, az);
+  if (scene.userData.skyStars) scene.userData.skyStars.position.set(ax, 0, az);
+  if (scene.userData.skyMoon) { const md = scene.userData.skyMoon; md.position.set(ax - 590, 255, az + 235); md.lookAt(ax, 0, az); }
+  if (scene.userData.skyNeb) for (const nb of scene.userData.skyNeb) nb.sp.position.set(ax + nb.x, nb.y, az + nb.z);
+}
+/* Stage 10: the graphics tier sets the stream radius — high
+ * builds to the full 330u, medium 260, low 200. generation is
+ * identical at every tier (placement never depends on radius),
+ * so clients on different tiers still agree on every chunk. */
+let terrStreamR = 330;
+function streamRadius() { const t = tierOf(); return t === 'high' ? 330 : t === 'medium' ? 260 : 200; }
 function tickTerrainStreaming() {
-  if (!terrGroup || zoneNow() !== 'town') { terrBuildQ.length = 0; terrCellCx = null; return; }
+  if (!terrGroup || ZONE_BOXES[zoneNow()]) { terrBuildQ.length = 0; terrCellCx = null; return; } // streams in town + wild; interiors idle it
   const ccx = Math.floor(px / TERR_CHUNK), ccz = Math.floor(pz / TERR_CHUNK);
-  if (ccx !== terrCellCx || ccz !== terrCellCz) {
-    terrCellCx = ccx; terrCellCz = ccz;
-    const plan = planChunks(new Set(TERRAIN_MESHES.keys()), px, pz);
+  const sR = streamRadius();
+  if (ccx !== terrCellCx || ccz !== terrCellCz || sR !== terrStreamR) {
+    terrCellCx = ccx; terrCellCz = ccz; terrStreamR = sR;
+    const plan = planChunks(new Set(TERRAIN_MESHES.keys()), px, pz, sR);
     for (const key of plan.evict) evictChunk(key);
     terrBuildQ = plan.build.map(w => [w.cx, w.cz]);
   }
@@ -597,7 +627,7 @@ function buildWorld() {
   // v548 COZY REDESIGN: golden hour. gradient sky dome, warm haze,
   // a low warm sun (the light slot is still userData.moon — applyGfx
   // configures its shadows through that key), faint early stars.
-  scene.fog = new THREE.FogExp2(0xcf9a68, 0.0016);
+  scene.fog = new THREE.FogExp2(0xcf9a68, 0.0022); // Stage 9: denser haze so the 330u stream edge lands behind a softer fog wall (was 0.0016, ~76% visible at 330u; now ~59%)
   scene.background = new THREE.Color(0xe9a06b);
   const skyTex = canvasTex(32, 512, (g, w, h) => {
     const gr = g.createLinearGradient(0, 0, 0, h);
@@ -605,7 +635,7 @@ function buildWorld() {
     g.fillStyle = gr; g.fillRect(0, 0, w, h);
   });
   const skyDome = new THREE.Mesh(new THREE.SphereGeometry(760, 24, 12), new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false, depthWrite: false }));
-  scene.add(skyDome);
+  scene.add(skyDome); scene.userData.skyDome = skyDome;
 
   const hemi = new THREE.HemisphereLight(0xbfd4ff, 0x977950, 0.85);
   scene.add(hemi);
@@ -613,7 +643,7 @@ function buildWorld() {
   moon.position.set(-120, 52, 48);
   moon.shadow.camera.left = -70; moon.shadow.camera.right = 70; moon.shadow.camera.top = 70; moon.shadow.camera.bottom = -70;
   moon.shadow.bias = -0.0006;
-  scene.add(moon); scene.userData.moon = moon;
+  scene.add(moon); scene.add(moon.target); scene.userData.moon = moon;
   const orbLight = new THREE.PointLight(0xffc98a, 900, 30, 2);
   orbLight.position.set(0, 3.4, 0); scene.add(orbLight);
 
@@ -625,17 +655,20 @@ function buildWorld() {
   }
   const starGeo = new THREE.BufferGeometry();
   starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-  scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 1.6, sizeAttenuation: false, fog: false, transparent: true, opacity: 0.3 })));
+  const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 1.6, sizeAttenuation: false, fog: false, transparent: true, opacity: 0.3 }));
+  scene.add(stars); scene.userData.skyStars = stars;
   const moonDisc = new THREE.Mesh(new THREE.CircleGeometry(24, 32), new THREE.MeshBasicMaterial({ color: 0xffdf9e, fog: false }));
-  moonDisc.position.set(-590, 255, 235); moonDisc.lookAt(0, 0, 0); scene.add(moonDisc);
+  moonDisc.position.set(-590, 255, 235); moonDisc.lookAt(0, 0, 0); scene.add(moonDisc); scene.userData.skyMoon = moonDisc;
   const nebTex = canvasTex(128, 128, (g, w, h) => {
     const gr = g.createRadialGradient(64, 64, 2, 64, 64, 64);
     gr.addColorStop(0, 'rgba(255,190,120,.5)'); gr.addColorStop(1, 'rgba(255,190,120,0)');
     g.fillStyle = gr; g.fillRect(0, 0, w, h);
   });
+  scene.userData.skyNeb = [];
   [[-190, 120, -260, 260, 0xf7a072], [230, 90, -240, 200, 0xf9a8d4], [60, 150, -330, 300, 0xffd9a0], [-590, 255, 235, 340, 0xffb36b]].forEach((n) => {
     const sm = new THREE.SpriteMaterial({ map: nebTex, color: n[4], transparent: true, opacity: 0.32, fog: false, depthWrite: false });
     const sp = new THREE.Sprite(sm); sp.position.set(n[0], n[1], n[2]); sp.scale.set(n[3], n[3] * 0.6, 1); scene.add(sp);
+    scene.userData.skyNeb.push({ sp, x: n[0], y: n[1], z: n[2] });
   });
 
   // ground + plaza + paths
@@ -958,6 +991,63 @@ function buildTown() {
     });
     scene.add(postIM); scene.add(headIM);
   }
+  // Stage 8: gate dressing — flanking fence runs on the bounds
+  // line either side of each gate (tread gap left open) and lamp
+  // runs along the join to the trailhead + the first stretch of
+  // the onward wild path. fences are the hamlet fence GLB as one
+  // InstancedMesh; lamps mirror the avenue instanced build. no
+  // colliders: the bounds still clamp, and wild-side dressing
+  // follows the no-wild-colliders rule.
+  {
+    const fenceSpots = [];
+    const lampSpots = [];
+    const net = pathNetwork();
+    for (const g of gateNodes()) {
+      const alongZ = Math.abs(g.x) > Math.abs(g.z); // E/W gates: line runs along z
+      for (const sgn of [-1, 1]) for (let off = 5.5; off <= 34; off += 2.05) {
+        const fx = alongZ ? g.x : g.x + sgn * off, fz = alongZ ? g.z + sgn * off : g.z;
+        if (groundH(fx, fz) < WATER_Y + 0.2) continue;
+        fenceSpots.push({ x: fx, z: fz, ry: alongZ ? Math.PI / 2 : 0 });
+      }
+      // lamps: two on the join, two on the onward edge
+      const segs = [[g.x, g.z, g.tx, g.tz]];
+      const thIdx = net.nodes.findIndex((n) => n.x === g.tx && n.z === g.tz);
+      const onward = net.edges.find(([a, b]) => (a === thIdx || b === thIdx) && net.nodes[a === thIdx ? b : a].ring >= 0);
+      if (onward) { const o = net.nodes[onward[0] === thIdx ? onward[1] : onward[0]]; segs.push([g.tx, g.tz, o.x, o.z]); }
+      segs.forEach(([ax, az, bx, bz], si) => {
+        const dx = bx - ax, dz = bz - az, L = Math.hypot(dx, dz) || 1;
+        const nx = -dz / L, nz = dx / L;
+        [0.35, 0.75].forEach((t, k) => {
+          const side = (k + si) % 2 ? 3.4 : -3.4;
+          const lx = ax + dx * t + nx * side, lz = az + dz * t + nz * side;
+          lampSpots.push([lx, lz]);
+        });
+      });
+    }
+    if (lampSpots.length) {
+      const postIM = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.07, 0.1, 3.6, 6), M(0x14101f, { roughness: 0.6, metalness: 0.4 }), lampSpots.length);
+      const headIM = new THREE.InstancedMesh(new THREE.SphereGeometry(0.3, 10, 8), M(0xffd9a0, { emissive: 0xffc98a, emissiveIntensity: 2.4 }), lampSpots.length);
+      const dum = new THREE.Object3D();
+      lampSpots.forEach(([lx, lz], i) => {
+        const gy = groundH(lx, lz);
+        dum.position.set(lx, gy + 1.8, lz); dum.updateMatrix(); postIM.setMatrixAt(i, dum.matrix);
+        dum.position.set(lx, gy + 3.75, lz); dum.updateMatrix(); headIM.setMatrixAt(i, dum.matrix);
+      });
+      scene.add(postIM); scene.add(headIM);
+    }
+    if (fenceSpots.length) {
+      loadAsset('/world3d/assets/environment/fence.glb', 40).then((proto) => {
+        if (!proto) return;
+        let mesh = null; proto.traverse((o) => { if (!mesh && o.isMesh) mesh = o; });
+        if (!mesh) return;
+        const im = new THREE.InstancedMesh(mesh.geometry, mesh.material, fenceSpots.length);
+        const d = new THREE.Object3D();
+        fenceSpots.forEach((s, k) => { d.position.set(s.x, groundH(s.x, s.z) - 0.04, s.z); d.rotation.set(0, s.ry, 0); d.updateMatrix(); im.setMatrixAt(k, d.matrix); });
+        im.castShadow = true; im.receiveShadow = true;
+        scene.add(im);
+      });
+    }
+  }
   // street name signs
   function streetSign(x, z, text, ry) {
     cyl(0.05, 0.05, 2.6, M(0x14101f, { metalness: 0.4, roughness: 0.5 }), x, 1.3, z, 6);
@@ -1214,6 +1304,7 @@ const ZONE_BOXES = { coffee: { minX: 1989, maxX: 2011, minZ: -9, maxZ: 9 }, arca
 function zoneNow() {
   for (const id in ZONE_BOXES) { const b = ZONE_BOXES[id]; if (px >= b.minX && px <= b.maxX && pz >= b.minZ && pz <= b.maxZ) return id; }
   if (Math.abs(px) <= 195 && Math.abs(pz) <= 118) return 'town';
+  if (Math.abs(px) <= 990 && Math.abs(pz) <= 990) return 'wild'; // Stage 11: the surface beyond town
   return 'void';
 }
 function addInteract(zone, x, z, r, label, action, when) { INTERACT.push({ zone, x, z, r, label, action, when }); }
@@ -2148,7 +2239,7 @@ function sfxStep() {
   const src = AC.createBufferSource(); src.buffer = noiseBuf;
   const bp = AC.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 0.9;
   const z = zoneNow();
-  bp.frequency.value = z === 'town' ? (districtNow === 'the plaza' ? 700 : 480) : 950;
+  bp.frequency.value = z === 'town' ? (districtNow === 'the plaza' ? 700 : 480) : z === 'wild' ? 480 : 950;
   const g = AC.createGain();
   g.gain.value = SET.sfx * (sprintingNow() ? 0.20 : 0.13);
   src.connect(bp); bp.connect(g); g.connect(acSfx);
@@ -3720,7 +3811,7 @@ function checkDistrict() {
   const z = zoneNow();
   let name = '';
   if (z === 'town') { for (const d of DISTRICTS) if (d.test(px, pz)) { name = d.name; break; } }
-  else name = { coffee: 'the coffee shop', arcade: 'the arcade', clothing: 'clothing co.', library: 'the library', rec: 'the rec center', apt: 'ur apartment' }[z] || '';
+  else name = { coffee: 'the coffee shop', arcade: 'the arcade', clothing: 'clothing co.', library: 'the library', rec: 'the rec center', apt: 'ur apartment', wild: 'the wilds' }[z] || '';
   if (name && name !== districtNow) {
     const first = !seenSet().has(name);
     if (first) {
@@ -3772,6 +3863,29 @@ function drawMap() {
     g.fillStyle = '#fff'; g.beginPath(); g.arc(sx(px), sz(pz), 5, 0, 7); g.fill();
     g.strokeStyle = '#ffc95e'; g.lineWidth = 2; g.beginPath(); g.arc(sx(px), sz(pz), 8.5, 0, 7); g.stroke();
     g.fillStyle = '#fff'; g.fillText('u are here', sx(px), sz(pz) + 22);
+  } else if (z === 'wild') {
+    // Stage 11 local-area mode: a 340u window centred on the
+    // player — paths, hamlets, gates and landmarks, town as an
+    // outline when it falls inside the window.
+    const R2 = 170, lx = (x) => (x - px + R2) / (2 * R2) * W, lz = (w) => (w - pz + R2) / (2 * R2) * H;
+    g.fillStyle = '#16211a'; g.fillRect(0, 0, W, H);
+    g.strokeStyle = '#3d4a3a'; g.lineWidth = 1.5; g.strokeRect(lx(-195), lz(-118), lx(195) - lx(-195), lz(118) - lz(-118));
+    g.fillStyle = '#6b7f66'; g.font = '600 9px Inter, sans-serif'; g.fillText('town', lx(0), lz(-118) - 4);
+    g.strokeStyle = '#8a7461'; g.lineWidth = 3; g.beginPath();
+    for (const s of pathNetwork().segs) { g.moveTo(lx(s.ax), lz(s.az)); g.lineTo(lx(s.bx), lz(s.bz)); }
+    g.stroke();
+    g.fillStyle = '#d9b380';
+    for (const s of settlements()) { g.fillRect(lx(s.x) - 3, lz(s.z) - 3, 6, 6); }
+    g.fillStyle = '#ffd9a0'; g.font = '600 9px Inter, sans-serif';
+    for (const gt of gateNodes()) { g.beginPath(); g.arc(lx(gt.x), lz(gt.z), 3.5, 0, 7); g.fill(); }
+    const LM = { lake: '#5b84ad', overlook: '#e8e4ff', ruin: '#b09cc9', falls: '#9fd4ff' };
+    for (const m of landmarks()) {
+      g.fillStyle = LM[m.kind] || '#fff'; g.beginPath(); g.arc(lx(m.x), lz(m.z), 4, 0, 7); g.fill();
+      g.fillStyle = '#f7ecd9'; g.fillText(m.kind, lx(m.x), lz(m.z) - 8);
+    }
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(W / 2, H / 2, 5, 0, 7); g.fill();
+    g.strokeStyle = '#ffc95e'; g.lineWidth = 2; g.beginPath(); g.arc(W / 2, H / 2, 8.5, 0, 7); g.stroke();
+    g.fillStyle = '#fff'; g.font = '600 10px Inter, sans-serif'; g.fillText('u are here — the wilds', W / 2, H / 2 + 22);
   } else {
     g.fillStyle = '#ffd9a0'; g.font = '700 13px Inter, sans-serif';
     g.fillText('u are inside: ' + z, W / 2, 24);
@@ -4404,7 +4518,7 @@ function updateCamera(dt) {
   for (const s of camSpheres) { const t = segSphereT(hx, hy, hz, cx, cy, cz, s); if (t >= 0) maxT = Math.min(maxT, t); }
   for (const b of camBoxes) { const t = segBoxT(hx, hy, hz, cx, cy, cz, b); if (t >= 0) maxT = Math.min(maxT, t); }
   let wantDist = SET.camDist * clamp(maxT * 0.94, 0.12, 1);
-  if (zoneNow() !== 'town') wantDist = Math.min(wantDist, 6.2); // indoor boom clamp
+  if (ZONE_BOXES[zoneNow()]) wantDist = Math.min(wantDist, 6.2); // indoor boom clamp (interiors only — the wild keeps the full boom)
   const rate = wantDist < camDistEff ? 22 : 6; // pull in fast, ease back out
   camDistEff += (wantDist - camDistEff) * dampK(rate, dt);
   const inv = camDistEff / SET.camDist;
@@ -4467,14 +4581,14 @@ function loop() {
   // town bounds; clamping to town while inside yanked the player to
   // the town edge the moment they moved (the v543 cafe bug).
   const zb = zoneNow();
-  if (zb === 'town' || !ZONE_BOXES[zb]) { px = clamp(px, -BOUND_X, BOUND_X); pz = clamp(pz, -BOUND_Z, BOUND_Z); }
-  else { const B = ZONE_BOXES[zb]; px = clamp(px, B.minX + 0.6, B.maxX - 0.6); pz = clamp(pz, B.minZ + 0.6, B.maxZ - 0.6); }
+  if (ZONE_BOXES[zb]) { const B = ZONE_BOXES[zb]; px = clamp(px, B.minX + 0.6, B.maxX - 0.6); pz = clamp(pz, B.minZ + 0.6, B.maxZ - 0.6); }
+  else { px = clamp(px, -990, 990); pz = clamp(pz, -990, 990); } // Stage 11: the town fence is gone; the world edge is the only surface bound (matches the server's WORLD_EDGE)
   // ground from the CLAMPED position's zone, not the pre-clamp one:
   // pushing against the town boundary overshoots past 195/118 for a
   // frame, read as 'void', and pinned groundY to 0 — the player sank
   // into the hillside for as long as they held the key (found by the
   // terrain refinement verification at the west edge).
-  groundY = (zoneNow() === 'town') ? groundH(px, pz) : 0;
+  groundY = !ZONE_BOXES[zoneNow()] ? groundH(px, pz) : 0;
   for (const c of colliders) {
     const dx = px - c.x, dz = pz - c.z, d = Math.hypot(dx, dz), min = c.r + 0.55;
     if (d > 0.001 && d < min) { px = c.x + dx / d * min; pz = c.z + dz / d * min; }
@@ -4509,13 +4623,13 @@ function loop() {
     const inst = dt > 0 ? Math.hypot(g.position.x - ox, g.position.z - oz) / dt : 0;
     rm.st.speed += (inst - rm.st.speed) * dampK(8, dt);
     rm.st.pose = rm.sit ? 'sit' : 'stand'; rm.st.emote = rm.emote;
-    g.position.y = (zoneNow() === 'town' ? groundH(g.position.x, g.position.z) : 0) + (rm.sit ? 0.04 : 0);
+    g.position.y = (Math.abs(g.position.x) < 1900 ? groundH(g.position.x, g.position.z) : 0) + (rm.sit ? 0.04 : 0); // per-remote ground: surface remotes ride the terrain, interior remotes stay on their floor
     g.rotation.y = angLerp(g.rotation.y, rm.try_, k);
     if (rm.rig && !rm.sit && !rm.emote) { setRigShown(rm, true); updateRig(rm, dt); }
     else { if (rm.rig) setRigShown(rm, false); animateAvatar(g, rm.st, dt, now); }
   }
   // npcs idle in place; prompt scan + seat snap (v543)
-  tickStrollers(dt, now); tickShards(now); tickDressing(now); tickAudio(); tickWildlife(now, dt); tickLOD(); tickTerrainStreaming();
+  tickStrollers(dt, now); tickShards(now); tickDressing(now); tickAudio(); tickWildlife(now, dt); tickLOD(); tickTerrainStreaming(); tickSkyFollow(px, pz);
   tickNPCRoutines(now);
   for (const n of NPCS) { if (n.zone && zoneNow() !== n.zone) continue; if (n.rig) updateRig(n, dt); else animateAvatar(n.g, n.st, dt, now); }
   if (sitting) { px = sitting.x; pz = sitting.z; if (joyVec.x || joyVec.y) standUp(); }
@@ -4565,7 +4679,7 @@ function loop() {
     window.__w3scene = scene; // diagnostic handle (mesh census in tests)
     window.__w3state = function () {
       const miraN = NPCS.find((n) => n.zone === 'coffee');
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, groveN: GROVE.n, coverN: COVER.lawn, chunksOn: COVER.chunksOn, chunks: COVER.chunks, lodNear: COVER.lodNear, lodFar: COVER.lodFar, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, perfQ: loadQ.length + loadActive, tChunks: TERRAIN_CHUNKS.size, tMesh: TERRAIN_MESHES.size, vegC: VEG_MESHES.size, settleC: SETTLE_MESHES.size, waterC: WATER_MESHES.size, fallsOn: !!fallsMesh, terrTex: terrainTexState ? { loaded: terrainTexState.loaded, failed: terrainTexState.failed.slice() } : null, garden: SPAWNG, vc: { on: vcOn3, muted: vcMuted, peers: Object.keys(vcPeers).length, states: Object.fromEntries(Object.entries(vcPeers).map(([u, p]) => [u, p.pc.connectionState])), talk: vcTalk3 }, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, groveN: GROVE.n, coverN: COVER.lawn, chunksOn: COVER.chunksOn, chunks: COVER.chunks, lodNear: COVER.lodNear, lodFar: COVER.lodFar, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, perfQ: loadQ.length + loadActive, tChunks: TERRAIN_CHUNKS.size, tMesh: TERRAIN_MESHES.size, vegC: VEG_MESHES.size, settleC: SETTLE_MESHES.size, waterC: WATER_MESHES.size, fallsOn: !!fallsMesh, skyAx: SKY_AX, skyAz: SKY_AZ, streamR: terrStreamR, tris: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.triangles : -1, terrTex: terrainTexState ? { loaded: terrainTexState.loaded, failed: terrainTexState.failed.slice() } : null, garden: SPAWNG, vc: { on: vcOn3, muted: vcMuted, peers: Object.keys(vcPeers).length, states: Object.fromEntries(Object.entries(vcPeers).map(([u, p]) => [u, p.pc.connectionState])), talk: vcTalk3 }, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }

@@ -118,9 +118,16 @@ const MENU = {
   mocha: { name: 'mocha', price: 40 },
   nebula: { name: 'nebula latte', price: 65 },
 };
+/* Stage 11: the surface world beyond town is walkable. zoneOf
+ * returns 'wild:<cx>:<cz>' (55u chunk coords) out to WORLD_EDGE;
+ * beyond that, and inside the interior band without a door warp,
+ * is still the void. town and interior answers are unchanged. */
+const WORLD_EDGE = 990;
+function isSurface(z) { return z === 'town' || (typeof z === 'string' && z.startsWith('wild:')); }
 function zoneOf(x, z) {
   if (Math.abs(x) <= BOUND_X && Math.abs(z) <= BOUND_Z) return 'town';
   for (const id in INTERIORS) { const b = INTERIORS[id]; if (x >= b.minX && x <= b.maxX && z >= b.minZ && z <= b.maxZ) return id; }
+  if (Math.abs(x) <= WORLD_EDGE && Math.abs(z) <= WORLD_EDGE) return 'wild:' + Math.floor(x / 55) + ':' + Math.floor(z / 55);
   return null;
 }
 
@@ -157,7 +164,8 @@ function createWorld3D(ctx) {
     const pa = P.get(a), pb = P.get(b);
     if (!pa || !pb || !pa.vc || !pb.vc) return false;
     const za = zoneOf(pa.x, pa.z) || 'town', zb = zoneOf(pb.x, pb.z) || 'town';
-    if (za !== zb || za === 'apt') return false;
+    if (za === 'apt' || zb === 'apt') return false;
+    if (za !== zb && !(isSurface(za) && isSurface(zb))) return false; // surface zones share voice across chunk borders (the 36u radius below still applies)
     return Math.hypot(pa.x - pb.x, pa.z - pb.z) <= VOICE_R3;
   }
 
@@ -172,7 +180,13 @@ function createWorld3D(ctx) {
     const out = [];
     for (const [u, p] of P) {
       if (u === me) continue;
-      if ((zoneOf(p.x, p.z) || 'town') !== mz) continue; // zones never see each other
+      const pz2 = zoneOf(p.x, p.z) || 'town';
+      if (pz2 !== mz) {
+        // interiors never see each other; surface zones share a
+        // roster across town/wild chunk borders within 400u
+        if (!(isSurface(pz2) && isSurface(mz))) continue;
+        if ((pz2.startsWith('wild:') || mz.startsWith('wild:')) && mp && dist2(mp.x, mp.z, p.x, p.z) > 400) continue;
+      }
       out.push({ u, x: Math.round(p.x * 10) / 10, z: Math.round(p.z * 10) / 10, ry: Math.round(p.ry * 100) / 100, fx: p.fx || '', hue: (typeof p.hue === 'number') ? p.hue : null, sit: p.sit ? 1 : 0, wear: p.wear || null, vc: p.vc ? 1 : 0, emote: (p.emote && Date.now() - (p.emoteAt || 0) < 2600) ? p.emote : null });
     }
     return out;
@@ -227,7 +241,7 @@ function createWorld3D(ctx) {
         }
         if (warped) {
           p.x = nx; p.z = nz; p.win = null; p.clampStreak = 0;
-        } else if (zoneOf(nx, nz) === curZone) {
+        } else if (zoneOf(nx, nz) === curZone || (isSurface(curZone) && isSurface(zoneOf(nx, nz)))) {
           const dtS = Math.min(2, Math.max(0.15, (now - prevAt) / 1000));
           const dd = dist2(p.x, p.z, nx, nz), maxStep = 52 * dtS + 6;
           if (dd > maxStep) { nx = p.x + (nx - p.x) * maxStep / dd; nz = p.z + (nz - p.z) * maxStep / dd; }

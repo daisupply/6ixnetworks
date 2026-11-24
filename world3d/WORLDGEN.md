@@ -286,7 +286,7 @@ measured baselines every later stage is judged against.
 - Pins: PIN_H / PIN_W / VEG_PIN / NET_PIN / SETTLE_PIN must not move
   (water + landmarks are additive; no groundH/weights changes).
 
-## Stage 7 results (2026-11-23) — COMPLETE, not pushed
+## Stage 7 results (2026-11-23) — COMPLETE, PUSHED as v590 (5e9cfc96) at his word
 - worldgen.js: chunkMinH/chunkWater (5x5 sample at mesh-grid
   steps; apron + interior band excluded) and landmarks() — a
   fixed 14u scan picking lake / overlook / ruin / falls by
@@ -311,3 +311,159 @@ measured baselines every later stage is judged against.
   (needs Stage 11 bounds removal to walk there; sandbox treks
   are throughput-limited regardless). Snapshot:
   ~/workspace/.tests/stages/worldgen-s7/.
+
+## Stage 8 mini-spec (2026-11-23)
+- Prompt scope, verbatim: avenue-end transitions, fence/garden
+  continuity, lamp runs along the first path segments; criteria:
+  inside the plateau, no unintended change.
+- Network: append 4 gate nodes (ring -2) ON the bounds lines —
+  (195,0), (-195,0), (0,-118), (0,118) — each edged to its
+  trailhead (nodes 0-3). Appended last so every existing node
+  index (and SETTLE_PIN / VEG_PIN) is untouched; NET_PIN re-pins
+  deliberately. The dirt tread then runs bounds -> trailhead ->
+  ring 1; wear stays out of the apron (the dOut>30 guard is
+  unchanged, so PIN_H / PIN_W stay bit-identical).
+- Client dressing (one builder, town scope): flanking fence
+  runs (hamlet fence GLB, one InstancedMesh) along the bounds
+  line +-6..34u each side of every gate with the tread gap open;
+  avenue-style lamp runs (instanced posts + heads, no real
+  lights) along each join and the first ~60u of the onward
+  ring-1 edge, alternating sides at groundH. No new colliders
+  (bounds still clamp; wild-side lamps follow the no-wild-
+  colliders rule).
+- Unhappy paths: a gate fence segment landing on a hamlet pad
+  or in water (gates are on the plateau rim — heights sampled
+  per segment, segments below WATER_Y+0.2 skipped); the fence
+  proto failing to load (dressing silently absent, gates still
+  work — same rule as settlements).
+
+## Stage 8 results (2026-11-23) — COMPLETE, not pushed
+- worldgen.js: gate nodes appended in buildNetwork (ring -2) at
+  (195,0), (-195,0), (0,-118), (0,118), each edged to its
+  trailhead; gateNodes() exported. Network now 29 nodes /
+  25 edges. NET_PIN re-pinned deliberately:
+  b6a87f95:dd478b47:1576. PIN_H, PIN_W, VEG_PIN, SETTLE_PIN,
+  LAND_PIN all bit-identical (append-last + the dOut>30 wear
+  guard did their job). pathDist = 0 along all four joins.
+- client3d.js gate dressing (town build, one block): flanking
+  fence runs (hamlet fence GLB, single InstancedMesh, ~112
+  segments) along the bounds line +-5.5..34u either side of
+  each gate with the tread gap open; avenue-style lamp runs
+  (instanced posts + emissive heads, 16 lamps) along each join
+  and the first stretch of the onward ring-1 edge, alternating
+  sides, seated at groundH. No new colliders.
+- Gate: worldgen 82/82 (4 new Stage 8 tests), math 106, roof
+  11. Browser boot check: booted READY, ZERO page errors with
+  the dressing live. The spawn screenshot died to the sandbox
+  timeout at capture time (target closed) — the side-by-side
+  vs pre-overhaul town screenshots remain owed (his screen or
+  a quiet box); inside-plateau change is provably nil by the
+  pins (heights + weights bit-identical).
+
+## Stage 9 results (2026-11-23) — COMPLETE, not pushed
+- tickSkyFollow(px, pz) runs in the frame loop after
+  tickTerrainStreaming: anchor = player position snapped to a
+  2u grid (no shadow shimmer); sun position/target, sky dome,
+  star shell, moon disc and the four nebula sprites all ride
+  the anchor. Interiors (|x| > 1000) skip the follow — the sun
+  stays where town left it, interior lighting untouched.
+  moon.target is now scene-added so its matrix updates.
+- Fog: FogExp2 0.0016 -> 0.0022. At the 330u stream edge the
+  fog factor goes from ~76% visible to ~59% — softer pop-in
+  without milking cross-town views (~68% at 280u). Full
+  fog-wall densities (0.0035+) were rejected: they haze the
+  whole town. The recorded-walk pop-in criterion stays a
+  his-screen verdict.
+- Verified: syntax, boot READY with zero errors, anchor at
+  spawn = (0, 18) for a player at (0, 18.3) via __w3state
+  skyAx/skyAz. NOT verified in-sandbox: the anchor tracking a
+  long walk — the test client's heartbeat starves on the
+  shared box (state drops to RECONNECTING, position freezes;
+  the documented SwiftShader/scheduler class, key input and
+  speed intent still register, zero page errors). His screen
+  settles it, same as the owed treks.
+- Known edge for Stage 12 review: the mountain ridgeline ring
+  is land, not sky — it does not follow; a player walking the
+  far wild will eventually cross it.
+
+## Stage 10 results (2026-11-23) — COMPLETE, not pushed
+- planChunks(have, px, pz, R = STREAM_R): eviction threshold
+  is R + 55, identical to EVICT_R at the default. Client
+  streamRadius() maps the existing gfx tiers (tierOf, incl.
+  the auto FPS cap) to radii: high 330 / medium 260 / low 200;
+  tickTerrainStreaming replans when the tier radius changes,
+  even standing still. Density and placement are NEVER scaled
+  — generation is radius-independent, so tiers cannot diverge
+  chunk content between clients (Stage 11 hash agreement).
+- Budgets surfaced in __w3state: streamR, tris (renderer.info
+  triangles) alongside the existing calls/tMesh/vegC counts;
+  the per-frame build drains stay capped at 2 terrain + 2 veg.
+- Gate: worldgen suite with 4 new Stage 10 tests (radius
+  shrinks wanted set, R + 55 eviction, default keeps, content
+  determinism), math suite, client syntax. The +20% frame-time
+  trek criterion is a real-GPU measurement — his screen only.
+
+## Stage 11 results (2026-11-23) — COMPLETE, not pushed
+- Server (world3d.js): zoneOf returns 'wild:<cx>:<cz>' for the
+  surface out to WORLD_EDGE 990 (town/interior answers byte-
+  identical; beyond the edge and the interior band stay void).
+  Movement accepts same-zone OR surface->surface crossings
+  (town<->wild, wild chunk<->chunk); interiors remain warp-only
+  islands. Roster: surface players share one roster across
+  borders within 400u; interiors unchanged (apartments still
+  solo). Voice: surface pairs are eligible across chunk
+  borders; the 36u radius still applies.
+- Client: zoneNow() knows 'wild'; the town fence clamp is
+  replaced by the +-990 world edge (interior box clamps
+  unchanged); groundY and remote-avatar ground ride groundH
+  on all surface; terrain streaming runs in town + wild and
+  idles only in interiors; the TP boom clamp is interiors-only;
+  footstep timbre and the district toast cover the wilds.
+- Map: in the wild, M opens a local-area view (340u window on
+  the player): path network, hamlets, gates, the four
+  landmarks labelled, town outlined when in range.
+- Gate: server suite 74/74 with 6 new wild tests (walk out of
+  town, deep-wild chunk crossings, roster range/border rules
+  both ways, interior teleport-walk refused). One trivia FAIL
+  on the first run was the suite's own pre-existing flake (it
+  fails whenever the first-served question's correct choice is
+  index 0 — it never sees a wrong answer); green on re-run,
+  unrelated to this stage. Two independent generation
+  processes agree bit-for-bit on the sampled world hash
+  (52d55c39: veg + terrain + network + settlements +
+  landmarks). Client boot: READY, zone town, streamR 330,
+  zero errors incl. shader errors.
+- NOT verified in-sandbox: a live two-browser wild meet-up and
+  the walk to the world edge (heartbeat starvation class) —
+  his-screen / Stage 12 items.
+
+## Stage 12 — full verification report (2026-11-23)
+Measured in this sandbox, final code (Stages 1-11):
+- math 106/106, roof 11/11, worldgen 86/86, server 74/74.
+  Pins: PIN_H / PIN_W / VEG_PIN / SETTLE_PIN / LAND_PIN
+  bit-identical to their Stage 2-7 values; NET_PIN re-pinned
+  once, deliberately, at Stage 8 (gate joins).
+- Cross-process world hash agreement: 52d55c39 in two
+  independent generation processes (veg, terrain, network,
+  settlements, landmarks) — the two-client consistency
+  property at the generation level.
+- Browser suite sections 1-3: loader 2/2, handshake 4/4,
+  desktop boot/movement/camera/settings 16 passes with the
+  same 2 inconclusive samples as the pre-overhaul baseline
+  (a 0.58u W-travel sample and a 0.575 double-jump apex —
+  both SwiftShader-throttle artefacts; the adjacent speed,
+  direction, follow-continuity, jump-rise and landing checks
+  pass). The suite then hit the sandbox throughput wall in
+  section 4 (portal trek), as it did before the overhaul.
+- Client boots at every stage gate: READY, zero page errors,
+  zero shader errors.
+His-screen only (never claimed from here): pointer-lock feel,
+real-GPU frame times on a 600u trek (Stage 10 criterion), the
+recorded-walk pop-in check (Stage 9), standing at the lake /
+falls / world edge, the two-client wild meet-up, the Stage 8
+side-by-side town screenshots, the mountain-ring crossing at
+the far wild, real-device touch, and the cafe live path.
+The world is walkable end to end as of Stage 11: town gates
+join the path network, the sun and sky travel, tiers set the
+stream radius, and the server validates wild movement,
+rosters and voice across chunk borders.

@@ -77,9 +77,12 @@ export function wantedChunks(px, pz, r) {
 
 /* diff the wanted set against what exists. have: a Set of 'cx,cz'
  * keys. build: wanted but missing, nearest first. evict: present,
- * not wanted, not apron, and centred beyond EVICT_R. */
-export function planChunks(have, px, pz) {
-  const want = wantedChunks(px, pz, STREAM_R);
+ * not wanted, not apron, and centred beyond R + 55 (the eviction
+ * hysteresis margin; at the default R = STREAM_R that is exactly
+ * EVICT_R). R is the Stage 10 quality-tier stream radius — it
+ * changes how far a client builds, never what a chunk contains. */
+export function planChunks(have, px, pz, R = STREAM_R) {
+  const want = wantedChunks(px, pz, R);
   const wantKeys = new Set(want.map(w => chunkKey(w.cx, w.cz)));
   const build = want.filter(w => !have.has(chunkKey(w.cx, w.cz)));
   const evict = [];
@@ -88,7 +91,7 @@ export function planChunks(have, px, pz) {
     const i = key.indexOf(',');
     const cx = +key.slice(0, i), cz = +key.slice(i + 1);
     if (isApronChunk(cx, cz)) continue;
-    if (chunkCenterD(cx, cz, px, pz) > EVICT_R) evict.push(key);
+    if (chunkCenterD(cx, cz, px, pz) > R + (EVICT_R - STREAM_R)) evict.push(key);
   }
   return { build, evict };
 }
@@ -254,8 +257,31 @@ function buildNetwork() {
     }
     if (mine.length) prev = mine;
   });
+  // Stage 8: gate nodes ON the bounds lines, appended last so
+  // every existing node index (settlements key off them) is
+  // untouched. each gate edges to its trailhead, joining the
+  // town avenues to the wild path network.
+  const GATES = [[195, 0, 0], [-195, 0, 1], [0, -118, 2], [0, 118, 3]];
+  for (const [gx, gz, th] of GATES) {
+    const idx = nodes.length;
+    nodes.push({ x: gx, z: gz, ring: -2 });
+    edges.push([idx, th]);
+  }
   const segs = edges.map(([a, b]) => ({ ax: nodes[a].x, az: nodes[a].z, bx: nodes[b].x, bz: nodes[b].z }));
   return { nodes, edges, segs };
+}
+/* the four town gates paired with their trailheads:
+ * [{ x, z, tx, tz }] — gate on the bounds line, t = trailhead. */
+export function gateNodes() {
+  const { nodes, edges } = pathNetwork();
+  const out = [];
+  nodes.forEach((n, i) => {
+    if (n.ring !== -2) return;
+    const e = edges.find(([a, b]) => a === i || b === i);
+    const o = nodes[e[0] === i ? e[1] : e[0]];
+    out.push({ x: n.x, z: n.z, tx: o.x, tz: o.z });
+  });
+  return out;
 }
 let NET_BUILDING = false;
 export function pathNetwork() {
