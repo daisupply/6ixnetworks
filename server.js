@@ -3167,6 +3167,7 @@ function isStaticAsset(target, ct) {
 const GM_FEED = 'https://rss.gamemonetize.com/rssfeed.php?format=json&category=All&type=html5&amount=20000';
 const FAMOBI_FEED = 'https://api.famobi.com/feed';
 const EXTRA_GAMES = [
+{ t: 'Rocket League 2D', ad: 20261124, u: 'https://rocket-league.io/', img: 'https://rocket-league.io/og.jpg', c: 'Sports', w: 960, h: 540 },
   { t: 'Surviver.io', ad: 20261120, u: 'https://surviv.io', img: 'https://surviv.io/img/title.png', c: 'Shooting', w: 960, h: 540 },
   { t: 'CloverPit', ad: 20261106, u: 'https://genizymath.github.io/iframe/716-fix3.html', img: 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3314790/header.jpg', c: 'Arcade', w: 960, h: 540 },
   { t: 'Deltarune', ad: 20261111, u: 'https://deltarune.live/chapter1/', img: 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1671210/header.jpg', c: 'RPG', w: 960, h: 540 },
