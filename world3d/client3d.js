@@ -38,6 +38,7 @@ const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
 const TAU = Math.PI * 2;
 // deterministic rng so the plaza layout is designed, not scattered
 function mulberry32(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function sstep(a, b, v) { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); } // math3d's sstep is module-private; identical local copy
 
 const PORTAL = { x: 22, z: 0 };
 let DISTRICT_REFS = [];
@@ -517,7 +518,7 @@ function wildParts(name, cb) {
   loadAsset(NAT + name + (VEG_LOD.has(name) ? '_LOD' : '') + '.glb', 60).then((proto) => {
     let parts = null;
     if (proto) {
-      parts = lodParts(proto);
+      parts = lodParts(proto, VEG_LOD.has(name));
       if (name.indexOf('Grass_') === 0) parts = parts.map((p) => { const m = p.material.clone(); m.emissive = new THREE.Color(0x1c2a0e); m.emissiveIntensity = 0.38; return { geometry: p.geometry, material: m }; });
     }
     WILD_PARTS.set(name, parts); // null = failed: species omitted, never a primitive (ECO rule)
@@ -530,7 +531,7 @@ function ensureVegChunk(cx, cz) {
   if (VEG_MESHES.has(key) || !TERRAIN_MESHES.has(key)) return;
   const veg = genChunkVeg(cx, cz);
   const group = new THREE.Group();
-  const entry = { group };
+  const entry = { group, ccx: cx * 55 + 27.5, ccz: cz * 55 + 27.5, treeIMs: [], treeLists: new Map(), nearState: 'lod', nearGroup: null };
   VEG_MESHES.set(key, entry);
   scene.add(group);
   const byName = new Map();
@@ -538,6 +539,7 @@ function ensureVegChunk(cx, cz) {
     if (!byName.has(d.n)) byName.set(d.n, []);
     byName.get(d.n).push(d);
   }
+  for (const [name, list] of byName) if (VEG_LOD.has(name)) entry.treeLists.set(name, list);
   for (const [name, list] of byName) {
     wildParts(name, (parts) => {
       if (!parts || VEG_MESHES.get(key) !== entry) return; // evicted (or failed) meanwhile
@@ -547,16 +549,17 @@ function ensureVegChunk(cx, cz) {
         let bcx = 0, bcz = 0;
         list.forEach((q, i) => {
           d.position.set(q.x, groundH(q.x, q.z) - 0.04, q.z);
-          d.rotation.set(0, q.ry, 0); d.scale.setScalar(q.s); d.updateMatrix();
+          d.rotation.set(0, q.ry, 0); d.scale.set(q.s, q.s * (LOD_Y[name] || 1), q.s); d.updateMatrix();
           im.setMatrixAt(i, d.matrix);
           bcx += q.x; bcz += q.z;
         });
         bcx /= list.length; bcz /= list.length;
         let brad = 0;
-        for (const q of list) { const dd = Math.hypot(q.x - bcx, q.z - bcz) + 4; if (dd > brad) brad = dd; }
+        for (const q of list) { const dd = Math.hypot(q.x - bcx, q.z - bcz) + 7; if (dd > brad) brad = dd; }
         im.boundingSphere = new THREE.Sphere(new THREE.Vector3(bcx, groundH(bcx, bcz), bcz), brad);
         im.castShadow = /Tree|Pine/.test(name);
         im.receiveShadow = true;
+        if (VEG_LOD.has(name)) entry.treeIMs.push(im);
         group.add(im);
       }
     });
@@ -568,6 +571,87 @@ function evictVeg(key) {
   VEG_MESHES.delete(key);
   scene.remove(entry.group);
   entry.group.traverse((o) => { if (o.isInstancedMesh) o.dispose(); });
+}
+
+/* wild near-upgrade: wild chunks render trees from the
+ * decimated _LOD parts at range (by design), but a player
+ * standing IN the wild was stuck with LOD trees at arm's
+ * length while town trees swap to full models — the visible
+ * quality cliff at the town gate. Chunks within 110u upgrade
+ * their TREES to the full models (same placement data, full
+ * geometry); beyond 150u they drop back. Hysteresis 110/150,
+ * checked on the LOD cadence. Only trees upgrade — shrubs,
+ * rocks and grass are small enough that their LOD/full delta
+ * is invisible. Full parts are cached per species exactly
+ * like WILD_PARTS; a chunk's near build is entry-guarded, so
+ * an eviction mid-load can never leave stale meshes. */
+const FULL_PARTS = new Map();
+const FULL_WAITERS = new Map();
+function fullParts(name, cb) {
+  const got = FULL_PARTS.get(name);
+  if (got && got !== 'pending') { cb(got); return; }
+  if (got === 'pending') { const w = FULL_WAITERS.get(name) || []; w.push(cb); FULL_WAITERS.set(name, w); return; }
+  FULL_PARTS.set(name, 'pending');
+  FULL_WAITERS.set(name, [cb]);
+  loadAsset(NAT + name + '.glb', 55).then((proto) => {
+    const parts = proto ? lodParts(proto, false) : null;
+    FULL_PARTS.set(name, parts);
+    const cbs = FULL_WAITERS.get(name) || []; FULL_WAITERS.delete(name);
+    for (const f of cbs) f(parts);
+  });
+}
+function buildNearVeg(key, entry) {
+  entry.nearState = 'building';
+  if (!entry.nearGroup) { entry.nearGroup = new THREE.Group(); entry.nearGroup.visible = false; entry.group.add(entry.nearGroup); }
+  let pending = entry.treeLists.size;
+  if (!pending) { entry.nearState = 'lod'; return; }
+  for (const [name, list] of entry.treeLists) {
+    fullParts(name, (parts) => {
+      if (VEG_MESHES.get(key) !== entry || entry.nearState !== 'building') return;
+      if (parts) {
+        for (const p of parts) {
+          const im = new THREE.InstancedMesh(p.geometry, p.material, list.length);
+          const d = new THREE.Object3D();
+          let bcx = 0, bcz = 0;
+          list.forEach((q, i) => {
+            d.position.set(q.x, groundH(q.x, q.z) - 0.04, q.z);
+            d.rotation.set(0, q.ry, 0); d.scale.setScalar(q.s); d.updateMatrix();
+            im.setMatrixAt(i, d.matrix);
+            bcx += q.x; bcz += q.z;
+          });
+          bcx /= list.length; bcz /= list.length;
+          let brad = 0;
+          for (const q of list) { const dd = Math.hypot(q.x - bcx, q.z - bcz) + 7; if (dd > brad) brad = dd; }
+          im.boundingSphere = new THREE.Sphere(new THREE.Vector3(bcx, groundH(bcx, bcz), bcz), brad);
+          im.castShadow = true; im.receiveShadow = true;
+          entry.nearGroup.add(im);
+        }
+      }
+      if (--pending === 0 && VEG_MESHES.get(key) === entry && entry.nearState === 'building') {
+        entry.nearState = 'near';
+        entry.nearGroup.visible = true;
+        for (const im of entry.treeIMs) im.visible = false;
+      }
+    });
+  }
+}
+let vegNearLast = 0;
+function tickVegNear() {
+  const tnow = performance.now();
+  if (tnow - vegNearLast < 220) return;
+  vegNearLast = tnow;
+  if (ZONE_BOXES[zoneNow()]) return; // interiors: no wild chunks exist there
+  for (const [key, entry] of VEG_MESHES) {
+    if (!entry.treeLists.size) continue;
+    const d = Math.hypot(px - entry.ccx, pz - entry.ccz);
+    const wantNear = entry.nearState === 'near' || entry.nearState === 'building' ? d < 150 : d < 110;
+    if (wantNear && entry.nearState === 'lod') buildNearVeg(key, entry);
+    else if (!wantNear && entry.nearState === 'near') {
+      entry.nearState = 'lod';
+      if (entry.nearGroup) entry.nearGroup.visible = false;
+      for (const im of entry.treeIMs) im.visible = true;
+    } else if (!wantNear && entry.nearState === 'building') entry.nearState = 'lod'; // callbacks will no-op on the state check
+  }
 }
 
 function plazaTexture() {
@@ -681,36 +765,70 @@ function buildWorld() {
     m.rotation.x = -Math.PI / 2; m.position.set(pp[0], 0.015, pp[1]); m.receiveShadow = true; scene.add(m);
   });
 
-  // distant mountain silhouettes (depth at the fog line): one
-  // continuous ridgeline ring whose crest follows the same ridged
-  // noise as the terrain rim, so the far range reads as a real
-  // mountain chain instead of repeated cones (terrain pass).
+  // FAR RANGE (horizon reconstruction): the old horizon was two
+  // open cylinder CURTAINS (one quad tall, unlit MeshBasicMaterial,
+  // two vertex colors) at r 338/478 — flat paper walls the player
+  // could walk straight through once the bounds opened. They are
+  // replaced by a real heightfield annulus BEYOND the playable
+  // edge (r 1030..1980, world-anchored, never reachable): a polar
+  // grid whose heights sample the SAME ridge/sector fields as
+  // groundH's rim ranges (math3d rim: ridge2 at 0.0085 + the
+  // angular sector gain), so the far range is literally the rim
+  // mountain system continued outward — irregular crests, passes,
+  // real slopes and sun shading (Standard material, flat-shaded
+  // facets), vertex-colored by height. Heights come from world
+  // XZ, so the angular seam agrees exactly. One draw call.
+  // Fog: at 1000u+ the scene FogExp2 would erase it entirely, so
+  // this material patches its fog chunk to a 0.4x density — the
+  // standard aerial-perspective treatment for distant ranges:
+  // hazed silhouettes from town, solid detailed slopes when the
+  // player stands at the world edge looking out.
   {
-    // each ring's radius wanders with angle (fbm over the circle, so
-    // it closes seamlessly), the crest is notched by a second ridge
-    // octave, and a farther, taller, paler range sits behind the
-    // first — layered depth instead of one circular wall.
-    const mkRing = (rBase, rVar, hBase, hVar, seed, cTop, cBot) => {
-      const geo = new THREE.CylinderGeometry(1, 1, 1, 180, 1, true);
-      const rp = geo.attributes.position, rcol = new Float32Array(rp.count * 3);
-      for (let i = 0; i < rp.count; i++) {
-        const x = rp.getX(i), z = rp.getZ(i), a = Math.atan2(z, x);
-        const ca = Math.cos(a), sa = Math.sin(a);
-        const R = rBase + rVar * fbm2(ca * 1.8 + seed, sa * 1.8 + seed * 0.3, 2);
-        rp.setX(i, ca * R); rp.setZ(i, sa * R);
-        const notch = 0.70 + 0.55 * ridge2(ca * 2.3 + seed * 2.1, sa * 2.3 + 3.7, 3);
-        const crest = (hBase + hVar * Math.pow(ridge2(ca * 3.1 + 31.4, sa * 3.1 + 3.1, 4), 1.4)) * notch
-          + 6 * fbm2(ca * 6.0 + 9.2, sa * 6.0, 2);
-        const isTop = rp.getY(i) > 0;
-        rp.setY(i, isTop ? crest : -8);
-        const c = isTop ? cTop : cBot;
-        rcol[i * 3] = c.r; rcol[i * 3 + 1] = c.g; rcol[i * 3 + 2] = c.b;
-      }
-      geo.setAttribute('color', new THREE.BufferAttribute(rcol, 3));
-      return new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, fog: true }));
+    const NA = 288, NR = 18, R_IN = 1030, R_OUT = 1980;
+    const pos = [], col = [], idx = [];
+    const cLow = new THREE.Color(0x77804f), cRock = new THREE.Color(0x8d7d78), cHigh = new THREE.Color(0x9a8794), cCrest = new THREE.Color(0xd8cdc2);
+    const rangeH = (x, z) => {
+      const r = Math.hypot(x, z);
+      const rg = ridge2(x * 0.0085 + 31.4, z * 0.0085 + 3.1, 4);
+      const ang = Math.atan2(z, x);
+      const sector = 0.72 + 0.6 * (fbm2(Math.cos(ang) * 1.35 + 9.1, Math.sin(ang) * 1.35 + 4.4, 2) * 0.5 + 0.5);
+      const rise = sstep(R_IN, 1450, r);
+      const crest = (18 + 165 * Math.pow(rg, 1.7)) * sector;
+      const detail = 16 * (ridge2(x * 0.021 + 7.3, z * 0.021 + 2.9, 3) - 0.5) + 6 * fbm2(x * 0.05, z * 0.05, 2);
+      let h = -8 + rise * (crest + detail * (0.4 + 0.6 * rg));
+      h *= 1 - 0.35 * sstep(1750, R_OUT, r);
+      return h;
     };
-    scene.add(mkRing(338, 55, 16, 40, 21.0, new THREE.Color(0x8a6f83), new THREE.Color(0xc7a68e)));
-    scene.add(mkRing(478, 70, 30, 58, 47.0, new THREE.Color(0x9b7f92), new THREE.Color(0xcbb098)));
+    for (let j = 0; j <= NR; j++) {
+      const r = R_IN + (R_OUT - R_IN) * Math.pow(j / NR, 1.25);
+      for (let i = 0; i <= NA; i++) {
+        const a = (i / NA) * Math.PI * 2, x = Math.cos(a) * r, z = Math.sin(a) * r;
+        pos.push(x, rangeH(x, z), z);
+      }
+    }
+    for (let j = 0; j < NR; j++) for (let i = 0; i < NA; i++) {
+      const a0 = j * (NA + 1) + i, b0 = a0 + 1, c0 = a0 + NA + 1, d0 = c0 + 1;
+      idx.push(a0, c0, b0, b0, c0, d0);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3));
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+    const pa = geo.attributes.position, na2 = geo.attributes.normal, carr = new Float32Array(pa.count * 3);
+    const tmp = new THREE.Color();
+    for (let i = 0; i < pa.count; i++) {
+      const h = pa.getY(i), steep = 1 - Math.abs(na2.getY(i));
+      if (h < 22) tmp.copy(cLow); else if (h < 62) tmp.copy(cLow).lerp(cRock, (h - 22) / 40); else if (h < 115) tmp.copy(cRock).lerp(cHigh, (h - 62) / 53); else tmp.copy(cHigh).lerp(cCrest, Math.min(1, (h - 115) / 60));
+      if (steep > 0.45 && h >= 22) tmp.lerp(cRock, 0.5); // exposed faces read as rock
+      carr[i * 3] = tmp.r; carr[i * 3 + 1] = tmp.g; carr[i * 3 + 2] = tmp.b;
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(carr, 3));
+    const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, flatShading: true, fog: true });
+    mat.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace('fogDensity * fogDensity * vFogDepth * vFogDepth', 'fogDensity * fogDensity * 0.16 * vFogDepth * vFogDepth'); };
+    mat.customProgramCacheKey = () => 'farrange1';
+    const range = new THREE.Mesh(geo, mat);
+    range.frustumCulled = false;
+    scene.add(range); scene.userData.farRange = range;
   }
 
   // THE FOUNTAIN (the wishing well, in 3d) — basin, rim, animated water,
@@ -2542,24 +2660,57 @@ function registerLOD(name, x, z, s, ry) {
  * stays visible at every distance; if the LOD also fails, the
  * tree is simply absent. Nothing primitive ever renders. */
 const LODTYPES = new Map();
-function lodParts(proto) {
+/* LOD silhouette compensation (GLB audit 2026-11-23): the
+ * decimated _LOD models are up to 11% shorter than the full
+ * models (CommonTree_5 6.28 vs 7.01u) — enough to see a tree
+ * shrink at the LOD swap. LOD instances are Y-scaled by these
+ * measured full/LOD height ratios so both representations
+ * share one silhouette. */
+const LOD_Y = { CommonTree_1: 1.004, CommonTree_2: 0.990, CommonTree_3: 1.069, CommonTree_4: 1.031, CommonTree_5: 1.116, Pine_1: 1.004, Pine_2: 0.999, Pine_3: 1.007, Pine_4: 1.006, Pine_5: 0.998, TwistedTree_1: 1.038, TwistedTree_2: 1.025, TwistedTree_3: 1.008, DeadTree_3: 0.998, SakuraTree: 0.990 };
+function lodParts(proto, isLOD) {
+  // transform correctness: parts are baked into the proto's
+  // world space (node matrixWorld applied to a CLONE — protos
+  // are shared cache objects and must never be mutated). The
+  // current tree GLBs are single-node/identity, so the bake is
+  // numerically a no-op for them, but any future multi-node
+  // model now assembles correctly instead of collapsing to
+  // origin-local geometry. LOD parts also get the distance
+  // material treatment: leaf MASK alphaTest lowered (mip
+  // averaging at range eats alpha below the 0.2 cutoff and the
+  // canopies thin out — the distant-tree bug) and texture
+  // anisotropy raised (grazing-angle shimmer).
+  proto.updateMatrixWorld(true);
   const parts = [];
+  const matCache = new Map();
+  const treatMat = (m) => {
+    if (!isLOD || !m) return m;
+    if (!matCache.has(m)) {
+      let out = m;
+      if (m.alphaTest > 0) { out = m.clone(); out.alphaTest = 0.08; }
+      const map = out.map || m.map;
+      if (map) map.anisotropy = Math.max(map.anisotropy || 1, 8);
+      matCache.set(m, out);
+    }
+    return matCache.get(m);
+  };
   proto.traverse((o) => {
     if (!o.isMesh) return;
+    const baked = o.geometry.clone();
+    baked.applyMatrix4(o.matrixWorld);
     const mats = Array.isArray(o.material) ? o.material : null;
-    if (mats && o.geometry.groups && o.geometry.groups.length) {
-      for (const g of o.geometry.groups) {
+    if (mats && baked.groups && baked.groups.length) {
+      for (const g of baked.groups) {
         const geo = new THREE.BufferGeometry();
-        for (const k in o.geometry.attributes) geo.setAttribute(k, o.geometry.attributes[k]);
-        const idx = o.geometry.index;
+        for (const k in baked.attributes) geo.setAttribute(k, baked.attributes[k]);
+        const idx = baked.index;
         if (idx) {
           const sub = idx.array.subarray(g.start, g.start + g.count);
           geo.setIndex(new THREE.BufferAttribute(sub.slice(), 1));
         }
-        parts.push({ geometry: geo, material: mats[g.materialIndex || 0] });
+        parts.push({ geometry: geo, material: treatMat(mats[g.materialIndex || 0]) });
       }
     } else {
-      parts.push({ geometry: o.geometry, material: o.material });
+      parts.push({ geometry: baked, material: treatMat(o.material) });
     }
   });
   return parts;
@@ -2570,7 +2721,8 @@ function setImpMatrix(e) {
   const d = new THREE.Object3D();
   d.position.set(e.x, groundH(e.x, e.z) - 0.05, e.z);
   d.rotation.y = e.ry;
-  d.scale.setScalar(e.near && e.model ? 0.0001 : e.s);
+  if (e.near && e.model) d.scale.setScalar(0.0001); // hidden: the full model carries this tree
+  else d.scale.set(e.s, e.s * (LOD_Y[e.name] || 1), e.s); // LOD silhouette matched to the full model
   d.updateMatrix();
   for (const im of rec.ims) { im.setMatrixAt(e.slot, d.matrix); im.instanceMatrix.needsUpdate = true; }
 }
@@ -2581,7 +2733,7 @@ function buildLodMeshes() {
     entries.forEach((e, i) => { e.slot = i; });
     loadAsset(NAT + name + '_LOD.glb', 40).then((proto) => {
       if (!proto) return;
-      const ims = lodParts(proto).map((p) => {
+      const ims = lodParts(proto, true).map((p) => {
         const im = new THREE.InstancedMesh(p.geometry, p.material, entries.length);
         im.frustumCulled = false; im.receiveShadow = true;
         scene.add(im); return im;
@@ -2678,11 +2830,11 @@ function buildHorizon() {
     loadAsset(NAT + hName + '_LOD.glb', 90).then((proto) => {
       if (!proto) return;
       const d = new THREE.Object3D();
-      for (const p of lodParts(proto)) {
+      for (const p of lodParts(proto, true)) {
         const im = new THREE.InstancedMesh(p.geometry, p.material, list.length);
         list.forEach((q, i) => {
           d.position.set(q.x, groundH(q.x, q.z) - 0.15, q.z);
-          d.rotation.set(0, q.ry, 0); d.scale.setScalar(q.s); d.updateMatrix();
+          d.rotation.set(0, q.ry, 0); d.scale.set(q.s, q.s * (LOD_Y[hName] || 1), q.s); d.updateMatrix();
           im.setMatrixAt(i, d.matrix);
         });
         im.frustumCulled = false;
@@ -4629,7 +4781,7 @@ function loop() {
     else { if (rm.rig) setRigShown(rm, false); animateAvatar(g, rm.st, dt, now); }
   }
   // npcs idle in place; prompt scan + seat snap (v543)
-  tickStrollers(dt, now); tickShards(now); tickDressing(now); tickAudio(); tickWildlife(now, dt); tickLOD(); tickTerrainStreaming(); tickSkyFollow(px, pz);
+  tickStrollers(dt, now); tickShards(now); tickDressing(now); tickAudio(); tickWildlife(now, dt); tickLOD(); tickVegNear(); tickTerrainStreaming(); tickSkyFollow(px, pz);
   tickNPCRoutines(now);
   for (const n of NPCS) { if (n.zone && zoneNow() !== n.zone) continue; if (n.rig) updateRig(n, dt); else animateAvatar(n.g, n.st, dt, now); }
   if (sitting) { px = sitting.x; pz = sitting.z; if (joyVec.x || joyVec.y) standUp(); }
@@ -4679,7 +4831,7 @@ function loop() {
     window.__w3scene = scene; // diagnostic handle (mesh census in tests)
     window.__w3state = function () {
       const miraN = NPCS.find((n) => n.zone === 'coffee');
-      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, groveN: GROVE.n, coverN: COVER.lawn, chunksOn: COVER.chunksOn, chunks: COVER.chunks, lodNear: COVER.lodNear, lodFar: COVER.lodFar, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, perfQ: loadQ.length + loadActive, tChunks: TERRAIN_CHUNKS.size, tMesh: TERRAIN_MESHES.size, vegC: VEG_MESHES.size, settleC: SETTLE_MESHES.size, waterC: WATER_MESHES.size, fallsOn: !!fallsMesh, skyAx: SKY_AX, skyAz: SKY_AZ, streamR: terrStreamR, tris: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.triangles : -1, terrTex: terrainTexState ? { loaded: terrainTexState.loaded, failed: terrainTexState.failed.slice() } : null, garden: SPAWNG, vc: { on: vcOn3, muted: vcMuted, peers: Object.keys(vcPeers).length, states: Object.fromEntries(Object.entries(vcPeers).map(([u, p]) => [u, p.pc.connectionState])), talk: vcTalk3 }, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
+      return { x: px, z: pz, y: py, ry, camYaw, camPitch, camDist: camDistEff, speed: speedSm, sprinting: !!(keys.ShiftLeft || keys.ShiftRight || sprintTouch), grounded, booted, state: bootState, conflict: sessionConflict, remotes: remotes.size, fps: Math.round(fpsEma), zone: zoneNow(), sitting: !!sitting, wear: myCos.wear, hue: myCos.hue, wardOpen, gamesOpen, quizOpen, mapOpen, shards: myCos.shards.length, district: districtNow, emote: (myEmote && performance.now() - myEmoteAt < 2200) ? myEmote : null, view: SET.view, eyeY: camera ? Math.round(camera.position.y * 100) / 100 : 0, fovNow: camera ? camera.fov : 0, fpPitch: Math.round(fpPitch * 1000) / 1000, hands: !!(handsGroup && handsGroup.visible), birds: BIRDS.length, petals: !!petals, groundY: Math.round(groundY * 100) / 100, hOverlook: Math.round(groundH(174, 8) * 10) / 10, grassN: VEG.grass, flowerN: VEG.flowers, forestN: FOREST.trees, groveN: GROVE.n, coverN: COVER.lawn, chunksOn: COVER.chunksOn, chunks: COVER.chunks, lodNear: COVER.lodNear, lodFar: COVER.lodFar, bfly: WILD.bfly.length, rabbits: WILD.rabbits.length, deer: WILD.deer.length, amb: ambZone, sfx: SET.sfx, npcs: NPCS.length, strollers: STROLLERS.length, miraX: (NPCS[0] ? +NPCS[0].g.position.x.toFixed(1) : 0), miraRig: !!(miraN && miraN.rig), rigs: NPCS.concat(STROLLERS).filter((n) => n.rig).length, meRig: !!(meEntry && meEntry.rig), remoteRigs: [...remotes.values()].filter((r) => r.rig).length, assetSwaps, perfQ: loadQ.length + loadActive, tChunks: TERRAIN_CHUNKS.size, tMesh: TERRAIN_MESHES.size, vegC: VEG_MESHES.size, settleC: SETTLE_MESHES.size, waterC: WATER_MESHES.size, fallsOn: !!fallsMesh, skyAx: SKY_AX, skyAz: SKY_AZ, farRange: !!(scene && scene.userData.farRange), vegNear: [...VEG_MESHES.values()].filter((e) => e.nearState === 'near').length, streamR: terrStreamR, tris: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.triangles : -1, terrTex: terrainTexState ? { loaded: terrainTexState.loaded, failed: terrainTexState.failed.slice() } : null, garden: SPAWNG, vc: { on: vcOn3, muted: vcMuted, peers: Object.keys(vcPeers).length, states: Object.fromEntries(Object.entries(vcPeers).map(([u, p]) => [u, p.pc.connectionState])), talk: vcTalk3 }, autoCap, calls: (typeof renderer !== 'undefined' && renderer) ? renderer.info.render.calls : -1, prompt: curPrompt ? (typeof curPrompt.label === 'function' ? curPrompt.label() : curPrompt.label) : '' };
     };
     if (window.__w3watchdog) clearTimeout(window.__w3watchdog);
     if (flavorTimer) { clearInterval(flavorTimer); flavorTimer = 0; }
@@ -4779,7 +4931,7 @@ function init() {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.08, 900);
+  camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.08, 3200); // far raised for the far range (was 900 — the old rings clipped from across the map)
   clock = new THREE.Clock();
   setLoad(38, 'BUILDING_WORLD'); // checkpoint: renderer + WebGL context live
 
