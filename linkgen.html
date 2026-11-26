@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wildcard Link Generator — usareme.site &amp; classlink.site</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Wildcard Link Generator — usareme.site, classlink.site, sixnet.site &amp; creamyfrostbite.rest</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -24,6 +24,8 @@
     body {
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
+    /* iOS focus-zoom floor: form controls below 16px trigger auto-zoom on focus */
+    input, textarea, select { font-size: 16px; }
     /* 6ix design tokens (Stage 8): this file is standalone (no GALAXY_CSS),
        so the platform token values are applied as literals over the
        Tailwind slate/indigo utilities. Doubled classes outrank the
@@ -91,7 +93,7 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
     }
-  </style>
+    </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
   <div class="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
@@ -104,7 +106,7 @@
         </div>
         <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white">Wildcard Site Links</h1>
         <p class="text-sm text-slate-400 mt-1">
-          Instant random 15-character wildcard URLs for <span class="font-mono text-slate-300">*.usareme.site</span> and <span class="font-mono text-slate-300">*.classlink.site</span>.
+          Instant random 15-character wildcard URLs for <span class="font-mono text-slate-300">*.usareme.site</span>, <span class="font-mono text-slate-300">*.classlink.site</span>, <span class="font-mono text-slate-300">*.sixnet.site</span>, and <span class="font-mono text-slate-300">*.creamyfrostbite.rest</span>.
         </p>
       </div>
       <div class="flex flex-wrap items-center gap-2.5">
@@ -131,6 +133,56 @@
         </button>
       </div>
     </header>
+
+    <!-- Home Site Banner -->
+    <section class="mt-6 p-4 sm:px-5 rounded-2xl bg-gradient-to-r from-indigo-950/70 via-slate-900/90 to-slate-900/80 border border-indigo-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-9 h-9 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-300 shrink-0">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold uppercase tracking-wider text-indigo-300">Home Site</span>
+            <span class="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] font-medium">Main Portal</span>
+          </div>
+          <a
+            id="home-site-link"
+            href="https://sixnetworks.site"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-redirect-url="https://sixnetworks.site"
+            class="block font-mono text-sm sm:text-base font-semibold text-white hover:text-indigo-200 hover:underline truncate mt-0.5"
+          >
+            https://sixnetworks.site
+          </a>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <button
+          id="copy-home-btn"
+          type="button"
+          class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700/80 transition cursor-pointer"
+        >
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          Copy URL
+        </button>
+        <button
+          id="open-home-btn"
+          type="button"
+          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-500/20 transition cursor-pointer"
+        >
+          <span>Open Home</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </button>
+      </div>
+    </section>
 
     <!-- Controls Bar -->
     <section class="mt-6 p-4 rounded-2xl bg-slate-900/70 border border-slate-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -216,7 +268,8 @@
     };
 
     const SUBDOMAIN_LENGTH = 15;
-    const DEFAULT_DOMAINS = ['usareme.site', 'classlink.site'];
+    const HOME_SITE_URL = 'https://sixnetworks.site';
+    const DEFAULT_DOMAINS = ['usareme.site', 'classlink.site', 'sixnet.site', 'creamyfrostbite.rest'];
 
     const state = {
       domains: [...DEFAULT_DOMAINS],
@@ -233,7 +286,14 @@
         if (!raw) return;
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed.domains) && parsed.domains.length > 0) {
-          state.domains = parsed.domains;
+          // Ensure all default domains are included even if saved preferences predate new defaults
+          const mergedDomains = [...parsed.domains];
+          DEFAULT_DOMAINS.forEach((defaultDomain) => {
+            if (!mergedDomains.includes(defaultDomain)) {
+              mergedDomains.push(defaultDomain);
+            }
+          });
+          state.domains = mergedDomains;
         }
         if ([1, 3, 5, 10, 15].includes(Number(parsed.linksPerSite))) {
           state.linksPerSite = Number(parsed.linksPerSite);
@@ -402,6 +462,12 @@
       document.getElementById('charset-select').value = state.charset;
       document.getElementById('open-mode-select').value = state.openMode;
 
+      const linkTarget = state.openMode === 'same-tab' ? '_top' : '_blank';
+      const homeLink = document.getElementById('home-site-link');
+      if (homeLink) {
+        homeLink.target = linkTarget;
+      }
+
       const grid = document.getElementById('domains-grid');
       grid.innerHTML = '';
 
@@ -411,7 +477,6 @@
         }
         const subdomains = state.generated[domain];
         const isDefault = DEFAULT_DOMAINS.includes(domain);
-        const linkTarget = state.openMode === 'same-tab' ? '_top' : '_blank';
 
         const card = document.createElement('section');
         card.className = 'rounded-2xl bg-slate-900/80 border border-slate-800 overflow-hidden flex flex-col shadow-lg';
@@ -545,6 +610,21 @@
       generateAll();
       render();
       showToast('Generated fresh 15-character wildcard links');
+    });
+
+    document.getElementById('home-site-link').addEventListener('click', (e) => {
+      if (state.openMode === 'same-tab') {
+        e.preventDefault();
+        openRedirect(HOME_SITE_URL);
+      }
+    });
+
+    document.getElementById('copy-home-btn').addEventListener('click', () => {
+      copyText(HOME_SITE_URL, 'Copied home site URL to clipboard');
+    });
+
+    document.getElementById('open-home-btn').addEventListener('click', () => {
+      openRedirect(HOME_SITE_URL);
     });
 
     document.getElementById('copy-all-btn').addEventListener('click', () => {
